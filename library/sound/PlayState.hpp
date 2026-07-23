@@ -1,7 +1,5 @@
 #pragma once
 
-#include <QtCore/QString>
-
 struct PlayState {
   double current_time = 0;
 

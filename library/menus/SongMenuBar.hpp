@@ -6,7 +6,8 @@
 #include "menus/FileMenu.hpp"
 #include "menus/PlayMenu.hpp"
 #include "menus/ViewMenu.hpp"
-#include "widgets/SongWidget.hpp"
+
+struct SongWidget;
 
 struct SongMenuBar : public QMenuBar {
   FileMenu file_menu;

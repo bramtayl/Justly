@@ -1,5 +1,12 @@
 #pragma once
 
+#include <libxml/parser.h>
+#include <QtCore/QByteArray>
+#include <QtCore/QMetaType>
+#include <QtCore/QtAssert>
+#include <numeric>
+#include <string>
+
 #include "other/helpers.hpp"
 
 static const auto MAX_NUMERATOR = 999;

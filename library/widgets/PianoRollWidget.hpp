@@ -1,27 +1,45 @@
 #pragma once
 
+#include <QtCore/QChar>
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QEvent>
+#include <QtCore/QList>
+#include <QtCore/QMetaObject>
+#include <QtCore/QObject>
+#include <QtCore/QPoint>
+#include <QtCore/QRect>
+#include <QtCore/QString>
 #include <QtCore/QTimer>
+#include <QtCore/QTypeInfo>
+#include <QtCore/QVariant>
+#include <QtCore/Qt>
+#include <QtCore/QtMinMax>
+#include <QtCore/QtSwap>
 #include <QtGui/QBrush>
 #include <QtGui/QColor>
-#include <QtGui/QMouseEvent>
 #include <QtGui/QPen>
+#include <QtGui/QPolygonF>
 #include <QtGui/QTransform>
-#include <QtGui/QWheelEvent>
 #include <QtWidgets/QGraphicsLineItem>
 #include <QtWidgets/QGraphicsScene>
-#include <QtWidgets/QGraphicsSimpleTextItem>
 #include <QtWidgets/QGraphicsView>
+#include <QtWidgets/QScrollBar>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 #include <algorithm>
 #include <cmath>
 #include <functional>
 #include <limits>
+#include <optional>
+#include <utility>
 
 #include "other/PianoRoll.hpp"
+#include "other/Song.hpp"
+#include "other/helpers.hpp"
+#include "rows/PitchedNote.hpp"
+#include "rows/PitchedVoice.hpp"
 #include "rows/RowType.hpp"
+#include "rows/UnpitchedVoice.hpp"
 #include "widgets/SongWidget.hpp"
 
 static const auto PIANO_ROLL_PIXELS_PER_MS = 0.1;
@@ -53,7 +71,11 @@ static const auto PIANO_ROLL_LABEL_DECIMAL_BASE = 10;
 // power-of-ten magnitude -- the classic "nice numbers" progression (1, 2, 5,
 // then roll over to the next magnitude's 1) that keeps chosen tick values
 // round (0.5s, 1s, 2s, 5s, 10s, ...) instead of arbitrary
-static const QList<double> PIANO_ROLL_NICE_STEP_MULTIPLIERS{1.0, 2.0, 5.0};
+[[nodiscard]] static auto get_piano_roll_nice_step_multipliers()
+    -> const QList<double> & {
+  static const QList<double> multipliers{1.0, 2.0, 5.0};
+  return multipliers;
+}
 static const auto PIANO_ROLL_NICE_STEP_ROLLOVER = 10.0;
 static const auto PIANO_ROLL_HIGHLIGHT_PEN_WIDTH = 1.5;
 static const auto PIANO_ROLL_MIN_TIME_ZOOM = 0.25;
@@ -61,20 +83,27 @@ static const auto PIANO_ROLL_MAX_TIME_ZOOM = 8.0;
 static const auto PIANO_ROLL_TIME_ZOOM_STEP = 1.25;
 
 // fixed categorical order (never cycled) -- a voice beyond the 8th falls
-// back to PIANO_ROLL_OTHER_VOICE_COLOR rather than reusing an earlier hue
-static const QList<QColor> PIANO_ROLL_VOICE_COLORS{
-    QColor("#2a78d6"), QColor("#eb6834"), QColor("#1baf7a"), QColor("#eda100"),
-    QColor("#e87ba4"), QColor("#008300"), QColor("#4a3aa7"), QColor("#e34948"),
-};
-static const auto PIANO_ROLL_OTHER_VOICE_COLOR = QColor("#898781");
+// back to get_piano_roll_other_voice_color() rather than reusing an earlier hue
+[[nodiscard]] static auto get_piano_roll_voice_colors() -> const QList<QColor> & {
+  static const QList<QColor> voice_colors{
+      QColor("#2a78d6"), QColor("#eb6834"), QColor("#1baf7a"), QColor("#eda100"),
+      QColor("#e87ba4"), QColor("#008300"), QColor("#4a3aa7"), QColor("#e34948"),
+  };
+  return voice_colors;
+}
+
+[[nodiscard]] static auto get_piano_roll_other_voice_color() -> const QColor & {
+  static const auto other_voice_color = QColor("#898781");
+  return other_voice_color;
+}
 
 [[nodiscard]] static auto get_voice_color(const int global_voice_index)
     -> QColor {
-  if (global_voice_index >= 0 &&
-      global_voice_index < PIANO_ROLL_VOICE_COLORS.size()) {
-    return PIANO_ROLL_VOICE_COLORS.at(global_voice_index);
+  const auto &voice_colors = get_piano_roll_voice_colors();
+  if (global_voice_index >= 0 && global_voice_index < voice_colors.size()) {
+    return voice_colors.at(global_voice_index);
   }
-  return PIANO_ROLL_OTHER_VOICE_COLOR;
+  return get_piano_roll_other_voice_color();
 }
 
 // picks a "nice" (1/2/5 * 10^n) tick interval, in ms, close to the raw
@@ -89,7 +118,7 @@ static const auto PIANO_ROLL_OTHER_VOICE_COLOR = QColor("#898781");
                                   std::floor(std::log10(raw_step_ms)));
   const auto fraction = raw_step_ms / magnitude;
   auto nice_fraction = PIANO_ROLL_NICE_STEP_ROLLOVER;
-  for (const auto multiplier : PIANO_ROLL_NICE_STEP_MULTIPLIERS) {
+  for (const auto multiplier : get_piano_roll_nice_step_multipliers()) {
     if (fraction <= multiplier) {
       nice_fraction = multiplier;
       break;
@@ -182,7 +211,7 @@ struct PianoRollWidget : public QWidget {
   // (via update_selection()) every time it changes, so rebuild_scene() can
   // reapply the same highlight/cursor after redrawing a fresh set of items.
   // number_of_rows == 0 means nothing is selected (the default at startup)
-  RowType selection_row_type = chord_type;
+  RowType selection_row_type = RowType::chord_type;
   int selection_chord_number = -1;
   int selection_first_row_number = -1;
   int selection_number_of_rows = 0;
@@ -223,14 +252,14 @@ struct PianoRollWidget : public QWidget {
     axis_view.setFocusPolicy(Qt::NoFocus);
 
     QObject::connect(view.verticalScrollBar(), &QScrollBar::valueChanged,
-                     this, [this](const int value) {
+                     this, [this](const int value) -> auto {
                        axis_view.verticalScrollBar()->setValue(value);
                      });
     // kept symmetric so that scrolling with the mouse wheel while hovered
     // over the axis column (still possible despite the hidden scrollbar)
     // moves the main view along with it, rather than desyncing the two
     QObject::connect(axis_view.verticalScrollBar(), &QScrollBar::valueChanged,
-                     this, [this](const int value) {
+                     this, [this](const int value) -> auto {
                        view.verticalScrollBar()->setValue(value);
                      });
 
@@ -240,7 +269,7 @@ struct PianoRollWidget : public QWidget {
     scene.addItem(&playhead_item);
 
     QObject::connect(&playhead_timer, &QTimer::timeout, this,
-                     [this]() { update_playhead_position(); });
+                     [this]() -> auto { update_playhead_position(); });
 
     // keeps the scene point under the cursor fixed on screen while
     // ctrl+wheel zooms the time axis in zoom_in()/zoom_out() below, rather
@@ -506,10 +535,10 @@ struct PianoRollWidget : public QWidget {
       }
     }
 
-    const auto is_chord_selection = selection_row_type == chord_type;
+    const auto is_chord_selection = selection_row_type == RowType::chord_type;
     const auto is_note_selection =
-        selection_row_type == pitched_note_type ||
-        selection_row_type == unpitched_note_type;
+        selection_row_type == RowType::pitched_note_type ||
+        selection_row_type == RowType::unpitched_note_type;
     const auto has_selection = (is_chord_selection || is_note_selection) &&
                                selection_number_of_rows > 0;
 
@@ -535,7 +564,7 @@ struct PianoRollWidget : public QWidget {
               is_chord_selection
                   ? std::nullopt
                   : std::make_optional(
-                        selection_row_type == pitched_note_type
+                        selection_row_type == RowType::pitched_note_type
                             ? PianoRollNoteKind::pitched_kind
                             : PianoRollNoteKind::unpitched_kind))
               .first;
@@ -641,7 +670,7 @@ struct PianoRollWidget : public QWidget {
   void redraw_time_axis_ticks() {
     for (auto *const item_pointer : time_axis_items) {
       scene.removeItem(item_pointer);
-      delete item_pointer;
+      delete item_pointer; // NOLINT(cppcoreguidelines-owning-memory)
     }
     time_axis_items.clear();
 
@@ -676,10 +705,11 @@ struct PianoRollWidget : public QWidget {
   }
 
   void position_playhead(const double time_ms) {
-    const auto x = time_ms * PIANO_ROLL_PIXELS_PER_MS;
+    const auto playhead_x = time_ms * PIANO_ROLL_PIXELS_PER_MS;
     const auto &scene_rect = scene.sceneRect();
-    playhead_item.setLine(x, scene_rect.top(), x, scene_rect.bottom());
-    follow_playhead(x);
+    playhead_item.setLine(playhead_x, scene_rect.top(), playhead_x,
+                          scene_rect.bottom());
+    follow_playhead(playhead_x);
   }
 
   // scrolls the view horizontally just enough to keep the moving playhead

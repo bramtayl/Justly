@@ -1,7 +1,19 @@
 #pragma once
 
+#include <libxml/parser.h>
+#include <QtCore/QList>
+#include <QtCore/QString>
+#include <QtCore/QTypeInfo>
+#include <QtCore/QVariant>
+#include <QtCore/QtAssert>
+#include <string>
+
+#include "cell_types/Program.hpp"
+#include "cell_types/Rational.hpp"
 #include "column_numbers/UnpitchedNoteColumn.hpp"
+#include "other/helpers.hpp"
 #include "rows/Note.hpp"
+#include "rows/Row.hpp"
 #include "rows/UnpitchedVoice.hpp"
 #include "rows/Voice.hpp"
 
@@ -35,18 +47,18 @@ struct UnpitchedNote : Note {
   };
 
   [[nodiscard]] static auto get_number_of_columns() -> int {
-    return number_of_unpitched_note_columns;
+    return static_cast<int>(UnpitchedNoteColumn::number_of_unpitched_note_columns);
   };
 
   [[nodiscard]] static auto get_column_name(int column_number) {
     switch (column_number) {
-    case unpitched_note_voice_number_column:
+    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_voice_number_column):
       return "Voice";
-    case unpitched_note_beats_column:
+    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_beats_column):
       return "Beats";
-    case unpitched_note_velocity_ratio_column:
+    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_velocity_ratio_column):
       return "Velocity ratio";
-    case unpitched_note_words_column:
+    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_words_column):
       return "Words";
     default:
       Q_ASSERT(false);
@@ -90,13 +102,13 @@ struct UnpitchedNote : Note {
   [[nodiscard]] auto
   get_data(const int column_number) const -> QVariant override {
     switch (column_number) {
-    case unpitched_note_voice_number_column:
+    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_voice_number_column):
       return voice_number;
-    case unpitched_note_beats_column:
+    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_beats_column):
       return QVariant::fromValue(beats);
-    case unpitched_note_velocity_ratio_column:
+    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_velocity_ratio_column):
       return QVariant::fromValue(velocity_ratio);
-    case unpitched_note_words_column:
+    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_words_column):
       return words;
     default:
       Q_ASSERT(false);
@@ -106,16 +118,16 @@ struct UnpitchedNote : Note {
 
   void set_data(const int column_number, const QVariant &new_value) override {
     switch (column_number) {
-    case unpitched_note_voice_number_column:
+    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_voice_number_column):
       voice_number = variant_to<int>(new_value);
       break;
-    case unpitched_note_beats_column:
+    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_beats_column):
       beats = variant_to<Rational>(new_value);
       break;
-    case unpitched_note_velocity_ratio_column:
+    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_velocity_ratio_column):
       velocity_ratio = variant_to<Rational>(new_value);
       break;
-    case unpitched_note_words_column:
+    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_words_column):
       words = variant_to<QString>(new_value);
       break;
     default:
@@ -126,16 +138,16 @@ struct UnpitchedNote : Note {
   void copy_column_from(const UnpitchedNote &template_row,
                         const int column_number) {
     switch (column_number) {
-    case unpitched_note_voice_number_column:
+    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_voice_number_column):
       voice_number = template_row.voice_number;
       break;
-    case unpitched_note_beats_column:
+    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_beats_column):
       beats = template_row.beats;
       break;
-    case unpitched_note_velocity_ratio_column:
+    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_velocity_ratio_column):
       velocity_ratio = template_row.velocity_ratio;
       break;
-    case unpitched_note_words_column:
+    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_words_column):
       words = template_row.words;
       break;
     default:
@@ -145,16 +157,16 @@ struct UnpitchedNote : Note {
 
   void column_to_xml(xmlNode &node, const int column_number) const override {
     switch (column_number) {
-    case unpitched_note_voice_number_column:
+    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_voice_number_column):
       set_xml_int(node, "voice_number", voice_number);
       break;
-    case unpitched_note_beats_column:
+    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_beats_column):
       maybe_add_rational_to_xml(node, "beats", beats);
       break;
-    case unpitched_note_velocity_ratio_column:
+    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_velocity_ratio_column):
       maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
       break;
-    case unpitched_note_words_column:
+    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_words_column):
       maybe_add_qstring_to_xml(node, "words", words);
       break;
     default:

@@ -1,6 +1,15 @@
 #pragma once
 
+#include <libxml/parser.h>
+#include <QtCore/QString>
+#include <QtCore/QTypeInfo>
+#include <QtCore/QVariant>
+#include <QtCore/QtAssert>
+#include <string>
+
+#include "cell_types/Rational.hpp"
 #include "column_numbers/PitchedVoiceColumn.hpp"
+#include "other/helpers.hpp"
 #include "rows/Row.hpp"
 #include "rows/Voice.hpp"
 
@@ -46,16 +55,16 @@ struct PitchedVoice : Voice {
   };
 
   [[nodiscard]] static auto get_number_of_columns() -> int {
-    return number_of_pitched_voice_columns;
+    return static_cast<int>(PitchedVoiceColumn::number_of_pitched_voice_columns);
   };
 
   [[nodiscard]] static auto get_column_name(int column_number) {
     switch (column_number) {
-    case pitched_voice_name_column:
+    case static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column):
       return "Name";
-    case pitched_voice_instrument_column:
+    case static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column):
       return "Instrument";
-    case pitched_voice_velocity_ratio_column:
+    case static_cast<int>(PitchedVoiceColumn::pitched_voice_velocity_ratio_column):
       return "Velocity ratio";
     default:
       Q_ASSERT(false);
@@ -74,11 +83,11 @@ struct PitchedVoice : Voice {
   [[nodiscard]] auto
   get_data(const int column_number) const -> QVariant override {
     switch (column_number) {
-    case pitched_voice_name_column:
+    case static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column):
       return name;
-    case pitched_voice_instrument_column:
+    case static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column):
       return program;
-    case pitched_voice_velocity_ratio_column:
+    case static_cast<int>(PitchedVoiceColumn::pitched_voice_velocity_ratio_column):
       return QVariant::fromValue(velocity_ratio);
     default:
       Q_ASSERT(false);
@@ -88,13 +97,13 @@ struct PitchedVoice : Voice {
 
   void set_data(const int column_number, const QVariant &new_value) override {
     switch (column_number) {
-    case pitched_voice_name_column:
+    case static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column):
       name = variant_to<QString>(new_value);
       break;
-    case pitched_voice_instrument_column:
+    case static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column):
       program = variant_to<QString>(new_value);
       break;
-    case pitched_voice_velocity_ratio_column:
+    case static_cast<int>(PitchedVoiceColumn::pitched_voice_velocity_ratio_column):
       velocity_ratio = variant_to<Rational>(new_value);
       break;
     default:
@@ -105,13 +114,13 @@ struct PitchedVoice : Voice {
   void copy_column_from(const PitchedVoice &template_row,
                         const int column_number) {
     switch (column_number) {
-    case pitched_voice_name_column:
+    case static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column):
       name = template_row.name;
       break;
-    case pitched_voice_instrument_column:
+    case static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column):
       program = template_row.program;
       break;
-    case pitched_voice_velocity_ratio_column:
+    case static_cast<int>(PitchedVoiceColumn::pitched_voice_velocity_ratio_column):
       velocity_ratio = template_row.velocity_ratio;
       break;
     default:
@@ -121,13 +130,13 @@ struct PitchedVoice : Voice {
 
   void column_to_xml(xmlNode &node, const int column_number) const override {
     switch (column_number) {
-    case pitched_voice_name_column:
+    case static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column):
       maybe_add_qstring_to_xml(node, "name", name);
       break;
-    case pitched_voice_instrument_column:
+    case static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column):
       maybe_add_qstring_to_xml(node, "instrument", program);
       break;
-    case pitched_voice_velocity_ratio_column:
+    case static_cast<int>(PitchedVoiceColumn::pitched_voice_velocity_ratio_column):
       maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
       break;
     default:

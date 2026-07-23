@@ -1,9 +1,19 @@
 #pragma once
 
+#include <fluidsynth.h>
 #include <QtCore/QByteArray>
-#include <QtCore/QStringListModel>
+#include <QtCore/QList>
+#include <QtCore/QMetaType>
+#include <QtCore/QString>
+#include <QtCore/QTypeInfo>
+#include <QtCore/QtAssert>
+#include <QtCore/QtMinMax>
+#include <QtCore/QtSwap>
 #include <algorithm>
+#include <compare>
+#include <iterator>
 #include <set>
+#include <string>
 
 #include "other/helpers.hpp"
 #include "sound/FluidSettings.hpp"
@@ -34,7 +44,7 @@ template <NamedInterface Named>
 auto get_named_index(const QList<Named> &nameds, const QString &name) -> auto {
   return std::find_if(
       nameds.cbegin(), nameds.cend(),
-      [&name](const Named &named) { return named.name == name; });
+      [&name](const Named &named) -> auto { return named.name == name; });
 }
 
 template <NamedInterface Named>
@@ -49,7 +59,7 @@ template <NamedInterface Named>
 [[nodiscard]] static auto get_names(const QList<Named> &nameds) {
   QList<QString> names;
   std::transform(nameds.cbegin(), nameds.cend(), std::back_inserter(names),
-                 [](const Named &named) { return named.name; });
+                 [](const Named &named) -> auto { return named.name; });
   return names;
 }
 
@@ -80,7 +90,7 @@ Q_DECLARE_METATYPE(const Program *);
                                           const bool is_pitched) {
   QList<Program> result;
   std::ranges::copy_if(all_programs, std::back_inserter(result),
-                       [is_pitched](const Program &program) {
+                       [is_pitched](const Program &program) -> auto {
                          const auto bank_number = program.bank_number;
                          return ((bank_number != UNPITCHED_BANK_NUMBER &&
                                   bank_number != TEMPLE_BLOCKS_BANK_NUMBER) ==
@@ -91,7 +101,7 @@ Q_DECLARE_METATYPE(const Program *);
 
 [[nodiscard]] static inline auto get_some_programs(const bool is_pitched)
     -> auto & {
-  static const auto all_programs = []() {
+  static const auto all_programs = []() -> QList<Program> {
     FluidSettings settings;
     FluidSynth synth(settings);
 
@@ -129,7 +139,7 @@ Q_DECLARE_METATYPE(const Program *);
 
     const auto non_expressive_indices = std::ranges::remove_if(
         programs, [&expressive_preset_numbers,
-                   &extra_expressive_preset_numbers](const auto &program) {
+                   &extra_expressive_preset_numbers](const auto &program) -> auto {
           const auto bank_number = program.bank_number;
           const auto preset_number = program.preset_number;
           return (bank_number == GENERAL_BANK_NUMBER &&
@@ -143,7 +153,7 @@ Q_DECLARE_METATYPE(const Program *);
                    non_expressive_indices.end());
 
     std::ranges::sort(
-        programs, [](const Program &instrument_1, const Program &instrument_2) {
+        programs, [](const Program &instrument_1, const Program &instrument_2) -> auto {
           return instrument_1.name < instrument_2.name;
         });
     return programs;

@@ -1,9 +1,19 @@
 #pragma once
 
+#include <libxml/parser.h>
+#include <libxml/xmlstring.h>
+#include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
-#include <QtGui/QGuiApplication>
-#include <libxml/tree.h>
+#include <QtCore/QFile>
+#include <QtCore/QList>
+#include <QtCore/QString>
+#include <QtCore/QVariant>
+#include <QtCore/QtAssert>
+#include <algorithm>
+#include <iterator>
+#include <string>
 
+// NOLINTBEGIN(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
 #define NO_COPY(classname)                                                     \
   classname(const classname &) = delete;                                       \
   auto operator=(const classname &)->classname = delete;
@@ -12,6 +22,7 @@
   NO_COPY(classname)                                                           \
   classname(classname &&) = delete;                                            \
   auto operator=(classname &&)->classname = delete;
+// NOLINTEND(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
 
 template <typename Thing>
 [[nodiscard]] static auto get_reference(Thing *thing_pointer) -> auto & {
@@ -39,7 +50,7 @@ template <typename SubType>
 template <typename SubType>
 [[nodiscard]] static auto get_first(const QList<SubType> &variant) -> const
     auto & {
-  Q_ASSERT(variant.size() >= 1);
+  Q_ASSERT(!variant.empty());
   return variant.at(0);
 }
 

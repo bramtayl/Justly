@@ -1,20 +1,79 @@
 #pragma once
 
+#include <fluidsynth.h>
+#include <libxml/parser.h>
+#include <libxml/xmlschemas.h>
+#include <string.h>
+#include <QtCore/QAbstractItemModel>
+#include <QtCore/QChar>
+#include <QtCore/QItemSelectionModel>
+#include <QtCore/QIterator>
+#include <QtCore/QList>
+#include <QtCore/QMap>
+#include <QtCore/QObject>
+#include <QtCore/QSet>
 #include <QtCore/QStandardPaths>
+#include <QtCore/QString>
+#include <QtCore/QTextStream>
+#include <QtCore/QTypeInfo>
+#include <QtCore/Qt>
+#include <QtCore/QtAssert>
+#include <QtCore/QtCompare>
+#include <QtCore/QtMinMax>
+#include <QtCore/QtSwap>
+#include <QtGui/QAction>
+#include <QtGui/QKeySequence>
+#include <QtGui/QUndoStack>
+#include <QtWidgets/QBoxLayout>
 #include <QtWidgets/QMenu>
+#include <QtWidgets/QMessageBox>
+#include <QtWidgets/QSpinBox>
+#include <QtWidgets/QWidget>
 #include <algorithm>
+#include <cmath>
+#include <iterator>
+#include <numeric>
+#include <string>
+#include <tuple>
 #include <utility>
 
+#include "cell_types/Interval.hpp"
+#include "cell_types/Program.hpp"
+#include "cell_types/Rational.hpp"
 #include "iterators/MostRecentIterator.hpp"
 #include "iterators/TimeIterator.hpp"
+#include "models/ChordsModel.hpp"
+#include "models/PitchedVoicesModel.hpp"
+#include "models/UnpitchedVoicesModel.hpp"
 #include "musicxml/MeasureRepeatInfo.hpp"
+#include "musicxml/MusicXMLChord.hpp"
+#include "musicxml/MusicXMLNote.hpp"
 #include "musicxml/PartInfo.hpp"
 #include "other/Song.hpp"
+#include "other/helpers.hpp"
+#include "rows/Chord.hpp"
+#include "rows/Note.hpp"
+#include "rows/PitchedNote.hpp"
+#include "rows/PitchedVoice.hpp"
+#include "rows/Row.hpp"
+#include "rows/UnpitchedNote.hpp"
+#include "rows/UnpitchedVoice.hpp"
+#include "rows/Voice.hpp"
+#include "sound/FluidDriver.hpp"
+#include "sound/FluidEvent.hpp"
+#include "sound/FluidSequencer.hpp"
+#include "sound/FluidSynth.hpp"
+#include "sound/PlayState.hpp"
 #include "sound/Player.hpp"
 #include "widgets/ControlsColumn.hpp"
+#include "widgets/SpinBoxes.hpp"
 #include "widgets/SwitchColumn.hpp"
+#include "widgets/SwitchTable.hpp"
 #include "xml/XMLDocument.hpp"
+#include "xml/XMLValidationContext.hpp"
 #include "xml/XMLValidator.hpp"
+
+template <RowInterface SubRow> struct RowsModel;
 
 static const auto DEFAULT_REPEAT_TIMES = 2;
 static const auto FIFTH_HALFSTEPS = 7;
@@ -289,7 +348,7 @@ static inline void export_to_file(SongWidget &song_widget,
   const auto finished_timer_id = fluid_sequencer_register_client(
       player.sequencer.internal_pointer, "finished timer",
       [](unsigned int /*time*/, fluid_event_t * /*event*/,
-         fluid_sequencer_t * /*seq*/, void *data_pointer) {
+         fluid_sequencer_t * /*seq*/, void *data_pointer) -> auto {
         get_reference(static_cast<bool *>(data_pointer)) = true;
       },
       &finished);
@@ -550,7 +609,7 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
   }
   return std::ranges::max_element(notes,
                                   [](const MusicXMLNote &first_note,
-                                     const MusicXMLNote &second_note) {
+                                     const MusicXMLNote &second_note) -> auto {
                                     return first_note.duration <
                                            second_note.duration;
                                   })
@@ -685,7 +744,7 @@ compute_measure_expansion(const QList<MeasureRepeatInfo> &measure_infos) {
   auto repeat_start_index = -1;
   auto block_start_index = 0;
 
-  const auto flush = [&](const int first_index, const int last_index) {
+  const auto flush = [&](const int first_index, const int last_index) -> auto {
     for (auto index = first_index; index <= last_index; index = index + 1) {
       const auto &measure_info = measure_infos.at(index);
       expansion.push_back({measure_info.start_time, measure_info.end_time});

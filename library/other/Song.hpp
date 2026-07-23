@@ -1,6 +1,23 @@
 #pragma once
 
+#include <stdlib.h>
+#include <QtCore/QList>
+#include <QtCore/QMap>
+#include <QtCore/QObject>
+#include <QtCore/QString>
+#include <QtCore/QTextStream>
+#include <QtCore/QtCompare>
+#include <QtCore/QtSwap>
+#include <cmath>
+#include <tuple>
+#include <utility>
+
 #include "rows/Chord.hpp"
+#include "rows/PitchedNote.hpp"
+#include "rows/PitchedVoice.hpp"
+#include "rows/Row.hpp"
+#include "rows/UnpitchedVoice.hpp"
+#include "sound/PlayState.hpp"
 
 static const auto C_0_MIDI = 12;
 static const auto CENTS_PER_HALFSTEP = 100;

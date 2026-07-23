@@ -1,7 +1,21 @@
 #pragma once
 
+#include <QtCore/QItemSelectionModel>
+#include <QtCore/QtAssert>
+#include <QtWidgets/QAbstractItemView>
+#include <QtWidgets/QBoxLayout>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QWidget>
+
+#include "models/PitchedNotesModel.hpp"
+#include "models/UnpitchedNotesModel.hpp"
+#include "other/helpers.hpp"
 #include "rows/RowType.hpp"
+#include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
+
+class QUndoStack;
+struct Song;
 
 struct SwitchColumn : public QWidget {
   QLabel &editing_text = *(new QLabel(SwitchColumn::tr("Chords")));
@@ -19,13 +33,13 @@ struct SwitchColumn : public QWidget {
 [[nodiscard]] static inline auto
 get_parent_chord_number(const SwitchTable &switch_table) -> int {
   switch (switch_table.delegate.current_row_type) {
-  case chord_type:
-  case pitched_voice_type:
-  case unpitched_voice_type:
+  case RowType::chord_type:
+  case RowType::pitched_voice_type:
+  case RowType::unpitched_voice_type:
     return -1;
-  case pitched_note_type:
+  case RowType::pitched_note_type:
     return switch_table.pitched_notes_model.parent_chord_number;
-  case unpitched_note_type:
+  case RowType::unpitched_note_type:
     return switch_table.unpitched_notes_model.parent_chord_number;
   default:
     Q_ASSERT(false);

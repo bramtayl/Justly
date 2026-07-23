@@ -1,5 +1,8 @@
 #pragma once
 
+#include <QtCore/QList>
+#include <utility>
+
 #include "rows/Row.hpp"
 
 template <RowInterface SubRow> struct Cells {

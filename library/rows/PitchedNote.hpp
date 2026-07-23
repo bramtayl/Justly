@@ -1,9 +1,31 @@
 #pragma once
 
+#include <fluidsynth.h>
+#include <libxml/parser.h>
+#include <QtCore/QList>
+#include <QtCore/QObject>
+#include <QtCore/QString>
+#include <QtCore/QTextStream>
+#include <QtCore/QTypeInfo>
+#include <QtCore/QVariant>
+#include <QtCore/QtAssert>
+#include <QtWidgets/QMessageBox>
+#include <cmath>
+#include <string>
+
 #include "cell_types/Interval.hpp"
+#include "cell_types/Program.hpp"
+#include "cell_types/Rational.hpp"
 #include "column_numbers/PitchedNoteColumn.hpp"
+#include "other/helpers.hpp"
 #include "rows/Note.hpp"
+#include "rows/PitchedVoice.hpp"
+#include "rows/Row.hpp"
 #include "rows/Voice.hpp"
+#include "sound/FluidEvent.hpp"
+#include "sound/FluidSequencer.hpp"
+#include "sound/PlayState.hpp"
+#include "sound/Player.hpp"
 
 static const auto BEND_PER_HALFSTEP = 4096;
 static const auto CONCERT_A_FREQUENCY = 440;
@@ -72,20 +94,20 @@ struct PitchedNote : Note {
   };
 
   [[nodiscard]] static auto get_number_of_columns() -> int {
-    return number_of_pitched_note_columns;
+    return static_cast<int>(PitchedNoteColumn::number_of_pitched_note_columns);
   };
 
   [[nodiscard]] static auto get_column_name(int column_number) {
     switch (column_number) {
-    case pitched_note_voice_number_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_voice_number_column):
       return "Voice";
-    case pitched_note_interval_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_interval_column):
       return "Interval";
-    case pitched_note_beats_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_beats_column):
       return "Beats";
-    case pitched_note_velocity_ratio_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_velocity_ratio_column):
       return "Velocity ratio";
-    case pitched_note_words_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_words_column):
       return "Words";
     default:
       Q_ASSERT(false);
@@ -167,15 +189,15 @@ struct PitchedNote : Note {
   [[nodiscard]] auto
   get_data(const int column_number) const -> QVariant override {
     switch (column_number) {
-    case pitched_note_voice_number_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_voice_number_column):
       return voice_number;
-    case pitched_note_interval_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_interval_column):
       return QVariant::fromValue(interval);
-    case pitched_note_beats_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_beats_column):
       return QVariant::fromValue(beats);
-    case pitched_note_velocity_ratio_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_velocity_ratio_column):
       return QVariant::fromValue(velocity_ratio);
-    case pitched_note_words_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_words_column):
       return words;
     default:
       Q_ASSERT(false);
@@ -185,19 +207,19 @@ struct PitchedNote : Note {
 
   void set_data(const int column_number, const QVariant &new_value) override {
     switch (column_number) {
-    case pitched_note_voice_number_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_voice_number_column):
       voice_number = variant_to<int>(new_value);
       break;
-    case pitched_note_interval_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_interval_column):
       interval = variant_to<Interval>(new_value);
       break;
-    case pitched_note_beats_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_beats_column):
       beats = variant_to<Rational>(new_value);
       break;
-    case pitched_note_velocity_ratio_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_velocity_ratio_column):
       velocity_ratio = variant_to<Rational>(new_value);
       break;
-    case pitched_note_words_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_words_column):
       words = variant_to<QString>(new_value);
       break;
     default:
@@ -208,19 +230,19 @@ struct PitchedNote : Note {
   void copy_column_from(const PitchedNote &template_row,
                         const int column_number) {
     switch (column_number) {
-    case pitched_note_voice_number_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_voice_number_column):
       voice_number = template_row.voice_number;
       break;
-    case pitched_note_interval_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_interval_column):
       interval = template_row.interval;
       break;
-    case pitched_note_beats_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_beats_column):
       beats = template_row.beats;
       break;
-    case pitched_note_velocity_ratio_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_velocity_ratio_column):
       velocity_ratio = template_row.velocity_ratio;
       break;
-    case pitched_note_words_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_words_column):
       words = template_row.words;
       break;
     default:
@@ -230,19 +252,19 @@ struct PitchedNote : Note {
 
   void column_to_xml(xmlNode &node, const int column_number) const override {
     switch (column_number) {
-    case pitched_note_voice_number_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_voice_number_column):
       set_xml_int(node, "voice_number", voice_number);
       break;
-    case pitched_note_interval_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_interval_column):
       maybe_add_interval_to_xml(node, "interval", interval);
       break;
-    case pitched_note_beats_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_beats_column):
       maybe_add_rational_to_xml(node, "beats", beats);
       break;
-    case pitched_note_velocity_ratio_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_velocity_ratio_column):
       maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
       break;
-    case pitched_note_words_column:
+    case static_cast<int>(PitchedNoteColumn::pitched_note_words_column):
       maybe_add_qstring_to_xml(node, "words", words);
       break;
     default:

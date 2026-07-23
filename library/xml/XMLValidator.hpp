@@ -1,7 +1,8 @@
 #pragma once
 
-#include <libxml/xmlschemas.h>
+#include <string>
 
+#include "other/helpers.hpp"
 #include "xml/XMLParserContext.hpp"
 #include "xml/XMLSchema.hpp"
 #include "xml/XMLValidationContext.hpp"

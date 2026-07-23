@@ -1,12 +1,44 @@
 #pragma once
 
+#include <libxml/parser.h>
+#include <libxml/xmlstring.h>
+#include <QtCore/QItemSelectionModel>
+#include <QtCore/QList>
+#include <QtCore/QMetaObject>
 #include <QtCore/QMimeData>
+#include <QtCore/QObject>
+#include <QtCore/QTypeInfo>
+#include <QtCore/QtMinMax>
+#include <QtCore/QtSwap>
+#include <QtGui/QAction>
+#include <QtGui/QClipboard>
+#include <QtGui/QKeySequence>
+#include <QtGui/QUndoStack>
+#include <QtWidgets/QMenu>
+#include <utility>
 
 #include "actions/DeleteCells.hpp"
 #include "actions/InsertRemoveRows.hpp"
 #include "actions/RemoveVoiceRows.hpp"
 #include "menus/InsertMenu.hpp"
 #include "menus/PasteMenu.hpp"
+#include "models/ChordsModel.hpp"
+#include "models/PitchedNotesModel.hpp"
+#include "models/PitchedVoicesModel.hpp"
+#include "models/RowsModel.hpp"
+#include "models/UnpitchedNotesModel.hpp"
+#include "models/UnpitchedVoicesModel.hpp"
+#include "other/helpers.hpp"
+#include "rows/PitchedNote.hpp"
+#include "rows/PitchedVoice.hpp"
+#include "rows/Row.hpp"
+#include "rows/RowType.hpp"
+#include "rows/UnpitchedNote.hpp"
+#include "rows/UnpitchedVoice.hpp"
+#include "widgets/SongWidget.hpp"
+#include "widgets/SwitchColumn.hpp"
+#include "widgets/SwitchDelegate.hpp"
+#include "widgets/SwitchTable.hpp"
 #include "xml/XMLDocument.hpp"
 
 static void add_delete_cells(SongWidget &song_widget) {
@@ -17,23 +49,23 @@ static void add_delete_cells(SongWidget &song_widget) {
 
   QUndoCommand *undo_command = nullptr;
   switch (switch_table.delegate.current_row_type) {
-  case chord_type:
+  case RowType::chord_type:
     undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
         switch_table.chords_model, range);
     break;
-  case pitched_note_type:
+  case RowType::pitched_note_type:
     undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
         switch_table.pitched_notes_model, range);
     break;
-  case unpitched_note_type:
+  case RowType::unpitched_note_type:
     undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
         switch_table.unpitched_notes_model, range);
     break;
-  case pitched_voice_type:
+  case RowType::pitched_voice_type:
     undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
         switch_table.pitched_voices_model, range);
     break;
-  case unpitched_voice_type:
+  case RowType::unpitched_voice_type:
     undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
         switch_table.unpitched_voices_model, range);
     break;
@@ -91,19 +123,19 @@ static void copy_selection(const SwitchTable &switch_table) {
       *(new QMimeData);
 
   switch (switch_table.delegate.current_row_type) {
-  case chord_type:
+  case RowType::chord_type:
     copy_from_model(mime_data, switch_table.chords_model, range);
     break;
-  case pitched_note_type:
+  case RowType::pitched_note_type:
     copy_from_model(mime_data, switch_table.pitched_notes_model, range);
     break;
-  case unpitched_note_type:
+  case RowType::unpitched_note_type:
     copy_from_model(mime_data, switch_table.unpitched_notes_model, range);
     break;
-  case pitched_voice_type:
+  case RowType::pitched_voice_type:
     copy_from_model(mime_data, switch_table.pitched_voices_model, range);
     break;
-  case unpitched_voice_type:
+  case RowType::unpitched_voice_type:
     copy_from_model(mime_data, switch_table.unpitched_voices_model, range);
     break;
   }
@@ -145,19 +177,19 @@ struct EditMenu : public QMenu {
                     false);
     addSeparator();
 
-    QObject::connect(&cut_action, &QAction::triggered, this, [&song_widget]() {
+    QObject::connect(&cut_action, &QAction::triggered, this, [&song_widget]() -> auto {
       copy_selection(song_widget.switch_column.switch_table);
       add_delete_cells(song_widget);
     });
 
     QObject::connect(&copy_action, &QAction::triggered, &switch_table,
-                     [&switch_table]() { copy_selection(switch_table); });
+                     [&switch_table]() -> auto { copy_selection(switch_table); });
 
     QObject::connect(&delete_cells_action, &QAction::triggered, this,
-                     [&song_widget]() { add_delete_cells(song_widget); });
+                     [&song_widget]() -> auto { add_delete_cells(song_widget); });
 
     QObject::connect(
-        &remove_rows_action, &QAction::triggered, this, [&song_widget]() {
+        &remove_rows_action, &QAction::triggered, this, [&song_widget]() -> auto {
           auto &switch_table = song_widget.switch_column.switch_table;
           auto &undo_stack = song_widget.undo_stack;
 
@@ -167,26 +199,26 @@ struct EditMenu : public QMenu {
 
           QUndoCommand *undo_command = nullptr;
           switch (switch_table.delegate.current_row_type) {
-          case chord_type:
+          case RowType::chord_type:
             undo_command = make_remove_command(
                 switch_table.chords_model, first_row_number, number_of_rows);
             break;
-          case pitched_note_type:
+          case RowType::pitched_note_type:
             undo_command =
                 make_remove_command(switch_table.pitched_notes_model,
                                     first_row_number, number_of_rows);
             break;
-          case unpitched_note_type:
+          case RowType::unpitched_note_type:
             undo_command =
                 make_remove_command(switch_table.unpitched_notes_model,
                                     first_row_number, number_of_rows);
             break;
-          case pitched_voice_type:
+          case RowType::pitched_voice_type:
             undo_command = new RemoveVoiceRows< // NOLINT(cppcoreguidelines-owning-memory)
                 PitchedVoice, PitchedNote>(switch_table.pitched_voices_model,
                                            first_row_number, number_of_rows);
             break;
-          case unpitched_voice_type:
+          case RowType::unpitched_voice_type:
             undo_command = new RemoveVoiceRows< // NOLINT(cppcoreguidelines-owning-memory)
                 UnpitchedVoice, UnpitchedNote>(
                 switch_table.unpitched_voices_model, first_row_number,

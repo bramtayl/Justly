@@ -1,7 +1,18 @@
 #pragma once
 
+#include <QtCore/QList>
+#include <QtCore/QVariant>
+
+#include "cell_types/Interval.hpp"
+#include "cell_types/Rational.hpp"
+#include "column_numbers/PitchedNoteColumn.hpp"
 #include "models/UndoRowsModel.hpp"
 #include "other/Song.hpp"
+#include "rows/PitchedNote.hpp"
+#include "rows/PitchedVoice.hpp"
+#include "sound/PlayState.hpp"
+
+class QUndoStack;
 
 struct PitchedNotesModel : public UndoRowsModel<PitchedNote> {
   explicit PitchedNotesModel(QUndoStack &undo_stack, Song &song)
@@ -10,7 +21,7 @@ struct PitchedNotesModel : public UndoRowsModel<PitchedNote> {
   [[nodiscard]] auto get_display_data(const int row_number,
                                       const int column_number) const
       -> QVariant override {
-    if (column_number == pitched_note_voice_number_column) {
+    if (column_number == static_cast<int>(PitchedNoteColumn::pitched_note_voice_number_column)) {
       return song.pitched_voices.at(get_rows().at(row_number).voice_number)
           .name;
     }

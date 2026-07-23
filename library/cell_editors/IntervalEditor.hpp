@@ -1,7 +1,16 @@
 #pragma once
 
+#include <QtCore/QObject>
+#include <QtCore/QString>
+#include <QtWidgets/QBoxLayout>
+#include <QtWidgets/QFrame>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QSpinBox>
+
 #include "cell_editors/RationalEditor.hpp"
 #include "cell_types/Interval.hpp"
+
+class QWidget;
 
 static const auto MAX_OCTAVE = 9;
 

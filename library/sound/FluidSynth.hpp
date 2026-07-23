@@ -1,5 +1,7 @@
 #pragma once
 
+#include <fluidsynth.h>
+
 #include "other/helpers.hpp"
 #include "sound/FluidSettings.hpp"
 

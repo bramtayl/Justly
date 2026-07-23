@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-enum RowType: std::uint8_t {
+enum class RowType : std::uint8_t {
   chord_type,
   pitched_note_type,
   unpitched_note_type,

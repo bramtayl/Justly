@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QtGui/QAction>
+#include <QtGui/QKeySequence>
 #include <QtWidgets/QMenu>
 
 #include "widgets/SongWidget.hpp"

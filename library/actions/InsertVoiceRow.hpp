@@ -1,9 +1,14 @@
 #pragma once
 
+#include <QtCore/QList>
 #include <QtGui/QUndoStack>
+#include <utility>
 
 #include "actions/VoiceNoteHelpers.hpp"
-#include "models/VoicesModel.hpp"
+#include "rows/Note.hpp"
+#include "rows/Voice.hpp"
+
+template <VoiceInterface SubVoice> struct VoicesModel;
 
 // inserts a voice row, shifting the voice_number of any note that referenced
 // a voice at or after the insertion point

@@ -1,8 +1,21 @@
 #pragma once
 
+#include <fluidsynth.h>
+#include <QtCore/QMetaObject>
+#include <QtCore/QObject>
+#include <QtCore/QString>
+#include <QtCore/QtAssert>
+#include <QtGui/QUndoStack>
 #include <QtWidgets/QFormLayout>
+#include <QtWidgets/QSizePolicy>
+#include <QtWidgets/QSpinBox>
+#include <QtWidgets/QWidget>
 
+#include "actions/ChangeId.hpp"
 #include "actions/SetDouble.hpp"
+#include "other/Song.hpp"
+#include "rows/Note.hpp"
+#include "sound/FluidSynth.hpp"
 
 static const auto DEFAULT_GAIN = 5;
 static const auto GAIN_STEP = 0.1;
@@ -63,31 +76,31 @@ struct SpinBoxes : public QWidget {
 
     QObject::connect(
         &gain_editor, &QDoubleSpinBox::valueChanged, this,
-        [&undo_stack, &song, &synth, &gain_editor_ref](double new_value) {
-          add_set_double(undo_stack, song, synth, gain_editor_ref, gain_id,
+        [&undo_stack, &song, &synth, &gain_editor_ref](double new_value) -> auto {
+          add_set_double(undo_stack, song, synth, gain_editor_ref, ChangeId::gain_id,
                          fluid_synth_get_gain(synth.internal_pointer), new_value);
         });
     QObject::connect(&starting_key_editor, &QDoubleSpinBox::valueChanged, this,
                      [&undo_stack, &song, &synth,
-                      &starting_key_editor_ref](double new_value) {
+                      &starting_key_editor_ref](double new_value) -> auto {
                        add_set_double(undo_stack, song, synth,
-                                      starting_key_editor_ref, starting_key_id,
+                                      starting_key_editor_ref, ChangeId::starting_key_id,
                                       song.starting_key, new_value);
                      });
     QObject::connect(
         &starting_velocity_editor, &QDoubleSpinBox::valueChanged, this,
         [&undo_stack, &song, &synth,
-         &starting_velocity_editor_ref](double new_value) {
+         &starting_velocity_editor_ref](double new_value) -> auto {
           add_set_double(undo_stack, song, synth, starting_velocity_editor_ref,
-                         starting_velocity_id, song.starting_velocity,
+                         ChangeId::starting_velocity_id, song.starting_velocity,
                          new_value);
         });
     QObject::connect(
         &starting_tempo_editor, &QDoubleSpinBox::valueChanged, this,
         [&undo_stack, &song, &synth,
-         &starting_tempo_editor_ref](double new_value) {
+         &starting_tempo_editor_ref](double new_value) -> auto {
           add_set_double(undo_stack, song, synth, starting_tempo_editor_ref,
-                         starting_tempo_id, song.starting_tempo, new_value);
+                         ChangeId::starting_tempo_id, song.starting_tempo, new_value);
         });
 
     gain_editor.setValue(DEFAULT_GAIN);

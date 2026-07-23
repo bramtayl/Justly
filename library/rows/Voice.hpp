@@ -1,10 +1,19 @@
 #pragma once
 
+#include <QtCore/QObject>
+#include <QtCore/QString>
+#include <QtCore/QTextStream>
+#include <QtCore/QVariant>
 #include <QtWidgets/QMessageBox>
+#include <concepts>
 
 #include "cell_types/Program.hpp"
 #include "cell_types/Rational.hpp"
+#include "other/helpers.hpp"
 #include "rows/Row.hpp"
+
+class QWidget;
+template <typename T> class QList;
 
 struct Voice : Row {
   QString name;

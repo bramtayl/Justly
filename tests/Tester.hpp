@@ -2,17 +2,20 @@
 
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QByteArray>
-#include <QtCore/QCoreApplication>
 #include <QtCore/QDebug>
 #include <QtCore/QDir>
+#include <QtCore/QEvent>
 #include <QtCore/QFile>
 #include <QtCore/QFlags>
 #include <QtCore/QIODevice>
 #include <QtCore/QItemSelectionModel>
+#include <QtCore/QLineF>
 #include <QtCore/QList>
 #include <QtCore/QMetaObject>
 #include <QtCore/QMimeData>
 #include <QtCore/QObject>
+#include <QtCore/QPoint>
+#include <QtCore/QRect>
 #include <QtCore/QString>
 #include <QtCore/QTemporaryFile>
 #include <QtCore/QThread>
@@ -24,24 +27,31 @@
 #include <QtGui/QAction>
 #include <QtGui/QClipboard>
 #include <QtGui/QGuiApplication>
-#include <QtGui/QMouseEvent>
+#include <QtGui/QPen>
+#include <QtGui/QTransform>
 #include <QtGui/QUndoStack>
 #include <QtTest/QTest>
 #include <QtTest/QTestData>
 #include <QtWidgets/QAbstractItemDelegate>
 #include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QApplication>
+#include <QtWidgets/QDockWidget>
+#include <QtWidgets/QGraphicsLineItem>
+#include <QtWidgets/QGraphicsScene>
+#include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QStyleOption>
 #include <QtWidgets/QWidget>
-
+#include <ranges>
 #include <string>
 
 #include "column_numbers/ChordColumn.hpp"
 #include "column_numbers/PitchedNoteColumn.hpp"
+#include "column_numbers/PitchedVoiceColumn.hpp"
 #include "column_numbers/UnpitchedNoteColumn.hpp"
+#include "column_numbers/UnpitchedVoiceColumn.hpp"
 #include "menus/EditMenu.hpp"
 #include "menus/FileMenu.hpp"
 #include "menus/InsertMenu.hpp"
@@ -54,14 +64,18 @@
 #include "other/helpers.hpp"
 #include "rows/Chord.hpp"
 #include "rows/PitchedNote.hpp"
+#include "rows/PitchedVoice.hpp"
 #include "rows/RowType.hpp"
 #include "rows/UnpitchedNote.hpp"
+#include "rows/UnpitchedVoice.hpp"
 #include "widgets/ControlsColumn.hpp"
 #include "widgets/IntervalRow.hpp"
+#include "widgets/PianoRollWidget.hpp"
 #include "widgets/SongEditor.hpp"
 #include "widgets/SongWidget.hpp"
 #include "widgets/SpinBoxes.hpp"
 #include "widgets/SwitchColumn.hpp"
+#include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
 
 static const auto BIG_VELOCITY = 126;
@@ -120,22 +134,22 @@ static void switch_to(SongEditor &song_editor, const RowType row_type,
                       const int chord_number) {
   auto &switch_table = song_editor.song_widget.switch_column.switch_table;
   switch (row_type) {
-  case chord_type:
+  case RowType::chord_type:
     QVERIFY(chord_number == -1);
     break;
-  case pitched_note_type:
+  case RowType::pitched_note_type:
     double_click_column(switch_table, chord_number,
-                        static_cast<int>(chord_pitched_notes_column));
+                        static_cast<int>(ChordColumn::chord_pitched_notes_column));
     break;
-  case unpitched_note_type:
+  case RowType::unpitched_note_type:
     double_click_column(switch_table, chord_number,
-                        static_cast<int>(chord_unpitched_notes_column));
+                        static_cast<int>(ChordColumn::chord_unpitched_notes_column));
     break;
-  case pitched_voice_type:
+  case RowType::pitched_voice_type:
     QVERIFY(chord_number == -1);
     song_editor.song_menu_bar.view_menu.edit_pitched_voices_action.trigger();
     break;
-  case unpitched_voice_type:
+  case RowType::unpitched_voice_type:
     QVERIFY(chord_number == -1);
     song_editor.song_menu_bar.view_menu.edit_unpitched_voices_action.trigger();
     break;
@@ -144,7 +158,7 @@ static void switch_to(SongEditor &song_editor, const RowType row_type,
 
 static void maybe_switch_back_to_chords(QUndoStack &undo_stack,
                                         const RowType row_type) {
-  if (row_type != chord_type) {
+  if (row_type != RowType::chord_type) {
     undo_stack.undo();
   }
 }
@@ -166,7 +180,7 @@ static void close_message_later(QWidget &parent, bool &waiting_for_message,
   timer.setSingleShot(true);
   QObject::connect(
       &timer, &QTimer::timeout, &parent,
-      [expected_text, &waiting_for_message]() {
+      [expected_text, &waiting_for_message]() -> auto {
         for (auto *const widget_pointer : QApplication::topLevelWidgets()) {
           auto *box_pointer = dynamic_cast<QMessageBox *>(widget_pointer);
           if (box_pointer != nullptr) {
@@ -202,11 +216,11 @@ static void add_table_columns() {
 static void add_tables() {
   add_table_columns();
 
-  QTest::newRow("chord") << chord_type << -1;
-  QTest::newRow("pitched note") << pitched_note_type << 1;
-  QTest::newRow("unpitched note") << unpitched_note_type << 1;
-  QTest::newRow("pitched voice") << pitched_voice_type << -1;
-  QTest::newRow("unpitched voice") << unpitched_voice_type << -1;
+  QTest::newRow("chord") << RowType::chord_type << -1;
+  QTest::newRow("pitched note") << RowType::pitched_note_type << 1;
+  QTest::newRow("unpitched note") << RowType::unpitched_note_type << 1;
+  QTest::newRow("pitched voice") << RowType::pitched_voice_type << -1;
+  QTest::newRow("unpitched voice") << RowType::unpitched_voice_type << -1;
 }
 
 static void add_cells() {
@@ -215,47 +229,47 @@ static void add_cells() {
   QTest::addColumn<int>("column_number");
 
   QTest::newRow("chord pitched notes")
-      << chord_type << -1 << 1 << static_cast<int>(chord_pitched_notes_column);
+      << RowType::chord_type << -1 << 1 << static_cast<int>(ChordColumn::chord_pitched_notes_column);
   QTest::newRow("chord unpitched notes")
-      << chord_type << -1 << 1
-      << static_cast<int>(chord_unpitched_notes_column);
+      << RowType::chord_type << -1 << 1
+      << static_cast<int>(ChordColumn::chord_unpitched_notes_column);
   QTest::newRow("chord interval")
-      << chord_type << -1 << 1 << static_cast<int>(chord_interval_column);
+      << RowType::chord_type << -1 << 1 << static_cast<int>(ChordColumn::chord_interval_column);
   QTest::newRow("chord beats")
-      << chord_type << -1 << 1 << static_cast<int>(chord_beats_column);
+      << RowType::chord_type << -1 << 1 << static_cast<int>(ChordColumn::chord_beats_column);
   QTest::newRow("chord velocity ratio")
-      << chord_type << -1 << 1 << static_cast<int>(chord_velocity_ratio_column);
+      << RowType::chord_type << -1 << 1 << static_cast<int>(ChordColumn::chord_velocity_ratio_column);
   QTest::newRow("chord tempo ratio")
-      << chord_type << -1 << 1 << static_cast<int>(chord_tempo_ratio_column);
+      << RowType::chord_type << -1 << 1 << static_cast<int>(ChordColumn::chord_tempo_ratio_column);
   QTest::newRow("chord words")
-      << chord_type << -1 << 1 << static_cast<int>(chord_words_column);
+      << RowType::chord_type << -1 << 1 << static_cast<int>(ChordColumn::chord_words_column);
   QTest::newRow("pitched note voice")
-      << pitched_note_type << 1 << 1
-      << static_cast<int>(pitched_note_voice_number_column);
+      << RowType::pitched_note_type << 1 << 1
+      << static_cast<int>(PitchedNoteColumn::pitched_note_voice_number_column);
   QTest::newRow("pitched note interval")
-      << pitched_note_type << 1 << 1
-      << static_cast<int>(pitched_note_interval_column);
+      << RowType::pitched_note_type << 1 << 1
+      << static_cast<int>(PitchedNoteColumn::pitched_note_interval_column);
   QTest::newRow("pitched note beats")
-      << pitched_note_type << 1 << 1
-      << static_cast<int>(pitched_note_beats_column);
+      << RowType::pitched_note_type << 1 << 1
+      << static_cast<int>(PitchedNoteColumn::pitched_note_beats_column);
   QTest::newRow("pitched note velocity ratio")
-      << pitched_note_type << 1 << 1
-      << static_cast<int>(pitched_note_velocity_ratio_column);
+      << RowType::pitched_note_type << 1 << 1
+      << static_cast<int>(PitchedNoteColumn::pitched_note_velocity_ratio_column);
   QTest::newRow("pitched note words")
-      << pitched_note_type << 1 << 1
-      << static_cast<int>(pitched_note_words_column);
+      << RowType::pitched_note_type << 1 << 1
+      << static_cast<int>(PitchedNoteColumn::pitched_note_words_column);
   QTest::newRow("unpitched note voice")
-      << unpitched_note_type << 1 << 1
-      << static_cast<int>(unpitched_note_voice_number_column);
+      << RowType::unpitched_note_type << 1 << 1
+      << static_cast<int>(UnpitchedNoteColumn::unpitched_note_voice_number_column);
   QTest::newRow("unpitched note beats")
-      << unpitched_note_type << 1 << 1
-      << static_cast<int>(unpitched_note_beats_column);
+      << RowType::unpitched_note_type << 1 << 1
+      << static_cast<int>(UnpitchedNoteColumn::unpitched_note_beats_column);
   QTest::newRow("unpitched note velocity ratio")
-      << unpitched_note_type << 1 << 1
-      << static_cast<int>(unpitched_note_velocity_ratio_column);
+      << RowType::unpitched_note_type << 1 << 1
+      << static_cast<int>(UnpitchedNoteColumn::unpitched_note_velocity_ratio_column);
   QTest::newRow("unpitched note words")
-      << unpitched_note_type << 1 << 1
-      << static_cast<int>(unpitched_note_words_column);
+      << RowType::unpitched_note_type << 1 << 1
+      << static_cast<int>(UnpitchedNoteColumn::unpitched_note_words_column);
   // note: pitched/unpitched voice columns are deliberately not covered here.
   // paste_after/paste_into insert a brand new row built only from the
   // pasted column(s), so a voice inserted this way would have an empty
@@ -270,44 +284,44 @@ static void add_editable_cell_pairs() {
   QTest::addColumn<int>("column_number");
 
   QTest::newRow("chord interval")
-      << chord_type << -1 << 0 << 1 << static_cast<int>(chord_interval_column);
+      << RowType::chord_type << -1 << 0 << 1 << static_cast<int>(ChordColumn::chord_interval_column);
   QTest::newRow("chord beats")
-      << chord_type << -1 << 0 << 1 << static_cast<int>(chord_beats_column);
+      << RowType::chord_type << -1 << 0 << 1 << static_cast<int>(ChordColumn::chord_beats_column);
   QTest::newRow("chord velocity ratio")
-      << chord_type << -1 << 0 << 1
-      << static_cast<int>(chord_velocity_ratio_column);
+      << RowType::chord_type << -1 << 0 << 1
+      << static_cast<int>(ChordColumn::chord_velocity_ratio_column);
   QTest::newRow("chord tempo ratio")
-      << chord_type << -1 << 0 << 1
-      << static_cast<int>(chord_tempo_ratio_column);
+      << RowType::chord_type << -1 << 0 << 1
+      << static_cast<int>(ChordColumn::chord_tempo_ratio_column);
   QTest::newRow("chord words")
-      << chord_type << -1 << 0 << 1 << static_cast<int>(chord_words_column);
+      << RowType::chord_type << -1 << 0 << 1 << static_cast<int>(ChordColumn::chord_words_column);
   QTest::newRow("pitched note voice")
-      << pitched_note_type << 1 << 0 << 1
-      << static_cast<int>(pitched_note_voice_number_column);
+      << RowType::pitched_note_type << 1 << 0 << 1
+      << static_cast<int>(PitchedNoteColumn::pitched_note_voice_number_column);
   QTest::newRow("pitched note interval")
-      << pitched_note_type << 1 << 0 << 1
-      << static_cast<int>(pitched_note_interval_column);
+      << RowType::pitched_note_type << 1 << 0 << 1
+      << static_cast<int>(PitchedNoteColumn::pitched_note_interval_column);
   QTest::newRow("pitched note beats")
-      << pitched_note_type << 1 << 0 << 1
-      << static_cast<int>(pitched_note_beats_column);
+      << RowType::pitched_note_type << 1 << 0 << 1
+      << static_cast<int>(PitchedNoteColumn::pitched_note_beats_column);
   QTest::newRow("pitched note velocity ratio")
-      << pitched_note_type << 1 << 0 << 1
-      << static_cast<int>(pitched_note_velocity_ratio_column);
+      << RowType::pitched_note_type << 1 << 0 << 1
+      << static_cast<int>(PitchedNoteColumn::pitched_note_velocity_ratio_column);
   QTest::newRow("pitched note words")
-      << pitched_note_type << 1 << 0 << 1
-      << static_cast<int>(pitched_note_words_column);
+      << RowType::pitched_note_type << 1 << 0 << 1
+      << static_cast<int>(PitchedNoteColumn::pitched_note_words_column);
   QTest::newRow("unpitched note voice")
-      << unpitched_note_type << 1 << 0 << 1
-      << static_cast<int>(unpitched_note_voice_number_column);
+      << RowType::unpitched_note_type << 1 << 0 << 1
+      << static_cast<int>(UnpitchedNoteColumn::unpitched_note_voice_number_column);
   QTest::newRow("unpitched note beats")
-      << unpitched_note_type << 1 << 0 << 1
-      << static_cast<int>(unpitched_note_beats_column);
+      << RowType::unpitched_note_type << 1 << 0 << 1
+      << static_cast<int>(UnpitchedNoteColumn::unpitched_note_beats_column);
   QTest::newRow("unpitched note velocity ratio")
-      << unpitched_note_type << 1 << 0 << 1
-      << static_cast<int>(unpitched_note_velocity_ratio_column);
+      << RowType::unpitched_note_type << 1 << 0 << 1
+      << static_cast<int>(UnpitchedNoteColumn::unpitched_note_velocity_ratio_column);
   QTest::newRow("unpitched note words")
-      << unpitched_note_type << 1 << 0 << 1
-      << static_cast<int>(unpitched_note_words_column);
+      << RowType::unpitched_note_type << 1 << 0 << 1
+      << static_cast<int>(UnpitchedNoteColumn::unpitched_note_words_column);
   // note: voice name columns are excluded here, since copy/cut/paste of
   // voice names is disabled (a voice's name must be typed, not copied, so
   // that it stays unique -- see ReplaceTable.hpp)
@@ -320,24 +334,24 @@ static void add_editable_cell_pairs() {
 // need two distinct existing values (test_copy, test_set_value)
 static void add_voice_column_pairs() {
   QTest::newRow("pitched voice instrument")
-      << pitched_voice_type << -1 << 0 << 1
-      << static_cast<int>(pitched_voice_instrument_column);
+      << RowType::pitched_voice_type << -1 << 0 << 1
+      << static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column);
   QTest::newRow("unpitched voice percussion set")
-      << unpitched_voice_type << -1 << 0 << 1
-      << static_cast<int>(unpitched_voice_percussion_set_column);
+      << RowType::unpitched_voice_type << -1 << 0 << 1
+      << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_percussion_set_column);
   QTest::newRow("unpitched voice midi number")
-      << unpitched_voice_type << -1 << 0 << 1
-      << static_cast<int>(unpitched_voice_midi_number_column);
+      << RowType::unpitched_voice_type << -1 << 0 << 1
+      << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_midi_number_column);
 }
 
 static void add_cell_pairs() {
   add_editable_cell_pairs();
   QTest::newRow("chord pitched notes")
-      << chord_type << -1 << 0 << 1
-      << static_cast<int>(chord_pitched_notes_column);
+      << RowType::chord_type << -1 << 0 << 1
+      << static_cast<int>(ChordColumn::chord_pitched_notes_column);
   QTest::newRow("chord unpitched notes")
-      << chord_type << -1 << 0 << 1
-      << static_cast<int>(chord_unpitched_notes_column);
+      << RowType::chord_type << -1 << 0 << 1
+      << static_cast<int>(ChordColumn::chord_unpitched_notes_column);
 }
 
 static auto get_file_text(const QString &filename) {
@@ -371,26 +385,26 @@ private slots:
     add_table_columns();
     QTest::addColumn<int>("number_of_columns");
 
-    QTest::newRow("chord") << chord_type << -1
-                           << static_cast<int>(number_of_chord_columns);
+    QTest::newRow("chord") << RowType::chord_type << -1
+                           << static_cast<int>(ChordColumn::number_of_chord_columns);
     QTest::newRow("pitched note")
-        << pitched_note_type << 0
-        << static_cast<int>(number_of_pitched_note_columns);
+        << RowType::pitched_note_type << 0
+        << static_cast<int>(PitchedNoteColumn::number_of_pitched_note_columns);
     QTest::newRow("unpitched note")
-        << unpitched_note_type << 0
-        << static_cast<int>(number_of_unpitched_note_columns);
+        << RowType::unpitched_note_type << 0
+        << static_cast<int>(UnpitchedNoteColumn::number_of_unpitched_note_columns);
     QTest::newRow("pitched voice")
-        << pitched_voice_type << -1
-        << static_cast<int>(number_of_pitched_voice_columns);
+        << RowType::pitched_voice_type << -1
+        << static_cast<int>(PitchedVoiceColumn::number_of_pitched_voice_columns);
     QTest::newRow("unpitched voice")
-        << unpitched_voice_type << -1
-        << static_cast<int>(number_of_unpitched_voice_columns);
+        << RowType::unpitched_voice_type << -1
+        << static_cast<int>(UnpitchedVoiceColumn::number_of_unpitched_voice_columns);
   };
 
   void test_column_count() {
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
-    QFETCH(int, number_of_columns);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, chord_number);
+    QFETCH(const int, number_of_columns);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -406,86 +420,86 @@ private slots:
     QTest::addColumn<QString>("column_name");
 
     QTest::newRow("chord interval")
-        << chord_type << -1 << static_cast<int>(chord_interval_column)
+        << RowType::chord_type << -1 << static_cast<int>(ChordColumn::chord_interval_column)
         << "Interval";
     QTest::newRow("chord beats")
-        << chord_type << -1 << static_cast<int>(chord_beats_column) << "Beats";
+        << RowType::chord_type << -1 << static_cast<int>(ChordColumn::chord_beats_column) << "Beats";
     QTest::newRow("chord velocity ratio")
-        << chord_type << -1 << static_cast<int>(chord_velocity_ratio_column)
+        << RowType::chord_type << -1 << static_cast<int>(ChordColumn::chord_velocity_ratio_column)
         << "Velocity ratio";
     QTest::newRow("chord tempo ratio")
-        << chord_type << -1 << static_cast<int>(chord_tempo_ratio_column)
+        << RowType::chord_type << -1 << static_cast<int>(ChordColumn::chord_tempo_ratio_column)
         << "Tempo ratio";
     QTest::newRow("chord words")
-        << chord_type << -1 << static_cast<int>(chord_words_column) << "Words";
+        << RowType::chord_type << -1 << static_cast<int>(ChordColumn::chord_words_column) << "Words";
     QTest::newRow("chord pitched notes")
-        << chord_type << -1 << static_cast<int>(chord_pitched_notes_column)
+        << RowType::chord_type << -1 << static_cast<int>(ChordColumn::chord_pitched_notes_column)
         << "Pitched notes";
     QTest::newRow("chord unpitched notes")
-        << chord_type << -1 << static_cast<int>(chord_unpitched_notes_column)
+        << RowType::chord_type << -1 << static_cast<int>(ChordColumn::chord_unpitched_notes_column)
         << "Unpitched notes";
     QTest::newRow("pitched note voice")
-        << pitched_note_type << 1 << static_cast<int>(pitched_note_voice_number_column)
+        << RowType::pitched_note_type << 1 << static_cast<int>(PitchedNoteColumn::pitched_note_voice_number_column)
         << "Voice";
     QTest::newRow("pitched note interval")
-        << pitched_note_type << 1
-        << static_cast<int>(pitched_note_interval_column) << "Interval";
+        << RowType::pitched_note_type << 1
+        << static_cast<int>(PitchedNoteColumn::pitched_note_interval_column) << "Interval";
     QTest::newRow("pitched note beats")
-        << pitched_note_type << 1 << static_cast<int>(pitched_note_beats_column)
+        << RowType::pitched_note_type << 1 << static_cast<int>(PitchedNoteColumn::pitched_note_beats_column)
         << "Beats";
     QTest::newRow("pitched note velocity ratio")
-        << pitched_note_type << 1
-        << static_cast<int>(pitched_note_velocity_ratio_column)
+        << RowType::pitched_note_type << 1
+        << static_cast<int>(PitchedNoteColumn::pitched_note_velocity_ratio_column)
         << "Velocity ratio";
     QTest::newRow("pitched note words")
-        << pitched_note_type << 1 << static_cast<int>(pitched_note_words_column)
+        << RowType::pitched_note_type << 1 << static_cast<int>(PitchedNoteColumn::pitched_note_words_column)
         << "Words";
     QTest::newRow("unpitched note voice")
-        << unpitched_note_type << 1
-        << static_cast<int>(unpitched_note_voice_number_column)
+        << RowType::unpitched_note_type << 1
+        << static_cast<int>(UnpitchedNoteColumn::unpitched_note_voice_number_column)
         << "Voice";
     QTest::newRow("unpitched note beats")
-        << unpitched_note_type << 1
-        << static_cast<int>(unpitched_note_beats_column) << "Beats";
+        << RowType::unpitched_note_type << 1
+        << static_cast<int>(UnpitchedNoteColumn::unpitched_note_beats_column) << "Beats";
     QTest::newRow("unpitched note velocity ratio")
-        << unpitched_note_type << 1
-        << static_cast<int>(unpitched_note_velocity_ratio_column)
+        << RowType::unpitched_note_type << 1
+        << static_cast<int>(UnpitchedNoteColumn::unpitched_note_velocity_ratio_column)
         << "Velocity ratio";
     QTest::newRow("unpitched note words")
-        << unpitched_note_type << 1
-        << static_cast<int>(unpitched_note_words_column) << "Words";
+        << RowType::unpitched_note_type << 1
+        << static_cast<int>(UnpitchedNoteColumn::unpitched_note_words_column) << "Words";
     QTest::newRow("pitched voice name")
-        << pitched_voice_type << -1
-        << static_cast<int>(pitched_voice_name_column) << "Name";
+        << RowType::pitched_voice_type << -1
+        << static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column) << "Name";
     QTest::newRow("pitched voice instrument")
-        << pitched_voice_type << -1
-        << static_cast<int>(pitched_voice_instrument_column) << "Instrument";
+        << RowType::pitched_voice_type << -1
+        << static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column) << "Instrument";
     QTest::newRow("pitched voice velocity ratio")
-        << pitched_voice_type << -1
-        << static_cast<int>(pitched_voice_velocity_ratio_column)
+        << RowType::pitched_voice_type << -1
+        << static_cast<int>(PitchedVoiceColumn::pitched_voice_velocity_ratio_column)
         << "Velocity ratio";
     QTest::newRow("unpitched voice name")
-        << unpitched_voice_type << -1
-        << static_cast<int>(unpitched_voice_name_column) << "Name";
+        << RowType::unpitched_voice_type << -1
+        << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column) << "Name";
     QTest::newRow("unpitched voice percussion set")
-        << unpitched_voice_type << -1
-        << static_cast<int>(unpitched_voice_percussion_set_column)
+        << RowType::unpitched_voice_type << -1
+        << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_percussion_set_column)
         << "Percussion set";
     QTest::newRow("unpitched voice midi number")
-        << unpitched_voice_type << -1
-        << static_cast<int>(unpitched_voice_midi_number_column)
+        << RowType::unpitched_voice_type << -1
+        << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_midi_number_column)
         << "MIDI number";
     QTest::newRow("unpitched voice velocity ratio")
-        << unpitched_voice_type << -1
-        << static_cast<int>(unpitched_voice_velocity_ratio_column)
+        << RowType::unpitched_voice_type << -1
+        << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column)
         << "Velocity ratio";
   };
 
   void test_column_header() {
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
-    QFETCH(int, column_number);
-    QFETCH(QString, column_name);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, chord_number);
+    QFETCH(const int, column_number);
+    QFETCH(const QString, column_name);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -503,11 +517,11 @@ private slots:
 
   void test_copy() {
 
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
-    QFETCH(int, first_row_number);
-    QFETCH(int, second_row_number);
-    QFETCH(int, column_number);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, chord_number);
+    QFETCH(const int, first_row_number);
+    QFETCH(const int, second_row_number);
+    QFETCH(const int, column_number);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -543,11 +557,11 @@ private slots:
   static void test_cut_data() { add_cell_pairs(); };
 
   void test_cut() {
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
-    QFETCH(int, first_row_number);
-    QFETCH(int, second_row_number);
-    QFETCH(int, column_number);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, chord_number);
+    QFETCH(const int, first_row_number);
+    QFETCH(const int, second_row_number);
+    QFETCH(const int, column_number);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -587,20 +601,20 @@ private slots:
   static void test_delete_data() {
     add_cells();
     QTest::newRow("pitched voice name")
-        << pitched_voice_type << -1 << 0
-        << static_cast<int>(pitched_voice_name_column);
+        << RowType::pitched_voice_type << -1 << 0
+        << static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column);
     QTest::newRow("pitched voice instrument")
-        << pitched_voice_type << -1 << 0
-        << static_cast<int>(pitched_voice_instrument_column);
+        << RowType::pitched_voice_type << -1 << 0
+        << static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column);
     QTest::newRow("unpitched voice name")
-        << unpitched_voice_type << -1 << 0
-        << static_cast<int>(unpitched_voice_name_column);
+        << RowType::unpitched_voice_type << -1 << 0
+        << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column);
     QTest::newRow("unpitched voice percussion set")
-        << unpitched_voice_type << -1 << 0
-        << static_cast<int>(unpitched_voice_percussion_set_column);
+        << RowType::unpitched_voice_type << -1 << 0
+        << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_percussion_set_column);
     QTest::newRow("unpitched voice midi number")
-        << unpitched_voice_type << -1 << 0
-        << static_cast<int>(unpitched_voice_midi_number_column);
+        << RowType::unpitched_voice_type << -1 << 0
+        << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_midi_number_column);
   };
 
   void test_delete() {
@@ -608,10 +622,10 @@ private slots:
     auto &switch_table = song_widget.switch_column.switch_table;
     auto &undo_stack = song_widget.undo_stack;
 
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
-    QFETCH(int, row_number);
-    QFETCH(int, column_number);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, chord_number);
+    QFETCH(const int, row_number);
+    QFETCH(const int, column_number);
 
     switch_to(song_editor, row_type, chord_number);
 
@@ -644,24 +658,24 @@ private slots:
     QTest::addColumn<bool>("is_editable");
 
     QTest::newRow("chord interval")
-        << chord_type << -1 << static_cast<int>(chord_interval_column) << true;
+        << RowType::chord_type << -1 << static_cast<int>(ChordColumn::chord_interval_column) << true;
     QTest::newRow("chord pitched notes")
-        << chord_type << -1 << static_cast<int>(chord_pitched_notes_column)
+        << RowType::chord_type << -1 << static_cast<int>(ChordColumn::chord_pitched_notes_column)
         << false;
     QTest::newRow("chord unpitched notes")
-        << chord_type << -1 << static_cast<int>(chord_unpitched_notes_column)
+        << RowType::chord_type << -1 << static_cast<int>(ChordColumn::chord_unpitched_notes_column)
         << false;
-    QTest::newRow("pitched note") << pitched_note_type << 1 << 0 << true;
-    QTest::newRow("unpitched note") << unpitched_note_type << 1 << 0 << true;
-    QTest::newRow("pitched voice") << pitched_voice_type << -1 << 0 << true;
-    QTest::newRow("unpitched voice") << unpitched_voice_type << -1 << 0 << true;
+    QTest::newRow("pitched note") << RowType::pitched_note_type << 1 << 0 << true;
+    QTest::newRow("unpitched note") << RowType::unpitched_note_type << 1 << 0 << true;
+    QTest::newRow("pitched voice") << RowType::pitched_voice_type << -1 << 0 << true;
+    QTest::newRow("unpitched voice") << RowType::unpitched_voice_type << -1 << 0 << true;
   };
 
   void test_flag() {
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
-    QFETCH(int, column_number);
-    QFETCH(bool, is_editable);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, chord_number);
+    QFETCH(const int, column_number);
+    QFETCH(const bool, is_editable);
 
     const auto uneditable_flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 
@@ -692,20 +706,20 @@ private slots:
 
   void test_frequency_bound() {
     QFETCH(QPushButton *, button_pointer);
-    QFETCH(QString, error_message);
+    QFETCH(const QString, error_message);
     auto &button = get_reference(button_pointer);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
     auto &undo_stack = song_widget.undo_stack;
 
-    switch_to(song_editor, pitched_note_type, 1);
+    switch_to(song_editor, RowType::pitched_note_type, 1);
     select_cell(switch_table, 0, 0);
     close_message_later(song_editor, waiting_for_message, error_message);
     press_times(button, OCTAVE_SHIFT_TIMES);
     song_editor.song_menu_bar.play_menu.play_action.trigger();
     undo_times(song_widget.undo_stack, OCTAVE_SHIFT_TIMES); // undo shift octave
-    maybe_switch_back_to_chords(undo_stack, pitched_note_type);
+    maybe_switch_back_to_chords(undo_stack, RowType::pitched_note_type);
   };
 
   static void test_frequency_in_status_data() {
@@ -763,8 +777,8 @@ private slots:
   };
 
   void test_frequency_in_status() {
-    QFETCH(int, frequency);
-    QFETCH(QString, text);
+    QFETCH(const int, frequency);
+    QFETCH(const QString, text);
 
     auto &song_widget = song_editor.song_widget;
 
@@ -797,8 +811,8 @@ private slots:
   static void test_insert_after_data() { add_tables(); };
 
   void test_insert_after() {
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, chord_number);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -813,7 +827,7 @@ private slots:
     // voices can only be appended after the last row, not inserted in the
     // middle
     const auto is_voice =
-        row_type == pitched_voice_type || row_type == unpitched_voice_type;
+        row_type == RowType::pitched_voice_type || row_type == RowType::unpitched_voice_type;
     select_cell(switch_table, is_voice ? old_row_count - 1 : 0, 0);
     song_editor.song_menu_bar.edit_menu.insert_menu.insert_after_action
         .trigger();
@@ -828,8 +842,8 @@ private slots:
   static void test_insert_into_data() { add_tables(); };
 
   void test_insert_into() {
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, chord_number);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -869,38 +883,38 @@ private slots:
     QTest::addColumn<QPushButton *>("button_pointer");
     add_table_columns();
 
-    QTest::newRow("chord third -") << &third_minus_button << chord_type << -1;
-    QTest::newRow("chord third +") << &third_plus_button << chord_type << -1;
-    QTest::newRow("chord fifth -") << &fifth_minus_button << chord_type << -1;
-    QTest::newRow("chord fifth +") << &fifth_plus_button << chord_type << -1;
+    QTest::newRow("chord third -") << &third_minus_button << RowType::chord_type << -1;
+    QTest::newRow("chord third +") << &third_plus_button << RowType::chord_type << -1;
+    QTest::newRow("chord fifth -") << &fifth_minus_button << RowType::chord_type << -1;
+    QTest::newRow("chord fifth +") << &fifth_plus_button << RowType::chord_type << -1;
     QTest::newRow("chord seventh -")
-        << &seventh_minus_button << chord_type << -1;
+        << &seventh_minus_button << RowType::chord_type << -1;
     QTest::newRow("chord seventh +")
-        << &seventh_plus_button << chord_type << -1;
-    QTest::newRow("chord octave -") << &octave_minus_button << chord_type << -1;
-    QTest::newRow("chord octave +") << &octave_plus_button << chord_type << -1;
+        << &seventh_plus_button << RowType::chord_type << -1;
+    QTest::newRow("chord octave -") << &octave_minus_button << RowType::chord_type << -1;
+    QTest::newRow("chord octave +") << &octave_plus_button << RowType::chord_type << -1;
     QTest::newRow("pitched note third -")
-        << &third_minus_button << pitched_note_type << 1;
+        << &third_minus_button << RowType::pitched_note_type << 1;
     QTest::newRow("pitched note third +")
-        << &third_plus_button << pitched_note_type << 1;
+        << &third_plus_button << RowType::pitched_note_type << 1;
     QTest::newRow("pitched note fifth -")
-        << &fifth_minus_button << pitched_note_type << 1;
+        << &fifth_minus_button << RowType::pitched_note_type << 1;
     QTest::newRow("pitched note fifth +")
-        << &fifth_plus_button << pitched_note_type << 1;
+        << &fifth_plus_button << RowType::pitched_note_type << 1;
     QTest::newRow("pitched note seventh -")
-        << &seventh_minus_button << pitched_note_type << 1;
+        << &seventh_minus_button << RowType::pitched_note_type << 1;
     QTest::newRow("pitched note seventh +")
-        << &seventh_plus_button << pitched_note_type << 1;
+        << &seventh_plus_button << RowType::pitched_note_type << 1;
     QTest::newRow("pitched note octave -")
-        << &octave_minus_button << pitched_note_type << 1;
+        << &octave_minus_button << RowType::pitched_note_type << 1;
     QTest::newRow("pitched note octave +")
-        << &octave_plus_button << pitched_note_type << 1;
+        << &octave_plus_button << RowType::pitched_note_type << 1;
   };
 
   void test_interval_button() {
     QFETCH(QPushButton *, button_pointer);
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, chord_number);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -909,9 +923,9 @@ private slots:
     switch_to(song_editor, row_type, chord_number);
     const auto test_index =
         get_model(switch_table)
-            .index(0, row_type == chord_type
-                          ? static_cast<int>(chord_interval_column)
-                          : static_cast<int>(pitched_note_interval_column));
+            .index(0, row_type == RowType::chord_type
+                          ? static_cast<int>(ChordColumn::chord_interval_column)
+                          : static_cast<int>(PitchedNoteColumn::pitched_note_interval_column));
     const auto original_data = test_index.data();
     get_selection_model(switch_table).select(test_index, SELECT_AND_CLEAR);
 
@@ -984,8 +998,8 @@ private slots:
   };
 
   void test_voice_error() {
-    QFETCH(QString, text);
-    QFETCH(QString, error_message);
+    QFETCH(const QString, text);
+    QFETCH(const QString, error_message);
 
     auto &song_widget = song_editor.song_widget;
     close_message_later(song_editor, waiting_for_message, error_message);
@@ -1002,30 +1016,30 @@ private slots:
     QTest::addColumn<QString>("warning_message");
 
     QTest::newRow("pitched voice duplicate name")
-        << pitched_voice_type << -1
-        << static_cast<int>(pitched_voice_name_column)
+        << RowType::pitched_voice_type << -1
+        << static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column)
         << QVariant(QString("Guitar")) << "Voice \"Guitar\" already exists!";
     QTest::newRow("pitched voice empty name")
-        << pitched_voice_type << -1
-        << static_cast<int>(pitched_voice_name_column) << QVariant(QString())
+        << RowType::pitched_voice_type << -1
+        << static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column) << QVariant(QString())
         << "Voice name is empty!";
     QTest::newRow("unpitched voice duplicate name")
-        << unpitched_voice_type << -1
-        << static_cast<int>(unpitched_voice_name_column)
+        << RowType::unpitched_voice_type << -1
+        << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column)
         << QVariant(QString("Room Kit"))
         << "Voice \"Room Kit\" already exists!";
     QTest::newRow("unpitched voice empty name")
-        << unpitched_voice_type << -1
-        << static_cast<int>(unpitched_voice_name_column) << QVariant(QString())
+        << RowType::unpitched_voice_type << -1
+        << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column) << QVariant(QString())
         << "Voice name is empty!";
   };
 
   void test_voice_name_rejected() {
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
-    QFETCH(int, column_number);
-    QFETCH(QVariant, new_value);
-    QFETCH(QString, warning_message);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, chord_number);
+    QFETCH(const int, column_number);
+    QFETCH(const QVariant, new_value);
+    QFETCH(const QString, warning_message);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -1096,16 +1110,16 @@ private slots:
     // removing voice 1 of 3 should: leave notes on voice 0 alone, reassign
     // (and warn about the first) note on the removed voice 1 to voice 0, and
     // shift notes on voice 2 down to voice 1
-    QFETCH(QString, text);
-    QFETCH(bool, is_pitched);
-    QFETCH(QString, warning_message);
+    QFETCH(const QString, text);
+    QFETCH(const bool, is_pitched);
+    QFETCH(const QString, warning_message);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
     auto &undo_stack = song_widget.undo_stack;
     auto &song = song_widget.song;
-    const auto voice_row_type = is_pitched ? pitched_voice_type
-                                           : unpitched_voice_type;
+    const auto voice_row_type = is_pitched ? RowType::pitched_voice_type
+                                           : RowType::unpitched_voice_type;
 
     open_text(song_widget, text);
 
@@ -1164,8 +1178,8 @@ private slots:
   };
 
   void test_musicxml() {
-    QFETCH(QString, file_name);
-    QFETCH(int, number_of_chords);
+    QFETCH(const QString, file_name);
+    QFETCH(const int, number_of_chords);
 
     auto &song_widget = song_editor.song_widget;
 
@@ -1191,8 +1205,8 @@ private slots:
   };
 
   void test_musicxml_error() {
-    QFETCH(QString, error_message);
-    QFETCH(QString, file_name);
+    QFETCH(const QString, error_message);
+    QFETCH(const QString, file_name);
 
     close_message_later(song_editor, waiting_for_message, error_message);
     import_musicxml(song_editor.song_widget, test_dir.filePath(file_name));
@@ -1201,13 +1215,13 @@ private slots:
   static void test_next_previous_data() {
     add_table_columns();
 
-    QTest::newRow("pitched note") << pitched_note_type << 1;
-    QTest::newRow("unpitched note") << unpitched_note_type << 1;
+    QTest::newRow("pitched note") << RowType::pitched_note_type << 1;
+    QTest::newRow("unpitched note") << RowType::unpitched_note_type << 1;
   };
 
   void test_next_previous() {
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, chord_number);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -1227,7 +1241,7 @@ private slots:
     auto &switch_table = song_widget.switch_column.switch_table;
     auto &undo_stack = song_widget.undo_stack;
 
-    switch_to(song_editor, pitched_note_type, 1);
+    switch_to(song_editor, RowType::pitched_note_type, 1);
     select_cell(switch_table, 0, 0);
     close_message_later(song_editor, waiting_for_message,
                         "Octave 10 (absolutely) greater than maximum 9");
@@ -1235,7 +1249,7 @@ private slots:
                 OCTAVE_SHIFT_TIMES + 1);
     undo_times(undo_stack, OCTAVE_SHIFT_TIMES); // undo shift octave
 
-    maybe_switch_back_to_chords(undo_stack, pitched_note_type);
+    maybe_switch_back_to_chords(undo_stack, RowType::pitched_note_type);
   };
 
   static void test_open_error_data() {
@@ -1247,8 +1261,8 @@ private slots:
   };
 
   void test_open_error() {
-    QFETCH(QString, text);
-    QFETCH(QString, error_message);
+    QFETCH(const QString, text);
+    QFETCH(const QString, error_message);
 
     auto &song_widget = song_editor.song_widget;
     close_message_later(song_editor, waiting_for_message, error_message);
@@ -1258,10 +1272,10 @@ private slots:
   static void test_paste_after_data() { add_cells(); };
 
   void test_paste_after() {
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
-    QFETCH(int, row_number);
-    QFETCH(int, column_number);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, chord_number);
+    QFETCH(const int, row_number);
+    QFETCH(const int, column_number);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -1289,48 +1303,48 @@ private slots:
     QTest::addColumn<QString>("mime_type");
     QTest::addColumn<QString>("error_message");
     QTest::newRow("chord not a mime")
-        << chord_type << -1 << "" << "not a mime"
+        << RowType::chord_type << -1 << "" << "not a mime"
         << "Cannot paste not a mime as chords cells";
     QTest::newRow("chord pitched notes mime")
-        << chord_type << -1 << "" << PitchedNote::get_cells_mime()
+        << RowType::chord_type << -1 << "" << PitchedNote::get_cells_mime()
         << "Cannot paste pitched notes cells as chords cells";
     QTest::newRow("chord not xml")
-        << chord_type << -1 << "[" << Chord::get_cells_mime() << "Invalid XML";
+        << RowType::chord_type << -1 << "[" << Chord::get_cells_mime() << "Invalid XML";
     QTest::newRow("chord not Justly")
-        << chord_type << -1 << "<song/>" << Chord::get_cells_mime()
+        << RowType::chord_type << -1 << "<song/>" << Chord::get_cells_mime()
         << "Invalid clipboard";
     QTest::newRow("pitched note not a mime")
-        << pitched_note_type << 1 << "" << "not a mime"
+        << RowType::pitched_note_type << 1 << "" << "not a mime"
         << "Cannot paste not a mime as pitched notes cells";
     QTest::newRow("pitched note chords mime")
-        << pitched_note_type << 1 << "" << Chord::get_cells_mime()
+        << RowType::pitched_note_type << 1 << "" << Chord::get_cells_mime()
         << "Cannot paste chords cells as pitched notes cells";
     QTest::newRow("pitched note not xml")
-        << pitched_note_type << 1 << "<" << PitchedNote::get_cells_mime()
+        << RowType::pitched_note_type << 1 << "<" << PitchedNote::get_cells_mime()
         << "Invalid XML";
     QTest::newRow("pitched note not Justly")
-        << pitched_note_type << 1 << "<song/>" << PitchedNote::get_cells_mime()
+        << RowType::pitched_note_type << 1 << "<song/>" << PitchedNote::get_cells_mime()
         << "Invalid clipboard";
     QTest::newRow("unpitched note not a mime")
-        << unpitched_note_type << 1 << "" << "not a mime"
+        << RowType::unpitched_note_type << 1 << "" << "not a mime"
         << "Cannot paste not a mime as unpitched notes cells";
     QTest::newRow("unpitched note chords mime")
-        << unpitched_note_type << 1 << "" << Chord::get_cells_mime()
+        << RowType::unpitched_note_type << 1 << "" << Chord::get_cells_mime()
         << "Cannot paste chords cells as unpitched notes cells";
     QTest::newRow("unpitched note not xml")
-        << unpitched_note_type << 1 << "<" << UnpitchedNote::get_cells_mime()
+        << RowType::unpitched_note_type << 1 << "<" << UnpitchedNote::get_cells_mime()
         << "Invalid XML";
     QTest::newRow("unpitched note not Justly")
-        << unpitched_note_type << 1 << "<song/>"
+        << RowType::unpitched_note_type << 1 << "<song/>"
         << UnpitchedNote::get_cells_mime() << "Invalid clipboard";
   };
 
   void test_paste_error() {
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
-    QFETCH(QString, copied);
-    QFETCH(QString, mime_type);
-    QFETCH(QString, error_message);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, chord_number);
+    QFETCH(const QString, copied);
+    QFETCH(const QString, mime_type);
+    QFETCH(const QString, error_message);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -1356,10 +1370,10 @@ private slots:
   static void test_paste_into_data() { add_cells(); };
 
   void test_paste_into() {
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
-    QFETCH(int, row_number);
-    QFETCH(int, column_number);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, chord_number);
+    QFETCH(const int, row_number);
+    QFETCH(const int, column_number);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -1389,42 +1403,42 @@ private slots:
     QTest::addColumn<int>("second_row_number");
     QTest::addColumn<int>("column_number");
 
-    QTest::newRow("two chords") << chord_type << -1 << 0 << 1
-                                << static_cast<int>(chord_interval_column);
-    QTest::newRow("one chord") << chord_type << -1 << 1 << 1
-                               << static_cast<int>(chord_interval_column);
+    QTest::newRow("two chords") << RowType::chord_type << -1 << 0 << 1
+                                << static_cast<int>(ChordColumn::chord_interval_column);
+    QTest::newRow("one chord") << RowType::chord_type << -1 << 1 << 1
+                               << static_cast<int>(ChordColumn::chord_interval_column);
     QTest::newRow("two pitched notes")
-        << pitched_note_type << 1 << 0 << 1
-        << static_cast<int>(pitched_note_voice_number_column);
+        << RowType::pitched_note_type << 1 << 0 << 1
+        << static_cast<int>(PitchedNoteColumn::pitched_note_voice_number_column);
     QTest::newRow("one pitched note")
-        << pitched_note_type << 1 << 1 << 1
-        << static_cast<int>(pitched_note_voice_number_column);
+        << RowType::pitched_note_type << 1 << 1 << 1
+        << static_cast<int>(PitchedNoteColumn::pitched_note_voice_number_column);
     QTest::newRow("two unpitched notes")
-        << unpitched_note_type << 1 << 0 << 1
-        << static_cast<int>(unpitched_note_voice_number_column);
+        << RowType::unpitched_note_type << 1 << 0 << 1
+        << static_cast<int>(UnpitchedNoteColumn::unpitched_note_voice_number_column);
     QTest::newRow("one unpitched note")
-        << unpitched_note_type << 1 << 1 << 1
-        << static_cast<int>(unpitched_note_voice_number_column);
+        << RowType::unpitched_note_type << 1 << 1 << 1
+        << static_cast<int>(UnpitchedNoteColumn::unpitched_note_voice_number_column);
     QTest::newRow("two pitched voices")
-        << pitched_voice_type << -1 << 0 << 1
-        << static_cast<int>(pitched_voice_instrument_column);
+        << RowType::pitched_voice_type << -1 << 0 << 1
+        << static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column);
     QTest::newRow("one pitched voice")
-        << pitched_voice_type << -1 << 1 << 1
-        << static_cast<int>(pitched_voice_instrument_column);
+        << RowType::pitched_voice_type << -1 << 1 << 1
+        << static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column);
     QTest::newRow("two unpitched voices")
-        << unpitched_voice_type << -1 << 0 << 1
-        << static_cast<int>(unpitched_voice_midi_number_column);
+        << RowType::unpitched_voice_type << -1 << 0 << 1
+        << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_midi_number_column);
     QTest::newRow("one unpitched voice")
-        << unpitched_voice_type << -1 << 1 << 1
-        << static_cast<int>(unpitched_voice_midi_number_column);
+        << RowType::unpitched_voice_type << -1 << 1 << 1
+        << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_midi_number_column);
   };
 
   void test_play() {
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
-    QFETCH(int, first_row_number);
-    QFETCH(int, second_row_number);
-    QFETCH(int, column_number);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, chord_number);
+    QFETCH(const int, first_row_number);
+    QFETCH(const int, second_row_number);
+    QFETCH(const int, column_number);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -1469,7 +1483,7 @@ private slots:
   void test_ratio_bound() {
     QFETCH(QPushButton *, fifth_button_pointer);
     QFETCH(QPushButton *, octave_button_pointer);
-    QFETCH(QString, error_message);
+    QFETCH(const QString, error_message);
 
     auto &fifth_button = get_reference(fifth_button_pointer);
     auto &octave_button = get_reference(octave_button_pointer);
@@ -1478,7 +1492,7 @@ private slots:
     auto &switch_table = song_widget.switch_column.switch_table;
     auto &undo_stack = song_widget.undo_stack;
 
-    switch_to(song_editor, pitched_note_type, 1);
+    switch_to(song_editor, RowType::pitched_note_type, 1);
     select_cell(switch_table, 0, 0);
 
     for (auto counter = 0; counter < RATIO_SHIFT_TIMES; counter++) {
@@ -1489,14 +1503,14 @@ private slots:
     fifth_button.click();
     undo_times(undo_stack, RATIO_SHIFT_TIMES * 2); // undo shift numerator
 
-    maybe_switch_back_to_chords(undo_stack, pitched_note_type);
+    maybe_switch_back_to_chords(undo_stack, RowType::pitched_note_type);
   };
 
   static void test_remove_row_data() { add_tables(); };
 
   void test_remove_row() {
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, chord_number);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -1511,12 +1525,12 @@ private slots:
     select_cell(switch_table, 0, 0);
     // removing voice 0 reassigns the fixture's notes that use it, warning
     // about the first one
-    if (row_type == pitched_voice_type) {
+    if (row_type == RowType::pitched_voice_type) {
       close_message_later(
           song_editor, waiting_for_message,
           "Reassigning voice for chord 2, pitched note 1 and 6 other notes "
           "to the first voice \"Guitar\"");
-    } else if (row_type == unpitched_voice_type) {
+    } else if (row_type == RowType::unpitched_voice_type) {
       close_message_later(
           song_editor, waiting_for_message,
           "Reassigning voice for chord 2, unpitched note 1 and 1 other note "
@@ -1533,7 +1547,7 @@ private slots:
 
   void test_replace_table_combining() {
     auto &song_widget = song_editor.song_widget;
-    switch_to(song_editor, unpitched_note_type, 0);
+    switch_to(song_editor, RowType::unpitched_note_type, 0);
     song_editor.song_menu_bar.view_menu.back_to_chords_action.trigger();
     QVERIFY(!song_widget.undo_stack.canUndo());
   };
@@ -1542,33 +1556,33 @@ private slots:
     add_table_columns();
     QTest::addColumn<int>("number_of_rows");
 
-    QTest::newRow("chords") << chord_type << -1 << EIGHT;
-    QTest::newRow("chord 0 pitched notes") << pitched_note_type << 0 << 0;
-    QTest::newRow("chord 1 pitched notes") << pitched_note_type << 1 << EIGHT;
-    QTest::newRow("chord 2 pitched notes") << pitched_note_type << 2 << 0;
-    QTest::newRow("chord 3 pitched notes") << pitched_note_type << 3 << 0;
-    QTest::newRow("chord 4 pitched notes") << pitched_note_type << 4 << 0;
-    QTest::newRow("chord 5 pitched notes") << pitched_note_type << FIVE << 0;
-    QTest::newRow("chord 6 pitched notes") << pitched_note_type << SIX << 0;
-    QTest::newRow("chord 7 pitched notes") << pitched_note_type << SEVEN << 0;
-    QTest::newRow("chord 0 unpitched notes") << unpitched_note_type << 0 << 0;
-    QTest::newRow("chord 1 unpitched notes") << unpitched_note_type << 1 << 4;
-    QTest::newRow("chord 2 unpitched notes") << unpitched_note_type << 2 << 0;
-    QTest::newRow("chord 3 unpitched notes") << unpitched_note_type << 3 << 0;
-    QTest::newRow("chord 4 unpitched notes") << unpitched_note_type << 4 << 0;
+    QTest::newRow("chords") << RowType::chord_type << -1 << EIGHT;
+    QTest::newRow("chord 0 pitched notes") << RowType::pitched_note_type << 0 << 0;
+    QTest::newRow("chord 1 pitched notes") << RowType::pitched_note_type << 1 << EIGHT;
+    QTest::newRow("chord 2 pitched notes") << RowType::pitched_note_type << 2 << 0;
+    QTest::newRow("chord 3 pitched notes") << RowType::pitched_note_type << 3 << 0;
+    QTest::newRow("chord 4 pitched notes") << RowType::pitched_note_type << 4 << 0;
+    QTest::newRow("chord 5 pitched notes") << RowType::pitched_note_type << FIVE << 0;
+    QTest::newRow("chord 6 pitched notes") << RowType::pitched_note_type << SIX << 0;
+    QTest::newRow("chord 7 pitched notes") << RowType::pitched_note_type << SEVEN << 0;
+    QTest::newRow("chord 0 unpitched notes") << RowType::unpitched_note_type << 0 << 0;
+    QTest::newRow("chord 1 unpitched notes") << RowType::unpitched_note_type << 1 << 4;
+    QTest::newRow("chord 2 unpitched notes") << RowType::unpitched_note_type << 2 << 0;
+    QTest::newRow("chord 3 unpitched notes") << RowType::unpitched_note_type << 3 << 0;
+    QTest::newRow("chord 4 unpitched notes") << RowType::unpitched_note_type << 4 << 0;
     QTest::newRow("chord 5 unpitched notes")
-        << unpitched_note_type << FIVE << 0;
-    QTest::newRow("chord 6 unpitched notes") << unpitched_note_type << SIX << 0;
+        << RowType::unpitched_note_type << FIVE << 0;
+    QTest::newRow("chord 6 unpitched notes") << RowType::unpitched_note_type << SIX << 0;
     QTest::newRow("chord 7 unpitched notes")
-        << unpitched_note_type << SEVEN << 0;
-    QTest::newRow("pitched voices") << pitched_voice_type << -1 << 2;
-    QTest::newRow("unpitched voices") << unpitched_voice_type << -1 << 3;
+        << RowType::unpitched_note_type << SEVEN << 0;
+    QTest::newRow("pitched voices") << RowType::pitched_voice_type << -1 << 2;
+    QTest::newRow("unpitched voices") << RowType::unpitched_voice_type << -1 << 3;
   };
 
   void test_row_count() {
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
-    QFETCH(int, number_of_rows);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, chord_number);
+    QFETCH(const int, number_of_rows);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -1587,8 +1601,8 @@ private slots:
   };
 
   void test_row_header() {
-    QFETCH(Qt::ItemDataRole, role);
-    QFETCH(QVariant, data);
+    QFETCH(const Qt::ItemDataRole, role);
+    QFETCH(const QVariant, data);
 
     QCOMPARE(get_model(song_editor.song_widget.switch_column.switch_table)
                  .headerData(0, Qt::Vertical, role),
@@ -1643,8 +1657,8 @@ private slots:
   void test_starting_control() {
     QFETCH(QDoubleSpinBox *, spin_box_pointer);
     QFETCH(double *, value_pointer);
-    QFETCH(double, first_value);
-    QFETCH(double, second_value);
+    QFETCH(const double, first_value);
+    QFETCH(const double, second_value);
 
     auto &spin_box = get_reference(spin_box_pointer);
     auto &value = get_reference(value_pointer);
@@ -1666,18 +1680,18 @@ private slots:
     add_table_columns();
     QTest::addColumn<QString>("status");
 
-    QTest::newRow("pitched note") << pitched_note_type << 1
+    QTest::newRow("pitched note") << RowType::pitched_note_type << 1
                                   << "660 Hz ≈ E5 + 2 cents; Velocity 30; 300 "
                                      "bpm; Start at 600 ms; Duration 200 ms";
     QTest::newRow("unpitched note")
-        << unpitched_note_type << 1
+        << RowType::unpitched_note_type << 1
         << "Velocity 30; 300 bpm; Start at 600 ms; Duration 200 ms";
   }
 
   void test_status() {
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
-    QFETCH(QString, status);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, chord_number);
+    QFETCH(const QString, status);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -1706,7 +1720,7 @@ private slots:
                "unpitched_voices><chords><chord><pitched_notes>"
                "<pitched_note><voice_number>0</voice_number></pitched_note>"
                "</pitched_notes></chord></chords></song>")
-        << pitched_note_type
+        << RowType::pitched_note_type
         << "220 Hz ≈ A3; Velocity 20; 100 bpm; Start at 0 ms; Duration 600 ms";
     QTest::newRow("unpitched voice velocity ratio")
         << QString(
@@ -1721,16 +1735,16 @@ private slots:
                "unpitched_voices><chords><chord><unpitched_notes>"
                "<unpitched_note><voice_number>0</voice_number>"
                "</unpitched_note></unpitched_notes></chord></chords></song>")
-        << unpitched_note_type
+        << RowType::unpitched_note_type
         << "Velocity 20; 100 bpm; Start at 0 ms; Duration 600 ms";
   };
 
   void test_voice_velocity_ratio() {
     // a voice's velocity ratio multiplies into the velocity of every note
     // that uses it, on top of the note's own separate velocity ratio
-    QFETCH(QString, text);
-    QFETCH(RowType, row_type);
-    QFETCH(QString, status);
+    QFETCH(const QString, text);
+    QFETCH(const RowType, row_type);
+    QFETCH(const QString, status);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -1767,11 +1781,11 @@ private slots:
     auto &switch_table = song_widget.switch_column.switch_table;
     auto &undo_stack = song_widget.undo_stack;
 
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
-    QFETCH(int, first_row_number);
-    QFETCH(int, second_row_number);
-    QFETCH(int, column_number);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, chord_number);
+    QFETCH(const int, first_row_number);
+    QFETCH(const int, second_row_number);
+    QFETCH(const int, column_number);
 
     switch_to(song_editor, row_type, chord_number);
 
@@ -1810,12 +1824,12 @@ private slots:
     QTest::addColumn<QString>("new_name");
 
     QTest::newRow("pitched voice")
-        << pitched_voice_type
-        << static_cast<int>(pitched_voice_name_column)
+        << RowType::pitched_voice_type
+        << static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column)
         << "New Pitched Voice Name";
     QTest::newRow("unpitched voice")
-        << unpitched_voice_type
-        << static_cast<int>(unpitched_voice_name_column)
+        << RowType::unpitched_voice_type
+        << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column)
         << "New Unpitched Voice Name";
   };
 
@@ -1824,9 +1838,9 @@ private slots:
     // check_voice_name in Voice.hpp), so this can't share test_set_value's
     // swap-two-existing-values pattern: setting a second row's name to a
     // first row's name would collide and warn
-    QFETCH(RowType, row_type);
-    QFETCH(int, column_number);
-    QFETCH(QString, new_name);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, column_number);
+    QFETCH(const QString, new_name);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -1861,19 +1875,19 @@ private slots:
     QTest::addColumn<int>("column_number");
 
     QTest::newRow("pitched voice instrument")
-        << pitched_voice_type
-        << static_cast<int>(pitched_voice_instrument_column);
+        << RowType::pitched_voice_type
+        << static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column);
     QTest::newRow("unpitched voice percussion set")
-        << unpitched_voice_type
-        << static_cast<int>(unpitched_voice_percussion_set_column);
+        << RowType::unpitched_voice_type
+        << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_percussion_set_column);
   };
 
   void test_voice_paste_insert_disabled() {
     // pasting after/into always inserts a brand new row built only from the
     // pasted column(s), which for voices would create one with an empty
     // (invalid) name -- see ReplaceTable.hpp
-    QFETCH(RowType, row_type);
-    QFETCH(int, column_number);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, column_number);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -1895,35 +1909,35 @@ private slots:
     QTest::addColumn<QString>("text");
 
     QTest::newRow("chord 0 interval")
-        << 0 << static_cast<int>(chord_interval_column) << "";
+        << 0 << static_cast<int>(ChordColumn::chord_interval_column) << "";
     QTest::newRow("chord 1 interval")
-        << 1 << static_cast<int>(chord_interval_column) << "3";
+        << 1 << static_cast<int>(ChordColumn::chord_interval_column) << "3";
     QTest::newRow("chord 2 interval")
-        << 2 << static_cast<int>(chord_interval_column) << "/5";
+        << 2 << static_cast<int>(ChordColumn::chord_interval_column) << "/5";
     QTest::newRow("chord 3 interval")
-        << 3 << static_cast<int>(chord_interval_column) << "3/5";
+        << 3 << static_cast<int>(ChordColumn::chord_interval_column) << "3/5";
     QTest::newRow("chord 4 interval")
-        << 4 << static_cast<int>(chord_interval_column) << "o1";
+        << 4 << static_cast<int>(ChordColumn::chord_interval_column) << "o1";
     QTest::newRow("chord 5 interval")
-        << FIVE << static_cast<int>(chord_interval_column) << "3o1";
+        << FIVE << static_cast<int>(ChordColumn::chord_interval_column) << "3o1";
     QTest::newRow("chord 6 interval")
-        << SIX << static_cast<int>(chord_interval_column) << "/5o1";
+        << SIX << static_cast<int>(ChordColumn::chord_interval_column) << "/5o1";
     QTest::newRow("chord 7 interval")
-        << SEVEN << static_cast<int>(chord_interval_column) << "3/5o1";
+        << SEVEN << static_cast<int>(ChordColumn::chord_interval_column) << "3/5o1";
     QTest::newRow("chord 0 beats")
-        << 0 << static_cast<int>(chord_beats_column) << "";
+        << 0 << static_cast<int>(ChordColumn::chord_beats_column) << "";
     QTest::newRow("chord 1 beats")
-        << 1 << static_cast<int>(chord_beats_column) << "3";
+        << 1 << static_cast<int>(ChordColumn::chord_beats_column) << "3";
     QTest::newRow("chord 2 beats")
-        << 2 << static_cast<int>(chord_beats_column) << "/5";
+        << 2 << static_cast<int>(ChordColumn::chord_beats_column) << "/5";
     QTest::newRow("chord 3 beats")
-        << 3 << static_cast<int>(chord_beats_column) << "3/5";
+        << 3 << static_cast<int>(ChordColumn::chord_beats_column) << "3/5";
   };
 
   void test_to_string() {
-    QFETCH(int, row_number);
-    QFETCH(int, column_number);
-    QFETCH(QString, text);
+    QFETCH(const int, row_number);
+    QFETCH(const int, column_number);
+    QFETCH(const QString, text);
 
     QCOMPARE(get_model(song_editor.song_widget.switch_column.switch_table)
                  .index(row_number, column_number)
@@ -1935,8 +1949,8 @@ private slots:
   static void test_unused_role_data() { add_tables(); };
 
   void test_unused_role() {
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, chord_number);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -1959,15 +1973,15 @@ private slots:
     QTest::newRow("pitched note 1") << 1 << 1980.0 << 600.0 << 90.0;
   };
 
-  void test_piano_roll_events() {
-    QFETCH(int, note_number);
-    QFETCH(double, frequency);
-    QFETCH(double, duration_ms);
-    QFETCH(double, velocity);
+  void test_piano_roll_events() const {
+    QFETCH(const int, note_number);
+    QFETCH(const double, frequency);
+    QFETCH(const double, duration_ms);
+    QFETCH(const double, velocity);
 
     const auto events = get_piano_roll_events(song_editor.song_widget.song);
     const auto matching_event = std::ranges::find_if(
-        events, [note_number](const PianoRollNoteEvent &event) {
+        events, [note_number](const PianoRollNoteEvent &event) -> auto {
           return event.chord_number == 1 && event.note_number == note_number &&
                  event.kind == PianoRollNoteKind::pitched_kind;
         });
@@ -1978,11 +1992,11 @@ private slots:
     QCOMPARE(matching_event->velocity, velocity);
   };
 
-  void test_piano_roll_events_total_count() {
+  void test_piano_roll_events_total_count() const {
     QCOMPARE(get_piano_roll_events(song_editor.song_widget.song).size(), 12);
   };
 
-  void test_piano_roll_time_bounds() {
+  void test_piano_roll_time_bounds() const {
     const auto [baseline_ms, end_ms] =
         get_piano_roll_time_bounds(song_editor.song_widget.song, 1, 1);
     QCOMPARE(baseline_ms, 600.0);
@@ -2011,7 +2025,7 @@ private slots:
     auto &undo_stack = song_widget.undo_stack;
     auto &scene = song_editor.piano_roll_widget.scene;
 
-    switch_to(song_editor, pitched_note_type, 1);
+    switch_to(song_editor, RowType::pitched_note_type, 1);
     const auto old_item_count = scene.items().size();
 
     select_cell(switch_table, 0, 0);
@@ -2022,7 +2036,7 @@ private slots:
     undo_stack.undo(); // undo insert
     QCOMPARE(scene.items().size(), old_item_count);
 
-    maybe_switch_back_to_chords(undo_stack, pitched_note_type);
+    maybe_switch_back_to_chords(undo_stack, RowType::pitched_note_type);
   };
 
   static void test_piano_roll_double_click_selects_note_data() {
@@ -2031,15 +2045,15 @@ private slots:
     QTest::addColumn<RowType>("expected_row_type");
 
     QTest::newRow("pitched")
-        << PianoRollNoteKind::pitched_kind << 2 << pitched_note_type;
+        << PianoRollNoteKind::pitched_kind << 2 << RowType::pitched_note_type;
     QTest::newRow("unpitched")
-        << PianoRollNoteKind::unpitched_kind << 1 << unpitched_note_type;
+        << PianoRollNoteKind::unpitched_kind << 1 << RowType::unpitched_note_type;
   };
 
   void test_piano_roll_double_click_selects_note() {
-    QFETCH(PianoRollNoteKind, kind);
-    QFETCH(int, note_number);
-    QFETCH(RowType, expected_row_type);
+    QFETCH(const PianoRollNoteKind, kind);
+    QFETCH(const int, note_number);
+    QFETCH(const RowType, expected_row_type);
 
     auto &piano_roll_widget = song_editor.piano_roll_widget;
     auto &switch_table = song_editor.song_widget.switch_column.switch_table;
@@ -2049,7 +2063,7 @@ private slots:
     // notes, matching the fixture used by the other piano-roll tests above
     const auto &events = piano_roll_widget.events;
     const auto event_iterator = std::ranges::find_if(
-        events, [kind, note_number](const PianoRollNoteEvent &event) {
+        events, [kind, note_number](const PianoRollNoteEvent &event) -> auto {
           return event.chord_number == 1 && event.note_number == note_number &&
                  event.kind == kind;
         });
@@ -2057,7 +2071,7 @@ private slots:
     const auto event_index =
         static_cast<int>(event_iterator - events.cbegin());
 
-    QGraphicsItem *note_item_pointer = nullptr;
+    const QGraphicsItem *note_item_pointer = nullptr;
     for (auto *const item_pointer : piano_roll_widget.scene.items()) {
       const auto item_data = item_pointer->data(0);
       if (item_data.isValid() && item_data.toInt() == event_index) {
@@ -2100,11 +2114,11 @@ private slots:
         event_index = event_index + 1) {
       const auto &event = events.at(event_index);
       const auto is_highlighted =
-          selection_row_type == chord_type
+          selection_row_type == RowType::chord_type
               ? event.chord_number == selection_chord_number
               : event.chord_number == selection_chord_number &&
                     event.note_number == selection_note_number &&
-                    event.kind == (selection_row_type == pitched_note_type
+                    event.kind == (selection_row_type == RowType::pitched_note_type
                                        ? PianoRollNoteKind::pitched_kind
                                        : PianoRollNoteKind::unpitched_kind);
       QCOMPARE(get_reference(note_items.at(event_index)).pen().style() !=
@@ -2121,7 +2135,7 @@ private slots:
     // notes, matching the fixture used by the other piano-roll tests above
     select_cell(switch_table, 1, 0);
 
-    check_piano_roll_highlight(piano_roll_widget, chord_type, 1, -1);
+    check_piano_roll_highlight(piano_roll_widget, RowType::chord_type, 1, -1);
 
     QVERIFY(piano_roll_widget.playhead_item.isVisible());
     QCOMPARE(piano_roll_widget.playhead_item.line().x1(),
@@ -2132,13 +2146,13 @@ private slots:
     QTest::addColumn<RowType>("row_type");
     QTest::addColumn<int>("note_number");
 
-    QTest::newRow("pitched") << pitched_note_type << 2;
-    QTest::newRow("unpitched") << unpitched_note_type << 1;
+    QTest::newRow("pitched") << RowType::pitched_note_type << 2;
+    QTest::newRow("unpitched") << RowType::unpitched_note_type << 1;
   };
 
   void test_piano_roll_selection_highlights_note() {
-    QFETCH(RowType, row_type);
-    QFETCH(int, note_number);
+    QFETCH(const RowType, row_type);
+    QFETCH(const int, note_number);
 
     auto &piano_roll_widget = song_editor.piano_roll_widget;
     auto &switch_table = song_editor.song_widget.switch_column.switch_table;
@@ -2169,7 +2183,7 @@ private slots:
     select_cell(switch_table, 1, 0);
     QVERIFY(piano_roll_widget.playhead_item.isVisible());
 
-    switch_to(song_editor, pitched_voice_type, -1);
+    switch_to(song_editor, RowType::pitched_voice_type, -1);
     select_cell(switch_table, 0, 0);
 
     QVERIFY(!piano_roll_widget.playhead_item.isVisible());
@@ -2177,7 +2191,7 @@ private slots:
       QCOMPARE(get_reference(note_item_pointer).pen().style(), Qt::NoPen);
     }
 
-    maybe_switch_back_to_chords(undo_stack, pitched_voice_type);
+    maybe_switch_back_to_chords(undo_stack, RowType::pitched_voice_type);
   };
 
   void test_piano_roll_zoom() {

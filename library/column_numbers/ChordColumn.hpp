@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-enum ChordColumn : std::uint8_t {
+enum class ChordColumn : std::uint8_t {
   chord_pitched_notes_column,
   chord_unpitched_notes_column,
   chord_interval_column,

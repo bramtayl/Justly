@@ -1,10 +1,28 @@
 #pragma once
 
+#include <QtCore/QList>
+#include <QtCore/QTypeInfo>
+#include <QtCore/QtMinMax>
+#include <QtCore/QtSwap>
+#include <algorithm>
+#include <cstdint>
 #include <optional>
+#include <type_traits>
 #include <utility>
 
+#include "cell_types/Interval.hpp"
+#include "cell_types/Rational.hpp"
 #include "other/Song.hpp"
+#include "rows/Chord.hpp"
+#include "rows/Note.hpp"
+#include "rows/Row.hpp"
 #include "rows/RowType.hpp"
+#include "sound/PlayState.hpp"
+
+struct PitchedNote;
+struct PitchedVoice;
+struct UnpitchedNote;
+struct UnpitchedVoice;
 
 enum class PianoRollNoteKind : std::uint8_t { pitched_kind, unpitched_kind };
 
@@ -127,13 +145,13 @@ append_piano_roll_events(QList<PianoRollNoteEvent> &events,
     const int selection_chord_number, const int selection_first_row_number,
     const int selection_number_of_rows) -> QList<int> {
   QList<int> selected_indices;
-  const auto is_chord_selection = selection_row_type == chord_type;
-  const auto is_note_selection = selection_row_type == pitched_note_type ||
-                                 selection_row_type == unpitched_note_type;
+  const auto is_chord_selection = selection_row_type == RowType::chord_type;
+  const auto is_note_selection = selection_row_type == RowType::pitched_note_type ||
+                                 selection_row_type == RowType::unpitched_note_type;
   if (!is_chord_selection && !is_note_selection) {
     return selected_indices;
   }
-  const auto kind_filter = selection_row_type == pitched_note_type
+  const auto kind_filter = selection_row_type == RowType::pitched_note_type
                                ? PianoRollNoteKind::pitched_kind
                                : PianoRollNoteKind::unpitched_kind;
   for (auto event_index = 0; event_index < events.size();

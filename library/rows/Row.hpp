@@ -1,5 +1,13 @@
 #pragma once
 
+#include <libxml/parser.h>
+#include <QtCore/QList>
+#include <QtCore/QString>
+#include <QtCore/QVariant>
+#include <concepts>
+#include <string>
+#include <utility>
+
 #include "other/helpers.hpp"
 
 static const auto MILLISECONDS_PER_MINUTE = 60000;

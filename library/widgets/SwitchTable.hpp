@@ -1,8 +1,12 @@
 #pragma once
 
+#include <QtCore/QSize>
+#include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QScrollBar>
 #include <QtWidgets/QTableView>
+#include <QtWidgets/QWidget>
+#include <concepts>
 
 #include "cell_editors/IntervalEditor.hpp"
 #include "models/ChordsModel.hpp"
@@ -10,8 +14,13 @@
 #include "models/PitchedVoicesModel.hpp"
 #include "models/UnpitchedNotesModel.hpp"
 #include "models/UnpitchedVoicesModel.hpp"
+#include "other/Song.hpp"
 #include "other/helpers.hpp"
+#include "rows/Row.hpp"
 #include "widgets/SwitchDelegate.hpp"
+
+class QUndoStack;
+template <RowInterface SubRow> struct RowsModel;
 
 static const auto WORDS_WIDTH = 200;
 

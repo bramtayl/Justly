@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QtCore/QMap>
+#include <QtCore/QtSwap>
+#include <utility>
 
 // given a sequence of divisions changes at certain division times
 // find a real time and the beats per division

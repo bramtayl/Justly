@@ -1,6 +1,11 @@
 #pragma once
 
+#include <libxml/xmlschemas.h>
+
+#include "other/helpers.hpp"
 #include "xml/XMLSchema.hpp"
+
+struct _xmlSchemaValidCtxt;
 
 class XMLValidationContext {
 public:

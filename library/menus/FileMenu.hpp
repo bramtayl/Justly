@@ -1,9 +1,19 @@
 #pragma once
 
+#include <QtCore/QDir>
+#include <QtCore/QList>
+#include <QtCore/QMetaObject>
+#include <QtCore/QObject>
+#include <QtCore/QString>
+#include <QtCore/QtAssert>
+#include <QtGui/QAction>
+#include <QtGui/QKeySequence>
+#include <QtGui/QUndoStack>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMenu>
 
 #include "widgets/SongWidget.hpp"
+#include "widgets/SwitchColumn.hpp"
 
 [[nodiscard]] static auto make_file_dialog(
     SongWidget &song_widget, const char *const caption, const QString &filter,
@@ -45,13 +55,13 @@ struct FileMenu : public QMenu {
     add_menu_action(*this, export_action);
 
     QObject::connect(&song_widget.undo_stack, &QUndoStack::cleanChanged, this,
-                     [&save_action_ref, &song_widget]() {
+                     [&save_action_ref, &song_widget]() -> auto {
                        save_action_ref.setEnabled(
                            !song_widget.undo_stack.isClean() &&
                            !song_widget.current_file.isEmpty());
                      });
 
-    QObject::connect(&open_action, &QAction::triggered, this, [&song_widget]() {
+    QObject::connect(&open_action, &QAction::triggered, this, [&song_widget]() -> auto {
       if (can_discard_changes(song_widget)) {
         auto &dialog = make_file_dialog(
             song_widget, "Open — Justly", "XML file (*.xml)",
@@ -63,7 +73,7 @@ struct FileMenu : public QMenu {
     });
 
     QObject::connect(
-        &import_action, &QAction::triggered, this, [&song_widget]() {
+        &import_action, &QAction::triggered, this, [&song_widget]() -> auto {
           if (can_discard_changes(song_widget)) {
             auto &dialog = make_file_dialog(
                 song_widget, "Import MusicXML — Justly",
@@ -76,12 +86,12 @@ struct FileMenu : public QMenu {
           }
         });
 
-    QObject::connect(&save_action, &QAction::triggered, this, [&song_widget]() {
+    QObject::connect(&save_action, &QAction::triggered, this, [&song_widget]() -> auto {
       save_as_file(song_widget, song_widget.current_file);
     });
 
     QObject::connect(
-        &save_as_action, &QAction::triggered, this, [&song_widget]() {
+        &save_as_action, &QAction::triggered, this, [&song_widget]() -> auto {
           auto &dialog = make_file_dialog(
               song_widget, "Save As — Justly", "XML file (*.xml)",
               QFileDialog::AcceptSave, ".xml", QFileDialog::AnyFile);
@@ -92,7 +102,7 @@ struct FileMenu : public QMenu {
         });
 
     QObject::connect(
-        &export_action, &QAction::triggered, this, [&song_widget]() {
+        &export_action, &QAction::triggered, this, [&song_widget]() -> auto {
           auto &dialog = make_file_dialog(
               song_widget, "Export — Justly", "WAV file (*.wav)",
               QFileDialog::AcceptSave, ".wav", QFileDialog::AnyFile);

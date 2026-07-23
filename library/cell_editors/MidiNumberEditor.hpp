@@ -1,6 +1,9 @@
 #pragma once
 
+#include <QtCore/QObject>
 #include <QtWidgets/QSpinBox>
+
+class QWidget;
 
 static const auto MAX_MIDI_NUMBER = 127;
 

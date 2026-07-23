@@ -1,9 +1,19 @@
 #pragma once
 
+#include <QtCore/QObject>
+#include <QtCore/QString>
+#include <QtCore/QTextStream>
+#include <concepts>
+
 #include "cell_types/Rational.hpp"
-#include "rows/PitchedVoice.hpp"
-#include "rows/UnpitchedVoice.hpp"
-#include "sound/Player.hpp"
+#include "rows/Row.hpp"
+
+class QWidget;
+struct PitchedVoice;
+struct Player;
+struct Program;
+struct UnpitchedVoice;
+template <typename T> class QList;
 
 static const auto BREATH_ID = 2;
 static const auto MAX_RELEASE_TIME = 6000;

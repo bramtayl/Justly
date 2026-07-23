@@ -1,11 +1,15 @@
 #pragma once
 
+#include <QtCore/QObject>
+#include <QtCore/QString>
 #include <QtWidgets/QFrame>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QSpinBox>
 
 #include "cell_types/Rational.hpp"
+
+class QWidget;
 
 struct RationalEditor : QFrame {
   Q_OBJECT

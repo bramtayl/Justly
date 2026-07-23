@@ -1,6 +1,14 @@
 #pragma once
 
+#include <libxml/parser.h>
+#include <QtCore/QByteArray>
+#include <QtCore/QMetaType>
+#include <QtCore/QtAssert>
+#include <cmath>
+#include <string>
+
 #include "cell_types/Rational.hpp"
+#include "other/helpers.hpp"
 
 static const auto OCTAVE_RATIO = 2.0;
 

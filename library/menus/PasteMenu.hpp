@@ -1,13 +1,55 @@
 #pragma once
 
+#include <libxml/parser.h>
+#include <QtCore/QFlags>
+#include <QtCore/QItemSelectionModel>
+#include <QtCore/QList>
+#include <QtCore/QMetaObject>
 #include <QtCore/QMimeData>
+#include <QtCore/QObject>
+#include <QtCore/QString>
+#include <QtCore/QTextStream>
+#include <QtCore/QTypeInfo>
+#include <QtCore/Qt>
+#include <QtCore/QtAssert>
+#include <QtCore/QtMinMax>
+#include <QtCore/QtSwap>
+#include <QtGui/QAction>
 #include <QtGui/QClipboard>
+#include <QtGui/QGuiApplication>
+#include <QtGui/QKeySequence>
+#include <QtGui/QUndoStack>
 #include <QtWidgets/QMenu>
+#include <QtWidgets/QMessageBox>
+#include <algorithm>
+#include <limits>
+#include <optional>
+#include <string>
+#include <utility>
 
 #include "actions/InsertRemoveRows.hpp"
+#include "actions/SetCells.hpp"
+#include "models/ChordsModel.hpp"
+#include "models/PitchedNotesModel.hpp"
+#include "models/PitchedVoicesModel.hpp"
+#include "models/UnpitchedNotesModel.hpp"
+#include "models/UnpitchedVoicesModel.hpp"
 #include "other/Cells.hpp"
+#include "other/helpers.hpp"
+#include "rows/Chord.hpp"
+#include "rows/PitchedNote.hpp"
+#include "rows/Row.hpp"
+#include "rows/RowType.hpp"
+#include "rows/UnpitchedNote.hpp"
 #include "widgets/SongWidget.hpp"
+#include "widgets/SwitchColumn.hpp"
+#include "widgets/SwitchDelegate.hpp"
+#include "widgets/SwitchTable.hpp"
 #include "xml/XMLDocument.hpp"
+#include "xml/XMLValidator.hpp"
+
+class QWidget;
+template <RowInterface SubRow> struct RowsModel;
 
 [[nodiscard]] static auto get_mime_description(const QString &mime_type) {
   Q_ASSERT(mime_type.isValidUtf16());
@@ -118,23 +160,23 @@ static void add_paste_insert(SongWidget &song_widget, const int row_number) {
 
   QUndoCommand *undo_command = nullptr;
   switch (switch_table.delegate.current_row_type) {
-  case chord_type:
+  case RowType::chord_type:
     undo_command = make_paste_insert_command(
         switch_table, switch_table.chords_model, row_number);
     break;
-  case pitched_note_type:
+  case RowType::pitched_note_type:
     undo_command = make_paste_insert_command(
         switch_table, switch_table.pitched_notes_model, row_number);
     break;
-  case unpitched_note_type:
+  case RowType::unpitched_note_type:
     undo_command = make_paste_insert_command(
         switch_table, switch_table.unpitched_notes_model, row_number);
     break;
-  case pitched_voice_type:
+  case RowType::pitched_voice_type:
     undo_command = make_paste_insert_command(
         switch_table, switch_table.pitched_voices_model, row_number);
     break;
-  case unpitched_voice_type:
+  case RowType::unpitched_voice_type:
     undo_command = make_paste_insert_command(
         switch_table, switch_table.unpitched_voices_model, row_number);
     break;
@@ -176,33 +218,33 @@ struct PasteMenu : public QMenu {
                                    Qt::Key_V);
 
     QObject::connect(
-        &paste_over_action, &QAction::triggered, this, [&song_widget]() {
+        &paste_over_action, &QAction::triggered, this, [&song_widget]() -> auto {
           auto &switch_table = song_widget.switch_column.switch_table;
 
           const auto first_row_number = get_only_range(switch_table).top();
 
           QUndoCommand *undo_command = nullptr;
           switch (switch_table.delegate.current_row_type) {
-          case chord_type:
+          case RowType::chord_type:
             undo_command = make_paste_cells_command(
                 switch_table, first_row_number, switch_table.chords_model);
             break;
-          case pitched_note_type:
+          case RowType::pitched_note_type:
             undo_command =
                 make_paste_cells_command(switch_table, first_row_number,
                                          switch_table.pitched_notes_model);
             break;
-          case unpitched_note_type:
+          case RowType::unpitched_note_type:
             undo_command =
                 make_paste_cells_command(switch_table, first_row_number,
                                          switch_table.unpitched_notes_model);
             break;
-          case pitched_voice_type:
+          case RowType::pitched_voice_type:
             undo_command =
                 make_paste_cells_command(switch_table, first_row_number,
                                          switch_table.pitched_voices_model);
             break;
-          case unpitched_voice_type:
+          case RowType::unpitched_voice_type:
             undo_command =
                 make_paste_cells_command(switch_table, first_row_number,
                                          switch_table.unpitched_voices_model);
@@ -215,10 +257,10 @@ struct PasteMenu : public QMenu {
         });
 
     QObject::connect(&paste_into_start_action, &QAction::triggered, this,
-                     [&song_widget]() { add_paste_insert(song_widget, 0); });
+                     [&song_widget]() -> auto { add_paste_insert(song_widget, 0); });
 
     QObject::connect(&paste_after_action, &QAction::triggered, this,
-                     [&song_widget]() {
+                     [&song_widget]() -> auto {
                        add_paste_insert(song_widget, get_next_row(song_widget));
                      });
   }

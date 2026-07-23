@@ -14,11 +14,13 @@ Checks: >
   hicpp-*,
   -hicpp-vararg,
   llvm-*,
+  -llvm-header-guard,
   misc-*,
   -misc-non-private-member-variables-in-classes,
   modernize-*,
   performance-*,
   portability-*,
+  -portability-avoid-pragma-once,
   readability-*,
   -readability-function-cognitive-complexity,
   -readability-math-missing-parentheses

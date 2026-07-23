@@ -1,18 +1,49 @@
 #pragma once
 
+#include <libxml/xmlversion.h>
+#include <QtCore/QAbstractItemModel>
+#include <QtCore/QMetaObject>
+#include <QtCore/QMetaType>
+#include <QtCore/QObject>
+#include <QtCore/QRect>
+#include <QtCore/QSize>
+#include <QtCore/QString>
+#include <QtCore/QTextStream>
+#include <QtCore/QTypeInfo>
+#include <QtCore/Qt>
+#include <QtGui/QAction>
 #include <QtGui/QCloseEvent>
+#include <QtGui/QGuiApplication>
+#include <QtGui/QIcon>
+#include <QtGui/QPixmap>
+#include <QtGui/QScreen>
+#include <QtGui/QUndoStack>
+#include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QDockWidget>
-#include <QtWidgets/QItemEditorFactory>
-#include <QtWidgets/QLineEdit>
 #include <QtWidgets/QMainWindow>
-#include <QtWidgets/QStandardItemEditorCreator>
 #include <QtWidgets/QStatusBar>
+#include <functional>
+#include <optional>
+#include <string>
 
 #include "actions/ReplaceTable.hpp"
+#include "cell_types/Interval.hpp"
+#include "cell_types/Rational.hpp"
+#include "column_numbers/ChordColumn.hpp"
+#include "menus/InsertMenu.hpp"
+#include "menus/PlayMenu.hpp"
 #include "menus/SongMenuBar.hpp"
+#include "menus/ViewMenu.hpp"
+#include "other/PianoRoll.hpp"
+#include "other/helpers.hpp"
 #include "rows/RowType.hpp"
 #include "widgets/PianoRollWidget.hpp"
+#include "widgets/SongWidget.hpp"
+#include "widgets/SpinBoxes.hpp"
+#include "widgets/SwitchColumn.hpp"
+#include "widgets/SwitchDelegate.hpp"
+#include "widgets/SwitchTable.hpp"
 
 static void add_replace_table(SongMenuBar &song_menu_bar,
                               SongWidget &song_widget,
@@ -34,7 +65,7 @@ static void connect_switch_to_table(QAction &action, QObject &context,
                                     const RowType row_type) {
   QObject::connect(
       &action, &QAction::triggered, &context,
-      [&song_menu_bar, &song_widget, &piano_roll_widget, row_type]() {
+      [&song_menu_bar, &song_widget, &piano_roll_widget, row_type]() -> auto {
         add_replace_table(song_menu_bar, song_widget, row_type, -1,
                           piano_roll_widget);
       });
@@ -49,7 +80,7 @@ static void connect_navigate_chord_action(QAction &action, QObject &context,
                                           const int delta) {
   QObject::connect(
       &action, &QAction::triggered, &context,
-      [&song_menu_bar, &song_widget, &piano_roll_widget, delta]() {
+      [&song_menu_bar, &song_widget, &piano_roll_widget, delta]() -> auto {
         const auto &switch_table = song_widget.switch_column.switch_table;
         add_replace_table(song_menu_bar, song_widget,
                           switch_table.delegate.current_row_type,
@@ -68,15 +99,15 @@ static void connect_piano_roll_playhead(PianoRollWidget &piano_roll_widget,
                                         PlayMenu &play_menu) {
   QObject::connect(
       &play_menu.play_action, &QAction::triggered, &context,
-      [&piano_roll_widget, &song_widget]() {
+      [&piano_roll_widget, &song_widget]() -> auto {
         const auto selection = get_play_selection(song_widget);
-        if (selection.row_type == pitched_voice_type ||
-            selection.row_type == unpitched_voice_type) {
+        if (selection.row_type == RowType::pitched_voice_type ||
+            selection.row_type == RowType::unpitched_voice_type) {
           // voice audition/preview has no timeline position
           piano_roll_widget.stop_playhead();
           return;
         }
-        const auto is_chord_selection = selection.row_type == chord_type;
+        const auto is_chord_selection = selection.row_type == RowType::chord_type;
         const auto [baseline_ms, end_ms] = get_piano_roll_time_bounds(
             song_widget.song,
             is_chord_selection ? selection.first_row_number
@@ -86,14 +117,14 @@ static void connect_piano_roll_playhead(PianoRollWidget &piano_roll_widget,
             is_chord_selection ? -1 : selection.number_of_rows,
             is_chord_selection
                 ? std::nullopt
-                : std::make_optional(selection.row_type == pitched_note_type
+                : std::make_optional(selection.row_type == RowType::pitched_note_type
                                          ? PianoRollNoteKind::pitched_kind
                                          : PianoRollNoteKind::unpitched_kind));
         piano_roll_widget.start_playhead(baseline_ms, end_ms);
       });
   QObject::connect(
       &play_menu.stop_playing_action, &QAction::triggered, &context,
-      [&piano_roll_widget]() { piano_roll_widget.stop_playhead(); });
+      [&piano_roll_widget]() -> auto { piano_roll_widget.stop_playhead(); });
 }
 
 struct SongEditor : public QMainWindow {
@@ -129,26 +160,26 @@ public:
 
     connect_switch_to_table(song_menu_bar.view_menu.back_to_chords_action,
                             *this, song_menu_bar, song_widget,
-                            piano_roll_widget, chord_type);
+                            piano_roll_widget, RowType::chord_type);
     connect_switch_to_table(song_menu_bar.view_menu.edit_pitched_voices_action,
                             *this, song_menu_bar, song_widget,
-                            piano_roll_widget, pitched_voice_type);
+                            piano_roll_widget, RowType::pitched_voice_type);
     connect_switch_to_table(
         song_menu_bar.view_menu.edit_unpitched_voices_action, *this,
-        song_menu_bar, song_widget, piano_roll_widget, unpitched_voice_type);
+        song_menu_bar, song_widget, piano_roll_widget, RowType::unpitched_voice_type);
 
     QObject::connect(
         &switch_table, &QAbstractItemView::doubleClicked, this,
         [&song_menu_bar_ref, &song_widget_ref,
-        &piano_roll_widget_ref](const QModelIndex &index) {
+        &piano_roll_widget_ref](const QModelIndex &index) -> auto {
           if (song_widget_ref.switch_column.switch_table.delegate
-                  .current_row_type == chord_type) {
+                  .current_row_type == RowType::chord_type) {
             const auto column = index.column();
-            const auto is_pitched = column == chord_pitched_notes_column;
-            if (is_pitched || (column == chord_unpitched_notes_column)) {
+            const auto is_pitched = column == static_cast<int>(ChordColumn::chord_pitched_notes_column);
+            if (is_pitched || (column == static_cast<int>(ChordColumn::chord_unpitched_notes_column))) {
               add_replace_table(
                   song_menu_bar_ref, song_widget_ref,
-                  (is_pitched ? pitched_note_type : unpitched_note_type),
+                  (is_pitched ? RowType::pitched_note_type : RowType::unpitched_note_type),
                   index.row(), piano_roll_widget_ref);
             }
           }
@@ -173,17 +204,17 @@ public:
 
     QObject::connect(&song_menu_bar.view_menu.zoom_in_action,
                      &QAction::triggered, &piano_roll_widget_ref,
-                     [&piano_roll_widget_ref]() {
+                     [&piano_roll_widget_ref]() -> auto {
                        piano_roll_widget_ref.zoom_in();
                      });
     QObject::connect(&song_menu_bar.view_menu.zoom_out_action,
                      &QAction::triggered, &piano_roll_widget_ref,
-                     [&piano_roll_widget_ref]() {
+                     [&piano_roll_widget_ref]() -> auto {
                        piano_roll_widget_ref.zoom_out();
                      });
 
     QObject::connect(&undo_stack, &QUndoStack::indexChanged, this,
-                     [&piano_roll_widget_ref]() {
+                     [&piano_roll_widget_ref]() -> auto {
                        piano_roll_widget_ref.rebuild_scene();
                      });
 
@@ -196,21 +227,21 @@ public:
                                 const PianoRollNoteKind kind) -> void {
           add_replace_table(song_menu_bar_ref, song_widget_ref,
                             kind == PianoRollNoteKind::pitched_kind
-                                ? pitched_note_type
-                                : unpitched_note_type,
+                                ? RowType::pitched_note_type
+                                : RowType::unpitched_note_type,
                             chord_number, piano_roll_widget_ref, note_number);
         };
 
     connect_piano_roll_playhead(piano_roll_widget, *this, song_widget,
                                 song_menu_bar.play_menu);
 
-    add_replace_table(song_menu_bar, song_widget, pitched_voice_type, -1,
+    add_replace_table(song_menu_bar, song_widget, RowType::pitched_voice_type, -1,
                       piano_roll_widget);
-    add_insert_row(song_widget, 0, pitched_voice_type);
-    add_replace_table(song_menu_bar, song_widget, unpitched_voice_type, -1,
+    add_insert_row(song_widget, 0, RowType::pitched_voice_type);
+    add_replace_table(song_menu_bar, song_widget, RowType::unpitched_voice_type, -1,
                       piano_roll_widget);
-    add_insert_row(song_widget, 0, unpitched_voice_type);
-    add_replace_table(song_menu_bar, song_widget, chord_type, -1,
+    add_insert_row(song_widget, 0, RowType::unpitched_voice_type);
+    add_replace_table(song_menu_bar, song_widget, RowType::chord_type, -1,
                       piano_roll_widget);
     clear_and_clean(undo_stack);
   };
@@ -244,13 +275,13 @@ inline void set_up() {
     QApplication::setWindowIcon(QIcon(pixmap));
   }
 
-  QMetaType::registerConverter<Rational, QString>([](const Rational &rational) {
+  QMetaType::registerConverter<Rational, QString>([](const Rational &rational) -> auto {
     QString result;
     QTextStream stream(&result);
     write_rational(stream, rational);
     return result;
   });
-  QMetaType::registerConverter<Interval, QString>([](const Interval &interval) {
+  QMetaType::registerConverter<Interval, QString>([](const Interval &interval) -> auto {
     const auto octave = interval.octave;
 
     QString result;

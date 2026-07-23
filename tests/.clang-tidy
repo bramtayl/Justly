@@ -1,0 +1,4 @@
+InheritParentConfig: true
+Checks: >
+  -cppcoreguidelines-avoid-magic-numbers,
+  -readability-magic-numbers

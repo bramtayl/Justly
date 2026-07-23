@@ -1,6 +1,11 @@
 #pragma once
 
+#include <libxml/xmlschemas.h>
+
+#include "other/helpers.hpp"
 #include "xml/XMLParserContext.hpp"
+
+struct _xmlSchema;
 
 class XMLSchema {
 public:

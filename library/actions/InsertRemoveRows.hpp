@@ -1,8 +1,12 @@
 #pragma once
 
+#include <QtCore/QList>
 #include <QtGui/QUndoStack>
+#include <utility>
 
-#include "models/RowsModel.hpp"
+#include "rows/Row.hpp"
+
+template <RowInterface SubRow> struct RowsModel;
 
 template <RowInterface SubRow>
 static void

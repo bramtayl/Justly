@@ -1,6 +1,16 @@
 #pragma once
 
+#include <libxml/parser.h>
+#include <QtCore/QString>
+#include <QtCore/QTypeInfo>
+#include <QtCore/QVariant>
+#include <QtCore/QtAssert>
+#include <string>
+
+#include "cell_types/Rational.hpp"
 #include "column_numbers/UnpitchedVoiceColumn.hpp"
+#include "other/helpers.hpp"
+#include "rows/Row.hpp"
 #include "rows/Voice.hpp"
 
 static const auto DEFAULT_MIDI_NUMBER = 57;
@@ -49,18 +59,18 @@ struct UnpitchedVoice : Voice {
   };
 
   [[nodiscard]] static auto get_number_of_columns() -> int {
-    return number_of_unpitched_voice_columns;
+    return static_cast<int>(UnpitchedVoiceColumn::number_of_unpitched_voice_columns);
   };
 
   [[nodiscard]] static auto get_column_name(int column_number) {
     switch (column_number) {
-    case unpitched_voice_name_column:
+    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column):
       return "Name";
-    case unpitched_voice_percussion_set_column:
+    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_percussion_set_column):
       return "Percussion set";
-    case unpitched_voice_midi_number_column:
+    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_midi_number_column):
       return "MIDI number";
-    case unpitched_voice_velocity_ratio_column:
+    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column):
       return "Velocity ratio";
     default:
       Q_ASSERT(false);
@@ -79,13 +89,13 @@ struct UnpitchedVoice : Voice {
   [[nodiscard]] auto
   get_data(const int column_number) const -> QVariant override {
     switch (column_number) {
-    case unpitched_voice_name_column:
+    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column):
       return name;
-    case unpitched_voice_percussion_set_column:
+    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_percussion_set_column):
       return program;
-    case unpitched_voice_midi_number_column:
+    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_midi_number_column):
       return QVariant::fromValue(midi_number);
-    case unpitched_voice_velocity_ratio_column:
+    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column):
       return QVariant::fromValue(velocity_ratio);
     default:
       Q_ASSERT(false);
@@ -95,16 +105,16 @@ struct UnpitchedVoice : Voice {
 
   void set_data(const int column_number, const QVariant &new_value) override {
     switch (column_number) {
-    case unpitched_voice_name_column:
+    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column):
       name = variant_to<QString>(new_value);
       break;
-    case unpitched_voice_percussion_set_column:
+    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_percussion_set_column):
       program = variant_to<QString>(new_value);
       break;
-    case unpitched_voice_midi_number_column:
+    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_midi_number_column):
       midi_number = variant_to<short>(new_value);
       break;
-    case unpitched_voice_velocity_ratio_column:
+    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column):
       velocity_ratio = variant_to<Rational>(new_value);
       break;
     default:
@@ -115,16 +125,16 @@ struct UnpitchedVoice : Voice {
   void copy_column_from(const UnpitchedVoice &template_row,
                         const int column_number) {
     switch (column_number) {
-    case unpitched_voice_name_column:
+    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column):
       name = template_row.name;
       break;
-    case unpitched_voice_percussion_set_column:
+    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_percussion_set_column):
       program = template_row.program;
       break;
-    case unpitched_voice_midi_number_column:
+    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_midi_number_column):
       midi_number = template_row.midi_number;
       break;
-    case unpitched_voice_velocity_ratio_column:
+    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column):
       velocity_ratio = template_row.velocity_ratio;
       break;
     default:
@@ -134,16 +144,16 @@ struct UnpitchedVoice : Voice {
 
   void column_to_xml(xmlNode &node, const int column_number) const override {
     switch (column_number) {
-    case unpitched_voice_name_column:
+    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column):
       maybe_add_qstring_to_xml(node, "name", name);
       break;
-    case unpitched_voice_percussion_set_column:
+    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_percussion_set_column):
       maybe_add_qstring_to_xml(node, "percussion_set_pointer", program);
       break;
-    case unpitched_voice_midi_number_column:
+    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_midi_number_column):
       set_xml_int(node, "midi_number", midi_number);
       break;
-    case unpitched_voice_velocity_ratio_column:
+    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column):
       maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
       break;
     default:

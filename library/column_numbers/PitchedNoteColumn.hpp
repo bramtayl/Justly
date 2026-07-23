@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-enum PitchedNoteColumn : std::uint8_t  {
+enum class PitchedNoteColumn : std::uint8_t {
   pitched_note_voice_number_column,
   pitched_note_interval_column,
   pitched_note_beats_column,

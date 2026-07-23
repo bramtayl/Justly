@@ -1,15 +1,22 @@
 #pragma once
 
+#include <fluidsynth.h>
+#include <QtCore/QList>
+#include <QtCore/QObject>
+#include <QtCore/QtAssert>
 #include <QtWidgets/QMessageBox>
 #include <thread>
 
 #include "cell_types/Program.hpp"
+#include "other/helpers.hpp"
 #include "sound/FluidDriver.hpp"
 #include "sound/FluidEvent.hpp"
 #include "sound/FluidSequencer.hpp"
 #include "sound/FluidSettings.hpp"
 #include "sound/FluidSynth.hpp"
 #include "sound/PlayState.hpp"
+
+class QWidget;
 
 static const auto NUMBER_OF_MIDI_CHANNELS = 64;
 
@@ -76,7 +83,7 @@ struct Player {
 
   double final_time = 0;
 
-  FluidSettings settings = []() {
+  FluidSettings settings = []() -> auto {
     FluidSettings result;
     const auto cores = std::thread::hardware_concurrency();
     set_fluid_int(result, "synth.midi-channels", NUMBER_OF_MIDI_CHANNELS);

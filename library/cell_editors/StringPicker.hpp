@@ -1,8 +1,16 @@
 #pragma once
 
+#include <QtCore/QList>
+#include <QtCore/QObject>
+#include <QtCore/QString>
 #include <QtCore/QStringListModel>
+#include <QtCore/QtAssert>
 #include <QtWidgets/QComboBox>
-#include <algorithm>
+#include <iterator>
+#include <ranges>
+#include <utility>
+
+class QWidget;
 
 struct StringPicker : public QComboBox {
   Q_OBJECT

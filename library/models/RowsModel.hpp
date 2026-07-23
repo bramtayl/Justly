@@ -1,9 +1,23 @@
 #pragma once
 
-#include <QtWidgets/QAbstractItemView>
+#include <libxml/parser.h>
+#include <QtCore/QAbstractItemModel>
+#include <QtCore/QFlags>
+#include <QtCore/QItemSelectionModel>
+#include <QtCore/QString>
+#include <QtCore/QTextStream>
+#include <QtCore/QVariant>
+#include <QtCore/Qt>
+#include <QtCore/QtAssert>
+#include <algorithm>
+#include <iterator>
+#include <utility>
 
-#include "other/Song.hpp"
+#include "other/helpers.hpp"
 #include "rows/Row.hpp"
+
+struct Song;
+template <typename T> class QList;
 
 [[nodiscard]] static inline auto
 get_number_of_rows(const QItemSelectionRange &range) {

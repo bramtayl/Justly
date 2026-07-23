@@ -1,9 +1,41 @@
 #pragma once
 
+#include <QtCore/QItemSelectionModel>
+#include <QtCore/QList>
+#include <QtCore/QMetaObject>
+#include <QtCore/QObject>
+#include <QtCore/QSize>
+#include <QtCore/QString>
+#include <QtCore/QTextStream>
+#include <QtCore/QTypeInfo>
+#include <QtCore/QtAssert>
+#include <QtCore/QtMinMax>
+#include <QtCore/QtSwap>
+#include <QtGui/QUndoStack>
+#include <QtWidgets/QBoxLayout>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QMessageBox>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QWidget>
+#include <cstdlib>
+#include <utility>
 
 #include "actions/SetCells.hpp"
+#include "cell_editors/IntervalEditor.hpp"
+#include "cell_types/Interval.hpp"
+#include "cell_types/Rational.hpp"
+#include "column_numbers/ChordColumn.hpp"
+#include "column_numbers/PitchedNoteColumn.hpp"
+#include "models/ChordsModel.hpp"
+#include "models/PitchedNotesModel.hpp"
+#include "models/RowsModel.hpp"
+#include "other/helpers.hpp"
+#include "rows/Chord.hpp"
+#include "rows/PitchedNote.hpp"
+#include "rows/RowType.hpp"
 #include "widgets/SwitchColumn.hpp"
+#include "widgets/SwitchDelegate.hpp"
+#include "widgets/SwitchTable.hpp"
 
 [[nodiscard]] static auto check_interval(QWidget &parent_widget,
                                          const Interval &interval) -> bool {
@@ -47,7 +79,7 @@ static void update_interval(QUndoStack &undo_stack, SwitchTable &switch_table,
 
   const auto current_row_type = switch_table.delegate.current_row_type;
   QUndoCommand *undo_command = nullptr;
-  if (current_row_type == chord_type) {
+  if (current_row_type == RowType::chord_type) {
     auto &chords_model = switch_table.chords_model;
     auto new_chords =
         copy_items(chords_model.get_rows(), first_row_number, number_of_rows);
@@ -59,9 +91,9 @@ static void update_interval(QUndoStack &undo_stack, SwitchTable &switch_table,
       chord.interval = new_interval;
     }
     undo_command = new SetCells( // NOLINT(cppcoreguidelines-owning-memory)
-        chords_model, first_row_number, number_of_rows, chord_interval_column,
-        chord_interval_column, std::move(new_chords));
-  } else if (current_row_type == pitched_note_type) {
+        chords_model, first_row_number, number_of_rows, static_cast<int>(ChordColumn::chord_interval_column),
+        static_cast<int>(ChordColumn::chord_interval_column), std::move(new_chords));
+  } else if (current_row_type == RowType::pitched_note_type) {
     auto &pitched_notes_model = switch_table.pitched_notes_model;
     auto new_pitched_notes = copy_items(pitched_notes_model.get_rows(),
                                         first_row_number, number_of_rows);
@@ -74,7 +106,7 @@ static void update_interval(QUndoStack &undo_stack, SwitchTable &switch_table,
     }
     undo_command = new SetCells( // NOLINT(cppcoreguidelines-owning-memory)
         pitched_notes_model, first_row_number, number_of_rows,
-        pitched_note_interval_column, pitched_note_interval_column,
+        static_cast<int>(PitchedNoteColumn::pitched_note_interval_column), static_cast<int>(PitchedNoteColumn::pitched_note_interval_column),
         std::move(new_pitched_notes));
   } else {
     Q_ASSERT(false);
@@ -110,13 +142,13 @@ struct IntervalRow : public QWidget {
     const auto &interval_ref = this->interval;
 
     QObject::connect(&minus_button, &QPushButton::released, this,
-                     [&undo_stack_ref, &switch_table_ref, &interval_ref]() {
+                     [&undo_stack_ref, &switch_table_ref, &interval_ref]() -> auto {
                        update_interval(undo_stack_ref, switch_table_ref,
                                        Interval() / interval_ref);
                      });
 
     QObject::connect(&plus_button, &QPushButton::released, this,
-                     [&undo_stack_ref, &switch_table_ref, &interval_ref]() {
+                     [&undo_stack_ref, &switch_table_ref, &interval_ref]() -> auto {
                        update_interval(undo_stack_ref, switch_table_ref,
                                        interval_ref);
                      });

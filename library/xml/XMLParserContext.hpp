@@ -4,6 +4,8 @@
 
 #include "other/helpers.hpp"
 
+struct _xmlSchemaParserCtxt;
+
 class XMLParserContext {
 public:
   _xmlSchemaParserCtxt *const internal_pointer;

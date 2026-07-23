@@ -1,14 +1,59 @@
 #pragma once
 
+#include <QtCore/QAbstractItemModel>
+#include <QtCore/QFlags>
+#include <QtCore/QItemSelectionModel>
+#include <QtCore/QList>
+#include <QtCore/QMetaObject>
+#include <QtCore/QObject>
+#include <QtCore/QSize>
+#include <QtCore/QString>
+#include <QtCore/QTextStream>
+#include <QtCore/QtAssert>
+#include <QtCore/QtMinMax>
+#include <QtCore/QtSwap>
+#include <QtGui/QAction>
+#include <QtGui/QUndoStack>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QTableView>
 #include <algorithm>
 
+#include "actions/ChangeId.hpp"
 #include "cell_editors/IntervalEditor.hpp"
+#include "cell_editors/RationalEditor.hpp"
+#include "cell_editors/StringPicker.hpp"
+#include "cell_types/Program.hpp"
 #include "column_numbers/ChordColumn.hpp"
+#include "column_numbers/PitchedNoteColumn.hpp"
 #include "column_numbers/PitchedVoiceColumn.hpp"
+#include "column_numbers/UnpitchedNoteColumn.hpp"
 #include "column_numbers/UnpitchedVoiceColumn.hpp"
+#include "menus/EditMenu.hpp"
+#include "menus/FileMenu.hpp"
+#include "menus/InsertMenu.hpp"
+#include "menus/PasteMenu.hpp"
+#include "menus/PlayMenu.hpp"
 #include "menus/SongMenuBar.hpp"
+#include "menus/ViewMenu.hpp"
+#include "models/ChordsModel.hpp"
+#include "models/PitchedNotesModel.hpp"
+#include "models/PitchedVoicesModel.hpp"
+#include "models/RowsModel.hpp"
+#include "models/UnpitchedNotesModel.hpp"
+#include "models/UnpitchedVoicesModel.hpp"
+#include "other/Song.hpp"
+#include "other/helpers.hpp"
+#include "rows/Chord.hpp"
+#include "rows/PitchedVoice.hpp"
 #include "rows/RowType.hpp"
+#include "rows/UnpitchedVoice.hpp"
+#include "widgets/ControlsColumn.hpp"
+#include "widgets/IntervalRow.hpp"
 #include "widgets/PianoRollWidget.hpp"
+#include "widgets/SongWidget.hpp"
+#include "widgets/SwitchColumn.hpp"
+#include "widgets/SwitchDelegate.hpp"
+#include "widgets/SwitchTable.hpp"
 
 static auto get_string_picker_width(const QList<QString> &names) {
   StringPicker editor(nullptr, names);
@@ -24,13 +69,13 @@ static auto set_minimum_column_size(QTableView &view, const int column_number,
 }
 
 static auto get_is_voice(const RowType row_type) -> bool {
-  return row_type == pitched_voice_type || row_type == unpitched_voice_type;
+  return row_type == RowType::pitched_voice_type || row_type == RowType::unpitched_voice_type;
 }
 
 static auto get_voice_name_column(const RowType row_type) -> int {
-  return row_type == pitched_voice_type
-             ? static_cast<int>(pitched_voice_name_column)
-             : static_cast<int>(unpitched_voice_name_column);
+  return row_type == RowType::pitched_voice_type
+             ? static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column)
+             : static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column);
 }
 
 // mirrors the switch table's current selection onto the piano roll (which
@@ -40,7 +85,7 @@ static void update_piano_roll_selection(PianoRollWidget &piano_roll_widget,
                                         const SongWidget &song_widget) {
   const auto &switch_table = song_widget.switch_column.switch_table;
   if (get_selection_model(switch_table).selection().empty()) {
-    piano_roll_widget.update_selection(chord_type, -1, -1, 0);
+    piano_roll_widget.update_selection(RowType::chord_type, -1, -1, 0);
     return;
   }
   const auto &range = get_only_range(switch_table);
@@ -69,7 +114,7 @@ static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
       anything_selected &&
           !is_voice &&
           current_row_type !=
-              unpitched_note_type);
+              RowType::unpitched_note_type);
 
   song_menu_bar.play_menu.play_action.setEnabled(anything_selected);
 
@@ -79,7 +124,7 @@ static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
       is_voice &&
       std::ranges::any_of(
           selection, [name_column = get_voice_name_column(current_row_type)](
-                        const QItemSelectionRange &range) {
+                        const QItemSelectionRange &range) -> auto {
             return range.left() <= name_column && name_column <= range.right();
           });
   const auto can_copy_paste = anything_selected && !name_column_selected;
@@ -129,7 +174,7 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
   auto &next_chord_action = view_menu.next_chord_action;
 
   auto &chords = song_widget.song.chords;
-  auto to_chords = new_row_type == chord_type;
+  auto to_chords = new_row_type == RowType::chord_type;
 
   const auto old_row_type = switch_table.delegate.current_row_type;
   const auto row_type_changed = old_row_type != new_row_type;
@@ -144,7 +189,7 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
   QString label_text;
   QTextStream stream(&label_text);
 
-  if (new_row_type == chord_type) {
+  if (new_row_type == RowType::chord_type) {
     stream << SongMenuBar::tr("Chords");
 
     previous_chord_action.setEnabled(false);
@@ -153,16 +198,16 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
 
     set_model(switch_table, switch_table.chords_model);
 
-    set_minimum_column_size(switch_table, chord_interval_column,
+    set_minimum_column_size(switch_table, static_cast<int>(ChordColumn::chord_interval_column),
                             interval_width);
-    set_minimum_column_size(switch_table, chord_beats_column, rational_width);
-    set_minimum_column_size(switch_table, chord_velocity_ratio_column,
+    set_minimum_column_size(switch_table, static_cast<int>(ChordColumn::chord_beats_column), rational_width);
+    set_minimum_column_size(switch_table, static_cast<int>(ChordColumn::chord_velocity_ratio_column),
                             rational_width);
-    set_minimum_column_size(switch_table, chord_tempo_ratio_column,
+    set_minimum_column_size(switch_table, static_cast<int>(ChordColumn::chord_tempo_ratio_column),
                             rational_width);
-    switch_table.resizeColumnToContents(chord_pitched_notes_column);
-    switch_table.resizeColumnToContents(chord_unpitched_notes_column);
-    set_minimum_column_size(switch_table, chord_words_column, WORDS_WIDTH);
+    switch_table.resizeColumnToContents(static_cast<int>(ChordColumn::chord_pitched_notes_column));
+    switch_table.resizeColumnToContents(static_cast<int>(ChordColumn::chord_unpitched_notes_column));
+    set_minimum_column_size(switch_table, static_cast<int>(ChordColumn::chord_words_column), WORDS_WIDTH);
 
     if (old_parent_chord_number >= 0) {
       const auto chord_index =
@@ -175,45 +220,45 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
     }
 
     switch (old_row_type) {
-    case chord_type:
-    case pitched_voice_type:
-    case unpitched_voice_type:
+    case RowType::chord_type:
+    case RowType::pitched_voice_type:
+    case RowType::unpitched_voice_type:
       break;
-    case pitched_note_type:
+    case RowType::pitched_note_type:
       switch_table.pitched_notes_model.set_rows_pointer();
       break;
-    case unpitched_note_type:
+    case RowType::unpitched_note_type:
       switch_table.unpitched_notes_model.set_rows_pointer();
       break;
     }
-  } else if (new_row_type == pitched_voice_type) {
+  } else if (new_row_type == RowType::pitched_voice_type) {
     stream << SongMenuBar::tr("Pitched voices");
     previous_chord_action.setEnabled(false);
     next_chord_action.setEnabled(false);
     set_model(switch_table, switch_table.pitched_voices_model);
-    set_minimum_column_size(switch_table, pitched_voice_instrument_column,
+    set_minimum_column_size(switch_table, static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column),
                             instrument_width);
-    set_minimum_column_size(switch_table, pitched_voice_velocity_ratio_column,
+    set_minimum_column_size(switch_table, static_cast<int>(PitchedVoiceColumn::pitched_voice_velocity_ratio_column),
                             rational_width);
-    set_minimum_column_size(switch_table, pitched_voice_name_column,
+    set_minimum_column_size(switch_table, static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column),
                             WORDS_WIDTH);
-  } else if (new_row_type == unpitched_voice_type) {
+  } else if (new_row_type == RowType::unpitched_voice_type) {
     stream << SongMenuBar::tr("Unpitched voices");
     previous_chord_action.setEnabled(false);
     next_chord_action.setEnabled(false);
     set_model(switch_table, switch_table.unpitched_voices_model);
-    set_minimum_column_size(switch_table, unpitched_voice_percussion_set_column,
+    set_minimum_column_size(switch_table, static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_percussion_set_column),
                             percussion_set_width);
-    switch_table.resizeColumnToContents(unpitched_voice_midi_number_column);
-    set_minimum_column_size(switch_table, unpitched_voice_velocity_ratio_column,
+    switch_table.resizeColumnToContents(static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_midi_number_column));
+    set_minimum_column_size(switch_table, static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column),
                             rational_width);
-    set_minimum_column_size(switch_table, unpitched_voice_name_column,
+    set_minimum_column_size(switch_table, static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column),
                             WORDS_WIDTH);
   } else {
     auto &chord = chords[new_chord_number];
     previous_chord_action.setEnabled(new_chord_number > 0);
     next_chord_action.setEnabled(new_chord_number < chords.size() - 1);
-    if (new_row_type == pitched_note_type) {
+    if (new_row_type == RowType::pitched_note_type) {
       auto &new_model = switch_table.pitched_notes_model;
       stream << SongMenuBar::tr("Pitched notes for chord ")
              << new_chord_number + 1;
@@ -222,15 +267,15 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
         set_model(switch_table, new_model);
 
         set_minimum_column_size(
-            switch_table, pitched_note_voice_number_column,
+            switch_table, static_cast<int>(PitchedNoteColumn::pitched_note_voice_number_column),
             get_string_picker_width(get_names(song.pitched_voices)));
-        set_minimum_column_size(switch_table, pitched_note_interval_column,
+        set_minimum_column_size(switch_table, static_cast<int>(PitchedNoteColumn::pitched_note_interval_column),
                                 interval_width);
-        set_minimum_column_size(switch_table, pitched_note_beats_column,
+        set_minimum_column_size(switch_table, static_cast<int>(PitchedNoteColumn::pitched_note_beats_column),
                                 rational_width);
         set_minimum_column_size(
-            switch_table, pitched_note_velocity_ratio_column, rational_width);
-        set_minimum_column_size(switch_table, pitched_note_words_column,
+            switch_table, static_cast<int>(PitchedNoteColumn::pitched_note_velocity_ratio_column), rational_width);
+        set_minimum_column_size(switch_table, static_cast<int>(PitchedNoteColumn::pitched_note_words_column),
                                 WORDS_WIDTH);
       }
       if (new_note_number >= 0) {
@@ -241,7 +286,7 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                                     QItemSelectionModel::Rows);
         switch_table.scrollTo(note_index);
       }
-    } else if (new_row_type == unpitched_note_type) {
+    } else if (new_row_type == RowType::unpitched_note_type) {
       auto &new_model = switch_table.unpitched_notes_model;
       stream << SongMenuBar::tr("Unpitched notes for chord ")
              << new_chord_number + 1;
@@ -250,13 +295,13 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
         set_model(switch_table, new_model);
 
         set_minimum_column_size(
-            switch_table, unpitched_note_voice_number_column,
+            switch_table, static_cast<int>(UnpitchedNoteColumn::unpitched_note_voice_number_column),
             get_string_picker_width(get_names(song.unpitched_voices)));
-        set_minimum_column_size(switch_table, unpitched_note_beats_column,
+        set_minimum_column_size(switch_table, static_cast<int>(UnpitchedNoteColumn::unpitched_note_beats_column),
                                 rational_width);
         set_minimum_column_size(
-            switch_table, unpitched_note_velocity_ratio_column, rational_width);
-        set_minimum_column_size(switch_table, unpitched_note_words_column,
+            switch_table, static_cast<int>(UnpitchedNoteColumn::unpitched_note_velocity_ratio_column), rational_width);
+        set_minimum_column_size(switch_table, static_cast<int>(UnpitchedNoteColumn::unpitched_note_words_column),
                                 WORDS_WIDTH);
       }
       if (new_note_number >= 0) {
@@ -286,7 +331,7 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
   QObject::connect(
       &selection_model, &QItemSelectionModel::selectionChanged,
       &selection_model,
-      [&song_menu_bar, &song_widget, &selection_model, &piano_roll_widget]() {
+      [&song_menu_bar, &song_widget, &selection_model, &piano_roll_widget]() -> auto {
         update_actions(song_menu_bar, song_widget, selection_model);
         update_piano_roll_selection(piano_roll_widget, song_widget);
       });
@@ -318,7 +363,9 @@ struct ReplaceTable : public QUndoCommand {
         new_chord_number(new_chord_number_input),
         new_note_number(new_note_number_input){};
 
-  [[nodiscard]] auto id() const -> int override { return replace_table_id; }
+  [[nodiscard]] auto id() const -> int override {
+    return static_cast<int>(ChangeId::replace_table_id);
+  }
 
   [[nodiscard]] auto
   mergeWith(const QUndoCommand *const next_command_pointer) -> bool override {

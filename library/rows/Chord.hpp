@@ -1,9 +1,24 @@
 #pragma once
 
+#include <libxml/parser.h>
+#include <QtCore/QList>
+#include <QtCore/QString>
+#include <QtCore/QTypeInfo>
+#include <QtCore/QVariant>
+#include <QtCore/QtAssert>
+#include <QtCore/QtMinMax>
+#include <QtCore/QtSwap>
+#include <string>
+#include <utility>
+
+#include "cell_types/Interval.hpp"
+#include "cell_types/Rational.hpp"
 #include "column_numbers/ChordColumn.hpp"
+#include "other/helpers.hpp"
 #include "rows/PitchedNote.hpp"
 #include "rows/Row.hpp"
 #include "rows/UnpitchedNote.hpp"
+#include "sound/PlayState.hpp"
 
 struct Chord : public Row {
   Rational beats;
@@ -50,24 +65,24 @@ struct Chord : public Row {
   };
 
   [[nodiscard]] static auto get_number_of_columns() -> int {
-    return number_of_chord_columns;
+    return static_cast<int>(ChordColumn::number_of_chord_columns);
   };
 
   [[nodiscard]] static auto get_column_name(int column_number) {
     switch (column_number) {
-    case chord_interval_column:
+    case static_cast<int>(ChordColumn::chord_interval_column):
       return "Interval";
-    case chord_beats_column:
+    case static_cast<int>(ChordColumn::chord_beats_column):
       return "Beats";
-    case chord_velocity_ratio_column:
+    case static_cast<int>(ChordColumn::chord_velocity_ratio_column):
       return "Velocity ratio";
-    case chord_tempo_ratio_column:
+    case static_cast<int>(ChordColumn::chord_tempo_ratio_column):
       return "Tempo ratio";
-    case chord_words_column:
+    case static_cast<int>(ChordColumn::chord_words_column):
       return "Words";
-    case chord_pitched_notes_column:
+    case static_cast<int>(ChordColumn::chord_pitched_notes_column):
       return "Pitched notes";
-    case chord_unpitched_notes_column:
+    case static_cast<int>(ChordColumn::chord_unpitched_notes_column):
       return "Unpitched notes";
     default:
       Q_ASSERT(false);
@@ -80,26 +95,26 @@ struct Chord : public Row {
   }
 
   [[nodiscard]] static auto is_column_editable(int column_number) -> bool {
-    return column_number != chord_pitched_notes_column &&
-           column_number != chord_unpitched_notes_column;
+    return column_number != static_cast<int>(ChordColumn::chord_pitched_notes_column) &&
+           column_number != static_cast<int>(ChordColumn::chord_unpitched_notes_column);
   }
 
   [[nodiscard]] auto
   get_data(const int column_number) const -> QVariant override {
     switch (column_number) {
-    case chord_interval_column:
+    case static_cast<int>(ChordColumn::chord_interval_column):
       return QVariant::fromValue(interval);
-    case chord_beats_column:
+    case static_cast<int>(ChordColumn::chord_beats_column):
       return QVariant::fromValue(beats);
-    case chord_velocity_ratio_column:
+    case static_cast<int>(ChordColumn::chord_velocity_ratio_column):
       return QVariant::fromValue(velocity_ratio);
-    case chord_tempo_ratio_column:
+    case static_cast<int>(ChordColumn::chord_tempo_ratio_column):
       return QVariant::fromValue(tempo_ratio);
-    case chord_words_column:
+    case static_cast<int>(ChordColumn::chord_words_column):
       return words;
-    case chord_pitched_notes_column:
+    case static_cast<int>(ChordColumn::chord_pitched_notes_column):
       return pitched_notes.size();
-    case chord_unpitched_notes_column:
+    case static_cast<int>(ChordColumn::chord_unpitched_notes_column):
       return unpitched_notes.size();
     default:
       Q_ASSERT(false);
@@ -109,19 +124,19 @@ struct Chord : public Row {
 
   void set_data(const int column_number, const QVariant &new_value) override {
     switch (column_number) {
-    case chord_interval_column:
+    case static_cast<int>(ChordColumn::chord_interval_column):
       interval = variant_to<Interval>(new_value);
       break;
-    case chord_beats_column:
+    case static_cast<int>(ChordColumn::chord_beats_column):
       beats = variant_to<Rational>(new_value);
       break;
-    case chord_velocity_ratio_column:
+    case static_cast<int>(ChordColumn::chord_velocity_ratio_column):
       velocity_ratio = variant_to<Rational>(new_value);
       break;
-    case chord_tempo_ratio_column:
+    case static_cast<int>(ChordColumn::chord_tempo_ratio_column):
       tempo_ratio = variant_to<Rational>(new_value);
       break;
-    case chord_words_column:
+    case static_cast<int>(ChordColumn::chord_words_column):
       words = variant_to<QString>(new_value);
       break;
     default:
@@ -131,25 +146,25 @@ struct Chord : public Row {
 
   void copy_column_from(const Chord &template_row, const int column_number) {
     switch (column_number) {
-    case chord_interval_column:
+    case static_cast<int>(ChordColumn::chord_interval_column):
       interval = template_row.interval;
       break;
-    case chord_beats_column:
+    case static_cast<int>(ChordColumn::chord_beats_column):
       beats = template_row.beats;
       break;
-    case chord_velocity_ratio_column:
+    case static_cast<int>(ChordColumn::chord_velocity_ratio_column):
       velocity_ratio = template_row.velocity_ratio;
       break;
-    case chord_tempo_ratio_column:
+    case static_cast<int>(ChordColumn::chord_tempo_ratio_column):
       tempo_ratio = template_row.tempo_ratio;
       break;
-    case chord_words_column:
+    case static_cast<int>(ChordColumn::chord_words_column):
       words = template_row.words;
       break;
-    case chord_pitched_notes_column:
+    case static_cast<int>(ChordColumn::chord_pitched_notes_column):
       pitched_notes = template_row.pitched_notes;
       break;
-    case chord_unpitched_notes_column:
+    case static_cast<int>(ChordColumn::chord_unpitched_notes_column):
       unpitched_notes = template_row.unpitched_notes;
       break;
     default:
@@ -160,25 +175,25 @@ struct Chord : public Row {
   void column_to_xml(xmlNode &chord_node,
                      const int column_number) const override {
     switch (column_number) {
-    case chord_pitched_notes_column:
+    case static_cast<int>(ChordColumn::chord_pitched_notes_column):
       maybe_set_xml_rows(chord_node, "pitched_notes", pitched_notes);
       break;
-    case chord_unpitched_notes_column:
+    case static_cast<int>(ChordColumn::chord_unpitched_notes_column):
       maybe_set_xml_rows(chord_node, "unpitched_notes", unpitched_notes);
       break;
-    case chord_interval_column:
+    case static_cast<int>(ChordColumn::chord_interval_column):
       maybe_add_interval_to_xml(chord_node, "interval", interval);
       break;
-    case chord_beats_column:
+    case static_cast<int>(ChordColumn::chord_beats_column):
       maybe_add_rational_to_xml(chord_node, "beats", beats);
       break;
-    case chord_velocity_ratio_column:
+    case static_cast<int>(ChordColumn::chord_velocity_ratio_column):
       maybe_add_rational_to_xml(chord_node, "velocity_ratio", velocity_ratio);
       break;
-    case chord_tempo_ratio_column:
+    case static_cast<int>(ChordColumn::chord_tempo_ratio_column):
       maybe_add_rational_to_xml(chord_node, "tempo_ratio", tempo_ratio);
       break;
-    case chord_words_column:
+    case static_cast<int>(ChordColumn::chord_words_column):
       maybe_add_qstring_to_xml(chord_node, "words", words);
       break;
     default:
