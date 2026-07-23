@@ -39,8 +39,22 @@ static const auto PIANO_ROLL_DEFAULT_AXIS_Y = 0.0;
 static const auto PIANO_ROLL_UNPITCHED_LANE_GAP = 30.0;
 static const auto PIANO_ROLL_LEGEND_GAP = 10.0;
 static const auto PIANO_ROLL_LEGEND_SWATCH_SIZE = 10.0;
-static const auto PIANO_ROLL_TIME_AXIS_STEP_MS = 500.0;
+// ticks are re-spaced on every zoom change (see redraw_time_axis_ticks())
+// to keep roughly this many screen pixels between them, rather than a fixed
+// time interval -- otherwise zooming in would crowd ticks together and
+// zooming out would spread them so far apart that most of the timeline
+// carries no labels at all
+static const auto PIANO_ROLL_TARGET_TICK_PIXEL_SPACING = 80.0;
 static const auto PIANO_ROLL_MS_PER_SECOND = 1000.0;
+static const auto PIANO_ROLL_MS_PER_MINUTE = 60000.0;
+static const auto PIANO_ROLL_SECONDS_PER_MINUTE = 60LL;
+static const auto PIANO_ROLL_LABEL_DECIMAL_BASE = 10;
+// candidate tick-step multipliers, tried in increasing order against each
+// power-of-ten magnitude -- the classic "nice numbers" progression (1, 2, 5,
+// then roll over to the next magnitude's 1) that keeps chosen tick values
+// round (0.5s, 1s, 2s, 5s, 10s, ...) instead of arbitrary
+static const QList<double> PIANO_ROLL_NICE_STEP_MULTIPLIERS{1.0, 2.0, 5.0};
+static const auto PIANO_ROLL_NICE_STEP_ROLLOVER = 10.0;
 static const auto PIANO_ROLL_HIGHLIGHT_PEN_WIDTH = 1.5;
 static const auto PIANO_ROLL_MIN_TIME_ZOOM = 0.25;
 static const auto PIANO_ROLL_MAX_TIME_ZOOM = 8.0;
@@ -61,6 +75,54 @@ static const auto PIANO_ROLL_OTHER_VOICE_COLOR = QColor("#898781");
     return PIANO_ROLL_VOICE_COLORS.at(global_voice_index);
   }
   return PIANO_ROLL_OTHER_VOICE_COLOR;
+}
+
+// picks a "nice" (1/2/5 * 10^n) tick interval, in ms, close to the raw
+// interval that would give PIANO_ROLL_TARGET_TICK_PIXEL_SPACING at the
+// current zoom -- so ticks land on round numbers (0.5s, 1s, 2s, ...) rather
+// than an arbitrary value like 437ms
+[[nodiscard]] static auto choose_time_axis_step_ms(const double time_zoom_factor)
+    -> double {
+  const auto raw_step_ms = PIANO_ROLL_TARGET_TICK_PIXEL_SPACING /
+                           (PIANO_ROLL_PIXELS_PER_MS * time_zoom_factor);
+  const auto magnitude = std::pow(PIANO_ROLL_NICE_STEP_ROLLOVER,
+                                  std::floor(std::log10(raw_step_ms)));
+  const auto fraction = raw_step_ms / magnitude;
+  auto nice_fraction = PIANO_ROLL_NICE_STEP_ROLLOVER;
+  for (const auto multiplier : PIANO_ROLL_NICE_STEP_MULTIPLIERS) {
+    if (fraction <= multiplier) {
+      nice_fraction = multiplier;
+      break;
+    }
+  }
+  return nice_fraction * magnitude;
+}
+
+// formats a time-axis tick label in whichever unit best suits the current
+// tick spacing (step_ms) -- milliseconds when ticks are sub-second, seconds
+// (with a decimal only when the step itself needs one) once ticks are a
+// second or more apart, and minutes:seconds once they're a minute or more
+// apart -- so labels stay round and readable at every zoom level rather
+// than always being expressed in one fixed unit
+[[nodiscard]] static auto format_time_axis_label(const double time_ms,
+                                                 const double step_ms)
+    -> QString {
+  if (step_ms < PIANO_ROLL_MS_PER_SECOND) {
+    return QString::number(std::llround(time_ms)) + "ms";
+  }
+  if (step_ms < PIANO_ROLL_MS_PER_MINUTE) {
+    const auto has_sub_second_step =
+        std::fmod(step_ms, PIANO_ROLL_MS_PER_SECOND) != 0.0;
+    return QString::number(time_ms / PIANO_ROLL_MS_PER_SECOND, 'f',
+                           has_sub_second_step ? 1 : 0) +
+           "s";
+  }
+  const auto total_seconds =
+      std::llround(time_ms / PIANO_ROLL_MS_PER_SECOND);
+  const auto minutes = total_seconds / PIANO_ROLL_SECONDS_PER_MINUTE;
+  const auto seconds = total_seconds % PIANO_ROLL_SECONDS_PER_MINUTE;
+  return QString("%1:%2").arg(minutes).arg(
+      seconds, 2, PIANO_ROLL_LABEL_DECIMAL_BASE, QChar('0'));
 }
 
 struct PianoRollWidget : public QWidget {
@@ -93,14 +155,24 @@ struct PianoRollWidget : public QWidget {
   double playhead_end_ms = 0;
   bool playhead_active = false;
 
-  // rebuilt every rebuild_scene() call; each drawn note rect stores its index
-  // into this list (via QGraphicsItem::setData) so a click on the rect can be
-  // traced back to the chord/note it represents
   // scales only the main view's x axis (time), never its y axis (pitch) --
   // so the pitch axis stays visually fixed (and stays in lockstep with
   // axis_view, which is never zoomed) while the time axis expands/contracts
   double time_zoom_factor = 1.0;
 
+  // the inputs draw_time_axis() needs to redraw just the time axis' ticks
+  // and labels (via redraw_time_axis_ticks()) whenever the zoom changes,
+  // without re-running the full rebuild_scene()
+  double time_axis_max_time_ms = 0.0;
+  double time_axis_y = PIANO_ROLL_DEFAULT_AXIS_Y;
+  // the tick lines + labels currently on screen, so redraw_time_axis_ticks()
+  // can remove exactly those before drawing a fresh set at the new spacing,
+  // leaving the rest of the scene (notes, pitch axis, playhead) untouched
+  QList<QGraphicsItem *> time_axis_items;
+
+  // rebuilt every rebuild_scene() call; each drawn note rect stores its index
+  // into this list (via QGraphicsItem::setData) so a click on the rect can be
+  // traced back to the chord/note it represents
   QList<PianoRollNoteEvent> events;
   // parallel to events -- the actual drawn item for each event, so a table
   // selection can be traced forward to the bar(s) it should highlight
@@ -224,6 +296,10 @@ struct PianoRollWidget : public QWidget {
 
     scene.clear();
     note_items.clear();
+    // scene.clear() above already deleted these items -- just drop the now-
+    // dangling pointers so redraw_time_axis_ticks() doesn't try to remove
+    // them again when draw_time_axis() calls it below
+    time_axis_items.clear();
 
     const auto &song = song_widget.song;
     const auto &pitched_voices = song.pitched_voices;
@@ -377,6 +453,10 @@ struct PianoRollWidget : public QWidget {
     time_zoom_factor = std::clamp(new_zoom_factor, PIANO_ROLL_MIN_TIME_ZOOM,
                                   PIANO_ROLL_MAX_TIME_ZOOM);
     view.setTransform(QTransform::fromScale(time_zoom_factor, 1.0));
+    // the tick spacing (in ms) that keeps ticks ~evenly spaced on screen
+    // depends on the zoom factor, so every zoom change needs a fresh set of
+    // ticks/labels -- just the time axis, not a full rebuild_scene()
+    redraw_time_axis_ticks();
   }
 
   void zoom_in() { set_time_zoom(time_zoom_factor * PIANO_ROLL_TIME_ZOOM_STEP); }
@@ -540,31 +620,58 @@ struct PianoRollWidget : public QWidget {
     return axis_y;
   }
 
-  // draws a tick + seconds label every PIANO_ROLL_TIME_AXIS_STEP_MS along a
-  // horizontal axis line placed between the pitched notes above and the
-  // unpitched lanes below
+  // draws the horizontal axis line, placed between the pitched notes above
+  // and the unpitched lanes below; the line's endpoints are in scene
+  // coordinates and don't depend on zoom, so unlike the ticks/labels it's
+  // drawn once here rather than in redraw_time_axis_ticks()
   void draw_time_axis(const double max_time_ms, const double axis_y) {
+    time_axis_max_time_ms = max_time_ms;
+    time_axis_y = axis_y;
     scene.addLine(PIANO_ROLL_AXIS_X, axis_y,
                  max_time_ms * PIANO_ROLL_PIXELS_PER_MS, axis_y);
+    redraw_time_axis_ticks();
+  }
 
+  // (re)draws the time axis' ticks and labels, spaced (in ms) so they land
+  // roughly PIANO_ROLL_TARGET_TICK_PIXEL_SPACING apart on screen at the
+  // current time_zoom_factor -- called from draw_time_axis() for the
+  // initial build and from set_time_zoom() whenever the zoom changes, since
+  // a spacing that looked right before a zoom change would otherwise crowd
+  // together (zooming in) or spread too far apart (zooming out)
+  void redraw_time_axis_ticks() {
+    for (auto *const item_pointer : time_axis_items) {
+      scene.removeItem(item_pointer);
+      delete item_pointer;
+    }
+    time_axis_items.clear();
+
+    const auto step_ms = choose_time_axis_step_ms(time_zoom_factor);
     for (auto step_number = 0;
-        step_number * PIANO_ROLL_TIME_AXIS_STEP_MS <= max_time_ms;
+        step_number * step_ms <= time_axis_max_time_ms;
         step_number = step_number + 1) {
-      const auto time_ms = step_number * PIANO_ROLL_TIME_AXIS_STEP_MS;
+      const auto time_ms = step_number * step_ms;
       const auto tick_x = time_ms * PIANO_ROLL_PIXELS_PER_MS;
-      scene.addLine(tick_x, axis_y, tick_x,
-                   axis_y + PIANO_ROLL_AXIS_TICK_LENGTH);
+      time_axis_items.push_back(
+          scene.addLine(tick_x, time_axis_y, tick_x,
+                       time_axis_y + PIANO_ROLL_AXIS_TICK_LENGTH));
 
-      auto &label = get_reference(scene.addSimpleText(
-          QString::number(time_ms / PIANO_ROLL_MS_PER_SECOND, 'f', 1) + "s"));
-      // centering would push the "0.0s" label partway into negative x --
+      auto &label = get_reference(
+          scene.addSimpleText(format_time_axis_label(time_ms, step_ms)));
+      // keeps the label's on-screen size constant across zoom levels --
+      // without this, since the label lives in the same scene as the notes
+      // it gets rendered through the main view's time-axis-only x scale
+      // (see set_time_zoom()), stretching or squeezing its glyphs
+      // horizontally instead of just moving the ticks further apart
+      label.setFlag(QGraphicsItem::ItemIgnoresTransformations);
+      // centering would push the "0ms"/"0s" label partway into negative x --
       // the pitch axis' column, which the main view can no longer scroll
       // into (see the view.setSceneRect() call in rebuild_scene()) -- so
       // clamp every label's left edge to the axis line instead
       label.setPos(std::max(tick_x - (label.boundingRect().width() / 2),
                             PIANO_ROLL_AXIS_X),
-                  axis_y + PIANO_ROLL_AXIS_TICK_LENGTH +
+                  time_axis_y + PIANO_ROLL_AXIS_TICK_LENGTH +
                       PIANO_ROLL_AXIS_LABEL_GAP);
+      time_axis_items.push_back(&label);
     }
   }
 
