@@ -63,7 +63,15 @@ struct PianoRollWidget : public QWidget {
 
   QGraphicsScene &scene = *(new QGraphicsScene(this));
   QGraphicsView &view = *(new QGraphicsView(&scene, this));
+  // a second, fixed-width view onto the same scene, locked so it only ever
+  // shows the pitch axis' column (x <= PIANO_ROLL_AXIS_X); its vertical
+  // scroll is kept in lockstep with the main view's (see the scrollbar
+  // connections in the constructor), so the pitch labels stay pinned to the
+  // left edge -- and lined up with their notes -- no matter how far the main
+  // view is scrolled horizontally
+  QGraphicsView &axis_view = *(new QGraphicsView(&scene, this));
   QBoxLayout &column_layout = *(new QVBoxLayout(this));
+  QBoxLayout &row_layout = *(new QHBoxLayout());
   QGraphicsLineItem &playhead_item = *(new QGraphicsLineItem);
 
   QTimer &playhead_timer = *(new QTimer(this));
@@ -103,7 +111,30 @@ struct PianoRollWidget : public QWidget {
     // (or shorter, down to this floor) via the splitter
     setMinimumHeight(PIANO_ROLL_MIN_HEIGHT);
 
-    column_layout.addWidget(&view);
+    row_layout.setSpacing(0);
+    row_layout.addWidget(&axis_view);
+    row_layout.addWidget(&view);
+    column_layout.addLayout(&row_layout);
+
+    // axis_view is a read-only mirror of the main view's vertical position
+    // -- it never scrolls (or gets scrolled) on its own, horizontally or
+    // vertically; see the scrollbar connections below for how it tracks
+    // the main view instead
+    axis_view.setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    axis_view.setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    axis_view.setFocusPolicy(Qt::NoFocus);
+
+    QObject::connect(view.verticalScrollBar(), &QScrollBar::valueChanged,
+                     this, [this](const int value) {
+                       axis_view.verticalScrollBar()->setValue(value);
+                     });
+    // kept symmetric so that scrolling with the mouse wheel while hovered
+    // over the axis column (still possible despite the hidden scrollbar)
+    // moves the main view along with it, rather than desyncing the two
+    QObject::connect(axis_view.verticalScrollBar(), &QScrollBar::valueChanged,
+                     this, [this](const int value) {
+                       view.verticalScrollBar()->setValue(value);
+                     });
 
     playhead_item.setPen(QPen(Qt::red));
     playhead_item.setZValue(1);
@@ -259,6 +290,25 @@ struct PianoRollWidget : public QWidget {
     scene.setSceneRect(scene.itemsBoundingRect().adjusted(
         -PIANO_ROLL_SCENE_MARGIN, -PIANO_ROLL_SCENE_MARGIN,
         PIANO_ROLL_SCENE_MARGIN, PIANO_ROLL_SCENE_MARGIN));
+
+    // only the pitch axis' ticks/labels have negative x, so the scene rect's
+    // left edge is exactly the widest label's left edge; giving axis_view
+    // that same rect (but overriding its own, view-local scene rect rather
+    // than the shared QGraphicsScene's) as both its fixed width and its
+    // scrollable area keeps it permanently framed on just the axis column,
+    // with zero horizontal scroll range
+    const auto &scene_rect = scene.sceneRect();
+    const auto axis_column_width = PIANO_ROLL_AXIS_X - scene_rect.left();
+    axis_view.setFixedWidth(static_cast<int>(std::ceil(axis_column_width)) +
+                            (2 * axis_view.frameWidth()));
+    axis_view.setSceneRect(scene_rect.left(), scene_rect.top(),
+                           axis_column_width, scene_rect.height());
+    // and the mirror image for the main view: without this, scrolling it
+    // all the way left would re-reveal the same axis labels a second time
+    // (axis_view already owns that column), doubling them up
+    view.setSceneRect(PIANO_ROLL_AXIS_X, scene_rect.top(),
+                      scene_rect.right() - PIANO_ROLL_AXIS_X,
+                      scene_rect.height());
 
     apply_selection_highlight();
   }
@@ -436,7 +486,12 @@ struct PianoRollWidget : public QWidget {
 
       auto &label = get_reference(scene.addSimpleText(
           QString::number(time_ms / PIANO_ROLL_MS_PER_SECOND, 'f', 1) + "s"));
-      label.setPos(tick_x - (label.boundingRect().width() / 2),
+      // centering would push the "0.0s" label partway into negative x --
+      // the pitch axis' column, which the main view can no longer scroll
+      // into (see the view.setSceneRect() call in rebuild_scene()) -- so
+      // clamp every label's left edge to the axis line instead
+      label.setPos(std::max(tick_x - (label.boundingRect().width() / 2),
+                            PIANO_ROLL_AXIS_X),
                   axis_y + PIANO_ROLL_AXIS_TICK_LENGTH +
                       PIANO_ROLL_AXIS_LABEL_GAP);
     }
