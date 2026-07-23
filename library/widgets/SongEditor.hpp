@@ -18,23 +18,26 @@ static void add_replace_table(SongMenuBar &song_menu_bar,
                               SongWidget &song_widget,
                               const RowType new_row_type,
                               const int new_chord_number,
+                              PianoRollWidget &piano_roll_widget,
                               const int new_note_number = -1) {
   song_widget.undo_stack.push(
       new ReplaceTable( // NOLINT(cppcoreguidelines-owning-memory)
-          song_menu_bar, song_widget, new_row_type, new_chord_number,
-          new_note_number));
+          song_menu_bar, song_widget, piano_roll_widget, new_row_type,
+          new_chord_number, new_note_number));
 }
 
 // wires an action that just switches to a fixed table (voices/chords)
 static void connect_switch_to_table(QAction &action, QObject &context,
                                     SongMenuBar &song_menu_bar,
                                     SongWidget &song_widget,
+                                    PianoRollWidget &piano_roll_widget,
                                     const RowType row_type) {
-  QObject::connect(&action, &QAction::triggered, &context,
-                   [&song_menu_bar, &song_widget, row_type]() {
-                     add_replace_table(song_menu_bar, song_widget, row_type,
-                                       -1);
-                   });
+  QObject::connect(
+      &action, &QAction::triggered, &context,
+      [&song_menu_bar, &song_widget, &piano_roll_widget, row_type]() {
+        add_replace_table(song_menu_bar, song_widget, row_type, -1,
+                          piano_roll_widget);
+      });
 }
 
 // wires the previous/next chord actions, which stay on the current table
@@ -42,14 +45,16 @@ static void connect_switch_to_table(QAction &action, QObject &context,
 static void connect_navigate_chord_action(QAction &action, QObject &context,
                                           SongMenuBar &song_menu_bar,
                                           SongWidget &song_widget,
+                                          PianoRollWidget &piano_roll_widget,
                                           const int delta) {
   QObject::connect(
       &action, &QAction::triggered, &context,
-      [&song_menu_bar, &song_widget, delta]() {
+      [&song_menu_bar, &song_widget, &piano_roll_widget, delta]() {
         const auto &switch_table = song_widget.switch_column.switch_table;
         add_replace_table(song_menu_bar, song_widget,
                           switch_table.delegate.current_row_type,
-                          get_parent_chord_number(switch_table) + delta);
+                          get_parent_chord_number(switch_table) + delta,
+                          piano_roll_widget);
       });
 }
 
@@ -106,6 +111,7 @@ public:
 
     auto &song_menu_bar_ref = this->song_menu_bar;
     auto &song_widget_ref = this->song_widget;
+    auto &piano_roll_widget_ref = this->piano_roll_widget;
 
     auto &switch_table = song_widget.switch_column.switch_table;
     auto &undo_stack = song_widget.undo_stack;
@@ -122,17 +128,19 @@ public:
                  minimumSizeHint().height()));
 
     connect_switch_to_table(song_menu_bar.view_menu.back_to_chords_action,
-                            *this, song_menu_bar, song_widget, chord_type);
+                            *this, song_menu_bar, song_widget,
+                            piano_roll_widget, chord_type);
     connect_switch_to_table(song_menu_bar.view_menu.edit_pitched_voices_action,
                             *this, song_menu_bar, song_widget,
-                            pitched_voice_type);
+                            piano_roll_widget, pitched_voice_type);
     connect_switch_to_table(
         song_menu_bar.view_menu.edit_unpitched_voices_action, *this,
-        song_menu_bar, song_widget, unpitched_voice_type);
+        song_menu_bar, song_widget, piano_roll_widget, unpitched_voice_type);
 
     QObject::connect(
         &switch_table, &QAbstractItemView::doubleClicked, this,
-        [&song_menu_bar_ref, &song_widget_ref](const QModelIndex &index) {
+        [&song_menu_bar_ref, &song_widget_ref,
+        &piano_roll_widget_ref](const QModelIndex &index) {
           if (song_widget_ref.switch_column.switch_table.delegate
                   .current_row_type == chord_type) {
             const auto column = index.column();
@@ -141,15 +149,17 @@ public:
               add_replace_table(
                   song_menu_bar_ref, song_widget_ref,
                   (is_pitched ? pitched_note_type : unpitched_note_type),
-                  index.row());
+                  index.row(), piano_roll_widget_ref);
             }
           }
         });
 
     connect_navigate_chord_action(song_menu_bar.view_menu.previous_chord_action,
-                                  *this, song_menu_bar, song_widget, -1);
+                                  *this, song_menu_bar, song_widget,
+                                  piano_roll_widget, -1);
     connect_navigate_chord_action(song_menu_bar.view_menu.next_chord_action,
-                                  *this, song_menu_bar, song_widget, 1);
+                                  *this, song_menu_bar, song_widget,
+                                  piano_roll_widget, 1);
 
     piano_roll_dock.setWidget(&piano_roll_widget);
     addDockWidget(Qt::BottomDockWidgetArea, &piano_roll_dock);
@@ -161,7 +171,6 @@ public:
     QObject::connect(&piano_roll_dock, &QDockWidget::visibilityChanged,
                      &show_piano_roll_action, &QAction::setChecked);
 
-    auto &piano_roll_widget_ref = piano_roll_widget;
     QObject::connect(&undo_stack, &QUndoStack::indexChanged, this,
                      [&piano_roll_widget_ref]() {
                        piano_roll_widget_ref.rebuild_scene();
@@ -171,25 +180,27 @@ public:
     // notes table for its chord, scrolled to and highlighting that note --
     // mirroring the chords table's own double-click-into-notes behavior
     piano_roll_widget.note_double_clicked =
-        [&song_menu_bar_ref, &song_widget_ref](const int chord_number,
-                                              const int note_number,
-                                              const PianoRollNoteKind kind)
-        -> void {
+        [&song_menu_bar_ref, &song_widget_ref,
+        &piano_roll_widget_ref](const int chord_number, const int note_number,
+                                const PianoRollNoteKind kind) -> void {
           add_replace_table(song_menu_bar_ref, song_widget_ref,
                             kind == PianoRollNoteKind::pitched_kind
                                 ? pitched_note_type
                                 : unpitched_note_type,
-                            chord_number, note_number);
+                            chord_number, piano_roll_widget_ref, note_number);
         };
 
     connect_piano_roll_playhead(piano_roll_widget, *this, song_widget,
                                 song_menu_bar.play_menu);
 
-    add_replace_table(song_menu_bar, song_widget, pitched_voice_type, -1);
+    add_replace_table(song_menu_bar, song_widget, pitched_voice_type, -1,
+                      piano_roll_widget);
     add_insert_row(song_widget, 0, pitched_voice_type);
-    add_replace_table(song_menu_bar, song_widget, unpitched_voice_type, -1);
+    add_replace_table(song_menu_bar, song_widget, unpitched_voice_type, -1,
+                      piano_roll_widget);
     add_insert_row(song_widget, 0, unpitched_voice_type);
-    add_replace_table(song_menu_bar, song_widget, chord_type, -1);
+    add_replace_table(song_menu_bar, song_widget, chord_type, -1,
+                      piano_roll_widget);
     clear_and_clean(undo_stack);
   };
   void closeEvent(QCloseEvent *close_event_pointer) override {

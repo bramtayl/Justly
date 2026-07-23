@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "other/Song.hpp"
+#include "rows/RowType.hpp"
 
 enum class PianoRollNoteKind : std::uint8_t { pitched_kind, unpitched_kind };
 
@@ -111,4 +112,46 @@ append_piano_roll_events(QList<PianoRollNoteEvent> &events,
     end_ms = std::max(end_ms, event.start_time_ms + event.duration_ms);
   }
   return {baseline_ms, end_ms};
+}
+
+// mirrors the filtering in get_piano_roll_time_bounds, but returns every
+// matching event's index rather than just the overall time bounds, so the
+// piano roll can highlight exactly the notes a table selection corresponds
+// to; a chord-row selection matches every note in the selected chords, a
+// note-row selection matches only same-kind notes at those row numbers
+// within their one parent chord. Voice-row selections (and no selection at
+// all, encoded as number_of_rows == 0) have no timeline position and always
+// match nothing.
+[[nodiscard]] static auto get_selected_piano_roll_event_indices(
+    const QList<PianoRollNoteEvent> &events, const RowType selection_row_type,
+    const int selection_chord_number, const int selection_first_row_number,
+    const int selection_number_of_rows) -> QList<int> {
+  QList<int> selected_indices;
+  const auto is_chord_selection = selection_row_type == chord_type;
+  const auto is_note_selection = selection_row_type == pitched_note_type ||
+                                 selection_row_type == unpitched_note_type;
+  if (!is_chord_selection && !is_note_selection) {
+    return selected_indices;
+  }
+  const auto kind_filter = selection_row_type == pitched_note_type
+                               ? PianoRollNoteKind::pitched_kind
+                               : PianoRollNoteKind::unpitched_kind;
+  for (auto event_index = 0; event_index < events.size();
+      event_index = event_index + 1) {
+    const auto &event = events.at(event_index);
+    if (is_chord_selection) {
+      if (event.chord_number >= selection_first_row_number &&
+         event.chord_number <
+             selection_first_row_number + selection_number_of_rows) {
+        selected_indices.push_back(event_index);
+      }
+    } else if (event.chord_number == selection_chord_number &&
+              event.kind == kind_filter &&
+              event.note_number >= selection_first_row_number &&
+              event.note_number <
+                  selection_first_row_number + selection_number_of_rows) {
+      selected_indices.push_back(event_index);
+    }
+  }
+  return selected_indices;
 }

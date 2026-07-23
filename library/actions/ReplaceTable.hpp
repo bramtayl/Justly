@@ -8,6 +8,7 @@
 #include "column_numbers/UnpitchedVoiceColumn.hpp"
 #include "menus/SongMenuBar.hpp"
 #include "rows/RowType.hpp"
+#include "widgets/PianoRollWidget.hpp"
 
 static auto get_string_picker_width(const QList<QString> &names) {
   StringPicker editor(nullptr, names);
@@ -30,6 +31,22 @@ static auto get_voice_name_column(const RowType row_type) -> int {
   return row_type == pitched_voice_type
              ? static_cast<int>(pitched_voice_name_column)
              : static_cast<int>(unpitched_voice_name_column);
+}
+
+// mirrors the switch table's current selection onto the piano roll (which
+// note bar(s) get highlighted, where the cursor jumps to); an empty
+// selection clears both, since get_only_range() asserts on an empty range
+static void update_piano_roll_selection(PianoRollWidget &piano_roll_widget,
+                                        const SongWidget &song_widget) {
+  const auto &switch_table = song_widget.switch_column.switch_table;
+  if (get_selection_model(switch_table).selection().empty()) {
+    piano_roll_widget.update_selection(chord_type, -1, -1, 0);
+    return;
+  }
+  const auto &range = get_only_range(switch_table);
+  piano_roll_widget.update_selection(switch_table.delegate.current_row_type,
+                                     get_parent_chord_number(switch_table),
+                                     range.top(), get_number_of_rows(range));
 }
 
 static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
@@ -101,6 +118,7 @@ static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
 static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                           const RowType new_row_type,
                           const int new_chord_number,
+                          PianoRollWidget &piano_roll_widget,
                           const int new_note_number = -1) {
   auto &song = song_widget.song;
   auto &switch_column = song_widget.switch_column;
@@ -264,16 +282,20 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
   switch_table.delegate.current_row_type = new_row_type;
   auto &selection_model = get_selection_model(switch_table);
   update_actions(song_menu_bar, song_widget, selection_model);
+  update_piano_roll_selection(piano_roll_widget, song_widget);
   QObject::connect(
       &selection_model, &QItemSelectionModel::selectionChanged,
-      &selection_model, [&song_menu_bar, &song_widget, &selection_model]() {
+      &selection_model,
+      [&song_menu_bar, &song_widget, &selection_model, &piano_roll_widget]() {
         update_actions(song_menu_bar, song_widget, selection_model);
+        update_piano_roll_selection(piano_roll_widget, song_widget);
       });
 }
 
 struct ReplaceTable : public QUndoCommand {
   SongMenuBar &song_menu_bar;
   SongWidget &song_widget;
+  PianoRollWidget &piano_roll_widget;
   const RowType old_row_type;
   const int old_chord_number;
   RowType new_row_type;
@@ -282,10 +304,12 @@ struct ReplaceTable : public QUndoCommand {
 
   explicit ReplaceTable(SongMenuBar &song_menu_bar_input,
                         SongWidget &song_widget_input,
+                        PianoRollWidget &piano_roll_widget_input,
                         const RowType new_row_type_input,
                         const int new_chord_number_input,
                         const int new_note_number_input = -1)
       : song_menu_bar(song_menu_bar_input), song_widget(song_widget_input),
+        piano_roll_widget(piano_roll_widget_input),
         old_row_type(
             song_widget.switch_column.switch_table.delegate.current_row_type),
         old_chord_number(
@@ -314,11 +338,12 @@ struct ReplaceTable : public QUndoCommand {
   }
 
   void undo() override {
-    replace_table(song_menu_bar, song_widget, old_row_type, old_chord_number);
+    replace_table(song_menu_bar, song_widget, old_row_type, old_chord_number,
+                 piano_roll_widget);
   }
 
   void redo() override {
     replace_table(song_menu_bar, song_widget, new_row_type, new_chord_number,
-                 new_note_number);
+                 piano_roll_widget, new_note_number);
   }
 };

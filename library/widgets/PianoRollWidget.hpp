@@ -19,6 +19,7 @@
 #include <limits>
 
 #include "other/PianoRoll.hpp"
+#include "rows/RowType.hpp"
 #include "widgets/SongWidget.hpp"
 
 static const auto PIANO_ROLL_PIXELS_PER_MS = 0.1;
@@ -38,6 +39,7 @@ static const auto PIANO_ROLL_LEGEND_GAP = 10.0;
 static const auto PIANO_ROLL_LEGEND_SWATCH_SIZE = 10.0;
 static const auto PIANO_ROLL_TIME_AXIS_STEP_MS = 500.0;
 static const auto PIANO_ROLL_MS_PER_SECOND = 1000.0;
+static const auto PIANO_ROLL_HIGHLIGHT_PEN_WIDTH = 1.5;
 
 // fixed categorical order (never cycled) -- a voice beyond the 8th falls
 // back to PIANO_ROLL_OTHER_VOICE_COLOR rather than reusing an earlier hue
@@ -74,6 +76,18 @@ struct PianoRollWidget : public QWidget {
   // into this list (via QGraphicsItem::setData) so a click on the rect can be
   // traced back to the chord/note it represents
   QList<PianoRollNoteEvent> events;
+  // parallel to events -- the actual drawn item for each event, so a table
+  // selection can be traced forward to the bar(s) it should highlight
+  QList<QGraphicsRectItem *> note_items;
+
+  // the switch table's current selection, mirrored here by SongEditor
+  // (via update_selection()) every time it changes, so rebuild_scene() can
+  // reapply the same highlight/cursor after redrawing a fresh set of items.
+  // number_of_rows == 0 means nothing is selected (the default at startup)
+  RowType selection_row_type = chord_type;
+  int selection_chord_number = -1;
+  int selection_first_row_number = -1;
+  int selection_number_of_rows = 0;
 
   // set from outside (SongEditor) once it has access to the song menu bar
   // and song widget needed to switch tables; left empty in contexts (e.g.
@@ -133,6 +147,7 @@ struct PianoRollWidget : public QWidget {
     const auto was_visible = playhead_item.isVisible();
 
     scene.clear();
+    note_items.clear();
 
     const auto &song = song_widget.song;
     const auto &pitched_voices = song.pitched_voices;
@@ -229,6 +244,7 @@ struct PianoRollWidget : public QWidget {
       // lets the double-click event filter trace a clicked rect back to the
       // PianoRollNoteEvent (and thus chord/note) it represents
       note_item.setData(0, event_index);
+      note_items.push_back(&note_item);
     }
 
     draw_legend(pitched_voices, unpitched_voices,
@@ -243,6 +259,94 @@ struct PianoRollWidget : public QWidget {
     scene.setSceneRect(scene.itemsBoundingRect().adjusted(
         -PIANO_ROLL_SCENE_MARGIN, -PIANO_ROLL_SCENE_MARGIN,
         PIANO_ROLL_SCENE_MARGIN, PIANO_ROLL_SCENE_MARGIN));
+
+    apply_selection_highlight();
+  }
+
+  // called by SongEditor whenever the switch table's selection changes, so
+  // the piano roll can mirror it: highlight the corresponding note bar(s),
+  // jump the cursor to the selection's start, and scroll to keep both in
+  // view. number_of_rows == 0 clears the highlight and hides the cursor
+  // (used both for "nothing selected" and for voice-row selections, which
+  // have no timeline position).
+  void update_selection(const RowType row_type, const int chord_number,
+                        const int first_row_number,
+                        const int number_of_rows) {
+    selection_row_type = row_type;
+    selection_chord_number = chord_number;
+    selection_first_row_number = first_row_number;
+    selection_number_of_rows = number_of_rows;
+    apply_selection_highlight();
+  }
+
+  // reapplies the highlight/cursor implied by the current selection_* fields
+  // against the current note_items -- called both from update_selection()
+  // and from the end of rebuild_scene(), since rebuilding replaces every
+  // QGraphicsRectItem (and thus wipes any highlight pen set on the old ones)
+  void apply_selection_highlight() {
+    const auto selected_indices = get_selected_piano_roll_event_indices(
+        events, selection_row_type, selection_chord_number,
+        selection_first_row_number, selection_number_of_rows);
+
+    QList<bool> is_selected(static_cast<int>(events.size()), false);
+    for (const auto selected_index : selected_indices) {
+      is_selected[selected_index] = true;
+    }
+
+    QRectF highlighted_bounds;
+    for (auto event_index = 0; event_index < note_items.size();
+        event_index = event_index + 1) {
+      auto &note_item = get_reference(note_items.at(event_index));
+      if (is_selected.at(event_index)) {
+        note_item.setPen(QPen(Qt::black, PIANO_ROLL_HIGHLIGHT_PEN_WIDTH));
+        highlighted_bounds =
+            highlighted_bounds.united(note_item.sceneBoundingRect());
+      } else {
+        note_item.setPen(QPen(Qt::NoPen));
+      }
+    }
+
+    const auto is_chord_selection = selection_row_type == chord_type;
+    const auto is_note_selection =
+        selection_row_type == pitched_note_type ||
+        selection_row_type == unpitched_note_type;
+    const auto has_selection = (is_chord_selection || is_note_selection) &&
+                               selection_number_of_rows > 0;
+
+    if (!has_selection) {
+      if (!playhead_active) {
+        playhead_item.hide();
+      }
+      return;
+    }
+
+    // playback already owns the cursor line while it's running; don't yank
+    // it away from the moving playhead just because the table selection
+    // changed underneath it
+    if (!playhead_active) {
+      const auto baseline_ms =
+          get_piano_roll_time_bounds(
+              song_widget.song,
+              is_chord_selection ? selection_first_row_number
+                                 : selection_chord_number,
+              is_chord_selection ? selection_number_of_rows : 1,
+              is_chord_selection ? 0 : selection_first_row_number,
+              is_chord_selection ? -1 : selection_number_of_rows,
+              is_chord_selection
+                  ? std::nullopt
+                  : std::make_optional(
+                        selection_row_type == pitched_note_type
+                            ? PianoRollNoteKind::pitched_kind
+                            : PianoRollNoteKind::unpitched_kind))
+              .first;
+      playhead_item.show();
+      position_playhead(baseline_ms);
+    }
+    if (!highlighted_bounds.isNull()) {
+      view.ensureVisible(highlighted_bounds,
+                         static_cast<int>(PIANO_ROLL_SCENE_MARGIN),
+                         static_cast<int>(PIANO_ROLL_SCENE_MARGIN));
+    }
   }
 
   // lists every voice (pitched first, then unpitched) as a colored swatch +

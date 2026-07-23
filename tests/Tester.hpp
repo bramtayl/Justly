@@ -2097,4 +2097,97 @@ private slots:
 
     undo_stack.undo();
   };
+
+  // checks that exactly the events matching the given criteria (mirroring
+  // get_selected_piano_roll_event_indices) are drawn with a highlight pen,
+  // and every other event is drawn plain
+  static void check_piano_roll_highlight(PianoRollWidget &piano_roll_widget,
+                                         const RowType selection_row_type,
+                                         const int selection_chord_number,
+                                         const int selection_note_number) {
+    const auto &events = piano_roll_widget.events;
+    const auto &note_items = piano_roll_widget.note_items;
+    for (auto event_index = 0; event_index < events.size();
+        event_index = event_index + 1) {
+      const auto &event = events.at(event_index);
+      const auto is_highlighted =
+          selection_row_type == chord_type
+              ? event.chord_number == selection_chord_number
+              : event.chord_number == selection_chord_number &&
+                    event.note_number == selection_note_number &&
+                    event.kind == (selection_row_type == pitched_note_type
+                                       ? PianoRollNoteKind::pitched_kind
+                                       : PianoRollNoteKind::unpitched_kind);
+      QCOMPARE(get_reference(note_items.at(event_index)).pen().style() !=
+                   Qt::NoPen,
+               is_highlighted);
+    }
+  }
+
+  void test_piano_roll_selection_highlights_chord() {
+    auto &piano_roll_widget = song_editor.piano_roll_widget;
+    auto &switch_table = song_editor.song_widget.switch_column.switch_table;
+
+    // chord number 1 (from test_song.xml) has both pitched and unpitched
+    // notes, matching the fixture used by the other piano-roll tests above
+    select_cell(switch_table, 1, 0);
+
+    check_piano_roll_highlight(piano_roll_widget, chord_type, 1, -1);
+
+    QVERIFY(piano_roll_widget.playhead_item.isVisible());
+    QCOMPARE(piano_roll_widget.playhead_item.line().x1(),
+             600.0 * PIANO_ROLL_PIXELS_PER_MS);
+  };
+
+  static void test_piano_roll_selection_highlights_note_data() {
+    QTest::addColumn<RowType>("row_type");
+    QTest::addColumn<int>("note_number");
+
+    QTest::newRow("pitched") << pitched_note_type << 2;
+    QTest::newRow("unpitched") << unpitched_note_type << 1;
+  };
+
+  void test_piano_roll_selection_highlights_note() {
+    QFETCH(RowType, row_type);
+    QFETCH(int, note_number);
+
+    auto &piano_roll_widget = song_editor.piano_roll_widget;
+    auto &switch_table = song_editor.song_widget.switch_column.switch_table;
+    auto &undo_stack = song_editor.song_widget.undo_stack;
+
+    switch_to(song_editor, row_type, 1);
+    select_cell(switch_table, note_number, 0);
+
+    check_piano_roll_highlight(piano_roll_widget, row_type, 1, note_number);
+
+    QVERIFY(piano_roll_widget.playhead_item.isVisible());
+    // both chord 1's pitched and unpitched notes start where the chord
+    // itself starts -- see test_piano_roll_time_bounds() above
+    QCOMPARE(piano_roll_widget.playhead_item.line().x1(),
+             600.0 * PIANO_ROLL_PIXELS_PER_MS);
+
+    maybe_switch_back_to_chords(undo_stack, row_type);
+  };
+
+  void test_piano_roll_selection_ignores_voice_table() {
+    auto &piano_roll_widget = song_editor.piano_roll_widget;
+    auto &switch_table = song_editor.song_widget.switch_column.switch_table;
+    auto &undo_stack = song_editor.song_widget.undo_stack;
+
+    // put a highlight/cursor up first, so switching to a voice table (which
+    // has no timeline position) has to actually clear it rather than just
+    // never having set it
+    select_cell(switch_table, 1, 0);
+    QVERIFY(piano_roll_widget.playhead_item.isVisible());
+
+    switch_to(song_editor, pitched_voice_type, -1);
+    select_cell(switch_table, 0, 0);
+
+    QVERIFY(!piano_roll_widget.playhead_item.isVisible());
+    for (auto *const note_item_pointer : piano_roll_widget.note_items) {
+      QCOMPARE(get_reference(note_item_pointer).pen().style(), Qt::NoPen);
+    }
+
+    maybe_switch_back_to_chords(undo_stack, pitched_voice_type);
+  };
 };
