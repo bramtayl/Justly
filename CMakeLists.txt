@@ -328,6 +328,13 @@ if (BUILD_TESTS)
     if (is_bundle)
         add_test(NAME run_tests
             COMMAND "${test_install_folder}/JustlyTests.app/Contents/MacOS/JustlyTests" -o test_output.txt,txt)
+        # separate from run_tests: launches via LaunchServices (as Finder
+        # would) to catch bundle-structure problems that direct-binary
+        # invocation above wouldn't (e.g. bad Info.plist); open's own exit
+        # code only reflects whether the launch succeeded, not the app's
+        # exit status, so this can't replace run_tests as a pass/fail check
+        add_test(NAME bundle_opens
+            COMMAND open -W -a "${test_install_folder}/JustlyTests.app")
     else()
         add_test(NAME run_tests COMMAND "${test_install_folder}/bin/JustlyTests" -o test_output.txt,txt)
     endif()
