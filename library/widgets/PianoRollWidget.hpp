@@ -303,13 +303,18 @@ struct PianoRollWidget : public QWidget {
     legend_view.setFixedWidth(static_cast<int>(std::ceil(legend_bounds.width())) +
                               (2 * legend_view.frameWidth()));
 
-    scene.addItem(&playhead_item);
-    playhead_item.setLine(saved_line);
-    playhead_item.setVisible(was_visible);
-
+    // sized from itemsBoundingRect() before the playhead is added back in --
+    // otherwise its line (spanning the full previous scene height, restored
+    // from saved_line below) would get baked into this pass' bounding box,
+    // permanently inflating the scrollable area with stale blank space that
+    // never shrinks back down even after the real content shrinks
     scene.setSceneRect(scene.itemsBoundingRect().adjusted(
         -PIANO_ROLL_SCENE_MARGIN, -PIANO_ROLL_SCENE_MARGIN,
         PIANO_ROLL_SCENE_MARGIN, PIANO_ROLL_SCENE_MARGIN));
+
+    scene.addItem(&playhead_item);
+    playhead_item.setLine(saved_line);
+    playhead_item.setVisible(was_visible);
 
     // only the pitch axis' ticks/labels have negative x, so the scene rect's
     // left edge is exactly the widest label's left edge; giving axis_view
