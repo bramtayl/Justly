@@ -354,18 +354,7 @@ struct Tester : public QObject {
   Q_OBJECT
 public:
   SongEditor song_editor;
-  QDir test_dir = []() {
-    // installed layout expects share/ next to the binary's folder (see
-    // get_share_file()), but that only gets populated by the install_tests
-    // target -- JUSTLY_TEST_SHARE_DIR lets a debug launch point straight at
-    // tests/share instead, so build/JustlyTests can run without installing
-    // first
-    const auto override_dir = qEnvironmentVariable("JUSTLY_TEST_SHARE_DIR");
-    if (!override_dir.isEmpty()) {
-      return QDir(override_dir);
-    }
-    return get_share_folder();
-  }();
+  QDir test_dir = get_share_folder();
 
   Tester() {
     set_up();

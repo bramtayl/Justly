@@ -65,6 +65,12 @@ if (TRACK_COVERAGE)
     add_link_options("--coverage")
 endif()
 
+# mirror the installed layout (bin/ next to share/, or Contents/MacOS next to
+# Contents/Resources) inside the build tree too, so Justly/JustlyTests can
+# find share/ (see get_share_folder() in helpers.hpp) straight out of the
+# build directory, without an install step or an environment variable
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+
 qt_add_library(JustlyLibrary INTERFACE)
 qt_add_executable(Justly)
 if (BUILD_TESTS)
@@ -241,6 +247,18 @@ else()
     install(DIRECTORY "${Justly_SOURCE_DIR}/share/" TYPE DATA)
 endif()
 
+foreach(app_target ${app_targets})
+    if (is_bundle)
+        set(build_share_dest "$<TARGET_FILE_DIR:${app_target}>/../Resources")
+    else()
+        set(build_share_dest "$<TARGET_FILE_DIR:${app_target}>/../share")
+    endif()
+    add_custom_command(TARGET ${app_target} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${Justly_SOURCE_DIR}/share" "${build_share_dest}"
+    )
+endforeach()
+
 if (BUILD_TESTS AND NOT WIN32)
     # qt deploy includes plugins added via qt_import_plugins
     # but ignores non-default PLATFORM plugins
@@ -281,9 +299,16 @@ if (BUILD_TESTS)
         install(DIRECTORY "${Justly_SOURCE_DIR}/tests/share/"
             DESTINATION "JustlyTests.app/Contents/Resources"
         )
+        set(build_tests_share_dest "$<TARGET_FILE_DIR:JustlyTests>/../Resources")
     else()
         install(DIRECTORY "${Justly_SOURCE_DIR}/tests/share/" TYPE DATA)
+        set(build_tests_share_dest "$<TARGET_FILE_DIR:JustlyTests>/../share")
     endif()
+
+    add_custom_command(TARGET JustlyTests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${Justly_SOURCE_DIR}/tests/share" "${build_tests_share_dest}"
+    )
 
     set(test_install_folder "${Justly_SOURCE_DIR}/test_install")
 
