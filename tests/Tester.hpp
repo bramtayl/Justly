@@ -2179,4 +2179,36 @@ private slots:
 
     maybe_switch_back_to_chords(undo_stack, pitched_voice_type);
   };
+
+  void test_piano_roll_zoom() {
+    auto &piano_roll_widget = song_editor.piano_roll_widget;
+
+    QCOMPARE(piano_roll_widget.view.transform().m11(), 1.0);
+    QCOMPARE(piano_roll_widget.view.transform().m22(), 1.0);
+
+    piano_roll_widget.zoom_in();
+    // only the time (x) axis scales -- the pitch (y) axis has to stay fixed
+    // so it stays aligned with axis_view, which is never zoomed
+    QCOMPARE(piano_roll_widget.view.transform().m11(),
+            PIANO_ROLL_TIME_ZOOM_STEP);
+    QCOMPARE(piano_roll_widget.view.transform().m22(), 1.0);
+
+    piano_roll_widget.zoom_out();
+    QCOMPARE(piano_roll_widget.view.transform().m11(), 1.0);
+
+    // clamped rather than unbounded, so repeated zooming can't shrink/grow
+    // the time axis into something unusable
+    for (auto zoom_count = 0; zoom_count < 20; zoom_count = zoom_count + 1) {
+      piano_roll_widget.zoom_out();
+    }
+    QCOMPARE(piano_roll_widget.time_zoom_factor, PIANO_ROLL_MIN_TIME_ZOOM);
+
+    for (auto zoom_count = 0; zoom_count < 40; zoom_count = zoom_count + 1) {
+      piano_roll_widget.zoom_in();
+    }
+    QCOMPARE(piano_roll_widget.time_zoom_factor, PIANO_ROLL_MAX_TIME_ZOOM);
+
+    // restore, so later tests see the default 1x zoom
+    piano_roll_widget.set_time_zoom(1.0);
+  };
 };

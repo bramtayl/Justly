@@ -7,6 +7,8 @@
 #include <QtGui/QColor>
 #include <QtGui/QMouseEvent>
 #include <QtGui/QPen>
+#include <QtGui/QTransform>
+#include <QtGui/QWheelEvent>
 #include <QtWidgets/QGraphicsLineItem>
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsSimpleTextItem>
@@ -40,6 +42,9 @@ static const auto PIANO_ROLL_LEGEND_SWATCH_SIZE = 10.0;
 static const auto PIANO_ROLL_TIME_AXIS_STEP_MS = 500.0;
 static const auto PIANO_ROLL_MS_PER_SECOND = 1000.0;
 static const auto PIANO_ROLL_HIGHLIGHT_PEN_WIDTH = 1.5;
+static const auto PIANO_ROLL_MIN_TIME_ZOOM = 0.25;
+static const auto PIANO_ROLL_MAX_TIME_ZOOM = 8.0;
+static const auto PIANO_ROLL_TIME_ZOOM_STEP = 1.25;
 
 // fixed categorical order (never cycled) -- a voice beyond the 8th falls
 // back to PIANO_ROLL_OTHER_VOICE_COLOR rather than reusing an earlier hue
@@ -91,6 +96,11 @@ struct PianoRollWidget : public QWidget {
   // rebuilt every rebuild_scene() call; each drawn note rect stores its index
   // into this list (via QGraphicsItem::setData) so a click on the rect can be
   // traced back to the chord/note it represents
+  // scales only the main view's x axis (time), never its y axis (pitch) --
+  // so the pitch axis stays visually fixed (and stays in lockstep with
+  // axis_view, which is never zoomed) while the time axis expands/contracts
+  double time_zoom_factor = 1.0;
+
   QList<PianoRollNoteEvent> events;
   // parallel to events -- the actual drawn item for each event, so a table
   // selection can be traced forward to the bar(s) it should highlight
@@ -160,9 +170,15 @@ struct PianoRollWidget : public QWidget {
     QObject::connect(&playhead_timer, &QTimer::timeout, this,
                      [this]() { update_playhead_position(); });
 
+    // keeps the scene point under the cursor fixed on screen while
+    // ctrl+wheel zooms the time axis in zoom_in()/zoom_out() below, rather
+    // than always zooming around the view's top-left corner
+    view.setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+
     // the view has no interactivity of its own (no item selection, no
-    // custom QGraphicsView subclass), so double-clicks are picked up via an
-    // event filter on the viewport rather than overriding QGraphicsView
+    // custom QGraphicsView subclass), so double-clicks and ctrl+wheel zoom
+    // are picked up via an event filter on the viewport rather than
+    // overriding QGraphicsView
     view.viewport()->installEventFilter(this);
 
     rebuild_scene();
@@ -170,6 +186,19 @@ struct PianoRollWidget : public QWidget {
 
   auto eventFilter(QObject *watched_pointer, QEvent *event_pointer)
       -> bool override {
+    if (event_pointer->type() == QEvent::Wheel &&
+       watched_pointer == view.viewport()) {
+      auto &wheel_event = get_reference(dynamic_cast<QWheelEvent *>(event_pointer));
+      if (wheel_event.modifiers().testFlag(Qt::ControlModifier)) {
+        const auto angle_delta_y = wheel_event.angleDelta().y();
+        if (angle_delta_y > 0) {
+          zoom_in();
+        } else if (angle_delta_y < 0) {
+          zoom_out();
+        }
+        return true;
+      }
+    }
     if (event_pointer->type() == QEvent::MouseButtonDblClick &&
        watched_pointer == view.viewport()) {
       const auto &mouse_event =
@@ -337,6 +366,22 @@ struct PianoRollWidget : public QWidget {
 
     apply_selection_highlight();
   }
+
+  // sets the main view's horizontal scale directly (rather than accumulating
+  // via QGraphicsView::scale()) so repeated zoom_in()/zoom_out() calls can't
+  // drift and clamping is just one std::clamp on the absolute factor; the
+  // vertical scale is always left at 1, so the pitch axis (and axis_view,
+  // which is never zoomed) stays visually fixed while only the time axis
+  // expands/contracts
+  void set_time_zoom(const double new_zoom_factor) {
+    time_zoom_factor = std::clamp(new_zoom_factor, PIANO_ROLL_MIN_TIME_ZOOM,
+                                  PIANO_ROLL_MAX_TIME_ZOOM);
+    view.setTransform(QTransform::fromScale(time_zoom_factor, 1.0));
+  }
+
+  void zoom_in() { set_time_zoom(time_zoom_factor * PIANO_ROLL_TIME_ZOOM_STEP); }
+
+  void zoom_out() { set_time_zoom(time_zoom_factor / PIANO_ROLL_TIME_ZOOM_STEP); }
 
   // called by SongEditor whenever the switch table's selection changes, so
   // the piano roll can mirror it: highlight the corresponding note bar(s),

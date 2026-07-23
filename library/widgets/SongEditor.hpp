@@ -171,6 +171,17 @@ public:
     QObject::connect(&piano_roll_dock, &QDockWidget::visibilityChanged,
                      &show_piano_roll_action, &QAction::setChecked);
 
+    QObject::connect(&song_menu_bar.view_menu.zoom_in_action,
+                     &QAction::triggered, &piano_roll_widget_ref,
+                     [&piano_roll_widget_ref]() {
+                       piano_roll_widget_ref.zoom_in();
+                     });
+    QObject::connect(&song_menu_bar.view_menu.zoom_out_action,
+                     &QAction::triggered, &piano_roll_widget_ref,
+                     [&piano_roll_widget_ref]() {
+                       piano_roll_widget_ref.zoom_out();
+                     });
+
     QObject::connect(&undo_stack, &QUndoStack::indexChanged, this,
                      [&piano_roll_widget_ref]() {
                        piano_roll_widget_ref.rebuild_scene();
