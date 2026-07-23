@@ -1,9 +1,11 @@
 #pragma once
 
 #include <QtCore/QElapsedTimer>
+#include <QtCore/QEvent>
 #include <QtCore/QTimer>
 #include <QtGui/QBrush>
 #include <QtGui/QColor>
+#include <QtGui/QMouseEvent>
 #include <QtGui/QPen>
 #include <QtWidgets/QGraphicsLineItem>
 #include <QtWidgets/QGraphicsScene>
@@ -13,6 +15,7 @@
 #include <QtWidgets/QWidget>
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <limits>
 
 #include "other/PianoRoll.hpp"
@@ -67,6 +70,18 @@ struct PianoRollWidget : public QWidget {
   double playhead_end_ms = 0;
   bool playhead_active = false;
 
+  // rebuilt every rebuild_scene() call; each drawn note rect stores its index
+  // into this list (via QGraphicsItem::setData) so a click on the rect can be
+  // traced back to the chord/note it represents
+  QList<PianoRollNoteEvent> events;
+
+  // set from outside (SongEditor) once it has access to the song menu bar
+  // and song widget needed to switch tables; left empty in contexts (e.g.
+  // tests) that never wire it up
+  std::function<void(int chord_number, int note_number,
+                     PianoRollNoteKind kind)>
+      note_double_clicked;
+
   explicit PianoRollWidget(const SongWidget &song_widget_input)
       : song_widget(song_widget_input) {
     // a bottom dock would otherwise default to a cramped sliver; this keeps
@@ -84,7 +99,32 @@ struct PianoRollWidget : public QWidget {
     QObject::connect(&playhead_timer, &QTimer::timeout, this,
                      [this]() { update_playhead_position(); });
 
+    // the view has no interactivity of its own (no item selection, no
+    // custom QGraphicsView subclass), so double-clicks are picked up via an
+    // event filter on the viewport rather than overriding QGraphicsView
+    view.viewport()->installEventFilter(this);
+
     rebuild_scene();
+  }
+
+  auto eventFilter(QObject *watched_pointer, QEvent *event_pointer)
+      -> bool override {
+    if (event_pointer->type() == QEvent::MouseButtonDblClick &&
+       watched_pointer == view.viewport()) {
+      const auto &mouse_event =
+          get_reference(dynamic_cast<QMouseEvent *>(event_pointer));
+      auto *const item_pointer = scene.itemAt(
+          view.mapToScene(mouse_event.pos()), view.transform());
+      if (item_pointer != nullptr) {
+        const auto event_index_data = item_pointer->data(0);
+        if (event_index_data.isValid() && note_double_clicked) {
+          const auto &event = events.at(event_index_data.toInt());
+          note_double_clicked(event.chord_number, event.note_number,
+                             event.kind);
+        }
+      }
+    }
+    return QWidget::eventFilter(watched_pointer, event_pointer);
   }
 
   void rebuild_scene() {
@@ -100,7 +140,7 @@ struct PianoRollWidget : public QWidget {
     const auto number_of_pitched_voices =
         static_cast<int>(pitched_voices.size());
 
-    const auto events = get_piano_roll_events(song);
+    events = get_piano_roll_events(song);
 
     auto min_midi = std::numeric_limits<double>::max();
     auto max_midi = std::numeric_limits<double>::lowest();
@@ -183,8 +223,12 @@ struct PianoRollWidget : public QWidget {
                                           ? event.voice_number
                                           : number_of_pitched_voices +
                                                 event.voice_number;
-      scene.addRect(bar_x, bar_y, width, PIANO_ROLL_NOTE_BAR_THICKNESS,
-                   QPen(Qt::NoPen), QBrush(get_voice_color(global_voice_index)));
+      auto &note_item = get_reference(scene.addRect(
+          bar_x, bar_y, width, PIANO_ROLL_NOTE_BAR_THICKNESS, QPen(Qt::NoPen),
+          QBrush(get_voice_color(global_voice_index))));
+      // lets the double-click event filter trace a clicked rect back to the
+      // PianoRollNoteEvent (and thus chord/note) it represents
+      note_item.setData(0, event_index);
     }
 
     draw_legend(pitched_voices, unpitched_voices,

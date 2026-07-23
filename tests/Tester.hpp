@@ -24,6 +24,7 @@
 #include <QtGui/QAction>
 #include <QtGui/QClipboard>
 #include <QtGui/QGuiApplication>
+#include <QtGui/QMouseEvent>
 #include <QtGui/QUndoStack>
 #include <QtTest/QTest>
 #include <QtTest/QTestData>
@@ -2033,5 +2034,67 @@ private slots:
     QCOMPARE(scene.items().size(), old_item_count);
 
     maybe_switch_back_to_chords(undo_stack, pitched_note_type);
+  };
+
+  static void test_piano_roll_double_click_selects_note_data() {
+    QTest::addColumn<PianoRollNoteKind>("kind");
+    QTest::addColumn<int>("note_number");
+    QTest::addColumn<RowType>("expected_row_type");
+
+    QTest::newRow("pitched")
+        << PianoRollNoteKind::pitched_kind << 2 << pitched_note_type;
+    QTest::newRow("unpitched")
+        << PianoRollNoteKind::unpitched_kind << 1 << unpitched_note_type;
+  };
+
+  void test_piano_roll_double_click_selects_note() {
+    QFETCH(PianoRollNoteKind, kind);
+    QFETCH(int, note_number);
+    QFETCH(RowType, expected_row_type);
+
+    auto &piano_roll_widget = song_editor.piano_roll_widget;
+    auto &switch_table = song_editor.song_widget.switch_column.switch_table;
+    auto &undo_stack = song_editor.song_widget.undo_stack;
+
+    // chord number 1 (from test_song.xml) has both pitched and unpitched
+    // notes, matching the fixture used by the other piano-roll tests above
+    const auto &events = piano_roll_widget.events;
+    const auto event_iterator = std::ranges::find_if(
+        events, [kind, note_number](const PianoRollNoteEvent &event) {
+          return event.chord_number == 1 && event.note_number == note_number &&
+                 event.kind == kind;
+        });
+    QVERIFY(event_iterator != events.cend());
+    const auto event_index =
+        static_cast<int>(event_iterator - events.cbegin());
+
+    QGraphicsItem *note_item_pointer = nullptr;
+    for (auto *const item_pointer : piano_roll_widget.scene.items()) {
+      const auto item_data = item_pointer->data(0);
+      if (item_data.isValid() && item_data.toInt() == event_index) {
+        note_item_pointer = item_pointer;
+        break;
+      }
+    }
+    QVERIFY(note_item_pointer != nullptr);
+
+    // drives the actual production event filter with a real QMouseEvent,
+    // rather than calling add_replace_table directly, so this exercises the
+    // full click-to-scene-item-to-callback path
+    const auto view_pos = piano_roll_widget.view.mapFromScene(
+        note_item_pointer->sceneBoundingRect().center());
+    const auto global_pos =
+        piano_roll_widget.view.viewport()->mapToGlobal(view_pos);
+    QMouseEvent double_click_event(
+        QEvent::MouseButtonDblClick, QPointF(view_pos), QPointF(global_pos),
+        Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    piano_roll_widget.eventFilter(piano_roll_widget.view.viewport(),
+                                  &double_click_event);
+
+    QCOMPARE(switch_table.delegate.current_row_type, expected_row_type);
+    QCOMPARE(get_parent_chord_number(switch_table), 1);
+    QCOMPARE(get_only_range(switch_table).top(), note_number);
+
+    undo_stack.undo();
   };
 };

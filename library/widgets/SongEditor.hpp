@@ -17,10 +17,12 @@
 static void add_replace_table(SongMenuBar &song_menu_bar,
                               SongWidget &song_widget,
                               const RowType new_row_type,
-                              const int new_chord_number) {
+                              const int new_chord_number,
+                              const int new_note_number = -1) {
   song_widget.undo_stack.push(
       new ReplaceTable( // NOLINT(cppcoreguidelines-owning-memory)
-          song_menu_bar, song_widget, new_row_type, new_chord_number));
+          song_menu_bar, song_widget, new_row_type, new_chord_number,
+          new_note_number));
 }
 
 // wires an action that just switches to a fixed table (voices/chords)
@@ -164,6 +166,21 @@ public:
                      [&piano_roll_widget_ref]() {
                        piano_roll_widget_ref.rebuild_scene();
                      });
+
+    // double-clicking a note in the piano roll opens the pitched/unpitched
+    // notes table for its chord, scrolled to and highlighting that note --
+    // mirroring the chords table's own double-click-into-notes behavior
+    piano_roll_widget.note_double_clicked =
+        [&song_menu_bar_ref, &song_widget_ref](const int chord_number,
+                                              const int note_number,
+                                              const PianoRollNoteKind kind)
+        -> void {
+          add_replace_table(song_menu_bar_ref, song_widget_ref,
+                            kind == PianoRollNoteKind::pitched_kind
+                                ? pitched_note_type
+                                : unpitched_note_type,
+                            chord_number, note_number);
+        };
 
     connect_piano_roll_playhead(piano_roll_widget, *this, song_widget,
                                 song_menu_bar.play_menu);

@@ -100,7 +100,8 @@ static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
 
 static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                           const RowType new_row_type,
-                          const int new_chord_number) {
+                          const int new_chord_number,
+                          const int new_note_number = -1) {
   auto &song = song_widget.song;
   auto &switch_column = song_widget.switch_column;
   auto &switch_table = switch_column.switch_table;
@@ -214,6 +215,14 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
         set_minimum_column_size(switch_table, pitched_note_words_column,
                                 WORDS_WIDTH);
       }
+      if (new_note_number >= 0) {
+        const auto note_index = new_model.index(new_note_number, 0);
+        get_selection_model(switch_table)
+            .select(note_index, QItemSelectionModel::Select |
+                                    QItemSelectionModel::Clear |
+                                    QItemSelectionModel::Rows);
+        switch_table.scrollTo(note_index);
+      }
     } else if (new_row_type == unpitched_note_type) {
       auto &new_model = switch_table.unpitched_notes_model;
       stream << SongMenuBar::tr("Unpitched notes for chord ")
@@ -231,6 +240,14 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
             switch_table, unpitched_note_velocity_ratio_column, rational_width);
         set_minimum_column_size(switch_table, unpitched_note_words_column,
                                 WORDS_WIDTH);
+      }
+      if (new_note_number >= 0) {
+        const auto note_index = new_model.index(new_note_number, 0);
+        get_selection_model(switch_table)
+            .select(note_index, QItemSelectionModel::Select |
+                                    QItemSelectionModel::Clear |
+                                    QItemSelectionModel::Rows);
+        switch_table.scrollTo(note_index);
       }
     }
   }
@@ -261,18 +278,21 @@ struct ReplaceTable : public QUndoCommand {
   const int old_chord_number;
   RowType new_row_type;
   int new_chord_number;
+  int new_note_number;
 
   explicit ReplaceTable(SongMenuBar &song_menu_bar_input,
                         SongWidget &song_widget_input,
                         const RowType new_row_type_input,
-                        const int new_chord_number_input)
+                        const int new_chord_number_input,
+                        const int new_note_number_input = -1)
       : song_menu_bar(song_menu_bar_input), song_widget(song_widget_input),
         old_row_type(
             song_widget.switch_column.switch_table.delegate.current_row_type),
         old_chord_number(
             get_parent_chord_number(song_widget.switch_column.switch_table)),
         new_row_type(new_row_type_input),
-        new_chord_number(new_chord_number_input){};
+        new_chord_number(new_chord_number_input),
+        new_note_number(new_note_number_input){};
 
   [[nodiscard]] auto id() const -> int override { return replace_table_id; }
 
@@ -289,6 +309,7 @@ struct ReplaceTable : public QUndoCommand {
     }
     new_row_type = next_row_type;
     new_chord_number = next_chord_number;
+    new_note_number = next_command.new_note_number;
     return true;
   }
 
@@ -297,6 +318,7 @@ struct ReplaceTable : public QUndoCommand {
   }
 
   void redo() override {
-    replace_table(song_menu_bar, song_widget, new_row_type, new_chord_number);
+    replace_table(song_menu_bar, song_widget, new_row_type, new_chord_number,
+                 new_note_number);
   }
 };
