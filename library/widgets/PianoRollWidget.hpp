@@ -70,6 +70,14 @@ struct PianoRollWidget : public QWidget {
   // left edge -- and lined up with their notes -- no matter how far the main
   // view is scrolled horizontally
   QGraphicsView &axis_view = *(new QGraphicsView(&scene, this));
+  // a separate scene/view for the voice legend, laid out in its own
+  // fixed-width column to the right of the main view -- pinned there just
+  // like axis_view is pinned to the left, so the legend stays visible and in
+  // the same place no matter how far the main view is scrolled, rather than
+  // being drawn into the scrollable main scene where it used to disappear
+  // off-screen
+  QGraphicsScene &legend_scene = *(new QGraphicsScene(this));
+  QGraphicsView &legend_view = *(new QGraphicsView(&legend_scene, this));
   QBoxLayout &column_layout = *(new QVBoxLayout(this));
   QBoxLayout &row_layout = *(new QHBoxLayout());
   QGraphicsLineItem &playhead_item = *(new QGraphicsLineItem);
@@ -114,7 +122,15 @@ struct PianoRollWidget : public QWidget {
     row_layout.setSpacing(0);
     row_layout.addWidget(&axis_view);
     row_layout.addWidget(&view);
+    row_layout.addWidget(&legend_view);
     column_layout.addLayout(&row_layout);
+
+    // legend_view never scrolls horizontally (it's a fixed-width column) and
+    // is left free to scroll vertically on its own -- independent of the
+    // main view -- so a long voice list stays reachable without the legend's
+    // on-screen position ever moving
+    legend_view.setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    legend_view.setFocusPolicy(Qt::NoFocus);
 
     // axis_view is a read-only mirror of the main view's vertical position
     // -- it never scrolls (or gets scrolled) on its own, horizontally or
@@ -227,9 +243,6 @@ struct PianoRollWidget : public QWidget {
       lane_end_times[assigned_lane] = event.start_time_ms + event.duration_ms;
       unpitched_lane_by_event[event_index] = assigned_lane;
     }
-    const auto number_of_unpitched_lanes =
-        static_cast<int>(lane_end_times.size());
-
     // the horizontal axis sits at the same y as the lowest pitch tick, and
     // both axes sit at x/y == PIANO_ROLL_AXIS_X, so the axes' first ticks
     // (the lowest pitch tick, and the t=0 time tick) meet at one corner
@@ -278,10 +291,17 @@ struct PianoRollWidget : public QWidget {
       note_items.push_back(&note_item);
     }
 
-    draw_legend(pitched_voices, unpitched_voices,
-               unpitched_lane_top +
-                   (number_of_unpitched_lanes * PIANO_ROLL_LANE_HEIGHT) +
-                   PIANO_ROLL_LEGEND_GAP);
+    legend_scene.clear();
+    draw_legend(pitched_voices, unpitched_voices);
+    // size legend_view to exactly fit its content (plus a margin), so the
+    // fixed-width column stays as narrow as the longest voice name rather
+    // than an arbitrary guessed width
+    const auto legend_bounds = legend_scene.itemsBoundingRect().adjusted(
+        -PIANO_ROLL_LEGEND_GAP, -PIANO_ROLL_LEGEND_GAP, PIANO_ROLL_LEGEND_GAP,
+        PIANO_ROLL_LEGEND_GAP);
+    legend_scene.setSceneRect(legend_bounds);
+    legend_view.setFixedWidth(static_cast<int>(std::ceil(legend_bounds.width())) +
+                              (2 * legend_view.frameWidth()));
 
     scene.addItem(&playhead_item);
     playhead_item.setLine(saved_line);
@@ -400,11 +420,12 @@ struct PianoRollWidget : public QWidget {
   }
 
   // lists every voice (pitched first, then unpitched) as a colored swatch +
-  // name, in the same order used to assign global_voice_index for coloring
+  // name, in the same order used to assign global_voice_index for coloring.
+  // Drawn into legend_scene (not the scrollable main scene) so the legend
+  // stays fixed in place regardless of how far the piano roll is scrolled
   void draw_legend(const QList<PitchedVoice> &pitched_voices,
-                   const QList<UnpitchedVoice> &unpitched_voices,
-                   const double top_y) {
-    auto row_y = top_y;
+                   const QList<UnpitchedVoice> &unpitched_voices) {
+    auto row_y = 0.0;
     auto global_voice_index = 0;
     for (const auto &voice : pitched_voices) {
       draw_legend_row(voice.name, global_voice_index, row_y);
@@ -420,10 +441,10 @@ struct PianoRollWidget : public QWidget {
 
   void draw_legend_row(const QString &name, const int global_voice_index,
                        const double row_y) {
-    scene.addRect(0, row_y, PIANO_ROLL_LEGEND_SWATCH_SIZE,
+    legend_scene.addRect(0, row_y, PIANO_ROLL_LEGEND_SWATCH_SIZE,
                  PIANO_ROLL_LEGEND_SWATCH_SIZE, QPen(Qt::NoPen),
                  QBrush(get_voice_color(global_voice_index)));
-    auto &label = get_reference(scene.addSimpleText(name));
+    auto &label = get_reference(legend_scene.addSimpleText(name));
     label.setPos(PIANO_ROLL_LEGEND_SWATCH_SIZE + PIANO_ROLL_AXIS_LABEL_GAP,
                 row_y - ((label.boundingRect().height() -
                          PIANO_ROLL_LEGEND_SWATCH_SIZE) /
