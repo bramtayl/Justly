@@ -265,6 +265,11 @@ struct PianoRollWidget : public QWidget {
   double playhead_baseline_ms = 0;
   double playhead_end_ms = 0;
   bool playhead_active = false;
+  // true while the user is dragging the playhead with the mouse (between a
+  // left-button press and release on the main view); guards the eventFilter's
+  // MouseMove handling so ordinary mouse-move events (that aren't part of a
+  // drag) don't also move the cursor
+  bool playhead_dragging = false;
 
   // scales only the main view's x axis (time), never its y axis (pitch) --
   // so the pitch axis stays visually fixed (and stays in lockstep with
@@ -403,7 +408,48 @@ struct PianoRollWidget : public QWidget {
         }
       }
     }
+    if (event_pointer->type() == QEvent::MouseButtonPress &&
+       watched_pointer == view.viewport()) {
+      const auto &mouse_event =
+          get_reference(dynamic_cast<QMouseEvent *>(event_pointer));
+      if (mouse_event.button() == Qt::LeftButton) {
+        // a manual click/drag takes over the cursor from playback's timer-
+        // driven animation, the same way it takes over from a stale
+        // selection-driven position in drag_playhead_to() below
+        if (playhead_active) {
+          stop_playhead();
+        }
+        playhead_dragging = true;
+        drag_playhead_to(mouse_event.pos());
+        return true;
+      }
+    }
+    if (event_pointer->type() == QEvent::MouseMove && playhead_dragging &&
+       watched_pointer == view.viewport()) {
+      const auto &mouse_event =
+          get_reference(dynamic_cast<QMouseEvent *>(event_pointer));
+      drag_playhead_to(mouse_event.pos());
+      return true;
+    }
+    if (event_pointer->type() == QEvent::MouseButtonRelease &&
+       playhead_dragging && watched_pointer == view.viewport()) {
+      playhead_dragging = false;
+      return true;
+    }
     return QWidget::eventFilter(watched_pointer, event_pointer);
+  }
+
+  // moves the playhead line to the time under the given viewport position,
+  // without recentering the view on it the way position_playhead() does for
+  // playback -- while the user is actively dragging, the view should hold
+  // still under the mouse rather than fight the drag by scrolling
+  void drag_playhead_to(const QPoint &viewport_pos) {
+    const auto scene_x = view.mapToScene(viewport_pos).x();
+    const auto playhead_x = std::max(0.0, scene_x);
+    const auto &scene_rect = scene.sceneRect();
+    playhead_item.setLine(playhead_x, scene_rect.top(), playhead_x,
+                          scene_rect.bottom());
+    playhead_item.show();
   }
 
   void rebuild_scene() {

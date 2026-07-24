@@ -47,12 +47,15 @@ On Windows, install dependencies with [vcpkg](https://github.com/microsoft/vcpkg
 
 You will also need to download the [MuseScore General soundfont](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2) and its [license](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General_License.md) into the `share` folder.
 
-Then configure and build:
+Then configure, build, and install:
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release
+cmake --install build --config Release --prefix <install location>
 ```
+
+The Justly executable will be in the "bin" subfolder of `<install location>` (or a MacOS bundle directly inside it).
 
 ## Motivation
 

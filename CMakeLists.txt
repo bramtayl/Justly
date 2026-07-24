@@ -3,6 +3,15 @@ cmake_minimum_required(VERSION 3.24)
 # on windows, add a path to Qt
 list(APPEND CMAKE_PREFIX_PATH C:/Users/brand/6.5.1/msvc2019_64)
 
+# must be set before project() -- otherwise CMake defaults it to the SDK
+# version of whatever Xcode happens to be installed on the build machine, so
+# release bundles built on a newer macOS runner silently refuse to launch
+# ("You can't use Justly with this version of macOS") on any older-but-still
+# supported Mac
+if (APPLE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0" CACHE STRING "Minimum macOS version")
+endif()
+
 project(Justly VERSION 1.0.0 LANGUAGES CXX)
 
 # download https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2
