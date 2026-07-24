@@ -115,6 +115,8 @@ static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
               RowType::unpitched_note_type);
 
   song_menu_bar.play_menu.play_action.setEnabled(anything_selected);
+  song_menu_bar.play_menu.play_to_end_action.setEnabled(anything_selected &&
+                                                         !is_voice);
 
   // voice names must be typed, not copy/pasted, since every voice name must
   // stay unique and non-empty
