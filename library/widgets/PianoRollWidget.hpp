@@ -49,6 +49,10 @@
 
 static const auto PIANO_ROLL_PIXELS_PER_MS = 0.1;
 static const auto PIANO_ROLL_PIXELS_PER_SEMITONE = 6;
+// how far below the lowest note the horizontal axis sits -- enough that the
+// lowest note's bar never reads as glued to (or nearly touching) the axis
+// line, without wasting a full octave of empty space underneath it
+static const auto PIANO_ROLL_AXIS_PITCH_MARGIN_SEMITONES = 3.0;
 static const auto PIANO_ROLL_LANE_HEIGHT = 20;
 static const auto PIANO_ROLL_NOTE_BAR_THICKNESS = 3.0;
 static const auto PIANO_ROLL_MIN_BAR_WIDTH = 1.0;
@@ -511,9 +515,8 @@ struct PianoRollWidget : public QWidget {
       lane_end_times[assigned_lane] = event.start_time_ms + event.duration_ms;
       unpitched_lane_by_event[event_index] = assigned_lane;
     }
-    // the horizontal axis sits at the same y as the lowest pitch tick, and
-    // both axes sit at x/y == PIANO_ROLL_AXIS_X, so the axes' first ticks
-    // (the lowest pitch tick, and the t=0 time tick) meet at one corner
+    // both axes sit at x/y == PIANO_ROLL_AXIS_X, so the horizontal axis and
+    // the t=0 time tick meet at one corner
     const auto axis_y = draw_pitch_axis(min_midi, max_midi);
     draw_time_axis(max_time_ms, axis_y);
     const auto unpitched_lane_top = axis_y + PIANO_ROLL_UNPITCHED_LANE_GAP;
@@ -764,24 +767,31 @@ struct PianoRollWidget : public QWidget {
                         2));
   }
 
-  // draws a tick + note-name label at every octave (C) spanning the range of
-  // pitched notes actually present, with no padding beyond that range;
-  // returns the y position of the lowest (bottommost) pitch tick, which is
-  // where the horizontal time axis should sit
+  // draws a tick + note-name label at every octave (C) at or above the
+  // lowest pitched note present, up through the highest octave that still
+  // fits within a fixed margin above the highest note -- ticks beyond either
+  // margin would just sit off the visible graph, so they're skipped rather
+  // than drawn there; returns the y position of the horizontal time axis, a
+  // fixed few semitones below the lowest note (not snapped to any tick), so
+  // the lowest note's bar never reads as glued to the axis line
   [[nodiscard]] auto draw_pitch_axis(const double min_midi,
                                      const double max_midi) -> double {
     if (min_midi > max_midi) {
       return PIANO_ROLL_DEFAULT_AXIS_Y;
     }
+    const auto axis_pitch =
+        min_midi - PIANO_ROLL_AXIS_PITCH_MARGIN_SEMITONES;
+    const auto top_pitch =
+        max_midi + PIANO_ROLL_AXIS_PITCH_MARGIN_SEMITONES;
+    const auto axis_y = -axis_pitch * PIANO_ROLL_PIXELS_PER_SEMITONE;
     const auto first_octave =
-        C_0_MIDI + to_int(std::floor((min_midi - C_0_MIDI) /
-                                     HALFSTEPS_PER_OCTAVE)) *
-                       HALFSTEPS_PER_OCTAVE;
-    const auto last_octave =
-        C_0_MIDI + to_int(std::ceil((max_midi - C_0_MIDI) /
+        C_0_MIDI + to_int(std::ceil((axis_pitch - C_0_MIDI) /
                                     HALFSTEPS_PER_OCTAVE)) *
                        HALFSTEPS_PER_OCTAVE;
-    const auto axis_y = -first_octave * PIANO_ROLL_PIXELS_PER_SEMITONE;
+    const auto last_octave =
+        C_0_MIDI + to_int(std::floor((top_pitch - C_0_MIDI) /
+                                     HALFSTEPS_PER_OCTAVE)) *
+                       HALFSTEPS_PER_OCTAVE;
 
     for (auto midi_value = first_octave; midi_value <= last_octave;
         midi_value = midi_value + HALFSTEPS_PER_OCTAVE) {
