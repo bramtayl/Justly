@@ -12,6 +12,7 @@
 - [Notation](#notation)
 - [Interface](#interface)
   - [Interval buttons](#interval-buttons)
+  - [Piano roll](#piano-roll)
   - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Import](#import)
 - [Example](#example)
@@ -208,6 +209,16 @@ When you select a chord or pitched note cell, Justly will show corresponding fre
 - To edit the unpitched notes of a chord, double click its "Unpitched notes" cell.
 - To go back to the chords, select "Back to chords" from the "View" menu (see [View Menu](#view-menu) below).
 
+### Piano roll
+
+Select "Piano roll" from the "View" menu to show or hide the piano roll, a graphical view of the song docked at the bottom of the window.
+
+The piano roll plots pitched notes by pitch (vertical axis) against time (horizontal axis); unpitched notes are shown in lanes below the pitch axis. A legend on the right identifies each voice by color.
+
+While playing, a red playhead line marks the current playback position and scrolls to follow it. Click or drag anywhere in the piano roll to move the playhead to that time, which also selects the corresponding chord in the table. Double click a note to select it in the table.
+
+Select "Zoom in" or "Zoom out" from the "View" menu, or hold Ctrl and scroll the mouse wheel over the piano roll, to zoom the time axis in or out under the cursor. Only the time axis zooms; the pitch axis does not.
+
 ### File Menu
 
 In the "File" menu, you can choose among the following options:
@@ -245,12 +256,16 @@ In the "View" menu, you can choose among the following options:
 - "Unpitched voices" to view unpitched voices.
 - "Previous chord" to view the pitched or unpitched notes of the previous chord.
 - "Next chord" to view the pitched or unpitched notes of the next chord.
+- "Piano roll" to show or hide the piano roll (see [Piano roll](#piano-roll) above).
+- "Zoom in" to zoom in the piano roll's time axis.
+- "Zoom out" to zoom out the piano roll's time axis.
 
 ### Play Menu
 
 In the play menu, you can choose among the following options:
 
 - "Play selection" to play a selection of chords or notes. If you play a selection of chords, you will skip any previous chords, and only play the selected chords. If you play a selection of notes within a chord, you will skip any previous chords, and only play the selected notes within the current chord.
+- "Play to end" like "Play selection", but instead of stopping after the selection, Justly continues playing through to the end of the song.
 - "Stop Playing" to stop playing.
 
 ### Keyboard shortcuts
@@ -273,10 +288,13 @@ In the play menu, you can choose among the following options:
 | Back to chords | Alt+Left | View |
 | Previous chord | Ctrl+Shift+Tab | View |
 | Next chord | Ctrl+Tab | View |
+| Zoom in | Ctrl++ | View |
+| Zoom out | Ctrl+- | View |
 | Play selection | Space | Play |
+| Play to end | Shift+Space | Play |
 | Stop playing | Escape | Play |
 
-"Import MusicXML", "Export recording", Paste "Into start", "Pitched voices", and "Unpitched voices" have no keyboard shortcut; use the menus above instead.
+"Import MusicXML", "Export recording", Paste "Into start", "Pitched voices", "Unpitched voices", and "Piano roll" have no keyboard shortcut; use the menus above instead.
 
 On macOS, Ctrl in the table above is usually Cmd; a few navigation shortcuts (Back to chords, Previous chord, Next chord) use different key combinations on macOS, shown in the menu itself.
 
