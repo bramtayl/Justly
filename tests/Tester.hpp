@@ -1462,6 +1462,26 @@ private slots:
     maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
   };
 
+  void test_play_to_end_starts_playhead() {
+    // regression test: "Play to end" is a separate action from "Play
+    // selection" and must independently start the piano roll playhead
+    // animation, not just trigger audio playback
+    auto &song_widget = song_editor.song_widget;
+    auto &piano_roll_widget = song_editor.piano_roll_widget;
+    auto &switch_table = song_widget.switch_column.switch_table;
+    auto &play_menu = song_editor.song_menu_bar.play_menu;
+
+    select_cell(switch_table, 0, 0);
+
+    QVERIFY(!piano_roll_widget.playhead_active);
+    play_menu.play_to_end_action.trigger();
+    QVERIFY(piano_roll_widget.playhead_active);
+
+    QThread::msleep(WAIT_TIME);
+    play_menu.stop_playing_action.trigger();
+    QVERIFY(!piano_roll_widget.playhead_active);
+  };
+
   void test_ratio_bound_data() {
     QTest::addColumn<QPushButton *>("fifth_button_pointer");
     QTest::addColumn<QPushButton *>("octave_button_pointer");
