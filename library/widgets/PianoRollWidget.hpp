@@ -712,17 +712,15 @@ struct PianoRollWidget : public QWidget {
     follow_playhead(playhead_x);
   }
 
-  // scrolls the view horizontally just enough to keep the moving playhead
-  // on screen, without disturbing the user's vertical scroll position -- the
-  // playhead line already spans the full scene height, so it's always
-  // vertically visible regardless of scroll and only needs a 0 vertical
-  // margin to prevent ensureVisible from ever moving the vertical scrollbar
+  // keeps the moving playhead centered horizontally, without disturbing the
+  // user's vertical scroll position -- centerOn() can't scroll past the
+  // view's own scene rect (set in rebuild_scene()), so near the start/end of
+  // the song, where centering the playhead would need to scroll past that
+  // edge, it instead settles as close to centered as the edge allows
   void follow_playhead(const double playhead_x) {
     const auto visible_scene_rect =
         view.mapToScene(view.viewport()->rect()).boundingRect();
-    view.ensureVisible(QRectF(playhead_x, visible_scene_rect.top(), 0,
-                              visible_scene_rect.height()),
-                       0, 0);
+    view.centerOn(playhead_x, visible_scene_rect.center().y());
   }
 
   // follow_playhead() calls ensureVisible() every tick while playing,
