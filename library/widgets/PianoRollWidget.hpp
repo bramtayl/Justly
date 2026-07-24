@@ -725,12 +725,25 @@ struct PianoRollWidget : public QWidget {
                        0, 0);
   }
 
+  // follow_playhead() calls ensureVisible() every tick while playing,
+  // fighting any manual scroll (drag on the scrollbar, or wheel) the user
+  // does at the same time -- the two writes to the same scroll position
+  // within one 33ms tick used to leave rendering artifacts behind that read
+  // as extra, stuck red cursor lines. Disabling manual scrolling during
+  // playback removes the conflicting writer entirely.
+  void set_manual_scrolling_enabled(const bool enabled) {
+    view.horizontalScrollBar()->setEnabled(enabled);
+    view.verticalScrollBar()->setEnabled(enabled);
+    axis_view.verticalScrollBar()->setEnabled(enabled);
+  }
+
   void start_playhead(const double baseline_ms, const double end_ms) {
     playhead_baseline_ms = baseline_ms;
     playhead_end_ms = end_ms;
     playhead_elapsed_timer.restart();
     playhead_active = true;
     playhead_item.show();
+    set_manual_scrolling_enabled(false);
     position_playhead(baseline_ms);
     playhead_timer.start(PIANO_ROLL_TIMER_INTERVAL_MS);
   }
@@ -739,6 +752,7 @@ struct PianoRollWidget : public QWidget {
     playhead_timer.stop();
     playhead_active = false;
     playhead_item.hide();
+    set_manual_scrolling_enabled(true);
   }
 
   void update_playhead_position() {
@@ -751,6 +765,7 @@ struct PianoRollWidget : public QWidget {
     if (current_ms >= playhead_end_ms) {
       playhead_active = false;
       playhead_timer.stop();
+      set_manual_scrolling_enabled(true);
       position_playhead(playhead_end_ms);
       return;
     }
