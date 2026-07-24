@@ -1,9 +1,5 @@
 #pragma once
 
-#include <fluidsynth.h>
-#include <libxml/parser.h>
-#include <libxml/xmlschemas.h>
-#include <string.h>
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QChar>
 #include <QtCore/QItemSelectionModel>
@@ -31,7 +27,15 @@
 #include <QtWidgets/QWidget>
 #include <algorithm>
 #include <cmath>
+#include <fluidsynth.h>
+#include <fluidsynth/audio.h>
+#include <fluidsynth/event.h>
+#include <fluidsynth/seq.h>
+#include <fluidsynth/synth.h>
+#include <fluidsynth/types.h>
 #include <iterator>
+#include <libxml/parser.h>
+#include <libxml/xmlschemas.h>
 #include <numeric>
 #include <string>
 #include <tuple>

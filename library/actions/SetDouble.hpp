@@ -1,10 +1,10 @@
 #pragma once
 
-#include <fluidsynth.h>
 #include <QtCore/QObject>
 #include <QtCore/QtAssert>
 #include <QtGui/QUndoCommand>
 #include <QtWidgets/QDoubleSpinBox>
+#include <fluidsynth.h>
 
 #include "actions/ChangeId.hpp"
 #include "other/Song.hpp"

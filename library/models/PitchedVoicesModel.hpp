@@ -3,6 +3,7 @@
 #include <QtCore/QList>
 #include <QtCore/QString>
 #include <QtCore/QTypeInfo>
+#include <QtCore/QVariant>
 #include <QtCore/QtMinMax>
 #include <QtCore/QtSwap>
 

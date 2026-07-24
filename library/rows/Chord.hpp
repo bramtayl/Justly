@@ -1,6 +1,5 @@
 #pragma once
 
-#include <libxml/parser.h>
 #include <QtCore/QList>
 #include <QtCore/QString>
 #include <QtCore/QTypeInfo>
@@ -8,8 +7,7 @@
 #include <QtCore/QtAssert>
 #include <QtCore/QtMinMax>
 #include <QtCore/QtSwap>
-#include <string>
-#include <utility>
+#include <libxml/parser.h>
 
 #include "cell_types/Interval.hpp"
 #include "cell_types/Rational.hpp"

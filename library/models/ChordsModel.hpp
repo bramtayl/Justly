@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QtCore/QDebug>
 #include <QtCore/QTypeInfo>
 #include <QtCore/QtMinMax>
 #include <QtCore/QtSwap>

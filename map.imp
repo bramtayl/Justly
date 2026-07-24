@@ -6,7 +6,6 @@
   { "include": ["<QtCore/qglobal.h>", "private", "<QtCore/QtGlobal>", "public"] },
   { "include": ["<QtCore/qobjectdefs.h>", "private", "<QtCore/QMetaObject>", "public"] },
   { "include": ["<QtCore/qtcoreexports.h>", "private", "<QtCore/QtGlobal>", "public"] },
-  { "include": ["<fluidsynth/types.h>", "private", "<fluidsynth.h>", "public"] },
   { "include": ["<nlohmann/detail/iterators/iter_impl.hpp>", "private", "<nlohmann/json.hpp>", "public"] },
   { "include": ["<nlohmann/detail/json_pointer.hpp>", "private", "<nlohmann/json.hpp>", "public"] },
   { "include": ["<nlohmann/detail/json_ref.hpp>", "private", "<nlohmann/json.hpp>", "public"] },
@@ -50,6 +49,7 @@
   { "include": ["<qlist.h>", "private", "<QtCore/QList>", "public"] },
   { "include": ["<qmainwindow.h>", "private", "<QtWidgets/QMainWindow>", "public"] },
   { "include": ["<qmap.h>", "private", "<QtCore/QMap>", "public"] },
+  { "include": ["<qmargins.h>", "private", "<QtCore/QMargins>", "public"] },
   { "include": ["<qmenu.h>", "private", "<QtWidgets/QMenu>", "public"] },
   { "include": ["<qmenubar.h>", "private", "<QtWidgets/QMenuBar>", "public"] },
   { "include": ["<qmessagebox.h>", "private", "<QtWidgets/QMessageBox>", "public"] },
@@ -93,5 +93,6 @@
   { "include": ["<qtmetamacros.h>", "private", "<QtCore/QObject>", "public"] },
   { "include": ["<qundostack.h>", "private", "<QtGui/QUndoStack>", "public"] },
   { "include": ["<qvariant.h>", "private", "<QtCore/QVariant>", "public"] },
-  { "include": ["<qwidget.h>", "private", "<QtWidgets/QWidget>", "public"] }
+  { "include": ["<qwidget.h>", "private", "<QtWidgets/QWidget>", "public"] },
+  { "include": ["<math.h>", "private", "<cmath>", "public"] }
 ]

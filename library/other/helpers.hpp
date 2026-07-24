@@ -1,7 +1,5 @@
 #pragma once
 
-#include <libxml/parser.h>
-#include <libxml/xmlstring.h>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -11,6 +9,8 @@
 #include <QtCore/QtAssert>
 #include <algorithm>
 #include <iterator>
+#include <libxml/parser.h>
+#include <libxml/xmlstring.h>
 #include <string>
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)

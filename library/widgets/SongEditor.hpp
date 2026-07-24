@@ -1,6 +1,5 @@
 #pragma once
 
-#include <libxml/xmlversion.h>
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QMetaObject>
 #include <QtCore/QMetaType>
@@ -24,6 +23,7 @@
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QStatusBar>
 #include <functional>
+#include <libxml/xmlversion.h>
 #include <optional>
 #include <string>
 

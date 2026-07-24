@@ -1,10 +1,16 @@
 #pragma once
 
-#include <fluidsynth.h>
 #include <QtCore/QList>
 #include <QtCore/QObject>
 #include <QtCore/QtAssert>
 #include <QtWidgets/QMessageBox>
+#include <fluidsynth.h>
+#include <fluidsynth/audio.h>
+#include <fluidsynth/event.h>
+#include <fluidsynth/misc.h>
+#include <fluidsynth/seq.h>
+#include <fluidsynth/settings.h>
+#include <fluidsynth/types.h>
 #include <thread>
 
 #include "cell_types/Program.hpp"

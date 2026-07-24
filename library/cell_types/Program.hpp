@@ -1,6 +1,5 @@
 #pragma once
 
-#include <fluidsynth.h>
 #include <QtCore/QByteArray>
 #include <QtCore/QList>
 #include <QtCore/QMetaType>
@@ -10,7 +9,10 @@
 #include <QtCore/QtMinMax>
 #include <QtCore/QtSwap>
 #include <algorithm>
-#include <compare>
+#include <fluidsynth.h>
+#include <fluidsynth/sfont.h>
+#include <fluidsynth/synth.h>
+#include <fluidsynth/types.h>
 #include <iterator>
 #include <set>
 #include <string>

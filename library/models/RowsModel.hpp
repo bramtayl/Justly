@@ -1,6 +1,5 @@
 #pragma once
 
-#include <libxml/parser.h>
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QFlags>
 #include <QtCore/QItemSelectionModel>
@@ -11,6 +10,7 @@
 #include <QtCore/QtAssert>
 #include <algorithm>
 #include <iterator>
+#include <libxml/parser.h>
 #include <utility>
 
 #include "other/helpers.hpp"

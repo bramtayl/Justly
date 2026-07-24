@@ -1,6 +1,5 @@
 #pragma once
 
-#include <math.h>
 #include <QtCore/QItemSelectionModel>
 #include <QtCore/QList>
 #include <QtCore/QMetaObject>
@@ -12,15 +11,11 @@
 #include <QtGui/QKeySequence>
 #include <QtWidgets/QMenu>
 
-#include "cell_types/Rational.hpp"
 #include "models/RowsModel.hpp"
 #include "other/Song.hpp"
 #include "rows/Chord.hpp"
 #include "rows/Note.hpp"
-#include "rows/PitchedVoice.hpp"
-#include "rows/Row.hpp"
 #include "rows/RowType.hpp"
-#include "rows/UnpitchedVoice.hpp"
 #include "sound/Player.hpp"
 #include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"

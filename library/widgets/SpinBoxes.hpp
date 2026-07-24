@@ -1,6 +1,5 @@
 #pragma once
 
-#include <fluidsynth.h>
 #include <QtCore/QMetaObject>
 #include <QtCore/QObject>
 #include <QtCore/QString>
@@ -10,6 +9,8 @@
 #include <QtWidgets/QSizePolicy>
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QWidget>
+#include <fluidsynth.h>
+#include <fluidsynth/synth.h>
 
 #include "actions/ChangeId.hpp"
 #include "actions/SetDouble.hpp"

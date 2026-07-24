@@ -5,7 +5,6 @@
 #include <QtCore/QtCompare>
 #include <QtCore/QtSwap>
 #include <string>
-#include <utility>
 
 #include "musicxml/MusicXMLChord.hpp"
 

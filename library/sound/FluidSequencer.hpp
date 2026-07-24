@@ -1,6 +1,9 @@
 #pragma once
 
 #include <fluidsynth.h>
+#include <fluidsynth/seq.h>
+#include <fluidsynth/seqbind.h>
+#include <fluidsynth/types.h>
 
 #include "other/helpers.hpp"
 #include "sound/FluidSynth.hpp"

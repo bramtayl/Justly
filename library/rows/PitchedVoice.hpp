@@ -1,11 +1,10 @@
 #pragma once
 
-#include <libxml/parser.h>
 #include <QtCore/QString>
 #include <QtCore/QTypeInfo>
 #include <QtCore/QVariant>
 #include <QtCore/QtAssert>
-#include <string>
+#include <libxml/parser.h>
 
 #include "cell_types/Rational.hpp"
 #include "column_numbers/PitchedVoiceColumn.hpp"

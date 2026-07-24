@@ -1,6 +1,5 @@
 #pragma once
 
-#include <libxml/parser.h>
 #include <QtCore/QFlags>
 #include <QtCore/QItemSelectionModel>
 #include <QtCore/QList>
@@ -22,9 +21,9 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMessageBox>
 #include <algorithm>
+#include <libxml/parser.h>
 #include <limits>
 #include <optional>
-#include <string>
 #include <utility>
 
 #include "actions/InsertRemoveRows.hpp"

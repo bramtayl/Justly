@@ -47,10 +47,21 @@ endif()
 qt_standard_project_setup()
 
 if (INCLUDE_WHAT_YOU_USE)
-    set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE 
+    # most of the codebase lives in headers with no matching .cpp, and iwyu
+    # only reports on a .cpp and its associated header by default, so tell it
+    # to also check every project header directly
+    set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE
         include-what-you-use
         -Xiwyu
         --mapping_file=${Justly_SOURCE_DIR}/map.imp
+        -Xiwyu
+        --check_also=${Justly_SOURCE_DIR}/library/*
+        -Xiwyu
+        --check_also=${Justly_SOURCE_DIR}/library/*/*
+        -Xiwyu
+        --check_also=${Justly_SOURCE_DIR}/executable/*
+        -Xiwyu
+        --check_also=${Justly_SOURCE_DIR}/tests/*
     )
 endif()
 

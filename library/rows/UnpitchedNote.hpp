@@ -1,12 +1,11 @@
 #pragma once
 
-#include <libxml/parser.h>
 #include <QtCore/QList>
 #include <QtCore/QString>
 #include <QtCore/QTypeInfo>
 #include <QtCore/QVariant>
 #include <QtCore/QtAssert>
-#include <string>
+#include <libxml/parser.h>
 
 #include "cell_types/Program.hpp"
 #include "cell_types/Rational.hpp"

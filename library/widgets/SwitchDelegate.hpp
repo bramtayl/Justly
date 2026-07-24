@@ -7,6 +7,7 @@
 #include <QtCore/QtSwap>
 #include <QtWidgets/QFrame>
 #include <QtWidgets/QSizePolicy>
+#include <QtWidgets/QStyleOption>
 #include <QtWidgets/QStyledItemDelegate>
 #include <QtWidgets/QWidget>
 
@@ -23,9 +24,7 @@
 #include "column_numbers/UnpitchedVoiceColumn.hpp"
 #include "other/Song.hpp"
 #include "other/helpers.hpp"
-#include "rows/PitchedVoice.hpp"
 #include "rows/RowType.hpp"
-#include "rows/UnpitchedVoice.hpp"
 #include "rows/Voice.hpp"
 
 static auto create_string_picker(QWidget *parent_pointer,

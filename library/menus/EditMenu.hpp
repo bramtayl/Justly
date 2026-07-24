@@ -1,7 +1,5 @@
 #pragma once
 
-#include <libxml/parser.h>
-#include <libxml/xmlstring.h>
 #include <QtCore/QItemSelectionModel>
 #include <QtCore/QList>
 #include <QtCore/QMetaObject>
@@ -15,7 +13,8 @@
 #include <QtGui/QKeySequence>
 #include <QtGui/QUndoStack>
 #include <QtWidgets/QMenu>
-#include <utility>
+#include <libxml/parser.h>
+#include <libxml/xmlstring.h>
 
 #include "actions/DeleteCells.hpp"
 #include "actions/InsertRemoveRows.hpp"

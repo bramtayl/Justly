@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stdlib.h>
 #include <QtCore/QList>
 #include <QtCore/QMap>
 #include <QtCore/QObject>
@@ -9,8 +8,8 @@
 #include <QtCore/QtCompare>
 #include <QtCore/QtSwap>
 #include <cmath>
+#include <cstdlib>
 #include <tuple>
-#include <utility>
 
 #include "rows/Chord.hpp"
 #include "rows/PitchedNote.hpp"

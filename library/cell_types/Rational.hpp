@@ -1,11 +1,10 @@
 #pragma once
 
-#include <libxml/parser.h>
 #include <QtCore/QByteArray>
 #include <QtCore/QMetaType>
 #include <QtCore/QtAssert>
+#include <libxml/parser.h>
 #include <numeric>
-#include <string>
 
 #include "other/helpers.hpp"
 

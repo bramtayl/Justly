@@ -1,6 +1,8 @@
 #pragma once
 
 #include <fluidsynth.h>
+#include <fluidsynth/settings.h>
+#include <fluidsynth/types.h>
 
 #include "other/helpers.hpp"
 

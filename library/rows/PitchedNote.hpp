@@ -1,7 +1,5 @@
 #pragma once
 
-#include <fluidsynth.h>
-#include <libxml/parser.h>
 #include <QtCore/QList>
 #include <QtCore/QObject>
 #include <QtCore/QString>
@@ -11,7 +9,10 @@
 #include <QtCore/QtAssert>
 #include <QtWidgets/QMessageBox>
 #include <cmath>
-#include <string>
+#include <fluidsynth.h>
+#include <fluidsynth/event.h>
+#include <fluidsynth/seq.h>
+#include <libxml/parser.h>
 
 #include "cell_types/Interval.hpp"
 #include "cell_types/Program.hpp"
