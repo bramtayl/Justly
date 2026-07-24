@@ -20,6 +20,7 @@
 #include <QtGui/QPen>
 #include <QtGui/QPolygonF>
 #include <QtGui/QTransform>
+#include <QtGui/QWheelEvent>
 #include <QtWidgets/QGraphicsLineItem>
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsView>
@@ -469,7 +470,27 @@ struct PianoRollWidget : public QWidget {
                       scene_rect.right() - PIANO_ROLL_AXIS_X,
                       scene_rect.height());
 
+    update_max_height(scene_rect.height());
+
     apply_selection_highlight();
+  }
+
+  // a short song (few voices, narrow pitch range) doesn't need nearly as
+  // much vertical space as PIANO_ROLL_MIN_HEIGHT reserves -- letting the dock
+  // grow well past the content just leaves blank gray space below the last
+  // note. Capping it at the content's own height (plus the chrome around it)
+  // means dragging the dock splitter taller stops being useful once the
+  // whole piano roll is already on screen, rather than dragging in dead
+  // space. Still floored at PIANO_ROLL_MIN_HEIGHT so an empty/near-empty
+  // piano roll doesn't collapse to a sliver.
+  void update_max_height(const double content_height) {
+    const auto chrome_height =
+        (2 * view.frameWidth()) + view.horizontalScrollBar()->sizeHint().height() +
+        column_layout.contentsMargins().top() +
+        column_layout.contentsMargins().bottom();
+    setMaximumHeight(static_cast<int>(std::max(
+        static_cast<double>(PIANO_ROLL_MIN_HEIGHT),
+        std::ceil(content_height + chrome_height))));
   }
 
   // sets the main view's horizontal scale directly (rather than accumulating
