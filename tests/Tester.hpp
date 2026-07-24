@@ -2194,6 +2194,78 @@ private slots:
     maybe_switch_back_to_chords(undo_stack, RowType::pitched_voice_type);
   };
 
+  void test_piano_roll_selection_preserves_multi_row_range() {
+    auto &switch_table = song_editor.song_widget.switch_column.switch_table;
+
+    // selecting a range of chords (e.g. for "Play selection") must not get
+    // collapsed down to a single row by the piano roll's cursor-follows-
+    // selection sync -- regression test for a bug where every table
+    // selection change (not just the cursor actually moving) fed back
+    // through select_chord_at_playhead() and forced a single-row reselect
+    auto &model = get_model(switch_table);
+    get_selection_model(switch_table)
+        .select(QItemSelection(model.index(1, 0), model.index(3, 0)),
+                SELECT_AND_CLEAR);
+
+    const auto &range = get_only_range(switch_table);
+    QCOMPARE(range.top(), 1);
+    QCOMPARE(range.bottom(), 3);
+  };
+
+  void test_piano_roll_drag_selects_chord() {
+    auto &piano_roll_widget = song_editor.piano_roll_widget;
+    auto &switch_table = song_editor.song_widget.switch_column.switch_table;
+
+    // start on chord 1 (600ms-1200ms, per test_piano_roll_time_bounds()
+    // above) so the drag below has to actually move the selection rather
+    // than leave an already-correct one alone
+    select_cell(switch_table, 1, 0);
+
+    // chord 2 starts where chord 1 ends, at 1200ms
+    const auto view_pos = piano_roll_widget.view.mapFromScene(
+        QPointF(1200.0 * PIANO_ROLL_PIXELS_PER_MS, 0));
+    const auto global_pos =
+        piano_roll_widget.view.viewport()->mapToGlobal(view_pos);
+
+    QMouseEvent press_event(QEvent::MouseButtonPress, QPointF(view_pos),
+                            QPointF(global_pos), Qt::LeftButton,
+                            Qt::LeftButton, Qt::NoModifier);
+    piano_roll_widget.eventFilter(piano_roll_widget.view.viewport(),
+                                  &press_event);
+
+    QCOMPARE(switch_table.delegate.current_row_type, RowType::chord_type);
+    QCOMPARE(get_only_range(switch_table).top(), 2);
+
+    QMouseEvent release_event(QEvent::MouseButtonRelease, QPointF(view_pos),
+                              QPointF(global_pos), Qt::NoButton, Qt::NoButton,
+                              Qt::NoModifier);
+    piano_roll_widget.eventFilter(piano_roll_widget.view.viewport(),
+                                  &release_event);
+  };
+
+  void test_piano_roll_playback_selects_chord() {
+    auto &piano_roll_widget = song_editor.piano_roll_widget;
+    auto &switch_table = song_editor.song_widget.switch_column.switch_table;
+
+    // start on chord 0; starting playback at chord 2's baseline (1200ms,
+    // per test_piano_roll_time_bounds() above) shouldn't itself move the
+    // selection -- only a timer tick should, so a multi-chord "Play
+    // selection" isn't collapsed to a single row the instant Play is
+    // pressed
+    select_cell(switch_table, 0, 0);
+
+    piano_roll_widget.start_playhead(1200.0, 1800.0);
+    QCOMPARE(get_only_range(switch_table).top(), 0);
+
+    // simulates one playback timer tick without waiting on the real
+    // QElapsedTimer -- elapsed() is at least 0, so current_ms is already
+    // >= the 1200ms baseline, landing on chord 2
+    piano_roll_widget.update_playhead_position();
+    QCOMPARE(get_only_range(switch_table).top(), 2);
+
+    piano_roll_widget.stop_playhead();
+  };
+
   void test_piano_roll_zoom() {
     auto &piano_roll_widget = song_editor.piano_roll_widget;
 

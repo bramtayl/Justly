@@ -4,6 +4,7 @@
 #include <QtCore/QTypeInfo>
 #include <QtCore/QtMinMax>
 #include <QtCore/QtSwap>
+#include <algorithm>
 #include <cstdint>
 #include <type_traits>
 
@@ -91,4 +92,35 @@ append_piano_roll_events(QList<PianoRollNoteEvent> &events,
     move_time(play_state, chord);
   }
   return events;
+}
+
+// each chord's start time, in chord order -- chords are laid out back-to-
+// back with no gaps, so a chord's own end time is simply the next chord's
+// start (or, for the last chord, whatever the caller already knows the
+// song's end time to be)
+[[nodiscard]] static inline auto get_chord_start_times(const Song &song)
+    -> QList<double> {
+  QList<double> start_times;
+
+  PlayState play_state;
+  initialize_playstate(song, play_state, 0);
+
+  for (const auto &chord : song.chords) {
+    modulate(play_state, chord);
+    start_times.push_back(play_state.current_time);
+    move_time(play_state, chord);
+  }
+  return start_times;
+}
+
+// which chord's time range (as laid out by get_chord_start_times) contains
+// time_ms -- the last chord whose start is at or before time_ms, or -1 if
+// there are no chords yet or time_ms falls before the first one
+[[nodiscard]] static inline auto
+get_chord_number_at_time(const QList<double> &chord_start_times,
+                         const double time_ms) -> int {
+  const auto first_later_iterator =
+      std::ranges::upper_bound(chord_start_times, time_ms);
+  return static_cast<int>(first_later_iterator - chord_start_times.begin()) -
+         1;
 }

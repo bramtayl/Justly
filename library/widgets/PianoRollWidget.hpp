@@ -3,8 +3,9 @@
 #include <QtCore/QChar>
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QEvent>
+#include <QtCore/QItemSelectionModel>
 #include <QtCore/QList>
-#include <QtCore/QMargins> 
+#include <QtCore/QMargins>
 #include <QtCore/QMetaObject>
 #include <QtCore/QObject>
 #include <QtCore/QPoint>
@@ -46,6 +47,7 @@
 #include "rows/UnpitchedVoice.hpp"
 #include "sound/PlayState.hpp"
 #include "widgets/SongWidget.hpp"
+#include "widgets/SwitchColumn.hpp"
 
 static const auto PIANO_ROLL_PIXELS_PER_MS = 0.1;
 static const auto PIANO_ROLL_PIXELS_PER_SEMITONE = 6;
@@ -274,6 +276,15 @@ struct PianoRollWidget : public QWidget {
   // MouseMove handling so ordinary mouse-move events (that aren't part of a
   // drag) don't also move the cursor
   bool playhead_dragging = false;
+  // true for the duration of select_chord_at_playhead()'s own call to
+  // QItemSelectionModel::select() -- that select() re-enters this widget
+  // synchronously via SongEditor's selectionChanged connection
+  // (update_piano_roll_selection() -> update_selection() ->
+  // apply_selection_highlight()); without this guard, apply_selection_highlight()
+  // would treat the sync as an ordinary table-driven selection change and
+  // reposition the cursor to the newly-selected chord's start, snapping it
+  // backwards away from wherever the drag/playback actually put it
+  bool selecting_chord_from_playhead = false;
 
   // scales only the main view's x axis (time), never its y axis (pitch) --
   // so the pitch axis stays visually fixed (and stays in lockstep with
@@ -297,6 +308,10 @@ struct PianoRollWidget : public QWidget {
   // parallel to events -- the actual drawn item for each event, so a table
   // selection can be traced forward to the bar(s) it should highlight
   QList<QGraphicsRectItem *> note_items;
+  // parallel to song_widget.song.chords, rebuilt alongside events -- lets
+  // select_chord_at_playhead() find which chord a cursor time falls in
+  // without rescanning the whole song on every playback tick
+  QList<double> chord_start_times;
 
   // the switch table's current selection, mirrored here by SongEditor
   // (via update_selection()) every time it changes, so rebuild_scene() can
@@ -454,6 +469,42 @@ struct PianoRollWidget : public QWidget {
     playhead_item.setLine(playhead_x, scene_rect.top(), playhead_x,
                           scene_rect.bottom());
     playhead_item.show();
+    select_chord_at_playhead(playhead_x / PIANO_ROLL_PIXELS_PER_MS);
+  }
+
+  // called whenever the playhead moves on its own -- from a manual drag
+  // (drag_playhead_to() above) or a running playback timer tick
+  // (update_playhead_position() below) -- so the switch table's own
+  // selection follows the cursor back. Deliberately NOT called from
+  // position_playhead() itself, since that's also invoked reactively by
+  // apply_selection_highlight() after any table selection change (including
+  // a multi-row range); calling this from there would collapse that
+  // selection down to a single row the instant it was made. Only applies
+  // while the table is showing chords: a note or voice row has no single
+  // "current chord" to reselect into, and reselecting a chord there would
+  // kick the user out of whichever chord's notes/voices they're editing.
+  void select_chord_at_playhead(const double time_ms) {
+    auto &switch_table = song_widget.switch_column.switch_table;
+    if (switch_table.delegate.current_row_type != RowType::chord_type) {
+      return;
+    }
+    const auto chord_number =
+        get_chord_number_at_time(chord_start_times, time_ms);
+    if (chord_number < 0) {
+      return;
+    }
+    auto &selection_model = get_selection_model(switch_table);
+    const auto selected_rows = selection_model.selectedRows();
+    if (selected_rows.size() == 1 && selected_rows.at(0).row() == chord_number) {
+      return;
+    }
+    const auto chord_index = switch_table.chords_model.index(chord_number, 0);
+    selecting_chord_from_playhead = true;
+    selection_model.select(chord_index, QItemSelectionModel::Select |
+                                            QItemSelectionModel::Clear |
+                                            QItemSelectionModel::Rows);
+    selecting_chord_from_playhead = false;
+    switch_table.scrollTo(chord_index);
   }
 
   void rebuild_scene() {
@@ -475,6 +526,7 @@ struct PianoRollWidget : public QWidget {
         static_cast<int>(pitched_voices.size());
 
     events = get_piano_roll_events(song);
+    chord_start_times = get_chord_start_times(song);
 
     auto min_midi = std::numeric_limits<double>::max();
     auto max_midi = std::numeric_limits<double>::lowest();
@@ -706,10 +758,14 @@ struct PianoRollWidget : public QWidget {
       return;
     }
 
-    // playback already owns the cursor line while it's running; don't yank
-    // it away from the moving playhead just because the table selection
-    // changed underneath it
-    if (!playhead_active) {
+    // playback already owns the cursor line while it's running, and so does
+    // an in-progress manual drag (which set it more precisely than a chord's
+    // start time); a selection change caused by select_chord_at_playhead()
+    // itself shouldn't reposition the cursor either, since it's just
+    // reporting where the cursor already is -- don't yank it away from any
+    // of the three just because the table selection changed underneath it
+    if (!playhead_active && !playhead_dragging &&
+       !selecting_chord_from_playhead) {
       const auto baseline_ms =
           get_piano_roll_time_bounds(
               song_widget.song,
@@ -926,8 +982,10 @@ struct PianoRollWidget : public QWidget {
       playhead_timer.stop();
       set_manual_scrolling_enabled(true);
       position_playhead(playhead_end_ms);
+      select_chord_at_playhead(playhead_end_ms);
       return;
     }
     position_playhead(current_ms);
+    select_chord_at_playhead(current_ms);
   }
 };
