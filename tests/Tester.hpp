@@ -1397,6 +1397,108 @@ private slots:
     maybe_switch_back_to_chords(undo_stack, row_type);
   };
 
+  static void test_paste_stale_voice_data() {
+    QTest::addColumn<QString>("text");
+    QTest::addColumn<bool>("is_pitched");
+    QTest::addColumn<QString>("warning_message");
+
+    static const QString pitched_song =
+        "<song><gain>1</gain><starting_key>220</starting_key>"
+        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
+        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
+        "<instrument>Marimba</instrument></pitched_voice><pitched_voice>"
+        "<name>B</name><instrument>Grand Piano</instrument></pitched_voice>"
+        "</pitched_voices><unpitched_voices><unpitched_voice><name>D</name>"
+        "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
+        "midi_number></unpitched_voice></unpitched_voices><chords><chord>"
+        "<pitched_notes><pitched_note><voice_number>0</voice_number>"
+        "</pitched_note><pitched_note><voice_number>1</voice_number>"
+        "</pitched_note></pitched_notes></chord></chords></song>";
+    static const QString unpitched_song =
+        "<song><gain>1</gain><starting_key>220</starting_key>"
+        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
+        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
+        "<instrument>Marimba</instrument></pitched_voice></pitched_voices>"
+        "<unpitched_voices><unpitched_voice><name>D</name>"
+        "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
+        "midi_number></unpitched_voice><unpitched_voice><name>E</name>"
+        "<percussion_set_pointer>Power</percussion_set_pointer><midi_number>37</"
+        "midi_number></unpitched_voice></unpitched_voices><chords><chord>"
+        "<unpitched_notes><unpitched_note><voice_number>0</voice_number>"
+        "</unpitched_note><unpitched_note><voice_number>1</voice_number>"
+        "</unpitched_note></unpitched_notes></chord></chords></song>";
+
+    QTest::newRow("pitched voice")
+        << pitched_song << true
+        << "Voice 1 for chord 1, pitched note 1 has no corresponding voice";
+    QTest::newRow("unpitched voice")
+        << unpitched_song << false
+        << "Voice 1 for chord 1, unpitched note 1 has no corresponding voice";
+  };
+
+  void test_paste_stale_voice() {
+    // if the clipboard holds a note referencing a voice, and that voice gets
+    // deleted before the paste happens, pasting must warn instead of
+    // indexing into the voices list with the now out-of-range voice number
+    QFETCH(const QString, text);
+    QFETCH(const bool, is_pitched);
+    QFETCH(const QString, warning_message);
+
+    auto &song_widget = song_editor.song_widget;
+    auto &switch_table = song_widget.switch_column.switch_table;
+    auto &edit_menu = song_editor.song_menu_bar.edit_menu;
+    auto &back_to_chords_action =
+        song_editor.song_menu_bar.view_menu.back_to_chords_action;
+    auto &song = song_widget.song;
+
+    const auto note_row_type =
+        is_pitched ? RowType::pitched_note_type : RowType::unpitched_note_type;
+    const auto voice_row_type = is_pitched ? RowType::pitched_voice_type
+                                           : RowType::unpitched_voice_type;
+    const auto voice_column =
+        is_pitched
+            ? static_cast<int>(
+                  PitchedNoteColumn::pitched_note_voice_number_column)
+            : static_cast<int>(
+                  UnpitchedNoteColumn::unpitched_note_voice_number_column);
+    const auto reassign_warning =
+        is_pitched
+            ? "Reassigning voice for chord 1, pitched note 2 to the first "
+              "voice \"A\""
+            : "Reassigning voice for chord 1, unpitched note 2 to the first "
+              "voice \"D\"";
+
+    open_text(song_widget, text);
+
+    // copy the second note's voice cell, which references the last (soon to
+    // be removed) voice
+    switch_to(song_editor, note_row_type, 0);
+    select_cell(switch_table, 1, voice_column);
+    edit_menu.copy_action.trigger();
+    back_to_chords_action.trigger();
+
+    // remove that voice; the fixture's only note gets reassigned to voice 0,
+    // but the clipboard copied above still holds the now-removed voice number
+    switch_to(song_editor, voice_row_type, -1);
+    select_cell(switch_table, 1, 0);
+    close_message_later(song_editor, waiting_for_message, reassign_warning);
+    edit_menu.remove_rows_action.trigger();
+    back_to_chords_action.trigger();
+
+    // pasting the stale clipboard should warn, not crash
+    switch_to(song_editor, note_row_type, 0);
+    select_cell(switch_table, 0, voice_column);
+    close_message_later(song_editor, waiting_for_message, warning_message);
+    edit_menu.paste_menu.paste_over_action.trigger();
+    QCOMPARE(is_pitched ? song.chords.at(0).pitched_notes.at(0).voice_number
+                        : song.chords.at(0).unpitched_notes.at(0).voice_number,
+             0);
+    back_to_chords_action.trigger();
+
+    // restore the shared fixture
+    open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
+  };
+
   static void test_play_data() {
 
     add_table_columns();

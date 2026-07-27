@@ -36,6 +36,7 @@
 #include "other/Cells.hpp"
 #include "other/helpers.hpp"
 #include "rows/Chord.hpp"
+#include "rows/Note.hpp"
 #include "rows/PitchedNote.hpp"
 #include "rows/Row.hpp"
 #include "rows/RowType.hpp"
@@ -148,6 +149,16 @@ make_paste_insert_command(QWidget &parent, RowsModel<SubRow> &rows_model,
     return nullptr;
   }
   auto &cells = maybe_cells.value();
+  if constexpr (NoteInterface<SubRow>) {
+    const auto &song = rows_model.song;
+    const auto number_of_voices =
+        SubRow::is_pitched() ? static_cast<int>(song.pitched_voices.size())
+                             : static_cast<int>(song.unpitched_voices.size());
+    if (!check_note_voices(parent, cells.rows, number_of_voices,
+                           rows_model.parent_chord_number)) {
+      return nullptr;
+    }
+  }
   return new InsertRemoveRows( // NOLINT(cppcoreguidelines-owning-memory)
       rows_model, row_number, std::move(cells.rows), cells.left_column,
       cells.right_column, false);
@@ -198,6 +209,16 @@ make_paste_cells_command(QWidget &parent, const int first_row_number,
   }
   auto &cells = maybe_cells.value();
   auto &copy_rows = cells.rows;
+  if constexpr (NoteInterface<SubRow>) {
+    const auto &song = rows_model.song;
+    const auto number_of_voices =
+        SubRow::is_pitched() ? static_cast<int>(song.pitched_voices.size())
+                             : static_cast<int>(song.unpitched_voices.size());
+    if (!check_note_voices(parent, copy_rows, number_of_voices,
+                           rows_model.parent_chord_number)) {
+      return nullptr;
+    }
+  }
   const auto number_copied = static_cast<int>(copy_rows.size());
   return new SetCells( // NOLINT(cppcoreguidelines-owning-memory)
       rows_model, first_row_number, number_copied, cells.left_column,
