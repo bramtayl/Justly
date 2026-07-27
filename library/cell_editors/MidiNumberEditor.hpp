@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QtCore/QObject>
+#include <QtCore/qtmetamacros.h>
 #include <QtWidgets/QSpinBox>
 
 class QWidget;

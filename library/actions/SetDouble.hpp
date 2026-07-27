@@ -5,6 +5,7 @@
 #include <QtGui/QUndoCommand>
 #include <QtWidgets/QDoubleSpinBox>
 #include <fluidsynth.h>
+#include <fluidsynth/synth.h>
 
 #include "actions/ChangeId.hpp"
 #include "other/Song.hpp"

@@ -5,6 +5,7 @@
 #include <QtCore/QString>
 #include <QtCore/QStringListModel>
 #include <QtCore/QtAssert>
+#include <QtCore/qtmetamacros.h>
 #include <QtWidgets/QComboBox>
 #include <algorithm>
 #include <iterator>

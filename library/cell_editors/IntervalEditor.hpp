@@ -2,6 +2,7 @@
 
 #include <QtCore/QObject>
 #include <QtCore/QString>
+#include <QtCore/qtmetamacros.h>
 #include <QtWidgets/QBoxLayout>
 #include <QtWidgets/QFrame>
 #include <QtWidgets/QLabel>

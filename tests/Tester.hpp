@@ -24,6 +24,7 @@
 #include <QtCore/QVariant>
 #include <QtCore/Qt>
 #include <QtCore/QtAssert>
+#include <QtCore/qtmetamacros.h>
 #include <QtGui/QAction>
 #include <QtGui/QClipboard>
 #include <QtGui/QGuiApplication>
@@ -32,6 +33,8 @@
 #include <QtGui/QUndoStack>
 #include <QtTest/QTest>
 #include <QtTest/QTestData>
+#include <QtTest/qtestcase.h>
+#include <QtTest/qtestkeyboard.h>
 #include <QtWidgets/QAbstractItemDelegate>
 #include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QApplication>
@@ -44,7 +47,7 @@
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QStyleOption>
 #include <QtWidgets/QWidget>
-#include <ranges>
+#include <algorithm>
 #include <string>
 
 #include "column_numbers/ChordColumn.hpp"
@@ -64,10 +67,8 @@
 #include "other/helpers.hpp"
 #include "rows/Chord.hpp"
 #include "rows/PitchedNote.hpp"
-#include "rows/PitchedVoice.hpp"
 #include "rows/RowType.hpp"
 #include "rows/UnpitchedNote.hpp"
-#include "rows/UnpitchedVoice.hpp"
 #include "widgets/ControlsColumn.hpp"
 #include "widgets/IntervalRow.hpp"
 #include "widgets/PianoRollWidget.hpp"

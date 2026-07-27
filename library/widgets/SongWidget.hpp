@@ -36,6 +36,7 @@
 #include <iterator>
 #include <libxml/parser.h>
 #include <libxml/xmlschemas.h>
+#include <limits>
 #include <numeric>
 #include <string>
 #include <tuple>
@@ -381,7 +382,16 @@ static inline void export_to_file(SongWidget &song_widget,
 
 static void set_xml_double(xmlNode &node, const char *const field_name,
                            double value) {
-  set_xml_string(node, field_name, std::to_string(value));
+  // std::to_string uses the current C locale, which can use a comma for the
+  // decimal separator; QString::number is always locale-independent,
+  // matching the xs:decimal lexical form required by song.xsd. (std::to_chars
+  // would also work, but Apple's libc++ only supports the floating-point
+  // overloads when targeting very recent macOS versions, and this project
+  // deliberately supports macOS back to 12.0.)
+  static const auto double_digits = std::numeric_limits<double>::max_digits10;
+  set_xml_string(
+      node, field_name,
+      QString::number(value, 'g', double_digits).toStdString());
 }
 
 static inline void save_as_file(SongWidget &song_widget,
@@ -431,7 +441,13 @@ static void clear_rows(RowsModel<SubRow> &rows_model) {
 }
 
 [[nodiscard]] static auto xml_to_double(const xmlNode &element) {
-  return std::stod(get_content(element));
+  // std::stod uses the current C locale; QString::toDouble is always
+  // locale-independent, so this matches set_xml_double above
+  bool was_ok = false;
+  const auto value =
+      QString::fromStdString(get_content(element)).toDouble(&was_ok);
+  Q_ASSERT(was_ok);
+  return value;
 }
 
 [[nodiscard]] static inline auto
