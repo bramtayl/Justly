@@ -1053,7 +1053,7 @@ struct PianoRollWidget : public QWidget {
     playhead_timer.stop();
     playhead_active = false;
     playhead_transition = PlayheadTransition::none;
-    playhead_item.hide();
+    apply_selection_highlight();
     set_manual_scrolling_enabled(true);
   }
 
