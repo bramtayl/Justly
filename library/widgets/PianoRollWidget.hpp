@@ -813,7 +813,7 @@ struct PianoRollWidget : public QWidget {
                             : PianoRollNoteKind::unpitched_kind))
               .first;
       playhead_item.show();
-      position_playhead(baseline_ms);
+      position_playhead(baseline_ms, false);
     }
     if (!highlighted_bounds.isNull()) {
       view.ensureVisible(highlighted_bounds,
@@ -952,12 +952,18 @@ struct PianoRollWidget : public QWidget {
     }
   }
 
-  void position_playhead(const double time_ms) {
+  // follow_view lets a caller move the playhead line without recentering the
+  // view on it -- used when playback has already stopped (see
+  // apply_selection_highlight()), where forcibly recentering would yank the
+  // view away from wherever the user had it scrolled
+  void position_playhead(const double time_ms, const bool follow_view = true) {
     const auto playhead_x = time_ms * PIANO_ROLL_PIXELS_PER_MS;
     const auto &scene_rect = scene.sceneRect();
     playhead_item.setLine(playhead_x, scene_rect.top(), playhead_x,
                           scene_rect.bottom());
-    follow_playhead(playhead_x);
+    if (follow_view) {
+      follow_playhead(playhead_x);
+    }
   }
 
   // eases a just-started playhead onto the view's center instead of

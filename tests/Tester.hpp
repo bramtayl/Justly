@@ -1457,7 +1457,7 @@ private slots:
                   PitchedNoteColumn::pitched_note_voice_number_column)
             : static_cast<int>(
                   UnpitchedNoteColumn::unpitched_note_voice_number_column);
-    const auto reassign_warning =
+    const auto *const reassign_warning =
         is_pitched
             ? "Reassigning voice for chord 1, pitched note 2 to the first "
               "voice \"A\""
