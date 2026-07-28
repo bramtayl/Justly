@@ -1,11 +1,13 @@
 #pragma once
 
+#include <QtCore/QByteArray>
 #include <QtCore/QList>
 #include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtCore/QTextStream>
 #include <QtGui/QUndoStack>
 #include <QtWidgets/QMessageBox>
+#include <optional>
 
 #include "actions/VoiceNoteHelpers.hpp"
 #include "other/helpers.hpp"
@@ -16,13 +18,16 @@ template <VoiceInterface SubVoice> struct VoicesModel;
 
 // removes a range of voice rows, warning about (and reassigning to the first
 // remaining voice) any notes that referenced a removed voice, and shifting
-// the voice_number of notes that referenced a later voice
+// the voice_number of notes that referenced a later voice, including any
+// note cells sitting on the OS clipboard, so a later paste doesn't land on
+// the wrong voice
 template <VoiceInterface SubVoice, NoteInterface SubNote>
 struct RemoveVoiceRows : public QUndoCommand {
   VoicesModel<SubVoice> &voices_model;
   const int first_row_number;
   const QList<SubVoice> old_voice_rows;
   const QList<AffectedVoiceNote<SubVoice>> affected_notes;
+  std::optional<QByteArray> old_clipboard_bytes;
 
   RemoveVoiceRows(VoicesModel<SubVoice> &voices_model_input,
                   const int first_row_number_input, const int number_of_rows)
@@ -38,6 +43,7 @@ struct RemoveVoiceRows : public QUndoCommand {
                              SubVoice::get_number_of_columns());
     restore_affected_notes<SubVoice, SubNote>(voices_model.song.chords,
                                               affected_notes);
+    restore_clipboard_bytes(SubNote::get_cells_mime(), old_clipboard_bytes);
   }
 
   void redo() override {
@@ -87,6 +93,17 @@ struct RemoveVoiceRows : public QUndoCommand {
         note.voice_number = 0;
       }
     }
+    old_clipboard_bytes = renumber_clipboard_voice_numbers<SubNote>(
+        [first_row_number = first_row_number, last_removed_row,
+         number_of_rows](const int voice_number) -> int {
+          if (voice_number < first_row_number) {
+            return voice_number;
+          }
+          if (voice_number > last_removed_row) {
+            return voice_number - number_of_rows;
+          }
+          return 0;
+        });
     voices_model.remove_rows(first_row_number, number_of_rows);
   }
 };

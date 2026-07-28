@@ -1400,7 +1400,6 @@ private slots:
   static void test_paste_stale_voice_data() {
     QTest::addColumn<QString>("text");
     QTest::addColumn<bool>("is_pitched");
-    QTest::addColumn<QString>("warning_message");
 
     static const QString pitched_song =
         "<song><gain>1</gain><starting_key>220</starting_key>"
@@ -1428,21 +1427,18 @@ private slots:
         "</unpitched_note><unpitched_note><voice_number>1</voice_number>"
         "</unpitched_note></unpitched_notes></chord></chords></song>";
 
-    QTest::newRow("pitched voice")
-        << pitched_song << true
-        << "Voice 1 for chord 1, pitched note 1 has no corresponding voice";
-    QTest::newRow("unpitched voice")
-        << unpitched_song << false
-        << "Voice 1 for chord 1, unpitched note 1 has no corresponding voice";
+    QTest::newRow("pitched voice") << pitched_song << true;
+    QTest::newRow("unpitched voice") << unpitched_song << false;
   };
 
   void test_paste_stale_voice() {
     // if the clipboard holds a note referencing a voice, and that voice gets
-    // deleted before the paste happens, pasting must warn instead of
-    // indexing into the voices list with the now out-of-range voice number
+    // deleted before the paste happens, the clipboard's voice_number must be
+    // reassigned to the first remaining voice the same way the live note is,
+    // so pasting lands on a valid voice instead of indexing into the voices
+    // list with the now out-of-range voice number
     QFETCH(const QString, text);
     QFETCH(const bool, is_pitched);
-    QFETCH(const QString, warning_message);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -1485,14 +1481,103 @@ private slots:
     edit_menu.remove_rows_action.trigger();
     back_to_chords_action.trigger();
 
-    // pasting the stale clipboard should warn, not crash
+    // pasting the reassigned clipboard should succeed silently, landing on
+    // the first remaining voice instead of erroring or misassigning
     switch_to(song_editor, note_row_type, 0);
     select_cell(switch_table, 0, voice_column);
-    close_message_later(song_editor, waiting_for_message, warning_message);
     edit_menu.paste_menu.paste_over_action.trigger();
     QCOMPARE(is_pitched ? song.chords.at(0).pitched_notes.at(0).voice_number
                         : song.chords.at(0).unpitched_notes.at(0).voice_number,
              0);
+    back_to_chords_action.trigger();
+
+    // restore the shared fixture
+    open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
+  };
+
+  static void test_paste_voice_renumbered_on_insert_data() {
+    QTest::addColumn<QString>("text");
+    QTest::addColumn<bool>("is_pitched");
+
+    static const QString pitched_song =
+        "<song><gain>1</gain><starting_key>220</starting_key>"
+        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
+        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
+        "<instrument>Marimba</instrument></pitched_voice><pitched_voice>"
+        "<name>B</name><instrument>Grand Piano</instrument></pitched_voice>"
+        "</pitched_voices><unpitched_voices><unpitched_voice><name>D</name>"
+        "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
+        "midi_number></unpitched_voice></unpitched_voices><chords><chord>"
+        "<pitched_notes><pitched_note><voice_number>0</voice_number>"
+        "</pitched_note><pitched_note><voice_number>1</voice_number>"
+        "</pitched_note></pitched_notes></chord></chords></song>";
+    static const QString unpitched_song =
+        "<song><gain>1</gain><starting_key>220</starting_key>"
+        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
+        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
+        "<instrument>Marimba</instrument></pitched_voice></pitched_voices>"
+        "<unpitched_voices><unpitched_voice><name>D</name>"
+        "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
+        "midi_number></unpitched_voice><unpitched_voice><name>E</name>"
+        "<percussion_set_pointer>Power</percussion_set_pointer><midi_number>37</"
+        "midi_number></unpitched_voice></unpitched_voices><chords><chord>"
+        "<unpitched_notes><unpitched_note><voice_number>0</voice_number>"
+        "</unpitched_note><unpitched_note><voice_number>1</voice_number>"
+        "</unpitched_note></unpitched_notes></chord></chords></song>";
+
+    QTest::newRow("pitched voice") << pitched_song << true;
+    QTest::newRow("unpitched voice") << unpitched_song << false;
+  };
+
+  void test_paste_voice_renumbered_on_insert() {
+    // if the clipboard holds a note referencing a voice, and a voice is
+    // inserted before it, the clipboard's voice_number must shift the same
+    // way the live note's does, or pasting would silently land on whatever
+    // voice now occupies the old index instead of the voice actually copied
+    QFETCH(const QString, text);
+    QFETCH(const bool, is_pitched);
+
+    auto &song_widget = song_editor.song_widget;
+    auto &switch_table = song_widget.switch_column.switch_table;
+    auto &edit_menu = song_editor.song_menu_bar.edit_menu;
+    auto &back_to_chords_action =
+        song_editor.song_menu_bar.view_menu.back_to_chords_action;
+    auto &song = song_widget.song;
+
+    const auto note_row_type =
+        is_pitched ? RowType::pitched_note_type : RowType::unpitched_note_type;
+    const auto voice_row_type = is_pitched ? RowType::pitched_voice_type
+                                           : RowType::unpitched_voice_type;
+    const auto voice_column =
+        is_pitched
+            ? static_cast<int>(
+                  PitchedNoteColumn::pitched_note_voice_number_column)
+            : static_cast<int>(
+                  UnpitchedNoteColumn::unpitched_note_voice_number_column);
+
+    open_text(song_widget, text);
+
+    // copy the second note's voice cell, which references the second voice
+    switch_to(song_editor, note_row_type, 0);
+    select_cell(switch_table, 1, voice_column);
+    edit_menu.copy_action.trigger();
+    back_to_chords_action.trigger();
+
+    // insert a new voice before both existing voices; the fixture's notes
+    // both shift up by one, and so must the clipboard's copied voice_number
+    switch_to(song_editor, voice_row_type, -1);
+    select_cell(switch_table, 0, 0);
+    edit_menu.insert_menu.insert_into_start_action.trigger();
+    back_to_chords_action.trigger();
+
+    // pasting the shifted clipboard should land on the second voice's new
+    // index, not the stale pre-insert index (which now points elsewhere)
+    switch_to(song_editor, note_row_type, 0);
+    select_cell(switch_table, 0, voice_column);
+    edit_menu.paste_menu.paste_over_action.trigger();
+    QCOMPARE(is_pitched ? song.chords.at(0).pitched_notes.at(0).voice_number
+                        : song.chords.at(0).unpitched_notes.at(0).voice_number,
+             2);
     back_to_chords_action.trigger();
 
     // restore the shared fixture
