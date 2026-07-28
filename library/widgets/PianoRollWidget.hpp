@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QtCore/QChar>
+#include <QtCore/QEasingCurve>
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QEvent>
 #include <QtCore/QItemSelectionModel>
@@ -33,6 +34,7 @@
 #include <QtWidgets/QWidget>
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <functional>
 #include <limits>
 #include <optional>
@@ -59,6 +61,11 @@ static const auto PIANO_ROLL_LANE_HEIGHT = 20;
 static const auto PIANO_ROLL_NOTE_BAR_THICKNESS = 3.0;
 static const auto PIANO_ROLL_MIN_BAR_WIDTH = 1.0;
 static const auto PIANO_ROLL_TIMER_INTERVAL_MS = 33;
+// how long the view takes to catch up to the playhead when playback starts
+// with the playhead already right of center (see follow_playhead()) -- long
+// enough to read as a deliberate scroll, short enough not to lag behind
+// what's actually playing
+static const auto PIANO_ROLL_PLAYHEAD_CATCHUP_MS = 400.0;
 static const auto PIANO_ROLL_MIN_HEIGHT = 300;
 static const auto PIANO_ROLL_SCENE_MARGIN = 10.0;
 static const auto PIANO_ROLL_AXIS_TICK_LENGTH = 5.0;
@@ -271,6 +278,30 @@ struct PianoRollWidget : public QWidget {
   double playhead_baseline_ms = 0;
   double playhead_end_ms = 0;
   bool playhead_active = false;
+
+  // how follow_playhead() should bring a just-started playhead onto the
+  // view's center, instead of snapping there instantly -- see
+  // follow_playhead() for what each mode does
+  enum class PlayheadTransition : std::uint8_t {
+    // no transition in progress -- every tick centers the view on the
+    // playhead, as usual
+    none,
+    // the playhead started left of center: the view holds still and waits
+    // for playback's own forward motion to carry the playhead to the
+    // view's (fixed) center before switching to normal following
+    waiting_to_reach_center,
+    // the playhead started right of center: since playback only moves it
+    // further right, the view instead eases itself from its starting
+    // position to where the playhead will be once the catch-up window
+    // ends, so the animated scroll and the playhead's real-time motion
+    // converge together exactly at the center
+    catching_up,
+  };
+  PlayheadTransition playhead_transition = PlayheadTransition::none;
+  // the view's horizontal center, in scene coordinates, at the moment a
+  // catching_up transition began -- the fixed starting point the eased
+  // scroll interpolates away from
+  double playhead_catchup_start_center_x = 0.0;
   // true while the user is dragging the playhead with the mouse (between a
   // left-button press and release on the main view); guards the eventFilter's
   // MouseMove handling so ordinary mouse-move events (that aren't part of a
@@ -929,15 +960,56 @@ struct PianoRollWidget : public QWidget {
     follow_playhead(playhead_x);
   }
 
-  // keeps the moving playhead centered horizontally, without disturbing the
-  // user's vertical scroll position -- centerOn() can't scroll past the
-  // view's own scene rect (set in rebuild_scene()), so near the start/end of
-  // the song, where centering the playhead would need to scroll past that
-  // edge, it instead settles as close to centered as the edge allows
+  // eases a just-started playhead onto the view's center instead of
+  // snapping there instantly (see playhead_transition for the two ways it
+  // does that), then keeps it centered horizontally for the rest of
+  // playback, without disturbing the user's vertical scroll position --
+  // centerOn() can't scroll past the view's own scene rect (set in
+  // rebuild_scene()), so near the start/end of the song, where centering
+  // the playhead would need to scroll past that edge, it instead settles as
+  // close to centered as the edge allows
   void follow_playhead(const double playhead_x) {
     const auto visible_scene_rect =
         view.mapToScene(view.viewport()->rect()).boundingRect();
-    view.centerOn(playhead_x, visible_scene_rect.center().y());
+    const auto vertical_center = visible_scene_rect.center().y();
+
+    if (playhead_transition == PlayheadTransition::waiting_to_reach_center) {
+      // view stays put; playback's own forward motion is what carries the
+      // playhead across to the (fixed) center
+      if (playhead_x < visible_scene_rect.center().x()) {
+        return;
+      }
+      playhead_transition = PlayheadTransition::none;
+    } else if (playhead_transition == PlayheadTransition::catching_up) {
+      const auto elapsed_ms =
+          static_cast<double>(playhead_elapsed_timer.elapsed());
+      if (elapsed_ms < PIANO_ROLL_PLAYHEAD_CATCHUP_MS) {
+        // eases the view from where it started to exactly where the
+        // playhead will be once the catch-up window ends, so the animated
+        // scroll and the playhead's real-time motion converge together at
+        // the center, rather than the view sliding at some arbitrary rate
+        // and hoping it happens to line up
+        const auto progress = elapsed_ms / PIANO_ROLL_PLAYHEAD_CATCHUP_MS;
+        const auto eased_progress =
+            QEasingCurve(QEasingCurve::InOutQuad).valueForProgress(progress);
+        // clamped to playhead_end_ms so a clip shorter than the catch-up
+        // window still eases toward where playback actually ends, rather
+        // than toward a point in time it never reaches
+        const auto catchup_end_x =
+            std::min(playhead_baseline_ms + PIANO_ROLL_PLAYHEAD_CATCHUP_MS,
+                     playhead_end_ms) *
+            PIANO_ROLL_PIXELS_PER_MS;
+        const auto center_x =
+            playhead_catchup_start_center_x +
+            (eased_progress *
+             (catchup_end_x - playhead_catchup_start_center_x));
+        view.centerOn(center_x, vertical_center);
+        return;
+      }
+      playhead_transition = PlayheadTransition::none;
+    }
+
+    view.centerOn(playhead_x, vertical_center);
   }
 
   // follow_playhead() calls ensureVisible() every tick while playing,
@@ -959,6 +1031,20 @@ struct PianoRollWidget : public QWidget {
     playhead_active = true;
     playhead_item.show();
     set_manual_scrolling_enabled(false);
+
+    // decides which transition follow_playhead() should run, based on
+    // where the playhead is starting relative to the view's current
+    // (not-yet-moved) center -- see PlayheadTransition
+    const auto initial_center_x =
+        view.mapToScene(view.viewport()->rect()).boundingRect().center().x();
+    const auto playhead_x = baseline_ms * PIANO_ROLL_PIXELS_PER_MS;
+    if (playhead_x <= initial_center_x) {
+      playhead_transition = PlayheadTransition::waiting_to_reach_center;
+    } else {
+      playhead_transition = PlayheadTransition::catching_up;
+      playhead_catchup_start_center_x = initial_center_x;
+    }
+
     position_playhead(baseline_ms);
     playhead_timer.start(PIANO_ROLL_TIMER_INTERVAL_MS);
   }
@@ -966,6 +1052,7 @@ struct PianoRollWidget : public QWidget {
   void stop_playhead() {
     playhead_timer.stop();
     playhead_active = false;
+    playhead_transition = PlayheadTransition::none;
     playhead_item.hide();
     set_manual_scrolling_enabled(true);
   }
