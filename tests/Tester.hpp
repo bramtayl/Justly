@@ -1196,6 +1196,61 @@ private slots:
     open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
   };
 
+  static void test_remove_last_voice_error_data() {
+    QTest::addColumn<QString>("text");
+    QTest::addColumn<bool>("is_pitched");
+    QTest::addColumn<QString>("warning_message");
+
+    static const QString song_with_one_of_each_voice =
+        "<song><gain>1</gain><starting_key>220</starting_key>"
+        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
+        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
+        "<instrument>Marimba</instrument></pitched_voice></pitched_voices>"
+        "<unpitched_voices><unpitched_voice><name>B</name>"
+        "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
+        "midi_number></unpitched_voice></unpitched_voices></song>";
+
+    QTest::newRow("pitched voice")
+        << song_with_one_of_each_voice << true
+        << "Cannot remove every pitched voice; at least one must remain";
+    QTest::newRow("unpitched voice")
+        << song_with_one_of_each_voice << false
+        << "Cannot remove every unpitched voice; at least one must remain";
+  };
+
+  void test_remove_last_voice_error() {
+    // removing the only remaining voice of a type should warn and leave the
+    // voice (and undo stack) untouched, rather than removing it
+    QFETCH(const QString, text);
+    QFETCH(const bool, is_pitched);
+    QFETCH(const QString, warning_message);
+
+    auto &song_widget = song_editor.song_widget;
+    auto &switch_table = song_widget.switch_column.switch_table;
+    auto &undo_stack = song_widget.undo_stack;
+    const auto voice_row_type = is_pitched ? RowType::pitched_voice_type
+                                           : RowType::unpitched_voice_type;
+
+    open_text(song_widget, text);
+
+    switch_to(song_editor, voice_row_type, -1);
+    auto &model = get_model(switch_table);
+    QCOMPARE(model.rowCount(), 1);
+    const auto old_undo_count = undo_stack.count();
+
+    select_cell(switch_table, 0, 0);
+    close_message_later(song_editor, waiting_for_message, warning_message);
+    song_editor.song_menu_bar.edit_menu.remove_rows_action.trigger();
+
+    QCOMPARE(model.rowCount(), 1);
+    QCOMPARE(undo_stack.count(), old_undo_count);
+
+    maybe_switch_back_to_chords(undo_stack, voice_row_type);
+
+    // restore the shared fixture
+    open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
+  };
+
   static void test_musicxml_data() {
     QTest::addColumn<QString>("file_name");
     QTest::addColumn<int>("number_of_chords");

@@ -13,6 +13,7 @@
 #include <QtGui/QKeySequence>
 #include <QtGui/QUndoStack>
 #include <QtWidgets/QMenu>
+#include <QtWidgets/QMessageBox>
 
 #include "actions/DeleteCells.hpp"
 #include "actions/InsertRemoveRows.hpp"
@@ -205,11 +206,27 @@ struct EditMenu : public QMenu {
                                     first_row_number, number_of_rows);
             break;
           case RowType::pitched_voice_type:
+            if (number_of_rows >=
+                switch_table.pitched_voices_model.get_rows().size()) {
+              QMessageBox::warning(
+                  &song_widget, QObject::tr("Remove voice error"),
+                  QObject::tr("Cannot remove every pitched voice; "
+                              "at least one must remain"));
+              return;
+            }
             undo_command = new RemoveVoiceRows< // NOLINT(cppcoreguidelines-owning-memory)
                 PitchedVoice, PitchedNote>(switch_table.pitched_voices_model,
                                            first_row_number, number_of_rows);
             break;
           case RowType::unpitched_voice_type:
+            if (number_of_rows >=
+                switch_table.unpitched_voices_model.get_rows().size()) {
+              QMessageBox::warning(
+                  &song_widget, QObject::tr("Remove voice error"),
+                  QObject::tr("Cannot remove every unpitched voice; "
+                              "at least one must remain"));
+              return;
+            }
             undo_command = new RemoveVoiceRows< // NOLINT(cppcoreguidelines-owning-memory)
                 UnpitchedVoice, UnpitchedNote>(
                 switch_table.unpitched_voices_model, first_row_number,
