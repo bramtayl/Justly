@@ -24,6 +24,18 @@ template <VoiceInterface SubVoice, NoteInterface SubNote>
   }
 }
 
+// a note whose voice_number was (or will be) shifted by a fixed delta, so the
+// pre-shift voice_number can always be recovered as current - delta; used
+// where that delta is known at both redo and undo, so there's no need to
+// separately store the old voice number
+template <VoiceInterface SubVoice> struct RenumberedVoiceNote {
+  int chord_number;
+  int note_number;
+};
+
+// a note whose voice_number was overwritten with a value that doesn't encode
+// the original (e.g. reassigned to the first remaining voice), so the old
+// voice number must be stored to be restorable on undo
 template <VoiceInterface SubVoice> struct AffectedVoiceNote {
   int chord_number;
   int note_number;
@@ -31,23 +43,20 @@ template <VoiceInterface SubVoice> struct AffectedVoiceNote {
 };
 
 // finds every note referencing a voice at or after first_affected_voice_number,
-// so InsertVoiceRow/RemoveVoiceRows can shift or restore voice_number on
-// undo/redo
+// so InsertVoiceRow can shift its voice_number by a known delta on undo/redo
 template <VoiceInterface SubVoice, NoteInterface SubNote>
 [[nodiscard]] static auto
 find_affected_notes(QList<Chord> &chords,
                     const int first_affected_voice_number)
-    -> QList<AffectedVoiceNote<SubVoice>> {
-  QList<AffectedVoiceNote<SubVoice>> affected_notes;
+    -> QList<RenumberedVoiceNote<SubVoice>> {
+  QList<RenumberedVoiceNote<SubVoice>> affected_notes;
   for (auto chord_number = 0; chord_number < chords.size();
       chord_number = chord_number + 1) {
     auto &notes = get_voice_notes<SubVoice, SubNote>(chords[chord_number]);
     for (auto note_number = 0; note_number < notes.size();
         note_number = note_number + 1) {
-      const auto old_voice_number = notes.at(note_number).voice_number;
-      if (old_voice_number >= first_affected_voice_number) {
-        affected_notes.push_back(
-            {chord_number, note_number, old_voice_number});
+      if (notes.at(note_number).voice_number >= first_affected_voice_number) {
+        affected_notes.push_back({chord_number, note_number});
       }
     }
   }
@@ -55,13 +64,14 @@ find_affected_notes(QList<Chord> &chords,
 }
 
 template <VoiceInterface SubVoice, NoteInterface SubNote>
-static void restore_affected_notes(
+static void offset_voice_numbers(
     QList<Chord> &chords,
-    const QList<AffectedVoiceNote<SubVoice>> &affected_notes) {
+    const QList<RenumberedVoiceNote<SubVoice>> &affected_notes,
+    const int delta) {
   for (const auto &affected_note : affected_notes) {
     get_voice_notes<SubVoice, SubNote>(
         chords[affected_note.chord_number])[affected_note.note_number]
-        .voice_number = affected_note.old_voice_number;
+        .voice_number += delta;
   }
 }
 

@@ -23,24 +23,21 @@ template <VoiceInterface SubVoice, NoteInterface SubNote>
 static void
 split_affected_notes(QList<Chord> &chords, const int first_row_number,
                      const int last_removed_row,
-                     QList<AffectedVoiceNote<SubVoice>> &renumbered_notes,
+                     QList<RenumberedVoiceNote<SubVoice>> &renumbered_notes,
                      QList<AffectedVoiceNote<SubVoice>> &reassigned_notes) {
   for (auto chord_number = 0; chord_number < chords.size();
       chord_number = chord_number + 1) {
     auto &notes = get_voice_notes<SubVoice, SubNote>(chords[chord_number]);
     for (auto note_number = 0; note_number < notes.size();
         note_number = note_number + 1) {
-      const auto old_voice_number = notes.at(note_number).voice_number;
-      if (old_voice_number < first_row_number) {
+      const auto voice_number = notes.at(note_number).voice_number;
+      if (voice_number < first_row_number) {
         continue;
       }
-      const AffectedVoiceNote<SubVoice> affected_note{chord_number,
-                                                       note_number,
-                                                       old_voice_number};
-      if (old_voice_number > last_removed_row) {
-        renumbered_notes.push_back(affected_note);
+      if (voice_number > last_removed_row) {
+        renumbered_notes.push_back({chord_number, note_number});
       } else {
-        reassigned_notes.push_back(affected_note);
+        reassigned_notes.push_back({chord_number, note_number, voice_number});
       }
     }
   }
@@ -69,7 +66,7 @@ struct RemoveVoiceRows : public QUndoCommand {
   const int first_row_number;
   const QList<SubVoice> old_voice_rows;
   const int last_removed_row;
-  QList<AffectedVoiceNote<SubVoice>> renumbered_notes;
+  QList<RenumberedVoiceNote<SubVoice>> renumbered_notes;
   QList<AffectedVoiceNote<SubVoice>> reassigned_notes;
   const QString first_voice_name;
 
@@ -91,10 +88,14 @@ struct RemoveVoiceRows : public QUndoCommand {
   void undo() override {
     voices_model.insert_rows(first_row_number, old_voice_rows, 0,
                              SubVoice::get_number_of_columns());
-    restore_affected_notes<SubVoice, SubNote>(voices_model.song.chords,
-                                              renumbered_notes);
-    restore_affected_notes<SubVoice, SubNote>(voices_model.song.chords,
-                                              reassigned_notes);
+    auto &chords = voices_model.song.chords;
+    offset_voice_numbers<SubVoice, SubNote>(
+        chords, renumbered_notes, static_cast<int>(old_voice_rows.size()));
+    for (const auto &affected_note : reassigned_notes) {
+      get_voice_notes<SubVoice, SubNote>(
+          chords[affected_note.chord_number])[affected_note.note_number]
+          .voice_number = affected_note.old_voice_number;
+    }
     renumber_clipboard_voice_numbers<SubNote>(
         first_row_number, static_cast<int>(old_voice_rows.size()),
         /*is_insertion=*/true);
@@ -104,11 +105,8 @@ struct RemoveVoiceRows : public QUndoCommand {
     const auto number_of_rows = static_cast<int>(old_voice_rows.size());
     auto &chords = voices_model.song.chords;
 
-    for (const auto &affected_note : renumbered_notes) {
-      get_voice_notes<SubVoice, SubNote>(
-          chords[affected_note.chord_number])[affected_note.note_number]
-          .voice_number = affected_note.old_voice_number - number_of_rows;
-    }
+    offset_voice_numbers<SubVoice, SubNote>(chords, renumbered_notes,
+                                            -number_of_rows);
 
     if (!reassigned_notes.empty()) {
       const auto &first_reassigned_note = reassigned_notes.front();
