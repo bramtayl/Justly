@@ -117,6 +117,26 @@ find_and_process_voice_number(xmlNode &note_node, const int first_row_number,
   }
 }
 
+// shared by RemoveVoiceRows and renumber_clipboard_voice_numbers so a live
+// note reassignment and a stale clipboard reassignment are reported
+// identically, aside from is_clipboard calling out that the latter only
+// affects notes sitting on the OS clipboard
+template <NoteInterface SubNote>
+static void warn_reassigned_voices(QWidget &parent,
+                                   const int reassigned_count,
+                                   const QString &first_voice_name,
+                                   const bool is_clipboard = false) {
+  QString message;
+  QTextStream stream(&message);
+  stream << QObject::tr("Reassigning ") << reassigned_count
+         << (is_clipboard ? QObject::tr(" clipboard ") : QObject::tr(" "))
+         << QObject::tr(SubNote::get_pitched()) << QObject::tr(" note")
+         << (reassigned_count == 1 ? QObject::tr(" voice") : QObject::tr(" voices"))
+         << QObject::tr(" to the first voice \"") << first_voice_name
+         << QObject::tr("\"");
+  QMessageBox::warning(&parent, QObject::tr("Voice removed"), message);
+}
+
 // copied notes on the OS clipboard bake in a voice_number that is a plain
 // positional index (PitchedNote.hpp/UnpitchedNote.hpp column_to_xml), so
 // inserting/removing a voice row must renumber it the same way it renumbers
@@ -215,14 +235,8 @@ renumber_clipboard_voice_numbers(const int first_row_number,
   }
 
   if (reassigned_count > 0 && parent != nullptr) {
-    QString message;
-    QTextStream stream(&message);
-    stream << QObject::tr("Reassigning ") << reassigned_count
-           << (reassigned_count == 1 ? QObject::tr(" clipboard voice")
-                                     : QObject::tr(" clipboard voices"))
-           << QObject::tr(" to the first voice \"") << first_voice_name
-           << QObject::tr("\"");
-    QMessageBox::warning(parent, QObject::tr("Voice removed"), message);
+    warn_reassigned_voices<SubNote>(*parent, reassigned_count,
+                                    first_voice_name, /*is_clipboard=*/true);
   }
 
   auto &new_mime_data = *(new QMimeData); // NOLINT(cppcoreguidelines-owning-memory)

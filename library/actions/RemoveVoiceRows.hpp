@@ -1,11 +1,8 @@
 #pragma once
 
 #include <QtCore/QList>
-#include <QtCore/QObject>
 #include <QtCore/QString>
-#include <QtCore/QTextStream>
 #include <QtGui/QUndoStack>
-#include <QtWidgets/QMessageBox>
 
 #include "actions/VoiceNoteHelpers.hpp"
 #include "other/helpers.hpp"
@@ -109,24 +106,9 @@ struct RemoveVoiceRows : public QUndoCommand {
                                             -number_of_rows);
 
     if (!reassigned_notes.empty()) {
-      const auto &first_reassigned_note = reassigned_notes.front();
-      const auto number_of_other_reassigned_notes =
-          static_cast<int>(reassigned_notes.size()) - 1;
-      QString message;
-      QTextStream stream(&message);
-      stream << QObject::tr("Reassigning voice");
-      add_note_location<SubNote>(stream, first_reassigned_note.chord_number,
-                                 first_reassigned_note.note_number);
-      if (number_of_other_reassigned_notes > 0) {
-        stream << QObject::tr(" and ") << number_of_other_reassigned_notes
-               << (number_of_other_reassigned_notes == 1
-                       ? QObject::tr(" other note")
-                       : QObject::tr(" other notes"));
-      }
-      stream << QObject::tr(" to the first voice \"") << first_voice_name
-             << QObject::tr("\"");
-      QMessageBox::warning(&voices_model.parent, QObject::tr("Voice removed"),
-                           message);
+      warn_reassigned_voices<SubNote>(voices_model.parent,
+                                     static_cast<int>(reassigned_notes.size()),
+                                     first_voice_name);
       for (const auto &affected_note : reassigned_notes) {
         get_voice_notes<SubVoice, SubNote>(
             chords[affected_note.chord_number])[affected_note.note_number]

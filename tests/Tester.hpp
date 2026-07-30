@@ -1169,12 +1169,10 @@ private slots:
 
     QTest::newRow("pitched voice")
         << pitched_song << true
-        << "Reassigning voice for chord 1, pitched note 2 to the first "
-           "voice \"A\"";
+        << "Reassigning 1 pitched note voice to the first voice \"A\"";
     QTest::newRow("unpitched voice")
         << unpitched_song << false
-        << "Reassigning voice for chord 1, unpitched note 2 to the first "
-           "voice \"D\"";
+        << "Reassigning 1 unpitched note voice to the first voice \"D\"";
   };
 
   void test_remove_voice_reassigns_notes() {
@@ -1584,14 +1582,14 @@ private slots:
                   UnpitchedNoteColumn::unpitched_note_voice_number_column);
     const QList<QString> reassign_warnings =
         is_pitched
-            ? QList<QString>{"Reassigning voice for chord 1, pitched note 2 "
-                             "to the first voice \"A\"",
-                             "Reassigning 1 clipboard voice to the first "
-                             "voice \"A\""}
-            : QList<QString>{"Reassigning voice for chord 1, unpitched note "
-                             "2 to the first voice \"D\"",
-                             "Reassigning 1 clipboard voice to the first "
-                             "voice \"D\""};
+            ? QList<QString>{"Reassigning 1 pitched note voice to the "
+                             "first voice \"A\"",
+                             "Reassigning 1 clipboard pitched note voice to "
+                             "the first voice \"A\""}
+            : QList<QString>{"Reassigning 1 unpitched note voice to the "
+                             "first voice \"D\"",
+                             "Reassigning 1 clipboard unpitched note voice "
+                             "to the first voice \"D\""};
 
     open_text(song_widget, text);
 
@@ -1953,17 +1951,16 @@ private slots:
 
     select_cell(switch_table, 0, 0);
     // removing voice 0 reassigns the fixture's notes that use it, warning
-    // about the first one
+    // about how many were reassigned
     if (row_type == RowType::pitched_voice_type) {
       close_message_later(
           song_editor, waiting_for_message,
-          "Reassigning voice for chord 2, pitched note 1 and 6 other notes "
-          "to the first voice \"Guitar\"");
+          "Reassigning 7 pitched note voices to the first voice \"Guitar\"");
     } else if (row_type == RowType::unpitched_voice_type) {
       close_message_later(
           song_editor, waiting_for_message,
-          "Reassigning voice for chord 2, unpitched note 1 and 1 other note "
-          "to the first voice \"Room Kit\"");
+          "Reassigning 2 unpitched note voices to the first voice \"Room "
+          "Kit\"");
     }
     song_editor.song_menu_bar.edit_menu.remove_rows_action.trigger();
 
