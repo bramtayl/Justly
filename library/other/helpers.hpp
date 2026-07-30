@@ -7,6 +7,8 @@
 #include <QtCore/QString>
 #include <QtCore/QVariant>
 #include <QtCore/QtAssert>
+#include <QtGui/QClipboard>
+#include <QtGui/QGuiApplication>
 #include <algorithm>
 #include <iterator>
 #include <libxml/parser.h>
@@ -28,6 +30,10 @@ template <typename Thing>
 [[nodiscard]] static auto get_reference(Thing *thing_pointer) -> auto & {
   Q_ASSERT(thing_pointer != nullptr);
   return *thing_pointer;
+}
+
+[[nodiscard]] static inline auto get_clipboard() -> auto & {
+  return get_reference(QGuiApplication::clipboard());
 }
 
 template <typename Item>

@@ -3,14 +3,11 @@
 #include <QtCore/QByteArray>
 #include <QtCore/QList>
 #include <QtCore/QMimeData>
-#include <QtGui/QClipboard>
-#include <QtGui/QGuiApplication>
 #include <concepts>
 #include <functional>
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/xmlstring.h>
-#include <optional>
 #include <string>
 
 #include "other/helpers.hpp"
@@ -35,6 +32,41 @@ template <VoiceInterface SubVoice> struct AffectedVoiceNote {
   int note_number;
   int old_voice_number;
 };
+
+// the transform a clipboard voice_number needs when number_of_rows voice
+// rows are inserted at first_row_number, for InsertVoiceRow::redo and
+// RemoveVoiceRows::undo (reinserting the rows it removed)
+[[nodiscard]] static inline auto
+make_insert_voice_transform(const int first_row_number,
+                            const int number_of_rows)
+    -> std::function<int(int)> {
+  return [first_row_number, number_of_rows](const int voice_number) -> int {
+    return voice_number >= first_row_number ? voice_number + number_of_rows
+                                            : voice_number;
+  };
+}
+
+// the transform a clipboard voice_number needs when number_of_rows voice
+// rows starting at first_row_number are removed, for RemoveVoiceRows::redo
+// and InsertVoiceRow::undo (removing the row it inserted); voice numbers
+// pointing into the removed range collapse to 0, mirroring how notes still
+// in song.chords get reassigned to the first remaining voice
+[[nodiscard]] static inline auto
+make_remove_voice_transform(const int first_row_number,
+                            const int number_of_rows)
+    -> std::function<int(int)> {
+  const auto last_removed_row = first_row_number + number_of_rows - 1;
+  return [first_row_number, last_removed_row,
+          number_of_rows](const int voice_number) -> int {
+    if (voice_number < first_row_number) {
+      return voice_number;
+    }
+    if (voice_number > last_removed_row) {
+      return voice_number - number_of_rows;
+    }
+    return 0;
+  };
+}
 
 // finds every note referencing a voice at or after first_affected_voice_number,
 // so InsertVoiceRow/RemoveVoiceRows can shift or restore voice_number on
@@ -71,39 +103,32 @@ static void restore_affected_notes(
   }
 }
 
-// named distinctly from PasteMenu.hpp's get_clipboard() to avoid a duplicate
-// static-function definition when both headers land in the same translation
-// unit
-[[nodiscard]] static inline auto get_voice_clipboard() -> auto & {
-  return get_reference(QGuiApplication::clipboard());
-}
-
 // copied notes on the OS clipboard bake in a voice_number that is a plain
 // positional index (PitchedNote.hpp/UnpitchedNote.hpp column_to_xml), so
 // inserting/removing a voice row must renumber it the same way it renumbers
 // notes still in song.chords, or a later paste would silently land on the
-// wrong voice. Returns the clipboard's original bytes (for undo) if it held
-// SubNote cells with the voice column copied, or nullopt if nothing needed
-// changing.
+// wrong voice. Called on both redo and undo (with an inverting transform) so
+// that whatever happens to be on the clipboard at the time - including a
+// fresh copy made after the original action - gets renumbered correctly,
+// rather than blowing away a newer copy by restoring stale bytes.
 template <NoteInterface SubNote>
-[[nodiscard]] static auto renumber_clipboard_voice_numbers(
-    const std::function<int(int)> &transform_voice_number)
-    -> std::optional<QByteArray> {
+static void renumber_clipboard_voice_numbers(
+    const std::function<int(int)> &transform_voice_number) {
   const auto *mime_type = SubNote::get_cells_mime();
   // the offscreen QPA platform (used in tests) returns nullptr here until
   // something has actually been copied; a real windowing platform always
   // returns a QMimeData, possibly with zero formats
-  const auto *mime_data_pointer = get_voice_clipboard().mimeData();
+  const auto *mime_data_pointer = get_clipboard().mimeData();
   if (mime_data_pointer == nullptr ||
       !mime_data_pointer->hasFormat(mime_type)) {
-    return {};
+    return;
   }
   const auto old_bytes = mime_data_pointer->data(mime_type);
 
   XMLDocument document(xmlReadMemory(old_bytes.constData(), old_bytes.size(),
                                      nullptr, nullptr, 0));
   if (document.internal_pointer == nullptr) {
-    return {};
+    return;
   }
   auto &root = get_root(document);
 
@@ -116,7 +141,7 @@ template <NoteInterface SubNote>
       // voice_number is always column 0, so if the copied range starts after
       // it, a paste can never touch voice_number and there is nothing to fix
       if (xml_to_int(field_node) > 0) {
-        return {};
+        return;
       }
     } else if (name == "rows") {
       auto *row_pointer = xmlFirstElementChild(&field_node);
@@ -142,7 +167,7 @@ template <NoteInterface SubNote>
   }
 
   if (!changed) {
-    return {};
+    return;
   }
 
   xmlChar *char_buffer = nullptr;
@@ -155,19 +180,6 @@ template <NoteInterface SubNote>
           reinterpret_cast<const char *>( // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
               char_buffer),
           buffer_size));
-  get_voice_clipboard().setMimeData(&new_mime_data);
+  get_clipboard().setMimeData(&new_mime_data);
   xmlFree(char_buffer);
-
-  return old_bytes;
-}
-
-static void
-restore_clipboard_bytes(const char *mime_type,
-                        const std::optional<QByteArray> &old_bytes) {
-  if (!old_bytes.has_value()) {
-    return;
-  }
-  auto &mime_data = *(new QMimeData); // NOLINT(cppcoreguidelines-owning-memory)
-  mime_data.setData(mime_type, old_bytes.value());
-  get_voice_clipboard().setMimeData(&mime_data);
 }

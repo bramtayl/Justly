@@ -14,8 +14,6 @@
 #include <QtCore/QtMinMax>
 #include <QtCore/QtSwap>
 #include <QtGui/QAction>
-#include <QtGui/QClipboard>
-#include <QtGui/QGuiApplication>
 #include <QtGui/QKeySequence>
 #include <QtGui/QUndoStack>
 #include <QtWidgets/QMenu>
@@ -63,10 +61,6 @@ template <RowInterface SubRow> struct RowsModel;
     return QObject::tr("unpitched notes cells");
   }
   return mime_type;
-}
-
-[[nodiscard]] static inline auto get_clipboard() -> auto & {
-  return get_reference(QGuiApplication::clipboard());
 }
 
 template <RowInterface SubRow>

@@ -1,9 +1,7 @@
 #pragma once
 
-#include <QtCore/QByteArray>
 #include <QtCore/QList>
 #include <QtGui/QUndoStack>
-#include <optional>
 #include <utility>
 
 #include "actions/VoiceNoteHelpers.hpp"
@@ -21,7 +19,6 @@ struct InsertVoiceRow : public QUndoCommand {
   const int row_number;
   const SubVoice new_row;
   const QList<AffectedVoiceNote<SubVoice>> affected_notes;
-  std::optional<QByteArray> old_clipboard_bytes;
 
   InsertVoiceRow(VoicesModel<SubVoice> &voices_model_input,
                  const int row_number_input,
@@ -35,7 +32,8 @@ struct InsertVoiceRow : public QUndoCommand {
     voices_model.remove_rows(row_number, 1);
     restore_affected_notes<SubVoice, SubNote>(voices_model.song.chords,
                                               affected_notes);
-    restore_clipboard_bytes(SubNote::get_cells_mime(), old_clipboard_bytes);
+    renumber_clipboard_voice_numbers<SubNote>(
+        make_remove_voice_transform(row_number, 1));
   }
 
   void redo() override {
@@ -45,11 +43,8 @@ struct InsertVoiceRow : public QUndoCommand {
           chords[affected_note.chord_number])[affected_note.note_number]
           .voice_number = affected_note.old_voice_number + 1;
     }
-    old_clipboard_bytes = renumber_clipboard_voice_numbers<SubNote>(
-        [row_number = row_number](const int voice_number) -> int {
-          return voice_number >= row_number ? voice_number + 1
-                                            : voice_number;
-        });
+    renumber_clipboard_voice_numbers<SubNote>(
+        make_insert_voice_transform(row_number, 1));
     voices_model.insert_row(row_number, new_row);
   }
 };

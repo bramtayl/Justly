@@ -1,13 +1,11 @@
 #pragma once
 
-#include <QtCore/QByteArray>
 #include <QtCore/QList>
 #include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtCore/QTextStream>
 #include <QtGui/QUndoStack>
 #include <QtWidgets/QMessageBox>
-#include <optional>
 
 #include "actions/VoiceNoteHelpers.hpp"
 #include "other/helpers.hpp"
@@ -27,7 +25,6 @@ struct RemoveVoiceRows : public QUndoCommand {
   const int first_row_number;
   const QList<SubVoice> old_voice_rows;
   const QList<AffectedVoiceNote<SubVoice>> affected_notes;
-  std::optional<QByteArray> old_clipboard_bytes;
 
   RemoveVoiceRows(VoicesModel<SubVoice> &voices_model_input,
                   const int first_row_number_input, const int number_of_rows)
@@ -43,7 +40,8 @@ struct RemoveVoiceRows : public QUndoCommand {
                              SubVoice::get_number_of_columns());
     restore_affected_notes<SubVoice, SubNote>(voices_model.song.chords,
                                               affected_notes);
-    restore_clipboard_bytes(SubNote::get_cells_mime(), old_clipboard_bytes);
+    renumber_clipboard_voice_numbers<SubNote>(make_insert_voice_transform(
+        first_row_number, static_cast<int>(old_voice_rows.size())));
   }
 
   void redo() override {
@@ -93,17 +91,8 @@ struct RemoveVoiceRows : public QUndoCommand {
         note.voice_number = 0;
       }
     }
-    old_clipboard_bytes = renumber_clipboard_voice_numbers<SubNote>(
-        [first_row_number = first_row_number, last_removed_row,
-         number_of_rows](const int voice_number) -> int {
-          if (voice_number < first_row_number) {
-            return voice_number;
-          }
-          if (voice_number > last_removed_row) {
-            return voice_number - number_of_rows;
-          }
-          return 0;
-        });
+    renumber_clipboard_voice_numbers<SubNote>(
+        make_remove_voice_transform(first_row_number, number_of_rows));
     voices_model.remove_rows(first_row_number, number_of_rows);
   }
 };
