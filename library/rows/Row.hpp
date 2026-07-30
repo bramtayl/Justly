@@ -69,7 +69,8 @@ static inline void maybe_add_qstring_to_xml(xmlNode &node,
 }
 
 [[nodiscard]] static inline auto get_qstring_content(const xmlNode &node) {
-  return QString(get_c_string_content(node));
+  const XMLString content{xmlNodeGetContent(&node)};
+  return QString(xml_string_to_c_string(content.internal_pointer));
 }
 
 [[nodiscard]] static inline auto

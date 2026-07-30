@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <iterator>
 #include <libxml/parser.h>
+#include <libxml/xmlmemory.h>
 #include <libxml/xmlstring.h>
 #include <string>
 
@@ -25,6 +26,19 @@
   classname(classname &&) = delete;                                            \
   auto operator=(classname &&)->classname = delete;
 // NOLINTEND(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
+
+struct XMLString {
+  xmlChar *internal_pointer = nullptr;
+
+  XMLString() = default;
+
+  explicit XMLString(xmlChar *internal_pointer_input)
+      : internal_pointer(internal_pointer_input) {}
+
+  ~XMLString() { xmlFree(internal_pointer); }
+
+  NO_MOVE_COPY(XMLString)
+};
 
 template <typename Thing>
 [[nodiscard]] static auto get_reference(Thing *thing_pointer) -> auto & {
@@ -78,12 +92,9 @@ template <typename SubType>
   return xml_string_to_string(node.name);
 }
 
-[[nodiscard]] static auto get_c_string_content(const xmlNode &node) {
-  return xml_string_to_c_string(xmlNodeGetContent(&node));
-}
-
 [[nodiscard]] static auto get_content(const xmlNode &node) {
-  return std::string(get_c_string_content(node));
+  const XMLString content{xmlNodeGetContent(&node)};
+  return xml_string_to_string(content.internal_pointer);
 }
 
 [[nodiscard]] static inline auto xml_to_int(const xmlNode &element) {

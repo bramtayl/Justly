@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QtCore/QByteArray>
 #include <QtCore/QItemSelectionModel>
 #include <QtCore/QList>
 #include <QtCore/QMetaObject>
@@ -107,13 +108,16 @@ static void copy_from_model(QMimeData &mime_data,
     }
   }
 
-  xmlChar *char_buffer = nullptr;
+  XMLString char_buffer;
   auto buffer_size = 0;
-  xmlDocDumpMemory(document.internal_pointer, &char_buffer, &buffer_size);
+  xmlDocDumpMemory(document.internal_pointer, &char_buffer.internal_pointer,
+                   &buffer_size);
   mime_data.setData(
       SubRow::get_cells_mime(),
-      reinterpret_cast< // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-          char *>(char_buffer));
+      QByteArray(
+          reinterpret_cast<const char *>( // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+              char_buffer.internal_pointer),
+          buffer_size));
 }
 
 static void copy_selection(const SwitchTable &switch_table) {

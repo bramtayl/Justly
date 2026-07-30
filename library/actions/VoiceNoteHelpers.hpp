@@ -170,16 +170,16 @@ static void renumber_clipboard_voice_numbers(
     return;
   }
 
-  xmlChar *char_buffer = nullptr;
+  XMLString char_buffer;
   auto buffer_size = 0;
-  xmlDocDumpMemory(document.internal_pointer, &char_buffer, &buffer_size);
+  xmlDocDumpMemory(document.internal_pointer, &char_buffer.internal_pointer,
+                   &buffer_size);
   auto &new_mime_data = *(new QMimeData); // NOLINT(cppcoreguidelines-owning-memory)
   new_mime_data.setData(
       mime_type,
       QByteArray(
           reinterpret_cast<const char *>( // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-              char_buffer),
+              char_buffer.internal_pointer),
           buffer_size));
   get_clipboard().setMimeData(&new_mime_data);
-  xmlFree(char_buffer);
 }
