@@ -4,7 +4,6 @@
 #include <QtCore/QList>
 #include <QtCore/QMimeData>
 #include <concepts>
-#include <functional>
 #include <libxml/parser.h>
 #include <string>
 
@@ -30,41 +29,6 @@ template <VoiceInterface SubVoice> struct AffectedVoiceNote {
   int note_number;
   int old_voice_number;
 };
-
-// the transform a clipboard voice_number needs when number_of_rows voice
-// rows are inserted at first_row_number, for InsertVoiceRow::redo and
-// RemoveVoiceRows::undo (reinserting the rows it removed)
-[[nodiscard]] static inline auto
-make_insert_voice_transform(const int first_row_number,
-                            const int number_of_rows)
-    -> std::function<int(int)> {
-  return [first_row_number, number_of_rows](const int voice_number) -> int {
-    return voice_number >= first_row_number ? voice_number + number_of_rows
-                                            : voice_number;
-  };
-}
-
-// the transform a clipboard voice_number needs when number_of_rows voice
-// rows starting at first_row_number are removed, for RemoveVoiceRows::redo
-// and InsertVoiceRow::undo (removing the row it inserted); voice numbers
-// pointing into the removed range collapse to 0, mirroring how notes still
-// in song.chords get reassigned to the first remaining voice
-[[nodiscard]] static inline auto
-make_remove_voice_transform(const int first_row_number,
-                            const int number_of_rows)
-    -> std::function<int(int)> {
-  const auto last_removed_row = first_row_number + number_of_rows - 1;
-  return [first_row_number, last_removed_row,
-          number_of_rows](const int voice_number) -> int {
-    if (voice_number < first_row_number) {
-      return voice_number;
-    }
-    if (voice_number > last_removed_row) {
-      return voice_number - number_of_rows;
-    }
-    return 0;
-  };
-}
 
 // finds every note referencing a voice at or after first_affected_voice_number,
 // so InsertVoiceRow/RemoveVoiceRows can shift or restore voice_number on
@@ -105,13 +69,19 @@ static void restore_affected_notes(
 // positional index (PitchedNote.hpp/UnpitchedNote.hpp column_to_xml), so
 // inserting/removing a voice row must renumber it the same way it renumbers
 // notes still in song.chords, or a later paste would silently land on the
-// wrong voice. Called on both redo and undo (with an inverting transform) so
+// wrong voice. Called on both redo and undo (with is_insertion inverted) so
 // that whatever happens to be on the clipboard at the time - including a
 // fresh copy made after the original action - gets renumbered correctly,
-// rather than blowing away a newer copy by restoring stale bytes.
+// rather than blowing away a newer copy by restoring stale bytes. When
+// is_insertion is false, voice numbers pointing into the removed range
+// collapse to 0, mirroring how notes still in song.chords get reassigned to
+// the first remaining voice.
 template <NoteInterface SubNote>
-static void renumber_clipboard_voice_numbers(
-    const std::function<int(int)> &transform_voice_number) {
+static void renumber_clipboard_voice_numbers(const int first_row_number,
+                                             const int number_of_rows,
+                                             const bool is_insertion) {
+  const auto last_removed_row = first_row_number + number_of_rows - 1;
+
   const auto *mime_type = SubNote::get_cells_mime();
   // the offscreen QPA platform (used in tests) returns nullptr here until
   // something has actually been copied; a real windowing platform always
@@ -145,8 +115,17 @@ static void renumber_clipboard_voice_numbers(
         while (note_field_pointer != nullptr) {
           auto &note_field_node = get_reference(note_field_pointer);
           if (get_xml_name(note_field_node) == "voice_number") {
-            const auto new_voice_number =
-                transform_voice_number(xml_to_int(note_field_node));
+            const auto voice_number = xml_to_int(note_field_node);
+            auto new_voice_number = voice_number;
+            if (is_insertion) {
+              if (voice_number >= first_row_number) {
+                new_voice_number = voice_number + number_of_rows;
+              }
+            } else if (voice_number > last_removed_row) {
+              new_voice_number = voice_number - number_of_rows;
+            } else if (voice_number >= first_row_number) {
+              new_voice_number = 0;
+            }
             xmlNodeSetContent(
                 &note_field_node,
                 c_string_to_xml_string(

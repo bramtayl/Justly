@@ -95,8 +95,9 @@ struct RemoveVoiceRows : public QUndoCommand {
                                               renumbered_notes);
     restore_affected_notes<SubVoice, SubNote>(voices_model.song.chords,
                                               reassigned_notes);
-    renumber_clipboard_voice_numbers<SubNote>(make_insert_voice_transform(
-        first_row_number, static_cast<int>(old_voice_rows.size())));
+    renumber_clipboard_voice_numbers<SubNote>(
+        first_row_number, static_cast<int>(old_voice_rows.size()),
+        /*is_insertion=*/true);
   }
 
   void redo() override {
@@ -135,8 +136,8 @@ struct RemoveVoiceRows : public QUndoCommand {
       }
     }
 
-    renumber_clipboard_voice_numbers<SubNote>(
-        make_remove_voice_transform(first_row_number, number_of_rows));
+    renumber_clipboard_voice_numbers<SubNote>(first_row_number, number_of_rows,
+                                              /*is_insertion=*/false);
     voices_model.remove_rows(first_row_number, number_of_rows);
   }
 };

@@ -32,8 +32,8 @@ struct InsertVoiceRow : public QUndoCommand {
     voices_model.remove_rows(row_number, 1);
     restore_affected_notes<SubVoice, SubNote>(voices_model.song.chords,
                                               affected_notes);
-    renumber_clipboard_voice_numbers<SubNote>(
-        make_remove_voice_transform(row_number, 1));
+    renumber_clipboard_voice_numbers<SubNote>(row_number, 1,
+                                              /*is_insertion=*/false);
   }
 
   void redo() override {
@@ -43,8 +43,8 @@ struct InsertVoiceRow : public QUndoCommand {
           chords[affected_note.chord_number])[affected_note.note_number]
           .voice_number = affected_note.old_voice_number + 1;
     }
-    renumber_clipboard_voice_numbers<SubNote>(
-        make_insert_voice_transform(row_number, 1));
+    renumber_clipboard_voice_numbers<SubNote>(row_number, 1,
+                                              /*is_insertion=*/true);
     voices_model.insert_row(row_number, new_row);
   }
 };
