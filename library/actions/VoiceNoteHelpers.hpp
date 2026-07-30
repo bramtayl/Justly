@@ -75,32 +75,79 @@ static void offset_voice_numbers(
   }
 }
 
+// looks for a direct voice_number child of note_node and renumbers it (or,
+// for a removal that swallows it, zeroes it) the same way
+// InsertVoiceRow/RemoveVoiceRows renumber notes still in song.chords; used
+// both for a flat copied note row and for a single pitched_note/unpitched_note
+// nested inside a copied chord
+static void
+find_and_process_voice_number(xmlNode &note_node, const int first_row_number,
+                              const int last_removed_row,
+                              const int number_of_rows, const bool is_insertion,
+                              bool &changed) {
+  auto *note_field_pointer = xmlFirstElementChild(&note_node);
+  while (note_field_pointer != nullptr) {
+    auto &note_field_node = get_reference(note_field_pointer);
+    if (get_xml_name(note_field_node) == "voice_number") {
+      const auto voice_number = xml_to_int(note_field_node);
+      auto new_voice_number = voice_number;
+      if (is_insertion) {
+        if (voice_number >= first_row_number) {
+          new_voice_number = voice_number + number_of_rows;
+        }
+      } else if (voice_number > last_removed_row) {
+        new_voice_number = voice_number - number_of_rows;
+      } else if (voice_number >= first_row_number) {
+        new_voice_number = 0;
+      }
+      xmlNodeSetContent(
+          &note_field_node,
+          c_string_to_xml_string(std::to_string(new_voice_number).c_str()));
+      changed = true;
+    }
+    note_field_pointer = xmlNextElementSibling(note_field_pointer);
+  }
+}
+
 // copied notes on the OS clipboard bake in a voice_number that is a plain
 // positional index (PitchedNote.hpp/UnpitchedNote.hpp column_to_xml), so
 // inserting/removing a voice row must renumber it the same way it renumbers
 // notes still in song.chords, or a later paste would silently land on the
-// wrong voice. Called on both redo and undo (with is_insertion inverted) so
-// that whatever happens to be on the clipboard at the time - including a
-// fresh copy made after the original action - gets renumbered correctly,
-// rather than blowing away a newer copy by restoring stale bytes. When
-// is_insertion is false, voice numbers pointing into the removed range
-// collapse to 0, mirroring how notes still in song.chords get reassigned to
-// the first remaining voice.
+// wrong voice. A copied chord bakes the same voice_number into any nested
+// pitched_note/unpitched_note under its pitched_notes/unpitched_notes
+// wrapper, so those are checked too. Called on both redo and undo (with
+// is_insertion inverted) so that whatever happens to be on the clipboard at
+// the time - including a fresh copy made after the original action - gets
+// renumbered correctly, rather than blowing away a newer copy by restoring
+// stale bytes. When is_insertion is false, voice numbers pointing into the
+// removed range collapse to 0, mirroring how notes still in song.chords get
+// reassigned to the first remaining voice.
 template <NoteInterface SubNote>
 static void renumber_clipboard_voice_numbers(const int first_row_number,
                                              const int number_of_rows,
                                              const bool is_insertion) {
   const auto last_removed_row = first_row_number + number_of_rows - 1;
 
-  const auto *mime_type = SubNote::get_cells_mime();
+  const auto *notes_mime_type = SubNote::get_cells_mime();
+  const auto *chords_mime_type = Chord::get_cells_mime();
+  const auto notes_container_name =
+      std::string(SubNote::get_pitched()) + "_notes";
+
   // the offscreen QPA platform (used in tests) returns nullptr here until
   // something has actually been copied; a real windowing platform always
   // returns a QMimeData, possibly with zero formats
   const auto *mime_data_pointer = get_clipboard().mimeData();
-  if (mime_data_pointer == nullptr ||
-      !mime_data_pointer->hasFormat(mime_type)) {
+  if (mime_data_pointer == nullptr) {
     return;
   }
+  const auto has_notes_mime = mime_data_pointer->hasFormat(notes_mime_type);
+  const auto has_chords_mime =
+      !has_notes_mime && mime_data_pointer->hasFormat(chords_mime_type);
+  if (!has_notes_mime && !has_chords_mime) {
+    return;
+  }
+  const auto *mime_type = has_notes_mime ? notes_mime_type : chords_mime_type;
+
   auto document = read_xml_document(mime_data_pointer->data(mime_type));
   if (document.internal_pointer == nullptr) {
     return;
@@ -112,7 +159,7 @@ static void renumber_clipboard_voice_numbers(const int first_row_number,
   while (field_pointer != nullptr) {
     auto &field_node = get_reference(field_pointer);
     const auto name = get_xml_name(field_node);
-    if (name == "left_column") {
+    if (has_notes_mime && name == "left_column") {
       // voice_number is always column 0, so if the copied range starts after
       // it, a paste can never touch voice_number and there is nothing to fix
       if (xml_to_int(field_node) > 0) {
@@ -121,28 +168,25 @@ static void renumber_clipboard_voice_numbers(const int first_row_number,
     } else if (name == "rows") {
       auto *row_pointer = xmlFirstElementChild(&field_node);
       while (row_pointer != nullptr) {
-        auto *note_field_pointer = xmlFirstElementChild(row_pointer);
-        while (note_field_pointer != nullptr) {
-          auto &note_field_node = get_reference(note_field_pointer);
-          if (get_xml_name(note_field_node) == "voice_number") {
-            const auto voice_number = xml_to_int(note_field_node);
-            auto new_voice_number = voice_number;
-            if (is_insertion) {
-              if (voice_number >= first_row_number) {
-                new_voice_number = voice_number + number_of_rows;
+        if (has_notes_mime) {
+          find_and_process_voice_number(get_reference(row_pointer),
+                                        first_row_number, last_removed_row,
+                                        number_of_rows, is_insertion, changed);
+        } else {
+          auto *chord_field_pointer = xmlFirstElementChild(row_pointer);
+          while (chord_field_pointer != nullptr) {
+            auto &chord_field_node = get_reference(chord_field_pointer);
+            if (get_xml_name(chord_field_node) == notes_container_name) {
+              auto *note_pointer = xmlFirstElementChild(chord_field_pointer);
+              while (note_pointer != nullptr) {
+                find_and_process_voice_number(
+                    get_reference(note_pointer), first_row_number,
+                    last_removed_row, number_of_rows, is_insertion, changed);
+                note_pointer = xmlNextElementSibling(note_pointer);
               }
-            } else if (voice_number > last_removed_row) {
-              new_voice_number = voice_number - number_of_rows;
-            } else if (voice_number >= first_row_number) {
-              new_voice_number = 0;
             }
-            xmlNodeSetContent(
-                &note_field_node,
-                c_string_to_xml_string(
-                    std::to_string(new_voice_number).c_str()));
-            changed = true;
+            chord_field_pointer = xmlNextElementSibling(chord_field_pointer);
           }
-          note_field_pointer = xmlNextElementSibling(note_field_pointer);
         }
         row_pointer = xmlNextElementSibling(row_pointer);
       }

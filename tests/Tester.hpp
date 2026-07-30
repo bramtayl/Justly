@@ -1668,6 +1668,97 @@ private slots:
     open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
   };
 
+  static void test_paste_chord_voice_renumbered_on_insert_data() {
+    QTest::addColumn<QString>("text");
+    QTest::addColumn<bool>("is_pitched");
+
+    static const QString pitched_song =
+        "<song><gain>1</gain><starting_key>220</starting_key>"
+        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
+        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
+        "<instrument>Marimba</instrument></pitched_voice><pitched_voice>"
+        "<name>B</name><instrument>Grand Piano</instrument></pitched_voice>"
+        "</pitched_voices><unpitched_voices><unpitched_voice><name>D</name>"
+        "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
+        "midi_number></unpitched_voice></unpitched_voices><chords><chord>"
+        "<pitched_notes><pitched_note><voice_number>0</voice_number>"
+        "</pitched_note><pitched_note><voice_number>1</voice_number>"
+        "</pitched_note></pitched_notes></chord></chords></song>";
+    static const QString unpitched_song =
+        "<song><gain>1</gain><starting_key>220</starting_key>"
+        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
+        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
+        "<instrument>Marimba</instrument></pitched_voice></pitched_voices>"
+        "<unpitched_voices><unpitched_voice><name>D</name>"
+        "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
+        "midi_number></unpitched_voice><unpitched_voice><name>E</name>"
+        "<percussion_set_pointer>Power</percussion_set_pointer><midi_number>37</"
+        "midi_number></unpitched_voice></unpitched_voices><chords><chord>"
+        "<unpitched_notes><unpitched_note><voice_number>0</voice_number>"
+        "</unpitched_note><unpitched_note><voice_number>1</voice_number>"
+        "</unpitched_note></unpitched_notes></chord></chords></song>";
+
+    QTest::newRow("pitched voice") << pitched_song << true;
+    QTest::newRow("unpitched voice") << unpitched_song << false;
+  };
+
+  void test_paste_chord_voice_renumbered_on_insert() {
+    // copying a whole chord bakes its nested notes' voice_number into the
+    // clipboard too; inserting a voice must shift those nested voice_numbers
+    // the same way it shifts a flat note copy, or pasting the chord back
+    // would silently restore the notes' stale, pre-insert voice numbers
+    // (regression test for renumber_clipboard_voice_numbers not looking
+    // inside a copied chord's nested pitched_notes/unpitched_notes)
+    QFETCH(const QString, text);
+    QFETCH(const bool, is_pitched);
+
+    auto &song_widget = song_editor.song_widget;
+    auto &switch_table = song_widget.switch_column.switch_table;
+    auto &edit_menu = song_editor.song_menu_bar.edit_menu;
+    auto &back_to_chords_action =
+        song_editor.song_menu_bar.view_menu.back_to_chords_action;
+    auto &song = song_widget.song;
+
+    const auto voice_row_type = is_pitched ? RowType::pitched_voice_type
+                                           : RowType::unpitched_voice_type;
+    const auto last_column = Chord::get_number_of_columns() - 1;
+
+    open_text(song_widget, text);
+
+    // copy the whole chord row, including its pitched_notes/unpitched_notes
+    // column, which nests both notes' voice_number fields in the clipboard
+    get_selection_model(switch_table)
+        .select(QItemSelection(get_model(switch_table).index(0, 0),
+                               get_model(switch_table).index(0, last_column)),
+                SELECT_AND_CLEAR);
+    edit_menu.copy_action.trigger();
+
+    // insert a new voice before both existing voices; the live chord's notes
+    // shift up by one, and so must the nested voice_numbers on the clipboard
+    switch_to(song_editor, voice_row_type, -1);
+    select_cell(switch_table, 0, 0);
+    edit_menu.insert_menu.insert_into_start_action.trigger();
+    back_to_chords_action.trigger();
+
+    // pasting the shifted clipboard back over the chord should restore both
+    // notes at their new, shifted voice numbers, not the stale pre-insert ones
+    get_selection_model(switch_table)
+        .select(QItemSelection(get_model(switch_table).index(0, 0),
+                               get_model(switch_table).index(0, last_column)),
+                SELECT_AND_CLEAR);
+    edit_menu.paste_menu.paste_over_action.trigger();
+
+    QCOMPARE(is_pitched ? song.chords.at(0).pitched_notes.at(0).voice_number
+                        : song.chords.at(0).unpitched_notes.at(0).voice_number,
+             1);
+    QCOMPARE(is_pitched ? song.chords.at(0).pitched_notes.at(1).voice_number
+                        : song.chords.at(0).unpitched_notes.at(1).voice_number,
+             2);
+
+    // restore the shared fixture
+    open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
+  };
+
   static void test_play_data() {
 
     add_table_columns();
