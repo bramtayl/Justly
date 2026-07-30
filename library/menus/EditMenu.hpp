@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QtCore/QByteArray>
 #include <QtCore/QItemSelectionModel>
 #include <QtCore/QList>
 #include <QtCore/QMetaObject>
@@ -14,8 +13,6 @@
 #include <QtGui/QKeySequence>
 #include <QtGui/QUndoStack>
 #include <QtWidgets/QMenu>
-#include <libxml/parser.h>
-#include <libxml/xmlstring.h>
 
 #include "actions/DeleteCells.hpp"
 #include "actions/InsertRemoveRows.hpp"
@@ -108,16 +105,7 @@ static void copy_from_model(QMimeData &mime_data,
     }
   }
 
-  XMLString char_buffer;
-  auto buffer_size = 0;
-  xmlDocDumpMemory(document.internal_pointer, &char_buffer.internal_pointer,
-                   &buffer_size);
-  mime_data.setData(
-      SubRow::get_cells_mime(),
-      QByteArray(
-          reinterpret_cast<const char *>( // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-              char_buffer.internal_pointer),
-          buffer_size));
+  mime_data.setData(SubRow::get_cells_mime(), document_to_byte_array(document));
 }
 
 static void copy_selection(const SwitchTable &switch_table) {

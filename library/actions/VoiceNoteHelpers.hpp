@@ -6,8 +6,6 @@
 #include <concepts>
 #include <functional>
 #include <libxml/parser.h>
-#include <libxml/xmlmemory.h>
-#include <libxml/xmlstring.h>
 #include <string>
 
 #include "other/helpers.hpp"
@@ -123,10 +121,7 @@ static void renumber_clipboard_voice_numbers(
       !mime_data_pointer->hasFormat(mime_type)) {
     return;
   }
-  const auto old_bytes = mime_data_pointer->data(mime_type);
-
-  XMLDocument document(xmlReadMemory(old_bytes.constData(), old_bytes.size(),
-                                     nullptr, nullptr, 0));
+  auto document = read_xml_document(mime_data_pointer->data(mime_type));
   if (document.internal_pointer == nullptr) {
     return;
   }
@@ -170,16 +165,7 @@ static void renumber_clipboard_voice_numbers(
     return;
   }
 
-  XMLString char_buffer;
-  auto buffer_size = 0;
-  xmlDocDumpMemory(document.internal_pointer, &char_buffer.internal_pointer,
-                   &buffer_size);
   auto &new_mime_data = *(new QMimeData); // NOLINT(cppcoreguidelines-owning-memory)
-  new_mime_data.setData(
-      mime_type,
-      QByteArray(
-          reinterpret_cast<const char *>( // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-              char_buffer.internal_pointer),
-          buffer_size));
+  new_mime_data.setData(mime_type, document_to_byte_array(document));
   get_clipboard().setMimeData(&new_mime_data);
 }

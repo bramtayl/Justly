@@ -85,10 +85,7 @@ parse_clipboard(QWidget &parent,
     return {};
   }
 
-  const auto &copied_text = mime_data.data(mime_type).toStdString();
-  XMLDocument document(xmlReadMemory(copied_text.c_str(),
-                                     static_cast<int>(copied_text.size()),
-                                     nullptr, nullptr, 0));
+  auto document = read_xml_document(mime_data.data(mime_type));
   if (document.internal_pointer == nullptr) {
     QMessageBox::warning(&parent, QObject::tr("Paste error"),
                          QObject::tr("Invalid XML"));
