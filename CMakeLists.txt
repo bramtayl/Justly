@@ -358,6 +358,13 @@ if (BUILD_TESTS)
     else()
         add_test(NAME run_tests COMMAND "${test_install_folder}/bin/JustlyTests" -o test_output.txt,txt)
     endif()
+
+    # without offscreen, QGuiApplication::clipboard() talks to the real
+    # desktop session -- clipboard ownership handoff isn't instant there, so
+    # copy/paste tests can read back whatever the desktop's clipboard last
+    # held (e.g. a browser copy) instead of the data the test just copied,
+    # popping an unexpected QMessageBox that nothing is waiting to close
+    set_tests_properties(run_tests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 endif()
 
 include(CPack)

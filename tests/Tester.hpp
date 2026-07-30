@@ -172,6 +172,16 @@ static void open_text(SongWidget &song_widget, const QString &song_text) {
   open_file(song_widget, temp_file.fileName());
 }
 
+[[nodiscard]] static auto find_top_level_message_box() -> QMessageBox * {
+  for (auto *const widget_pointer : QApplication::topLevelWidgets()) {
+    auto *const box_pointer = dynamic_cast<QMessageBox *>(widget_pointer);
+    if (box_pointer != nullptr && box_pointer->isVisible()) {
+      return box_pointer;
+    }
+  }
+  return nullptr;
+}
+
 static void close_message_later(QWidget &parent, bool &waiting_for_message,
                                 const QString &expected_text) {
   const auto waiting_before = waiting_for_message;
@@ -182,15 +192,12 @@ static void close_message_later(QWidget &parent, bool &waiting_for_message,
   QObject::connect(
       &timer, &QTimer::timeout, &parent,
       [expected_text, &waiting_for_message]() -> auto {
-        for (auto *const widget_pointer : QApplication::topLevelWidgets()) {
-          auto *box_pointer = dynamic_cast<QMessageBox *>(widget_pointer);
-          if (box_pointer != nullptr) {
-            auto actual_text = box_pointer->text();
-            waiting_for_message = false;
-            QTest::keyEvent(QTest::Press, box_pointer, Qt::Key_Enter);
-            QCOMPARE(actual_text, expected_text);
-            break;
-          }
+        auto *const box_pointer = find_top_level_message_box();
+        if (box_pointer != nullptr) {
+          auto actual_text = box_pointer->text();
+          waiting_for_message = false;
+          QTest::keyEvent(QTest::Press, box_pointer, Qt::Key_Enter);
+          QCOMPARE(actual_text, expected_text);
         }
       });
   timer.start(WAIT_TIME);
@@ -370,6 +377,12 @@ struct Tester : public QObject {
 public:
   SongEditor song_editor;
   QDir test_dir = get_share_folder();
+  bool waiting_for_message = false;
+  // watches for a QMessageBox that pops up while no test is expecting one
+  // (via close_message_later) and fails fast instead of leaving it open --
+  // QMessageBox::exec() runs a nested event loop, so this timer still fires
+  // while a test is blocked waiting on it
+  QTimer unexpected_message_timer;
 
   Tester() {
     set_up();
@@ -378,8 +391,24 @@ public:
     // QMessageBox block forever with no user around to dismiss it
     Q_ASSERT(QFile::exists(fixture_file));
     open_file(song_editor.song_widget, fixture_file);
+
+    QObject::connect(&unexpected_message_timer, &QTimer::timeout, this,
+                     [this]() -> auto {
+                       if (waiting_for_message) {
+                         return;
+                       }
+                       auto *const box_pointer = find_top_level_message_box();
+                       if (box_pointer == nullptr) {
+                         return;
+                       }
+                       const auto actual_text = box_pointer->text();
+                       box_pointer->close();
+                       QFAIL(qUtf8Printable(
+                           QString("Unexpected message box: %1")
+                               .arg(actual_text)));
+                     });
+    unexpected_message_timer.start(WAIT_TIME);
   }
-  bool waiting_for_message = false;
 
 private slots:
   static void test_column_count_data() {
