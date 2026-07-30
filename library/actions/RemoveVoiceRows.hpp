@@ -134,8 +134,9 @@ struct RemoveVoiceRows : public QUndoCommand {
       }
     }
 
-    renumber_clipboard_voice_numbers<SubNote>(first_row_number, number_of_rows,
-                                              /*is_insertion=*/false);
+    renumber_clipboard_voice_numbers<SubNote>(
+        first_row_number, number_of_rows, /*is_insertion=*/false,
+        &voices_model.parent, first_voice_name);
     voices_model.remove_rows(first_row_number, number_of_rows);
   }
 };

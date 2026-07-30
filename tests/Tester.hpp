@@ -48,6 +48,7 @@
 #include <QtWidgets/QStyleOption>
 #include <QtWidgets/QWidget>
 #include <algorithm>
+#include <memory>
 #include <string>
 
 #include "column_numbers/ChordColumn.hpp"
@@ -198,6 +199,40 @@ static void close_message_later(QWidget &parent, bool &waiting_for_message,
           waiting_for_message = false;
           QTest::keyEvent(QTest::Press, box_pointer, Qt::Key_Enter);
           QCOMPARE(actual_text, expected_text);
+        }
+      });
+  timer.start(WAIT_TIME);
+  QVERIFY(!waiting_before);
+};
+
+// like close_message_later, but for an action that pops up several message
+// boxes in a row (e.g. a voice removal that warns about a reassigned live
+// note and then, separately, a reassigned clipboard entry); re-arms the
+// timer after each box closes so every expected text gets matched in order
+static void
+close_messages_later(QWidget &parent, bool &waiting_for_message,
+                     const QList<QString> &expected_texts) {
+  const auto waiting_before = waiting_for_message;
+  waiting_for_message = true;
+  auto remaining_texts =
+      std::make_shared<QList<QString>>(expected_texts);
+  auto &timer = // NOLINT(cppcoreguidelines-owning-memory)
+      *(new QTimer(&parent));
+  timer.setSingleShot(true);
+  QObject::connect(
+      &timer, &QTimer::timeout, &parent,
+      [remaining_texts, &waiting_for_message, &timer]() -> auto {
+        auto *const box_pointer = find_top_level_message_box();
+        if (box_pointer != nullptr) {
+          const auto actual_text = box_pointer->text();
+          QTest::keyEvent(QTest::Press, box_pointer, Qt::Key_Enter);
+          QVERIFY(!remaining_texts->empty());
+          QCOMPARE(actual_text, remaining_texts->takeFirst());
+          if (remaining_texts->empty()) {
+            waiting_for_message = false;
+          } else {
+            timer.start(WAIT_TIME);
+          }
         }
       });
   timer.start(WAIT_TIME);
@@ -411,6 +446,12 @@ public:
   }
 
 private slots:
+  // the OS clipboard is a process-global singleton that outlives any single
+  // test, so a stale copy left over from an earlier test (e.g. a copied
+  // voice_number cell) must not bleed into a later test's voice removal and
+  // trigger an unexpected clipboard-reassignment warning
+  static void init() { get_clipboard().clear(); }
+
   static void test_column_count_data() {
     add_table_columns();
     QTest::addColumn<int>("number_of_columns");
@@ -1541,12 +1582,16 @@ private slots:
                   PitchedNoteColumn::pitched_note_voice_number_column)
             : static_cast<int>(
                   UnpitchedNoteColumn::unpitched_note_voice_number_column);
-    const auto *const reassign_warning =
+    const QList<QString> reassign_warnings =
         is_pitched
-            ? "Reassigning voice for chord 1, pitched note 2 to the first "
-              "voice \"A\""
-            : "Reassigning voice for chord 1, unpitched note 2 to the first "
-              "voice \"D\"";
+            ? QList<QString>{"Reassigning voice for chord 1, pitched note 2 "
+                             "to the first voice \"A\"",
+                             "Reassigning 1 clipboard voice to the first "
+                             "voice \"A\""}
+            : QList<QString>{"Reassigning voice for chord 1, unpitched note "
+                             "2 to the first voice \"D\"",
+                             "Reassigning 1 clipboard voice to the first "
+                             "voice \"D\""};
 
     open_text(song_widget, text);
 
@@ -1558,10 +1603,11 @@ private slots:
     back_to_chords_action.trigger();
 
     // remove that voice; the fixture's only note gets reassigned to voice 0,
-    // but the clipboard copied above still holds the now-removed voice number
+    // warning about that live note, and separately about the clipboard copy
+    // (of that same note's voice cell) that also collapses to voice 0
     switch_to(song_editor, voice_row_type, -1);
     select_cell(switch_table, 1, 0);
-    close_message_later(song_editor, waiting_for_message, reassign_warning);
+    close_messages_later(song_editor, waiting_for_message, reassign_warnings);
     edit_menu.remove_rows_action.trigger();
     back_to_chords_action.trigger();
 

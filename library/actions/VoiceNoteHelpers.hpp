@@ -3,6 +3,10 @@
 #include <QtCore/QByteArray>
 #include <QtCore/QList>
 #include <QtCore/QMimeData>
+#include <QtCore/QObject>
+#include <QtCore/QString>
+#include <QtCore/QTextStream>
+#include <QtWidgets/QMessageBox>
 #include <concepts>
 #include <libxml/parser.h>
 #include <string>
@@ -13,6 +17,7 @@
 #include "rows/Voice.hpp"
 #include "xml/XMLDocument.hpp"
 
+class QWidget;
 struct PitchedVoice;
 
 template <VoiceInterface SubVoice, NoteInterface SubNote>
@@ -79,12 +84,14 @@ static void offset_voice_numbers(
 // for a removal that swallows it, zeroes it) the same way
 // InsertVoiceRow/RemoveVoiceRows renumber notes still in song.chords; used
 // both for a flat copied note row and for a single pitched_note/unpitched_note
-// nested inside a copied chord
+// nested inside a copied chord. reassigned_count is bumped whenever a
+// voice_number collapses to 0, so the caller can warn about it the same way
+// RemoveVoiceRows warns about a live note being reassigned
 static void
 find_and_process_voice_number(xmlNode &note_node, const int first_row_number,
                               const int last_removed_row,
                               const int number_of_rows, const bool is_insertion,
-                              bool &changed) {
+                              bool &changed, int &reassigned_count) {
   auto *note_field_pointer = xmlFirstElementChild(&note_node);
   while (note_field_pointer != nullptr) {
     auto &note_field_node = get_reference(note_field_pointer);
@@ -99,6 +106,7 @@ find_and_process_voice_number(xmlNode &note_node, const int first_row_number,
         new_voice_number = voice_number - number_of_rows;
       } else if (voice_number >= first_row_number) {
         new_voice_number = 0;
+        reassigned_count = reassigned_count + 1;
       }
       xmlNodeSetContent(
           &note_field_node,
@@ -121,11 +129,16 @@ find_and_process_voice_number(xmlNode &note_node, const int first_row_number,
 // renumbered correctly, rather than blowing away a newer copy by restoring
 // stale bytes. When is_insertion is false, voice numbers pointing into the
 // removed range collapse to 0, mirroring how notes still in song.chords get
-// reassigned to the first remaining voice.
+// reassigned to the first remaining voice; when parent is non-null, that
+// collapse is reported with the same warning RemoveVoiceRows shows for a
+// live note being reassigned, so a stale clipboard reassignment isn't silent
 template <NoteInterface SubNote>
-static void renumber_clipboard_voice_numbers(const int first_row_number,
-                                             const int number_of_rows,
-                                             const bool is_insertion) {
+static void
+renumber_clipboard_voice_numbers(const int first_row_number,
+                                 const int number_of_rows,
+                                 const bool is_insertion,
+                                 QWidget *parent = nullptr,
+                                 const QString &first_voice_name = QString()) {
   const auto last_removed_row = first_row_number + number_of_rows - 1;
 
   const auto *notes_mime_type = SubNote::get_cells_mime();
@@ -155,6 +168,7 @@ static void renumber_clipboard_voice_numbers(const int first_row_number,
   auto &root = get_root(document);
 
   auto changed = false;
+  auto reassigned_count = 0;
   auto *field_pointer = xmlFirstElementChild(&root);
   while (field_pointer != nullptr) {
     auto &field_node = get_reference(field_pointer);
@@ -171,7 +185,8 @@ static void renumber_clipboard_voice_numbers(const int first_row_number,
         if (has_notes_mime) {
           find_and_process_voice_number(get_reference(row_pointer),
                                         first_row_number, last_removed_row,
-                                        number_of_rows, is_insertion, changed);
+                                        number_of_rows, is_insertion, changed,
+                                        reassigned_count);
         } else {
           auto *chord_field_pointer = xmlFirstElementChild(row_pointer);
           while (chord_field_pointer != nullptr) {
@@ -181,7 +196,8 @@ static void renumber_clipboard_voice_numbers(const int first_row_number,
               while (note_pointer != nullptr) {
                 find_and_process_voice_number(
                     get_reference(note_pointer), first_row_number,
-                    last_removed_row, number_of_rows, is_insertion, changed);
+                    last_removed_row, number_of_rows, is_insertion, changed,
+                    reassigned_count);
                 note_pointer = xmlNextElementSibling(note_pointer);
               }
             }
@@ -196,6 +212,17 @@ static void renumber_clipboard_voice_numbers(const int first_row_number,
 
   if (!changed) {
     return;
+  }
+
+  if (reassigned_count > 0 && parent != nullptr) {
+    QString message;
+    QTextStream stream(&message);
+    stream << QObject::tr("Reassigning ") << reassigned_count
+           << (reassigned_count == 1 ? QObject::tr(" clipboard voice")
+                                     : QObject::tr(" clipboard voices"))
+           << QObject::tr(" to the first voice \"") << first_voice_name
+           << QObject::tr("\"");
+    QMessageBox::warning(parent, QObject::tr("Voice removed"), message);
   }
 
   auto &new_mime_data = *(new QMimeData); // NOLINT(cppcoreguidelines-owning-memory)
