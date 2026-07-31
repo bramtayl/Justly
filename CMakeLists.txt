@@ -279,12 +279,19 @@ foreach(app_target ${app_targets})
     )
 endforeach()
 
-if (BUILD_TESTS AND NOT WIN32)
-    # qt deploy includes plugins added via qt_import_plugins
-    # but ignores non-default PLATFORM plugins
-    # need to deploy QOffscreenIntegrationPlugin manually
+if (BUILD_TESTS)
+    # qt deploy (windeployqt/macdeployqt, or the manual copy_directory-style
+    # install below on Linux) only deploys the platform plugin matching the
+    # host OS (qwindows/cocoa/xcb) plus whatever qt_import_plugins requested
+    # above -- it ignores the non-default "offscreen" platform that
+    # QT_QPA_PLATFORM=offscreen (set on run_tests below) asks for at runtime,
+    # so it has to be deployed manually here on every platform
     if (is_bundle)
         set(offscreen_plugin_dir "JustlyTests.app/Contents/PlugIns/platforms")
+    elseif (WIN32)
+        # Qt's plugin loader looks for platform plugins in a "platforms"
+        # directory next to the executable
+        set(offscreen_plugin_dir "bin/platforms")
     else()
         set(qt_lib_arch_dir "")
         if (CMAKE_LIBRARY_ARCHITECTURE)
