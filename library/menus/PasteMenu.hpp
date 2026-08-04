@@ -100,12 +100,11 @@ parse_clipboard(QWidget &parent,
     return {};
   }
 
-  auto &root = get_root(document);
   QList<SubRow> new_rows;
   auto left_column = 0;
   auto right_column = 0;
 
-  auto *field_pointer = xmlFirstElementChild(&root);
+  auto *field_pointer = xmlFirstElementChild(&get_root(document));
   while (field_pointer != nullptr) {
     auto &field_node = get_reference(field_pointer);
     const auto name = get_xml_name(field_node);
@@ -210,10 +209,9 @@ make_paste_cells_command(QWidget &parent, const int first_row_number,
       return nullptr;
     }
   }
-  const auto number_copied = static_cast<int>(copy_rows.size());
   return new SetCells( // NOLINT(cppcoreguidelines-owning-memory)
-      rows_model, first_row_number, number_copied, cells.left_column,
-      cells.right_column, std::move(copy_rows));
+      rows_model, first_row_number, static_cast<int>(copy_rows.size()),
+      cells.left_column, cells.right_column, std::move(copy_rows));
 }
 
 struct PasteMenu : public QMenu {

@@ -81,9 +81,11 @@
 #include "widgets/SwitchTable.hpp"
 
 static const auto BIG_VELOCITY = 126;
+static const auto FIVE = 5;
 static const auto PERCUSSION_ROWS = 16;
 static const auto MOZART_ROWS = 147;
 static const auto SALTARELLO_ROWS = 184;
+static const auto SEVEN = 7;
 static const auto MUSIC_XML_ROWS = 545;
 static const auto NEW_GAIN_1 = 2;
 static const auto NEW_GAIN_2 = 3;

@@ -252,10 +252,10 @@ public:
           // "play to end" always continues through every remaining chord in
           // full, regardless of note-row selection, so the end bound must
           // span the whole remaining song rather than just the selected notes
-          const auto number_of_chords = static_cast<int>(song.chords.size());
           const auto end_ms = get_piano_roll_time_bounds(
               song, first_chord_number,
-              number_of_chords - first_chord_number).second;
+              static_cast<int>(song.chords.size()) - first_chord_number)
+                                  .second;
           piano_roll_widget_ref.start_playhead(baseline_ms, end_ms);
         });
     QObject::connect(

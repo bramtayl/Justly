@@ -164,11 +164,9 @@ renumber_clipboard_voice_numbers(const int first_row_number,
   if (document.internal_pointer == nullptr) {
     return;
   }
-  auto &root = get_root(document);
-
   auto changed = false;
   auto reassigned_count = 0;
-  auto *field_pointer = xmlFirstElementChild(&root);
+  auto *field_pointer = xmlFirstElementChild(&get_root(document));
   while (field_pointer != nullptr) {
     auto &field_node = get_reference(field_pointer);
     const auto name = get_xml_name(field_node);
@@ -189,8 +187,8 @@ renumber_clipboard_voice_numbers(const int first_row_number,
         } else {
           auto *chord_field_pointer = xmlFirstElementChild(row_pointer);
           while (chord_field_pointer != nullptr) {
-            auto &chord_field_node = get_reference(chord_field_pointer);
-            if (get_xml_name(chord_field_node) == notes_container_name) {
+            if (get_xml_name(get_reference(chord_field_pointer)) ==
+                notes_container_name) {
               auto *note_pointer = xmlFirstElementChild(chord_field_pointer);
               while (note_pointer != nullptr) {
                 find_and_process_voice_number(

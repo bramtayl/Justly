@@ -433,8 +433,7 @@ struct PianoRollWidget : public QWidget {
   // playback -- while the user is actively dragging, the view should hold
   // still under the mouse rather than fight the drag by scrolling
   void drag_playhead_to(const QPoint &viewport_pos) {
-    const auto scene_x = view.mapToScene(viewport_pos).x();
-    const auto playhead_x = std::max(0.0, scene_x);
+    const auto playhead_x = std::max(0.0, view.mapToScene(viewport_pos).x());
     const auto &scene_rect = scene.sceneRect();
     playhead_item.setLine(playhead_x, scene_rect.top(), playhead_x,
                           scene_rect.bottom());
