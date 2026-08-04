@@ -188,6 +188,62 @@ static const auto PIANO_ROLL_TIME_ZOOM_STEP = 1.25;
   return selected_indices;
 }
 
+static void draw_legend_row(QGraphicsScene &legend_scene, const QString &name,
+                            const int global_voice_index, const double row_y) {
+  legend_scene.addRect(0, row_y, PIANO_ROLL_LEGEND_SWATCH_SIZE,
+               PIANO_ROLL_LEGEND_SWATCH_SIZE, QPen(Qt::NoPen),
+               QBrush(get_voice_color(global_voice_index)));
+  auto &label = get_reference(legend_scene.addSimpleText(name));
+  label.setPos(PIANO_ROLL_LEGEND_SWATCH_SIZE + PIANO_ROLL_AXIS_LABEL_GAP,
+              row_y - ((label.boundingRect().height() -
+                       PIANO_ROLL_LEGEND_SWATCH_SIZE) /
+                      2));
+}
+
+// draws a tick + note-name label at every octave (C) at or above the
+// lowest pitched note present, up through the highest octave that still
+// fits within a fixed margin above the highest note -- ticks beyond either
+// margin would just sit off the visible graph, so they're skipped rather
+// than drawn there; returns the y position of the horizontal time axis, a
+// fixed few semitones below the lowest note (not snapped to any tick), so
+// the lowest note's bar never reads as glued to the axis line
+[[nodiscard]] static auto draw_pitch_axis(QGraphicsScene &scene,
+                                          const double min_midi,
+                                          const double max_midi) -> double {
+  if (min_midi > max_midi) {
+    return PIANO_ROLL_DEFAULT_AXIS_Y;
+  }
+  const auto axis_pitch =
+      min_midi - PIANO_ROLL_AXIS_PITCH_MARGIN_SEMITONES;
+  const auto top_pitch =
+      max_midi + PIANO_ROLL_AXIS_PITCH_MARGIN_SEMITONES;
+  const auto axis_y = -axis_pitch * PIANO_ROLL_PIXELS_PER_SEMITONE;
+  const auto first_octave =
+      C_0_MIDI + to_int(std::ceil((axis_pitch - C_0_MIDI) /
+                                  HALFSTEPS_PER_OCTAVE)) *
+                     HALFSTEPS_PER_OCTAVE;
+  const auto last_octave =
+      C_0_MIDI + to_int(std::floor((top_pitch - C_0_MIDI) /
+                                   HALFSTEPS_PER_OCTAVE)) *
+                     HALFSTEPS_PER_OCTAVE;
+
+  for (auto midi_value = first_octave; midi_value <= last_octave;
+      midi_value = midi_value + HALFSTEPS_PER_OCTAVE) {
+    const auto tick_y = -midi_value * PIANO_ROLL_PIXELS_PER_SEMITONE;
+    scene.addLine(PIANO_ROLL_AXIS_X - PIANO_ROLL_AXIS_TICK_LENGTH, tick_y,
+                 PIANO_ROLL_AXIS_X, tick_y);
+
+    auto &label =
+        get_reference(scene.addSimpleText(get_note_name(midi_value)));
+    const auto &label_rect = label.boundingRect();
+    label.setPos(PIANO_ROLL_AXIS_X - PIANO_ROLL_AXIS_TICK_LENGTH -
+                    PIANO_ROLL_AXIS_LABEL_GAP - label_rect.width(),
+                tick_y - (label_rect.height() / 2));
+  }
+
+  return axis_y;
+}
+
 struct PianoRollWidget : public QWidget {
   const SongWidget &song_widget;
 
@@ -545,7 +601,7 @@ struct PianoRollWidget : public QWidget {
     }
     // both axes sit at x/y == PIANO_ROLL_AXIS_X, so the horizontal axis and
     // the t=0 time tick meet at one corner
-    const auto axis_y = draw_pitch_axis(min_midi, max_midi);
+    const auto axis_y = draw_pitch_axis(scene, min_midi, max_midi);
     draw_time_axis(max_time_ms, axis_y);
     const auto unpitched_lane_top = axis_y + PIANO_ROLL_UNPITCHED_LANE_GAP;
 
@@ -776,70 +832,15 @@ struct PianoRollWidget : public QWidget {
     auto row_y = 0.0;
     auto global_voice_index = 0;
     for (const auto &voice : pitched_voices) {
-      draw_legend_row(voice.name, global_voice_index, row_y);
+      draw_legend_row(legend_scene, voice.name, global_voice_index, row_y);
       row_y = row_y + PIANO_ROLL_LANE_HEIGHT;
       global_voice_index = global_voice_index + 1;
     }
     for (const auto &voice : unpitched_voices) {
-      draw_legend_row(voice.name, global_voice_index, row_y);
+      draw_legend_row(legend_scene, voice.name, global_voice_index, row_y);
       row_y = row_y + PIANO_ROLL_LANE_HEIGHT;
       global_voice_index = global_voice_index + 1;
     }
-  }
-
-  void draw_legend_row(const QString &name, const int global_voice_index,
-                       const double row_y) {
-    legend_scene.addRect(0, row_y, PIANO_ROLL_LEGEND_SWATCH_SIZE,
-                 PIANO_ROLL_LEGEND_SWATCH_SIZE, QPen(Qt::NoPen),
-                 QBrush(get_voice_color(global_voice_index)));
-    auto &label = get_reference(legend_scene.addSimpleText(name));
-    label.setPos(PIANO_ROLL_LEGEND_SWATCH_SIZE + PIANO_ROLL_AXIS_LABEL_GAP,
-                row_y - ((label.boundingRect().height() -
-                         PIANO_ROLL_LEGEND_SWATCH_SIZE) /
-                        2));
-  }
-
-  // draws a tick + note-name label at every octave (C) at or above the
-  // lowest pitched note present, up through the highest octave that still
-  // fits within a fixed margin above the highest note -- ticks beyond either
-  // margin would just sit off the visible graph, so they're skipped rather
-  // than drawn there; returns the y position of the horizontal time axis, a
-  // fixed few semitones below the lowest note (not snapped to any tick), so
-  // the lowest note's bar never reads as glued to the axis line
-  [[nodiscard]] auto draw_pitch_axis(const double min_midi,
-                                     const double max_midi) -> double {
-    if (min_midi > max_midi) {
-      return PIANO_ROLL_DEFAULT_AXIS_Y;
-    }
-    const auto axis_pitch =
-        min_midi - PIANO_ROLL_AXIS_PITCH_MARGIN_SEMITONES;
-    const auto top_pitch =
-        max_midi + PIANO_ROLL_AXIS_PITCH_MARGIN_SEMITONES;
-    const auto axis_y = -axis_pitch * PIANO_ROLL_PIXELS_PER_SEMITONE;
-    const auto first_octave =
-        C_0_MIDI + to_int(std::ceil((axis_pitch - C_0_MIDI) /
-                                    HALFSTEPS_PER_OCTAVE)) *
-                       HALFSTEPS_PER_OCTAVE;
-    const auto last_octave =
-        C_0_MIDI + to_int(std::floor((top_pitch - C_0_MIDI) /
-                                     HALFSTEPS_PER_OCTAVE)) *
-                       HALFSTEPS_PER_OCTAVE;
-
-    for (auto midi_value = first_octave; midi_value <= last_octave;
-        midi_value = midi_value + HALFSTEPS_PER_OCTAVE) {
-      const auto tick_y = -midi_value * PIANO_ROLL_PIXELS_PER_SEMITONE;
-      scene.addLine(PIANO_ROLL_AXIS_X - PIANO_ROLL_AXIS_TICK_LENGTH, tick_y,
-                   PIANO_ROLL_AXIS_X, tick_y);
-
-      auto &label =
-          get_reference(scene.addSimpleText(get_note_name(midi_value)));
-      const auto &label_rect = label.boundingRect();
-      label.setPos(PIANO_ROLL_AXIS_X - PIANO_ROLL_AXIS_TICK_LENGTH -
-                      PIANO_ROLL_AXIS_LABEL_GAP - label_rect.width(),
-                  tick_y - (label_rect.height() / 2));
-    }
-
-    return axis_y;
   }
 
   // draws the horizontal axis line, placed between the pitched notes above
