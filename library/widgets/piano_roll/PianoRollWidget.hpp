@@ -18,20 +18,23 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
+#include <limits>
 #include <optional>
 #include <utility>
 
 #include "other/PianoRoll.hpp"
 #include "other/Song.hpp"
 #include "other/helpers.hpp"
+#include "rows/PitchedNote.hpp"
 #include "rows/RowType.hpp"
 #include "sound/PlayState.hpp"
+#include "widgets/SongWidget.hpp"
+#include "widgets/SwitchColumn.hpp"
 #include "widgets/piano_roll/PianoRollAxisView.hpp"
 #include "widgets/piano_roll/PianoRollLegendView.hpp"
 #include "widgets/piano_roll/PianoRollNotesView.hpp"
+#include "widgets/piano_roll/PlayheadTransition.hpp"
 #include "widgets/piano_roll/piano_roll_helpers.hpp"
-#include "widgets/SongWidget.hpp"
-#include "widgets/SwitchColumn.hpp"
 
 // number_of_notes == -1 (default) means "every note in every chord in
 // [first_chord_number, first_chord_number + number_of_chords)". A concrete
@@ -379,8 +382,221 @@ static void select_chord_at_playhead(PianoRollWidget &widget,
 
 static void rebuild_scene(PianoRollWidget &widget) {
   const auto &song = widget.song_widget.song;
-  rebuild_notes_view(widget.piano_roll_view, song);
-  rebuild_legend_view(widget.legend_view, song.pitched_voices, song.unpitched_voices);
+
+  // repopulates the notes view's scene with a fresh set of note bars + the
+  // pitch/time axes for the current song
+  {
+    auto &notes_view = widget.piano_roll_view;
+    auto &scene = notes_view.scene;
+    auto &playhead_item = notes_view.playhead_item;
+    auto &view = notes_view.view;
+
+    scene.removeItem(&playhead_item);
+    const auto saved_line = playhead_item.line();
+    const auto was_visible = playhead_item.isVisible();
+
+    scene.clear();
+    notes_view.note_items.clear();
+    // scene.clear() above already deleted these items -- just drop the now-
+    // dangling pointers so redraw_time_axis_ticks() doesn't try to remove
+    // them again below
+    notes_view.time_axis_items.clear();
+
+    const auto &pitched_voices = song.pitched_voices;
+    const auto number_of_pitched_voices =
+        static_cast<int>(pitched_voices.size());
+
+    auto &events = notes_view.events;
+    events = get_piano_roll_events(song);
+    notes_view.chord_start_times = get_chord_start_times(song);
+
+    auto min_midi = std::numeric_limits<double>::max();
+    auto max_midi = std::numeric_limits<double>::lowest();
+    auto max_time_ms = 0.0;
+    for (const auto &event : events) {
+      max_time_ms =
+          std::max(max_time_ms, event.start_time_ms + event.duration_ms);
+      if (event.kind == PianoRollNoteKind::pitched_kind) {
+        const auto midi_number = frequency_to_midi_number(event.frequency);
+        min_midi = std::min(min_midi, midi_number);
+        max_midi = std::max(max_midi, midi_number);
+      }
+    }
+
+    // greedily pack unpitched notes into the fewest lanes with no time
+    // overlap, rather than giving every unpitched voice its own fixed lane
+    // -- voice identity is carried by bar color (+ the legend) instead
+    QList<int> unpitched_lane_by_event(static_cast<int>(events.size()), -1);
+    QList<double> lane_end_times;
+    for (auto event_index = 0; event_index < events.size();
+        event_index = event_index + 1) {
+      const auto &event = events.at(event_index);
+      if (event.kind != PianoRollNoteKind::unpitched_kind) {
+        continue;
+      }
+      auto assigned_lane = -1;
+      for (auto lane_index = 0; lane_index < lane_end_times.size();
+          lane_index = lane_index + 1) {
+        if (lane_end_times.at(lane_index) <= event.start_time_ms) {
+          assigned_lane = lane_index;
+          break;
+        }
+      }
+      if (assigned_lane == -1) {
+        assigned_lane = static_cast<int>(lane_end_times.size());
+        lane_end_times.push_back(0);
+      }
+      lane_end_times[assigned_lane] = event.start_time_ms + event.duration_ms;
+      unpitched_lane_by_event[event_index] = assigned_lane;
+    }
+    // both axes sit at x/y == PIANO_ROLL_AXIS_X, so the horizontal axis and
+    // the t=0 time tick meet at one corner
+    //
+    // draws a tick + note-name label at every octave (C) at or above the
+    // lowest pitched note present, up through the highest octave that still
+    // fits within a fixed margin above the highest note -- ticks beyond either
+    // margin would just sit off the visible graph, so they're skipped rather
+    // than drawn there; axis_y ends up a fixed few semitones below the lowest
+    // note (not snapped to any tick), so the lowest note's bar never reads as
+    // glued to the axis line
+    const auto axis_y = [&]() -> double {
+      if (min_midi > max_midi) {
+        return PIANO_ROLL_DEFAULT_AXIS_Y;
+      }
+      const auto axis_pitch = min_midi - PIANO_ROLL_AXIS_PITCH_MARGIN_SEMITONES;
+      const auto top_pitch = max_midi + PIANO_ROLL_AXIS_PITCH_MARGIN_SEMITONES;
+      const auto pitch_axis_y = -axis_pitch * PIANO_ROLL_PIXELS_PER_SEMITONE;
+      const auto first_octave =
+          C_0_MIDI + to_int(std::ceil((axis_pitch - C_0_MIDI) /
+                                      HALFSTEPS_PER_OCTAVE)) *
+                         HALFSTEPS_PER_OCTAVE;
+      const auto last_octave =
+          C_0_MIDI + to_int(std::floor((top_pitch - C_0_MIDI) /
+                                       HALFSTEPS_PER_OCTAVE)) *
+                         HALFSTEPS_PER_OCTAVE;
+
+      for (auto midi_value = first_octave; midi_value <= last_octave;
+          midi_value = midi_value + HALFSTEPS_PER_OCTAVE) {
+        const auto tick_y = -midi_value * PIANO_ROLL_PIXELS_PER_SEMITONE;
+        scene.addLine(PIANO_ROLL_AXIS_X - PIANO_ROLL_AXIS_TICK_LENGTH, tick_y,
+                     PIANO_ROLL_AXIS_X, tick_y);
+
+        auto &label =
+            get_reference(scene.addSimpleText(get_note_name(midi_value)));
+        const auto &label_rect = label.boundingRect();
+        label.setPos(PIANO_ROLL_AXIS_X - PIANO_ROLL_AXIS_TICK_LENGTH -
+                        PIANO_ROLL_AXIS_LABEL_GAP - label_rect.width(),
+                    tick_y - (label_rect.height() / 2));
+      }
+
+      return pitch_axis_y;
+    }();
+    // draws the horizontal axis line, placed between the pitched notes above
+    // and the unpitched lanes below; the line's endpoints are in scene
+    // coordinates and don't depend on zoom, so unlike the ticks/labels
+    // (redrawn by redraw_time_axis_ticks() below) it's only ever drawn once
+    notes_view.time_axis_max_time_ms = max_time_ms;
+    notes_view.time_axis_y = axis_y;
+    scene.addLine(PIANO_ROLL_AXIS_X, axis_y, max_time_ms * PIANO_ROLL_PIXELS_PER_MS,
+                 axis_y);
+    redraw_time_axis_ticks(notes_view);
+    const auto unpitched_lane_top = axis_y + PIANO_ROLL_UNPITCHED_LANE_GAP;
+
+    auto &note_items = notes_view.note_items;
+    for (auto event_index = 0; event_index < events.size();
+        event_index = event_index + 1) {
+      const auto &event = events.at(event_index);
+      const auto bar_x = event.start_time_ms * PIANO_ROLL_PIXELS_PER_MS;
+      const auto width =
+          std::max(PIANO_ROLL_MIN_BAR_WIDTH,
+                   event.duration_ms * PIANO_ROLL_PIXELS_PER_MS);
+
+      const auto is_pitched = event.kind == PianoRollNoteKind::pitched_kind;
+      const auto lane_y =
+          is_pitched ? -frequency_to_midi_number(event.frequency) *
+                           PIANO_ROLL_PIXELS_PER_SEMITONE
+                     : unpitched_lane_top +
+                           (unpitched_lane_by_event.at(event_index) *
+                            PIANO_ROLL_LANE_HEIGHT);
+      // pitched lane_y is the exact pitch line (one semitone = 6px), so
+      // center on it symmetrically; unpitched lane_y is the top of a much
+      // taller 20px band, so offset down instead. Using the unpitched
+      // (band-top) offset for pitched notes too used to push low notes'
+      // bars several pixels below their true pitch line -- enough to dip
+      // below the horizontal axis for the lowest notes in a song.
+      const auto bar_y =
+          is_pitched
+              ? lane_y - (PIANO_ROLL_NOTE_BAR_THICKNESS / 2)
+              : lane_y + ((PIANO_ROLL_LANE_HEIGHT -
+                          PIANO_ROLL_NOTE_BAR_THICKNESS) /
+                         2);
+
+      const auto global_voice_index = is_pitched
+                                          ? event.voice_number
+                                          : number_of_pitched_voices +
+                                                event.voice_number;
+      auto &note_item = get_reference(scene.addRect(
+          bar_x, bar_y, width, PIANO_ROLL_NOTE_BAR_THICKNESS, QPen(Qt::NoPen),
+          QBrush(get_voice_color(global_voice_index))));
+      // lets the double-click event filter trace a clicked rect back to the
+      // PianoRollNoteEvent (and thus chord/note) it represents
+      note_item.setData(0, event_index);
+      note_items.push_back(&note_item);
+    }
+
+    // sized from itemsBoundingRect() before the playhead is added back in --
+    // otherwise its line (spanning the full previous scene height, restored
+    // from saved_line below) would get baked into this pass' bounding box,
+    // permanently inflating the scrollable area with stale blank space that
+    // never shrinks back down even after the real content shrinks
+    scene.setSceneRect(scene.itemsBoundingRect().adjusted(
+        -PIANO_ROLL_SCENE_MARGIN, -PIANO_ROLL_SCENE_MARGIN,
+        PIANO_ROLL_SCENE_MARGIN, PIANO_ROLL_SCENE_MARGIN));
+
+    scene.addItem(&playhead_item);
+    playhead_item.setLine(saved_line);
+    playhead_item.setVisible(was_visible);
+
+    // without this, scrolling this view all the way left would re-reveal
+    // the same axis labels a second time (PianoRollAxisView already owns
+    // that column), doubling them up
+    const auto &notes_scene_rect = scene.sceneRect();
+    view.setSceneRect(PIANO_ROLL_AXIS_X, notes_scene_rect.top(),
+                      notes_scene_rect.right() - PIANO_ROLL_AXIS_X,
+                      notes_scene_rect.height());
+  }
+
+  // lists every voice (pitched first, then unpitched) as a colored swatch +
+  // name, in the same order used to assign global_voice_index for coloring,
+  // then sizes legend_view to exactly fit its content (plus a margin), so
+  // the fixed-width column stays as narrow as the longest voice name rather
+  // than an arbitrary guessed width
+  {
+    auto &legend_view = widget.legend_view;
+    auto &scene = legend_view.scene;
+    auto &view = legend_view.view;
+
+    scene.clear();
+    auto row_y = 0.0;
+    auto global_voice_index = 0;
+    for (const auto &voice : song.pitched_voices) {
+      draw_legend_row(scene, voice.name, global_voice_index, row_y);
+      row_y = row_y + PIANO_ROLL_LANE_HEIGHT;
+      global_voice_index = global_voice_index + 1;
+    }
+    for (const auto &voice : song.unpitched_voices) {
+      draw_legend_row(scene, voice.name, global_voice_index, row_y);
+      row_y = row_y + PIANO_ROLL_LANE_HEIGHT;
+      global_voice_index = global_voice_index + 1;
+    }
+
+    const auto legend_bounds = scene.itemsBoundingRect().adjusted(
+        -PIANO_ROLL_LEGEND_GAP, -PIANO_ROLL_LEGEND_GAP, PIANO_ROLL_LEGEND_GAP,
+        PIANO_ROLL_LEGEND_GAP);
+    scene.setSceneRect(legend_bounds);
+    view.setFixedWidth(static_cast<int>(std::ceil(legend_bounds.width())) +
+                       (2 * view.frameWidth()));
+  }
 
   const auto &scene_rect = widget.piano_roll_view.scene.sceneRect();
   // only the pitch axis' ticks/labels have negative x, so the scene
@@ -479,12 +695,11 @@ static void start_playhead(PianoRollWidget &widget, const double baseline_ms,
 
   // decides which transition position_playhead() should run, based on
   // where the playhead is starting relative to the view's current
-  // (not-yet-moved) center -- see PianoRollNotesView::PlayheadTransition
+  // (not-yet-moved) center -- see PlayheadTransition
   auto &view = piano_roll_view.view;
   const auto initial_center_x =
       view.mapToScene(view.viewport()->rect()).boundingRect().center().x();
   const auto playhead_x = baseline_ms * PIANO_ROLL_PIXELS_PER_MS;
-  using PlayheadTransition = PianoRollNotesView::PlayheadTransition;
   if (playhead_x <= initial_center_x) {
     piano_roll_view.playhead_transition = PlayheadTransition::waiting_to_reach_center;
   } else {
@@ -500,7 +715,7 @@ static void stop_playhead(PianoRollWidget &widget) {
   auto &piano_roll_view = widget.piano_roll_view;
   piano_roll_view.playhead_timer.stop();
   piano_roll_view.playhead_active = false;
-  piano_roll_view.playhead_transition = PianoRollNotesView::PlayheadTransition::none;
+  piano_roll_view.playhead_transition = PlayheadTransition::none;
 
   set_manual_scrolling_enabled(widget, true);
   apply_selection_highlight(widget);

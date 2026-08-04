@@ -3,5 +3,6 @@ target_sources(JustlyLibrary INTERFACE FILE_SET justly_headers FILES
     "PianoRollLegendView.hpp"
     "PianoRollNotesView.hpp"
     "PianoRollWidget.hpp"
+    "PlayheadTransition.hpp"
     "piano_roll_helpers.hpp"
 )

@@ -29,5 +29,7 @@ struct PianoRollAxisView {
     view.setFrameShape(QFrame::NoFrame);
   }
 
+  ~PianoRollAxisView() = default;
+
   NO_MOVE_COPY(PianoRollAxisView)
 };
