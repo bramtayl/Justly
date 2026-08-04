@@ -77,11 +77,11 @@ static void update_piano_roll_selection(PianoRollWidget &piano_roll_widget,
                                         const SongWidget &song_widget) {
   const auto &switch_table = song_widget.switch_column.switch_table;
   if (get_selection_model(switch_table).selection().empty()) {
-    piano_roll_widget.update_selection(RowType::chord_type, -1, -1, 0);
+    update_piano_roll_widget_selection(piano_roll_widget, RowType::chord_type, -1, -1, 0);
     return;
   }
   const auto &range = get_only_range(switch_table);
-  piano_roll_widget.update_selection(switch_table.delegate.current_row_type,
+  update_piano_roll_widget_selection(piano_roll_widget, switch_table.delegate.current_row_type,
                                      get_parent_chord_number(switch_table),
                                      range.top(), get_number_of_rows(range));
 }

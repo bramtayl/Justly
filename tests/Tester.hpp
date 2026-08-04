@@ -2682,16 +2682,16 @@ private slots:
     // pressed
     select_cell(switch_table, 0, 0);
 
-    piano_roll_widget.start_playhead(1200.0, 1800.0);
+    start_playhead(piano_roll_widget, 1200.0, 1800.0);
     QCOMPARE(get_only_range(switch_table).top(), 0);
 
     // simulates one playback timer tick without waiting on the real
     // QElapsedTimer -- elapsed() is at least 0, so current_ms is already
     // >= the 1200ms baseline, landing on chord 2
-    piano_roll_widget.update_playhead_position();
+    update_playhead_position(piano_roll_widget);
     QCOMPARE(get_only_range(switch_table).top(), 2);
 
-    piano_roll_widget.stop_playhead();
+    stop_playhead(piano_roll_widget);
   };
 
   void test_piano_roll_zoom() {
@@ -2700,29 +2700,29 @@ private slots:
     QCOMPARE(piano_roll_widget.piano_roll_view.view.transform().m11(), 1.0);
     QCOMPARE(piano_roll_widget.piano_roll_view.view.transform().m22(), 1.0);
 
-    piano_roll_widget.zoom_in();
+    zoom_in(piano_roll_widget);
     // only the time (x) axis scales -- the pitch (y) axis has to stay fixed
     // so it stays aligned with axis_view, which is never zoomed
     QCOMPARE(piano_roll_widget.piano_roll_view.view.transform().m11(),
             PIANO_ROLL_TIME_ZOOM_STEP);
     QCOMPARE(piano_roll_widget.piano_roll_view.view.transform().m22(), 1.0);
 
-    piano_roll_widget.zoom_out();
+    zoom_out(piano_roll_widget);
     QCOMPARE(piano_roll_widget.piano_roll_view.view.transform().m11(), 1.0);
 
     // clamped rather than unbounded, so repeated zooming can't shrink/grow
     // the time axis into something unusable
     for (auto zoom_count = 0; zoom_count < 20; zoom_count = zoom_count + 1) {
-      piano_roll_widget.zoom_out();
+      zoom_out(piano_roll_widget);
     }
     QCOMPARE(piano_roll_widget.piano_roll_view.time_zoom_factor, PIANO_ROLL_MIN_TIME_ZOOM);
 
     for (auto zoom_count = 0; zoom_count < 40; zoom_count = zoom_count + 1) {
-      piano_roll_widget.zoom_in();
+      zoom_in(piano_roll_widget);
     }
     QCOMPARE(piano_roll_widget.piano_roll_view.time_zoom_factor, PIANO_ROLL_MAX_TIME_ZOOM);
 
     // restore, so later tests see the default 1x zoom
-    piano_roll_widget.set_time_zoom(1.0);
+    set_time_zoom(piano_roll_widget, 1.0);
   };
 };

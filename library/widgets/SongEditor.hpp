@@ -167,17 +167,17 @@ public:
     QObject::connect(&song_menu_bar.view_menu.zoom_in_action,
                      &QAction::triggered, &piano_roll_widget_ref,
                      [&piano_roll_widget_ref]() -> auto {
-                       piano_roll_widget_ref.zoom_in();
+                       zoom_in(piano_roll_widget_ref);
                      });
     QObject::connect(&song_menu_bar.view_menu.zoom_out_action,
                      &QAction::triggered, &piano_roll_widget_ref,
                      [&piano_roll_widget_ref]() -> auto {
-                       piano_roll_widget_ref.zoom_out();
+                       zoom_out(piano_roll_widget_ref);
                      });
 
     QObject::connect(&undo_stack, &QUndoStack::indexChanged, this,
                      [&piano_roll_widget_ref]() -> auto {
-                       piano_roll_widget_ref.rebuild_scene();
+                       rebuild_scene(piano_roll_widget_ref);
                      });
 
     // double-clicking a note in the piano roll opens the pitched/unpitched
@@ -207,7 +207,7 @@ public:
           if (selection.row_type == RowType::pitched_voice_type ||
               selection.row_type == RowType::unpitched_voice_type) {
             // voice audition/preview has no timeline position
-            piano_roll_widget_ref.stop_playhead();
+            stop_playhead(piano_roll_widget_ref);
             return;
           }
           const auto is_chord_selection = selection.row_type == RowType::chord_type;
@@ -223,7 +223,7 @@ public:
                   : std::make_optional(selection.row_type == RowType::pitched_note_type
                                            ? PianoRollNoteKind::pitched_kind
                                            : PianoRollNoteKind::unpitched_kind));
-          piano_roll_widget_ref.start_playhead(baseline_ms, end_ms);
+          start_playhead(piano_roll_widget_ref, baseline_ms, end_ms);
         });
     QObject::connect(
         &play_menu.play_to_end_action, &QAction::triggered, this,
@@ -233,7 +233,7 @@ public:
           if (selection.row_type == RowType::pitched_voice_type ||
               selection.row_type == RowType::unpitched_voice_type) {
             // voice audition/preview has no timeline position
-            piano_roll_widget_ref.stop_playhead();
+            stop_playhead(piano_roll_widget_ref);
             return;
           }
           const auto is_chord_selection = selection.row_type == RowType::chord_type;
@@ -256,11 +256,11 @@ public:
               song, first_chord_number,
               static_cast<int>(song.chords.size()) - first_chord_number)
                                   .second;
-          piano_roll_widget_ref.start_playhead(baseline_ms, end_ms);
+          start_playhead(piano_roll_widget_ref, baseline_ms, end_ms);
         });
     QObject::connect(
         &play_menu.stop_playing_action, &QAction::triggered, this,
-        [&piano_roll_widget_ref]() -> auto { piano_roll_widget_ref.stop_playhead(); });
+        [&piano_roll_widget_ref]() -> auto { stop_playhead(piano_roll_widget_ref); });
 
     add_replace_table(song_menu_bar, song_widget, RowType::pitched_voice_type, -1,
                       piano_roll_widget);

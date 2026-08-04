@@ -2,6 +2,8 @@
 
 #include <QtCore/QList>
 #include <QtGui/QColor>
+#include <QtWidgets/QGraphicsView>
+#include <QtWidgets/QScrollBar>
 
 static const auto PIANO_ROLL_PIXELS_PER_MS = 0.1;
 static const auto PIANO_ROLL_PIXELS_PER_SEMITONE = 6;
@@ -14,9 +16,9 @@ static const auto PIANO_ROLL_NOTE_BAR_THICKNESS = 3.0;
 static const auto PIANO_ROLL_MIN_BAR_WIDTH = 1.0;
 static const auto PIANO_ROLL_TIMER_INTERVAL_MS = 33;
 // how long the view takes to catch up to the playhead when playback starts
-// with the playhead already right of center (see PianoRollNotesView::follow_playhead())
-// -- long enough to read as a deliberate scroll, short enough not to lag
-// behind what's actually playing
+// with the playhead already right of center (see
+// PianoRollNotesView::position_playhead()) -- long enough to read as a
+// deliberate scroll, short enough not to lag behind what's actually playing
 static const auto PIANO_ROLL_PLAYHEAD_CATCHUP_MS = 400.0;
 static const auto PIANO_ROLL_MIN_HEIGHT = 300;
 static const auto PIANO_ROLL_SCENE_MARGIN = 10.0;
@@ -56,4 +58,9 @@ static const auto PIANO_ROLL_TIME_ZOOM_STEP = 1.25;
   }
   static const auto other_voice_color = QColor("#898781");
   return other_voice_color;
+}
+
+static void set_vertical_scrolling_enabled(QGraphicsView &view,
+                                           const bool enabled) {
+  view.verticalScrollBar()->setEnabled(enabled);
 }

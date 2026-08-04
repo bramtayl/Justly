@@ -50,33 +50,37 @@ struct PianoRollLegendView {
   }
 
   NO_MOVE_COPY(PianoRollLegendView)
-
-  // lists every voice (pitched first, then unpitched) as a colored swatch +
-  // name, in the same order used to assign global_voice_index for coloring,
-  // then sizes this view to exactly fit its content (plus a margin), so the
-  // fixed-width column stays as narrow as the longest voice name rather
-  // than an arbitrary guessed width
-  void rebuild(const QList<PitchedVoice> &pitched_voices,
-              const QList<UnpitchedVoice> &unpitched_voices) {
-    scene.clear();
-    auto row_y = 0.0;
-    auto global_voice_index = 0;
-    for (const auto &voice : pitched_voices) {
-      draw_legend_row(scene, voice.name, global_voice_index, row_y);
-      row_y = row_y + PIANO_ROLL_LANE_HEIGHT;
-      global_voice_index = global_voice_index + 1;
-    }
-    for (const auto &voice : unpitched_voices) {
-      draw_legend_row(scene, voice.name, global_voice_index, row_y);
-      row_y = row_y + PIANO_ROLL_LANE_HEIGHT;
-      global_voice_index = global_voice_index + 1;
-    }
-
-    const auto legend_bounds = scene.itemsBoundingRect().adjusted(
-        -PIANO_ROLL_LEGEND_GAP, -PIANO_ROLL_LEGEND_GAP, PIANO_ROLL_LEGEND_GAP,
-        PIANO_ROLL_LEGEND_GAP);
-    scene.setSceneRect(legend_bounds);
-    view.setFixedWidth(static_cast<int>(std::ceil(legend_bounds.width())) +
-                       (2 * view.frameWidth()));
-  }
 };
+
+// lists every voice (pitched first, then unpitched) as a colored swatch +
+// name, in the same order used to assign global_voice_index for coloring,
+// then sizes legend_view to exactly fit its content (plus a margin), so the
+// fixed-width column stays as narrow as the longest voice name rather than
+// an arbitrary guessed width
+static void rebuild_legend_view(PianoRollLegendView &legend_view,
+                                const QList<PitchedVoice> &pitched_voices,
+                                const QList<UnpitchedVoice> &unpitched_voices) {
+  auto &scene = legend_view.scene;
+  auto &view = legend_view.view;
+
+  scene.clear();
+  auto row_y = 0.0;
+  auto global_voice_index = 0;
+  for (const auto &voice : pitched_voices) {
+    draw_legend_row(scene, voice.name, global_voice_index, row_y);
+    row_y = row_y + PIANO_ROLL_LANE_HEIGHT;
+    global_voice_index = global_voice_index + 1;
+  }
+  for (const auto &voice : unpitched_voices) {
+    draw_legend_row(scene, voice.name, global_voice_index, row_y);
+    row_y = row_y + PIANO_ROLL_LANE_HEIGHT;
+    global_voice_index = global_voice_index + 1;
+  }
+
+  const auto legend_bounds = scene.itemsBoundingRect().adjusted(
+      -PIANO_ROLL_LEGEND_GAP, -PIANO_ROLL_LEGEND_GAP, PIANO_ROLL_LEGEND_GAP,
+      PIANO_ROLL_LEGEND_GAP);
+  scene.setSceneRect(legend_bounds);
+  view.setFixedWidth(static_cast<int>(std::ceil(legend_bounds.width())) +
+                     (2 * view.frameWidth()));
+}
