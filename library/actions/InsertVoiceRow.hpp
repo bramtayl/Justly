@@ -25,8 +25,24 @@ struct InsertVoiceRow : public QUndoCommand {
                  SubVoice new_row_input = SubVoice())
       : voices_model(voices_model_input), row_number(row_number_input),
         new_row(std::move(new_row_input)),
-        affected_notes(find_affected_notes<SubVoice, SubNote>(
-            voices_model.song.chords, row_number)) {}
+        // finds every note referencing a voice at or after row_number, so
+        // undo/redo can shift its voice_number by a known delta
+        affected_notes([&]() -> QList<RenumberedVoiceNote<SubVoice>> {
+          QList<RenumberedVoiceNote<SubVoice>> notes;
+          auto &chords = voices_model.song.chords;
+          for (auto chord_number = 0; chord_number < chords.size();
+              chord_number = chord_number + 1) {
+            auto &chord_notes =
+                get_voice_notes<SubVoice, SubNote>(chords[chord_number]);
+            for (auto note_number = 0; note_number < chord_notes.size();
+                note_number = note_number + 1) {
+              if (chord_notes.at(note_number).voice_number >= row_number) {
+                notes.push_back({chord_number, note_number});
+              }
+            }
+          }
+          return notes;
+        }()) {}
 
   void undo() override {
     voices_model.remove_rows(row_number, 1);

@@ -89,77 +89,6 @@ static void connect_navigate_chord_action(QAction &action, QObject &context,
       });
 }
 
-// wires the piano roll's playhead animation to the existing Play/Stop
-// actions, since playback itself remains fire-and-forget (no pause/resume,
-// no "now playing" callback from FluidSynth) — the playhead is driven purely
-// by wall-clock elapsed time against the same precomputed schedule bounds.
-static void connect_piano_roll_playhead(PianoRollWidget &piano_roll_widget,
-                                        QObject &context,
-                                        SongWidget &song_widget,
-                                        PlayMenu &play_menu) {
-  QObject::connect(
-      &play_menu.play_action, &QAction::triggered, &context,
-      [&piano_roll_widget, &song_widget]() -> auto {
-        const auto selection = get_play_selection(song_widget);
-        if (selection.row_type == RowType::pitched_voice_type ||
-            selection.row_type == RowType::unpitched_voice_type) {
-          // voice audition/preview has no timeline position
-          piano_roll_widget.stop_playhead();
-          return;
-        }
-        const auto is_chord_selection = selection.row_type == RowType::chord_type;
-        const auto [baseline_ms, end_ms] = get_piano_roll_time_bounds(
-            song_widget.song,
-            is_chord_selection ? selection.first_row_number
-                               : selection.chord_number,
-            is_chord_selection ? selection.number_of_rows : 1,
-            is_chord_selection ? 0 : selection.first_row_number,
-            is_chord_selection ? -1 : selection.number_of_rows,
-            is_chord_selection
-                ? std::nullopt
-                : std::make_optional(selection.row_type == RowType::pitched_note_type
-                                         ? PianoRollNoteKind::pitched_kind
-                                         : PianoRollNoteKind::unpitched_kind));
-        piano_roll_widget.start_playhead(baseline_ms, end_ms);
-      });
-  QObject::connect(
-      &play_menu.play_to_end_action, &QAction::triggered, &context,
-      [&piano_roll_widget, &song_widget]() -> auto {
-        const auto &song = song_widget.song;
-        const auto selection = get_play_selection(song_widget);
-        if (selection.row_type == RowType::pitched_voice_type ||
-            selection.row_type == RowType::unpitched_voice_type) {
-          // voice audition/preview has no timeline position
-          piano_roll_widget.stop_playhead();
-          return;
-        }
-        const auto is_chord_selection = selection.row_type == RowType::chord_type;
-        const auto first_chord_number =
-            is_chord_selection ? selection.first_row_number : selection.chord_number;
-        const auto baseline_ms = get_piano_roll_time_bounds(
-            song, first_chord_number,
-            is_chord_selection ? selection.number_of_rows : 1,
-            is_chord_selection ? 0 : selection.first_row_number,
-            is_chord_selection ? -1 : selection.number_of_rows,
-            is_chord_selection
-                ? std::nullopt
-                : std::make_optional(selection.row_type == RowType::pitched_note_type
-                                         ? PianoRollNoteKind::pitched_kind
-                                         : PianoRollNoteKind::unpitched_kind)).first;
-        // "play to end" always continues through every remaining chord in
-        // full, regardless of note-row selection, so the end bound must
-        // span the whole remaining song rather than just the selected notes
-        const auto number_of_chords = static_cast<int>(song.chords.size());
-        const auto end_ms = get_piano_roll_time_bounds(
-            song, first_chord_number,
-            number_of_chords - first_chord_number).second;
-        piano_roll_widget.start_playhead(baseline_ms, end_ms);
-      });
-  QObject::connect(
-      &play_menu.stop_playing_action, &QAction::triggered, &context,
-      [&piano_roll_widget]() -> auto { piano_roll_widget.stop_playhead(); });
-}
-
 struct SongEditor : public QMainWindow {
 public:
   SongWidget &song_widget;
@@ -265,8 +194,73 @@ public:
                             chord_number, piano_roll_widget_ref, note_number);
         };
 
-    connect_piano_roll_playhead(piano_roll_widget, *this, song_widget,
-                                song_menu_bar.play_menu);
+    // wires the piano roll's playhead animation to the existing Play/Stop
+    // actions, since playback itself remains fire-and-forget (no
+    // pause/resume, no "now playing" callback from FluidSynth) — the
+    // playhead is driven purely by wall-clock elapsed time against the same
+    // precomputed schedule bounds.
+    auto &play_menu = song_menu_bar.play_menu;
+    QObject::connect(
+        &play_menu.play_action, &QAction::triggered, this,
+        [&piano_roll_widget_ref, &song_widget_ref]() -> auto {
+          const auto selection = get_play_selection(song_widget_ref);
+          if (selection.row_type == RowType::pitched_voice_type ||
+              selection.row_type == RowType::unpitched_voice_type) {
+            // voice audition/preview has no timeline position
+            piano_roll_widget_ref.stop_playhead();
+            return;
+          }
+          const auto is_chord_selection = selection.row_type == RowType::chord_type;
+          const auto [baseline_ms, end_ms] = get_piano_roll_time_bounds(
+              song_widget_ref.song,
+              is_chord_selection ? selection.first_row_number
+                                 : selection.chord_number,
+              is_chord_selection ? selection.number_of_rows : 1,
+              is_chord_selection ? 0 : selection.first_row_number,
+              is_chord_selection ? -1 : selection.number_of_rows,
+              is_chord_selection
+                  ? std::nullopt
+                  : std::make_optional(selection.row_type == RowType::pitched_note_type
+                                           ? PianoRollNoteKind::pitched_kind
+                                           : PianoRollNoteKind::unpitched_kind));
+          piano_roll_widget_ref.start_playhead(baseline_ms, end_ms);
+        });
+    QObject::connect(
+        &play_menu.play_to_end_action, &QAction::triggered, this,
+        [&piano_roll_widget_ref, &song_widget_ref]() -> auto {
+          const auto &song = song_widget_ref.song;
+          const auto selection = get_play_selection(song_widget_ref);
+          if (selection.row_type == RowType::pitched_voice_type ||
+              selection.row_type == RowType::unpitched_voice_type) {
+            // voice audition/preview has no timeline position
+            piano_roll_widget_ref.stop_playhead();
+            return;
+          }
+          const auto is_chord_selection = selection.row_type == RowType::chord_type;
+          const auto first_chord_number =
+              is_chord_selection ? selection.first_row_number : selection.chord_number;
+          const auto baseline_ms = get_piano_roll_time_bounds(
+              song, first_chord_number,
+              is_chord_selection ? selection.number_of_rows : 1,
+              is_chord_selection ? 0 : selection.first_row_number,
+              is_chord_selection ? -1 : selection.number_of_rows,
+              is_chord_selection
+                  ? std::nullopt
+                  : std::make_optional(selection.row_type == RowType::pitched_note_type
+                                           ? PianoRollNoteKind::pitched_kind
+                                           : PianoRollNoteKind::unpitched_kind)).first;
+          // "play to end" always continues through every remaining chord in
+          // full, regardless of note-row selection, so the end bound must
+          // span the whole remaining song rather than just the selected notes
+          const auto number_of_chords = static_cast<int>(song.chords.size());
+          const auto end_ms = get_piano_roll_time_bounds(
+              song, first_chord_number,
+              number_of_chords - first_chord_number).second;
+          piano_roll_widget_ref.start_playhead(baseline_ms, end_ms);
+        });
+    QObject::connect(
+        &play_menu.stop_playing_action, &QAction::triggered, this,
+        [&piano_roll_widget_ref]() -> auto { piano_roll_widget_ref.stop_playhead(); });
 
     add_replace_table(song_menu_bar, song_widget, RowType::pitched_voice_type, -1,
                       piano_roll_widget);

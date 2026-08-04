@@ -67,13 +67,6 @@ template <typename SubType>
   return variant.value<SubType>();
 }
 
-template <typename SubType>
-[[nodiscard]] static auto get_first(const QList<SubType> &variant) -> const
-    auto & {
-  Q_ASSERT(!variant.empty());
-  return variant.at(0);
-}
-
 [[nodiscard]] static auto c_string_to_xml_string(const char *text) {
   return reinterpret_cast< // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
       const xmlChar *>(text);

@@ -50,28 +50,11 @@ auto get_named_index(const QList<Named> &nameds, const QString &name) -> auto {
 }
 
 template <NamedInterface Named>
-auto get_named(const QList<Named> &nameds, const QString &name) -> const
-    auto & {
-  const auto result_index = get_named_index(nameds, name);
-  Q_ASSERT(result_index != nameds.cend());
-  return *result_index;
-}
-
-template <NamedInterface Named>
 [[nodiscard]] static auto get_names(const QList<Named> &nameds) {
   QList<QString> names;
   std::transform(nameds.cbegin(), nameds.cend(), std::back_inserter(names),
                  [](const Named &named) -> auto { return named.name; });
   return names;
-}
-
-// sf2 preset names have no guaranteed encoding: modern soundfonts are UTF-8,
-// but older ones sometimes use Latin-1, so fall back rather than mis-decode
-[[nodiscard]] static inline auto
-decode_soundfont_name(const char *const name) -> QString {
-  const QByteArray bytes(name);
-  return bytes.isValidUtf8() ? QString::fromUtf8(bytes)
-                             : QString::fromLatin1(bytes);
 }
 
 struct Program {
@@ -81,7 +64,14 @@ struct Program {
 
   Program(const char *const name_input, const short bank_number_input,
           const short preset_number_input)
-      : name(decode_soundfont_name(name_input)),
+      // sf2 preset names have no guaranteed encoding: modern soundfonts are
+      // UTF-8, but older ones sometimes use Latin-1, so fall back rather
+      // than mis-decode
+      : name([&]() -> QString {
+          const QByteArray bytes(name_input);
+          return bytes.isValidUtf8() ? QString::fromUtf8(bytes)
+                                     : QString::fromLatin1(bytes);
+        }()),
         bank_number(bank_number_input),
         preset_number(preset_number_input) {};
 };

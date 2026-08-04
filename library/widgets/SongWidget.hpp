@@ -89,15 +89,6 @@ static const auto VOICE_PREVIEW_MILLISECONDS = 1000;
   return xml_string_to_string(xmlGetProp(&node, c_string_to_xml_string(name)));
 }
 
-[[nodiscard]] static auto get_optional_property(xmlNode &node, const char *name)
-    -> std::string {
-  auto *const value_pointer = xmlGetProp(&node, c_string_to_xml_string(name));
-  if (value_pointer == nullptr) {
-    return {};
-  }
-  return xml_string_to_string(value_pointer);
-}
-
 struct SongWidget : public QWidget {
   Song song;
   Player player = Player(*this);
@@ -482,12 +473,6 @@ check_duplicate_or_empty_voice_names(QWidget &parent,
   return true;
 }
 
-[[nodiscard]] static auto check_voice_names(QWidget &parent, const Song &song)
-    -> bool {
-  return check_duplicate_or_empty_voice_names(parent, song.pitched_voices) &&
-         check_duplicate_or_empty_voice_names(parent, song.unpitched_voices);
-}
-
 template <NoteInterface SubNote>
 [[nodiscard]] static auto
 check_note_voices(QWidget &parent, const QList<SubNote> &notes,
@@ -502,25 +487,6 @@ check_note_voices(QWidget &parent, const QList<SubNote> &notes,
       add_note_location<SubNote>(stream, chord_number, note_number);
       stream << QObject::tr(" has no corresponding voice");
       QMessageBox::warning(&parent, QObject::tr("Voice number error"), message);
-      return false;
-    }
-  }
-  return true;
-}
-
-[[nodiscard]] static auto check_chord_voices(QWidget &parent, const Song &song)
-    -> bool {
-  const auto number_of_pitched_voices =
-      static_cast<int>(song.pitched_voices.size());
-  const auto number_of_unpitched_voices =
-      static_cast<int>(song.unpitched_voices.size());
-  for (auto chord_number = 0; chord_number < song.chords.size();
-       chord_number = chord_number + 1) {
-    const auto &chord = song.chords.at(chord_number);
-    if (!check_note_voices(parent, chord.pitched_notes,
-                           number_of_pitched_voices, chord_number) ||
-        !check_note_voices(parent, chord.unpitched_notes,
-                           number_of_unpitched_voices, chord_number)) {
       return false;
     }
   }
@@ -579,8 +545,29 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
     field_pointer = xmlNextElementSibling(field_pointer);
   }
 
-  if (!check_voice_names(song_widget, song_widget.song) ||
-      !check_chord_voices(song_widget, song_widget.song)) {
+  const auto &song = song_widget.song;
+  auto names_and_voices_ok =
+      check_duplicate_or_empty_voice_names(song_widget, song.pitched_voices) &&
+      check_duplicate_or_empty_voice_names(song_widget, song.unpitched_voices);
+  if (names_and_voices_ok) {
+    const auto number_of_pitched_voices =
+        static_cast<int>(song.pitched_voices.size());
+    const auto number_of_unpitched_voices =
+        static_cast<int>(song.unpitched_voices.size());
+    for (auto chord_number = 0; chord_number < song.chords.size();
+        chord_number = chord_number + 1) {
+      const auto &chord = song.chords.at(chord_number);
+      if (!check_note_voices(song_widget, chord.pitched_notes,
+                             number_of_pitched_voices, chord_number) ||
+          !check_note_voices(song_widget, chord.unpitched_notes,
+                             number_of_unpitched_voices, chord_number)) {
+        names_and_voices_ok = false;
+        break;
+      }
+    }
+  }
+
+  if (!names_and_voices_ok) {
     clear_rows(chords_model);
     clear_rows(pitched_voices_model);
     clear_rows(unpitched_voices_model);
@@ -702,56 +689,6 @@ static void reset(TimeIterator &iterator) {
   iterator.time_per_division = 1;
 }
 
-[[nodiscard]] static auto parse_ending_numbers(xmlNode &ending_node) {
-  QList<int> numbers;
-  const auto numbers_text =
-      QString::fromStdString(get_property(ending_node, "number"));
-  for (const auto &token : numbers_text.split(',', Qt::SkipEmptyParts)) {
-    bool is_number = false;
-    const auto number = token.trimmed().toInt(&is_number);
-    if (is_number) {
-      numbers.push_back(number);
-    }
-  }
-  return numbers;
-}
-
-// records forward/backward repeats and first/second-ending brackets onto
-// the current measure, so the raw per-part timeline can be unrolled below
-static void parse_barline(xmlNode &barline_node,
-                          QList<int> &active_ending_numbers,
-                          MeasureRepeatInfo &measure_info) {
-  auto *child_pointer = xmlFirstElementChild(&barline_node);
-  while (child_pointer != nullptr) {
-    auto &child = get_reference(child_pointer);
-    if (node_is(child, "repeat")) {
-      const auto direction = get_property(child, "direction");
-      if (direction == "forward") {
-        measure_info.has_forward_repeat = true;
-      } else if (direction == "backward") {
-        measure_info.has_backward_repeat = true;
-        const auto times_text = get_optional_property(child, "times");
-        measure_info.repeat_times =
-            times_text.empty() ? DEFAULT_REPEAT_TIMES : std::stoi(times_text);
-      }
-    } else if (node_is(child, "ending")) {
-      if (get_property(child, "type") == "start") {
-        for (const auto number : parse_ending_numbers(child)) {
-          if (!active_ending_numbers.contains(number)) {
-            active_ending_numbers.push_back(number);
-          }
-          if (!measure_info.ending_numbers.contains(number)) {
-            measure_info.ending_numbers.push_back(number);
-          }
-        }
-      } else { // "stop" or "discontinue"
-        active_ending_numbers.clear();
-      }
-    }
-    child_pointer = xmlNextElementSibling(child_pointer);
-  }
-}
-
 // turns a linear list of measures (each optionally tagged with a
 // forward/backward repeat and/or first-/second-ending numbers) into an
 // ordered list of (start_time, end_time) spans describing the actual
@@ -864,19 +801,6 @@ get_time_and_time_per_division(TimeIterator &iterator,
           (time_per_division *
            (check_divisions_time - iterator.next_change_divisions_time)),
       time_per_division);
-}
-
-[[nodiscard]] static auto get_or_create_voice_number(
-    QMap<QString, int> &voice_numbers, QList<QString> &voice_names,
-    const QString &voice_key, const QString &voice_name) -> int {
-  const auto found_voice_number = voice_numbers.find(voice_key);
-  if (found_voice_number != voice_numbers.end()) {
-    return found_voice_number.value();
-  }
-  const auto new_voice_number = static_cast<int>(voice_names.size());
-  voice_numbers[voice_key] = new_voice_number;
-  voice_names.push_back(voice_name);
-  return new_voice_number;
 }
 
 [[nodiscard]] static auto deduplicate_voice_names(QList<QString> voice_names)
@@ -1158,10 +1082,17 @@ static inline void import_musicxml(SongWidget &song_widget,
                 QTextStream voice_key_stream(&voice_key);
                 voice_key_stream << QString::fromStdString(part_id) << ":"
                                  << QString::fromStdString(instrument_id);
-                new_note.voice_number = get_or_create_voice_number(
-                    voice_numbers, voice_names, voice_key,
-                    instrument_name.isEmpty() ? part_info.part_name
-                                              : instrument_name);
+                const auto voice_name = instrument_name.isEmpty()
+                                            ? part_info.part_name
+                                            : instrument_name;
+                const auto found_voice_number = voice_numbers.find(voice_key);
+                if (found_voice_number != voice_numbers.end()) {
+                  new_note.voice_number = found_voice_number.value();
+                } else {
+                  new_note.voice_number = static_cast<int>(voice_names.size());
+                  voice_numbers[voice_key] = new_note.voice_number;
+                  voice_names.push_back(voice_name);
+                }
                 if (tie_start) { // also not tie end
                   tied_notes[midi_number] = std::move(new_note);
                 } else { // not tie start or end
@@ -1177,7 +1108,57 @@ static inline void import_musicxml(SongWidget &song_widget,
             current_time += get_duration(measure_element);
             chord_start_time = current_time;
           } else if (measure_element_name == "barline") {
-            parse_barline(measure_element, active_ending_numbers, measure_info);
+            // records forward/backward repeats and first/second-ending
+            // brackets onto the current measure, so the raw per-part
+            // timeline can be unrolled below
+            auto *barline_child_pointer =
+                xmlFirstElementChild(&measure_element);
+            while (barline_child_pointer != nullptr) {
+              auto &child = get_reference(barline_child_pointer);
+              if (node_is(child, "repeat")) {
+                const auto direction = get_property(child, "direction");
+                if (direction == "forward") {
+                  measure_info.has_forward_repeat = true;
+                } else if (direction == "backward") {
+                  measure_info.has_backward_repeat = true;
+                  auto *const times_property = xmlGetProp(
+                      &child, c_string_to_xml_string("times"));
+                  const auto times_text =
+                      times_property == nullptr
+                          ? std::string()
+                          : xml_string_to_string(times_property);
+                  measure_info.repeat_times = times_text.empty()
+                                                   ? DEFAULT_REPEAT_TIMES
+                                                   : std::stoi(times_text);
+                }
+              } else if (node_is(child, "ending")) {
+                if (get_property(child, "type") == "start") {
+                  QList<int> ending_numbers;
+                  const auto numbers_text = QString::fromStdString(
+                      get_property(child, "number"));
+                  for (const auto &token :
+                       numbers_text.split(',', Qt::SkipEmptyParts)) {
+                    bool is_number = false;
+                    const auto number = token.trimmed().toInt(&is_number);
+                    if (is_number) {
+                      ending_numbers.push_back(number);
+                    }
+                  }
+                  for (const auto number : ending_numbers) {
+                    if (!active_ending_numbers.contains(number)) {
+                      active_ending_numbers.push_back(number);
+                    }
+                    if (!measure_info.ending_numbers.contains(number)) {
+                      measure_info.ending_numbers.push_back(number);
+                    }
+                  }
+                } else { // "stop" or "discontinue"
+                  active_ending_numbers.clear();
+                }
+              }
+              barline_child_pointer =
+                  xmlNextElementSibling(barline_child_pointer);
+            }
           }
           measure_element_pointer =
               xmlNextElementSibling(measure_element_pointer);

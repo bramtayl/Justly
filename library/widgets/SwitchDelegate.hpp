@@ -37,23 +37,17 @@ static auto create_string_picker(QWidget *parent_pointer,
 }
 
 template <VoiceInterface SubVoice>
-[[nodiscard]] static auto
-get_ordered_voice_names(const QList<SubVoice> &voices) {
+static auto create_voice_number_picker(QWidget *parent_pointer,
+                                       const QList<SubVoice> &voices)
+    -> auto & {
   QList<QString> voice_names;
   voice_names.reserve(voices.size());
   for (const auto &voice : voices) {
     voice_names.push_back(voice.name);
   }
-  return voice_names;
-}
-
-template <VoiceInterface SubVoice>
-static auto create_voice_number_picker(QWidget *parent_pointer,
-                                       const QList<SubVoice> &voices)
-    -> auto & {
   auto &specific_result = get_reference(
       new VoiceNumberPicker( // NOLINT(cppcoreguidelines-owning-memory)
-          parent_pointer, get_ordered_voice_names(voices)));
+          parent_pointer, voice_names));
   specific_result.setFrame(false);
   return specific_result;
 }

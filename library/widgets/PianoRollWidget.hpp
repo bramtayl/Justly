@@ -85,30 +85,11 @@ static const auto PIANO_ROLL_MS_PER_SECOND = 1000.0;
 static const auto PIANO_ROLL_MS_PER_MINUTE = 60000.0;
 static const auto PIANO_ROLL_SECONDS_PER_MINUTE = 60LL;
 static const auto PIANO_ROLL_LABEL_DECIMAL_BASE = 10;
-// candidate tick-step multipliers, tried in increasing order against each
-// power-of-ten magnitude -- the classic "nice numbers" progression (1, 2, 5,
-// then roll over to the next magnitude's 1) that keeps chosen tick values
-// round (0.5s, 1s, 2s, 5s, 10s, ...) instead of arbitrary
-[[nodiscard]] static auto get_piano_roll_nice_step_multipliers()
-    -> const QList<double> & {
-  static const QList<double> multipliers{1.0, 2.0, 5.0};
-  return multipliers;
-}
 static const auto PIANO_ROLL_NICE_STEP_ROLLOVER = 10.0;
 static const auto PIANO_ROLL_HIGHLIGHT_PEN_WIDTH = 1.5;
 static const auto PIANO_ROLL_MIN_TIME_ZOOM = 0.25;
 static const auto PIANO_ROLL_MAX_TIME_ZOOM = 8.0;
 static const auto PIANO_ROLL_TIME_ZOOM_STEP = 1.25;
-
-// fixed categorical order (never cycled) -- a voice beyond the 8th falls
-// back to get_piano_roll_other_voice_color() rather than reusing an earlier hue
-[[nodiscard]] static auto get_piano_roll_voice_colors() -> const QList<QColor> & {
-  static const QList<QColor> voice_colors{
-      QColor("#2a78d6"), QColor("#eb6834"), QColor("#1baf7a"), QColor("#eda100"),
-      QColor("#e87ba4"), QColor("#008300"), QColor("#4a3aa7"), QColor("#e34948"),
-  };
-  return voice_colors;
-}
 
 [[nodiscard]] static auto get_piano_roll_other_voice_color() -> const QColor & {
   static const auto other_voice_color = QColor("#898781");
@@ -117,59 +98,17 @@ static const auto PIANO_ROLL_TIME_ZOOM_STEP = 1.25;
 
 [[nodiscard]] static auto get_voice_color(const int global_voice_index)
     -> QColor {
-  const auto &voice_colors = get_piano_roll_voice_colors();
+  // fixed categorical order (never cycled) -- a voice beyond the 8th falls
+  // back to get_piano_roll_other_voice_color() rather than reusing an
+  // earlier hue
+  static const QList<QColor> voice_colors{
+      QColor("#2a78d6"), QColor("#eb6834"), QColor("#1baf7a"), QColor("#eda100"),
+      QColor("#e87ba4"), QColor("#008300"), QColor("#4a3aa7"), QColor("#e34948"),
+  };
   if (global_voice_index >= 0 && global_voice_index < voice_colors.size()) {
     return voice_colors.at(global_voice_index);
   }
   return get_piano_roll_other_voice_color();
-}
-
-// picks a "nice" (1/2/5 * 10^n) tick interval, in ms, close to the raw
-// interval that would give PIANO_ROLL_TARGET_TICK_PIXEL_SPACING at the
-// current zoom -- so ticks land on round numbers (0.5s, 1s, 2s, ...) rather
-// than an arbitrary value like 437ms
-[[nodiscard]] static auto choose_time_axis_step_ms(const double time_zoom_factor)
-    -> double {
-  const auto raw_step_ms = PIANO_ROLL_TARGET_TICK_PIXEL_SPACING /
-                           (PIANO_ROLL_PIXELS_PER_MS * time_zoom_factor);
-  const auto magnitude = std::pow(PIANO_ROLL_NICE_STEP_ROLLOVER,
-                                  std::floor(std::log10(raw_step_ms)));
-  const auto fraction = raw_step_ms / magnitude;
-  auto nice_fraction = PIANO_ROLL_NICE_STEP_ROLLOVER;
-  for (const auto multiplier : get_piano_roll_nice_step_multipliers()) {
-    if (fraction <= multiplier) {
-      nice_fraction = multiplier;
-      break;
-    }
-  }
-  return nice_fraction * magnitude;
-}
-
-// formats a time-axis tick label in whichever unit best suits the current
-// tick spacing (step_ms) -- milliseconds when ticks are sub-second, seconds
-// (with a decimal only when the step itself needs one) once ticks are a
-// second or more apart, and minutes:seconds once they're a minute or more
-// apart -- so labels stay round and readable at every zoom level rather
-// than always being expressed in one fixed unit
-[[nodiscard]] static auto format_time_axis_label(const double time_ms,
-                                                 const double step_ms)
-    -> QString {
-  if (step_ms < PIANO_ROLL_MS_PER_SECOND) {
-    return QString::number(std::llround(time_ms)) + "ms";
-  }
-  if (step_ms < PIANO_ROLL_MS_PER_MINUTE) {
-    const auto has_sub_second_step =
-        std::fmod(step_ms, PIANO_ROLL_MS_PER_SECOND) != 0.0;
-    return QString::number(time_ms / PIANO_ROLL_MS_PER_SECOND, 'f',
-                           has_sub_second_step ? 1 : 0) +
-           "s";
-  }
-  const auto total_seconds =
-      std::llround(time_ms / PIANO_ROLL_MS_PER_SECOND);
-  const auto minutes = total_seconds / PIANO_ROLL_SECONDS_PER_MINUTE;
-  const auto seconds = total_seconds % PIANO_ROLL_SECONDS_PER_MINUTE;
-  return QString("%1:%2").arg(minutes).arg(
-      seconds, 2, PIANO_ROLL_LABEL_DECIMAL_BASE, QChar('0'));
 }
 
 // number_of_notes == -1 (default) means "every note in every chord in
@@ -519,8 +458,15 @@ struct PianoRollWidget : public QWidget {
     if (switch_table.delegate.current_row_type != RowType::chord_type) {
       return;
     }
+    // which chord's time range (as laid out by get_chord_start_times)
+    // contains time_ms -- the last chord whose start is at or before
+    // time_ms, or -1 if there are no chords yet or time_ms falls before the
+    // first one
+    const auto first_later_iterator =
+        std::ranges::upper_bound(chord_start_times, time_ms);
     const auto chord_number =
-        get_chord_number_at_time(chord_start_times, time_ms);
+        static_cast<int>(first_later_iterator - chord_start_times.begin()) -
+        1;
     if (chord_number < 0) {
       return;
     }
@@ -922,7 +868,28 @@ struct PianoRollWidget : public QWidget {
     }
     time_axis_items.clear();
 
-    const auto step_ms = choose_time_axis_step_ms(time_zoom_factor);
+    // picks a "nice" (1/2/5 * 10^n) tick interval, in ms, close to the raw
+    // interval that would give PIANO_ROLL_TARGET_TICK_PIXEL_SPACING at the
+    // current zoom -- so ticks land on round numbers (0.5s, 1s, 2s, ...)
+    // rather than an arbitrary value like 437ms
+    const auto raw_step_ms = PIANO_ROLL_TARGET_TICK_PIXEL_SPACING /
+                             (PIANO_ROLL_PIXELS_PER_MS * time_zoom_factor);
+    const auto magnitude = std::pow(PIANO_ROLL_NICE_STEP_ROLLOVER,
+                                    std::floor(std::log10(raw_step_ms)));
+    const auto fraction = raw_step_ms / magnitude;
+    auto nice_fraction = PIANO_ROLL_NICE_STEP_ROLLOVER;
+    // candidate tick-step multipliers, tried in increasing order against
+    // each power-of-ten magnitude -- the classic "nice numbers" progression
+    // (1, 2, 5, then roll over to the next magnitude's 1) that keeps chosen
+    // tick values round (0.5s, 1s, 2s, 5s, 10s, ...) instead of arbitrary
+    static const QList<double> nice_step_multipliers{1.0, 2.0, 5.0};
+    for (const auto multiplier : nice_step_multipliers) {
+      if (fraction <= multiplier) {
+        nice_fraction = multiplier;
+        break;
+      }
+    }
+    const auto step_ms = nice_fraction * magnitude;
     for (auto step_number = 0;
         step_number * step_ms <= time_axis_max_time_ms;
         step_number = step_number + 1) {
@@ -932,8 +899,31 @@ struct PianoRollWidget : public QWidget {
           scene.addLine(tick_x, time_axis_y, tick_x,
                        time_axis_y + PIANO_ROLL_AXIS_TICK_LENGTH));
 
-      auto &label = get_reference(
-          scene.addSimpleText(format_time_axis_label(time_ms, step_ms)));
+      // formats a time-axis tick label in whichever unit best suits the
+      // current tick spacing (step_ms) -- milliseconds when ticks are
+      // sub-second, seconds (with a decimal only when the step itself needs
+      // one) once ticks are a second or more apart, and minutes:seconds
+      // once they're a minute or more apart -- so labels stay round and
+      // readable at every zoom level rather than always being expressed in
+      // one fixed unit
+      auto &label = get_reference(scene.addSimpleText([&]() -> QString {
+        if (step_ms < PIANO_ROLL_MS_PER_SECOND) {
+          return QString::number(std::llround(time_ms)) + "ms";
+        }
+        if (step_ms < PIANO_ROLL_MS_PER_MINUTE) {
+          const auto has_sub_second_step =
+              std::fmod(step_ms, PIANO_ROLL_MS_PER_SECOND) != 0.0;
+          return QString::number(time_ms / PIANO_ROLL_MS_PER_SECOND, 'f',
+                                 has_sub_second_step ? 1 : 0) +
+                 "s";
+        }
+        const auto total_seconds =
+            std::llround(time_ms / PIANO_ROLL_MS_PER_SECOND);
+        const auto minutes = total_seconds / PIANO_ROLL_SECONDS_PER_MINUTE;
+        const auto seconds = total_seconds % PIANO_ROLL_SECONDS_PER_MINUTE;
+        return QString("%1:%2").arg(minutes).arg(
+            seconds, 2, PIANO_ROLL_LABEL_DECIMAL_BASE, QChar('0'));
+      }()));
       // keeps the label's on-screen size constant across zoom levels --
       // without this, since the label lives in the same scene as the notes
       // it gets rendered through the main view's time-axis-only x scale

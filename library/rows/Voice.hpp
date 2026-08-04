@@ -4,6 +4,7 @@
 #include <QtCore/QString>
 #include <QtCore/QTextStream>
 #include <QtCore/QVariant>
+#include <QtCore/QtAssert>
 #include <QtWidgets/QMessageBox>
 #include <concepts>
 
@@ -31,7 +32,10 @@ template <VoiceInterface SubVoice>
 [[nodiscard]] auto get_voice_program(const QList<Program> &programs,
                                      const QList<SubVoice> &voices,
                                      int voice_number) -> const auto & {
-  return get_named(programs, voices.at(voice_number).program);
+  const auto result_index =
+      get_named_index(programs, voices.at(voice_number).program);
+  Q_ASSERT(result_index != programs.cend());
+  return *result_index;
 }
 
 template <VoiceInterface SubVoice>

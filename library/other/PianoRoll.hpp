@@ -4,7 +4,6 @@
 #include <QtCore/QTypeInfo>
 #include <QtCore/QtMinMax>
 #include <QtCore/QtSwap>
-#include <algorithm>
 #include <cstdint>
 #include <type_traits>
 
@@ -111,16 +110,4 @@ append_piano_roll_events(QList<PianoRollNoteEvent> &events,
     move_time(play_state, chord);
   }
   return start_times;
-}
-
-// which chord's time range (as laid out by get_chord_start_times) contains
-// time_ms -- the last chord whose start is at or before time_ms, or -1 if
-// there are no chords yet or time_ms falls before the first one
-[[nodiscard]] static inline auto
-get_chord_number_at_time(const QList<double> &chord_start_times,
-                         const double time_ms) -> int {
-  const auto first_later_iterator =
-      std::ranges::upper_bound(chord_start_times, time_ms);
-  return static_cast<int>(first_later_iterator - chord_start_times.begin()) -
-         1;
 }

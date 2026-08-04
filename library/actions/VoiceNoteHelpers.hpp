@@ -47,27 +47,6 @@ template <VoiceInterface SubVoice> struct AffectedVoiceNote {
   int old_voice_number;
 };
 
-// finds every note referencing a voice at or after first_affected_voice_number,
-// so InsertVoiceRow can shift its voice_number by a known delta on undo/redo
-template <VoiceInterface SubVoice, NoteInterface SubNote>
-[[nodiscard]] static auto
-find_affected_notes(QList<Chord> &chords,
-                    const int first_affected_voice_number)
-    -> QList<RenumberedVoiceNote<SubVoice>> {
-  QList<RenumberedVoiceNote<SubVoice>> affected_notes;
-  for (auto chord_number = 0; chord_number < chords.size();
-      chord_number = chord_number + 1) {
-    auto &notes = get_voice_notes<SubVoice, SubNote>(chords[chord_number]);
-    for (auto note_number = 0; note_number < notes.size();
-        note_number = note_number + 1) {
-      if (notes.at(note_number).voice_number >= first_affected_voice_number) {
-        affected_notes.push_back({chord_number, note_number});
-      }
-    }
-  }
-  return affected_notes;
-}
-
 template <VoiceInterface SubVoice, NoteInterface SubNote>
 static void offset_voice_numbers(
     QList<Chord> &chords,

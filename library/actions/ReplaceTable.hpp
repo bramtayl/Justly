@@ -70,12 +70,6 @@ static auto get_is_voice(const RowType row_type) -> bool {
   return row_type == RowType::pitched_voice_type || row_type == RowType::unpitched_voice_type;
 }
 
-static auto get_voice_name_column(const RowType row_type) -> int {
-  return row_type == RowType::pitched_voice_type
-             ? static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column)
-             : static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column);
-}
-
 // mirrors the switch table's current selection onto the piano roll (which
 // note bar(s) get highlighted, where the cursor jumps to); an empty
 // selection clears both, since get_only_range() asserts on an empty range
@@ -123,8 +117,14 @@ static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
   const auto name_column_selected =
       is_voice &&
       std::ranges::any_of(
-          selection, [name_column = get_voice_name_column(current_row_type)](
-                        const QItemSelectionRange &range) -> auto {
+          selection,
+          [name_column = current_row_type == RowType::pitched_voice_type
+                             ? static_cast<int>(
+                                   PitchedVoiceColumn::pitched_voice_name_column)
+                             : static_cast<int>(
+                                   UnpitchedVoiceColumn::
+                                       unpitched_voice_name_column)](
+              const QItemSelectionRange &range) -> auto {
             return range.left() <= name_column && name_column <= range.right();
           });
   const auto can_copy_paste = anything_selected && !name_column_selected;
