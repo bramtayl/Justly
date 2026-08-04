@@ -28,8 +28,31 @@
 
 #include "other/PianoRoll.hpp"
 #include "other/helpers.hpp"
+#include "widgets/piano_roll/PianoRollLegendView.hpp"
 #include "widgets/piano_roll/PlayheadTransition.hpp"
-#include "widgets/piano_roll/piano_roll_helpers.hpp"
+
+static const auto PIANO_ROLL_PIXELS_PER_MS = 0.1;
+static const auto PIANO_ROLL_AXIS_TICK_LENGTH = 5.0;
+static const auto PIANO_ROLL_AXIS_X = 0.0;
+static const auto PIANO_ROLL_DEFAULT_AXIS_Y = 0.0;
+// ticks are re-spaced on every zoom change (see
+// PianoRollNotesView::redraw_time_axis_ticks()) to keep roughly this many screen
+// pixels between them, rather than a fixed time interval -- otherwise
+// zooming in would crowd ticks together and zooming out would spread them so
+// far apart that most of the timeline carries no labels at all
+static const auto PIANO_ROLL_TARGET_TICK_PIXEL_SPACING = 80.0;
+static const auto PIANO_ROLL_MS_PER_SECOND = 1000.0;
+static const auto PIANO_ROLL_MS_PER_MINUTE = 60000.0;
+static const auto PIANO_ROLL_SECONDS_PER_MINUTE = 60LL;
+static const auto PIANO_ROLL_LABEL_DECIMAL_BASE = 10;
+static const auto PIANO_ROLL_NICE_STEP_ROLLOVER = 10.0;
+static const auto PIANO_ROLL_MIN_TIME_ZOOM = 0.25;
+static const auto PIANO_ROLL_MAX_TIME_ZOOM = 8.0;
+// how long the view takes to catch up to the playhead when playback starts
+// with the playhead already right of center (see
+// PianoRollNotesView::position_playhead()) -- long enough to read as a
+// deliberate scroll, short enough not to lag behind what's actually playing
+static const auto PIANO_ROLL_PLAYHEAD_CATCHUP_MS = 400.0;
 
 // the main scrollable graphics view: the note bars, the pitch/time axes,
 // and the playhead cursor + its playback animation all live here

@@ -12,6 +12,7 @@
 #include <QtGui/QPen>
 #include <QtGui/QWheelEvent>
 #include <QtWidgets/QBoxLayout>
+#include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QScrollBar>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
@@ -34,7 +35,22 @@
 #include "widgets/piano_roll/PianoRollLegendView.hpp"
 #include "widgets/piano_roll/PianoRollNotesView.hpp"
 #include "widgets/piano_roll/PlayheadTransition.hpp"
-#include "widgets/piano_roll/piano_roll_helpers.hpp"
+
+static const auto PIANO_ROLL_PIXELS_PER_SEMITONE = 6;
+// how far below the lowest note the horizontal axis sits -- enough that the
+// lowest note's bar never reads as glued to (or nearly touching) the axis
+// line, without wasting a full octave of empty space underneath it
+static const auto PIANO_ROLL_AXIS_PITCH_MARGIN_SEMITONES = 3.0;
+static const auto PIANO_ROLL_LANE_HEIGHT = 20;
+static const auto PIANO_ROLL_NOTE_BAR_THICKNESS = 3.0;
+static const auto PIANO_ROLL_MIN_BAR_WIDTH = 1.0;
+static const auto PIANO_ROLL_TIMER_INTERVAL_MS = 33;
+static const auto PIANO_ROLL_MIN_HEIGHT = 300;
+static const auto PIANO_ROLL_SCENE_MARGIN = 10.0;
+static const auto PIANO_ROLL_UNPITCHED_LANE_GAP = 30.0;
+static const auto PIANO_ROLL_LEGEND_GAP = 10.0;
+static const auto PIANO_ROLL_HIGHLIGHT_PEN_WIDTH = 1.5;
+static const auto PIANO_ROLL_TIME_ZOOM_STEP = 1.25;
 
 // number_of_notes == -1 (default) means "every note in every chord in
 // [first_chord_number, first_chord_number + number_of_chords)". A concrete
@@ -537,7 +553,7 @@ static void rebuild_scene(PianoRollWidget &widget) {
                                                 event.voice_number;
       auto &note_item = get_reference(scene.addRect(
           bar_x, bar_y, width, PIANO_ROLL_NOTE_BAR_THICKNESS, QPen(Qt::NoPen),
-          QBrush(get_voice_color(global_voice_index))));
+          QBrush(PianoRollLegendView::get_voice_color(global_voice_index))));
       // lets the double-click event filter trace a clicked rect back to the
       // PianoRollNoteEvent (and thus chord/note) it represents
       note_item.setData(0, event_index);
@@ -667,6 +683,11 @@ static void update_piano_roll_widget_selection(PianoRollWidget &widget,
   widget.selection_first_row_number = first_row_number;
   widget.selection_number_of_rows = number_of_rows;
   apply_selection_highlight(widget);
+}
+
+static void set_vertical_scrolling_enabled(QGraphicsView &view,
+                                           const bool enabled) {
+  view.verticalScrollBar()->setEnabled(enabled);
 }
 
 // position_playhead() recenters the view every tick while playing, fighting
