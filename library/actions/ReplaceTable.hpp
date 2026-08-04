@@ -47,7 +47,7 @@
 #include "rows/RowType.hpp"
 #include "widgets/ControlsColumn.hpp"
 #include "widgets/IntervalRow.hpp"
-#include "widgets/PianoRollWidget.hpp"
+#include "widgets/piano_roll/PianoRollWidget.hpp"
 #include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchDelegate.hpp"

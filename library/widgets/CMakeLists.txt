@@ -2,7 +2,6 @@
 target_sources(JustlyLibrary INTERFACE FILE_SET justly_headers FILES
     "ControlsColumn.hpp"
     "IntervalRow.hpp"
-    "PianoRollWidget.hpp"
     "SongWidget.hpp"
     "SpinBoxes.hpp"
     "SongEditor.hpp"
@@ -10,3 +9,5 @@ target_sources(JustlyLibrary INTERFACE FILE_SET justly_headers FILES
     "SwitchDelegate.hpp"
     "SwitchTable.hpp"
 )
+
+add_subdirectory("piano_roll")

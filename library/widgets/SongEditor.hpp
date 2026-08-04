@@ -38,7 +38,7 @@
 #include "other/PianoRoll.hpp"
 #include "other/helpers.hpp"
 #include "rows/RowType.hpp"
-#include "widgets/PianoRollWidget.hpp"
+#include "widgets/piano_roll/PianoRollWidget.hpp"
 #include "widgets/SongWidget.hpp"
 #include "widgets/SpinBoxes.hpp"
 #include "widgets/SwitchColumn.hpp"
