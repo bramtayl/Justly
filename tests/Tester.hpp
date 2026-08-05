@@ -2944,7 +2944,9 @@ private slots:
     // simulates one playback timer tick without waiting on the real
     // QElapsedTimer -- elapsed() is at least 0, so current_ms is already
     // >= the 1200ms baseline, landing on chord 2
-    update_playhead_position(piano_roll_widget);
+    update_playhead_position(piano_roll_widget.piano_roll_view,
+                             piano_roll_widget.axis_view, switch_table,
+                             piano_roll_widget.selecting_chord_from_playhead);
     QCOMPARE(get_only_range(switch_table).top(), 2);
 
     stop_playhead(piano_roll_widget);
