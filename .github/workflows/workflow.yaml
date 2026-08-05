@@ -139,7 +139,7 @@ jobs:
     # load-command path macdeployqt failed to rewrite to a bundle-relative one
     - name: Remove dependencies before testing on MacOS
       if: matrix.family == 'macos'
-      run: brew uninstall fluid-synth qt libxml2 libzip && brew autoremove
+      run: brew uninstall --ignore-dependencies fluid-synth qt libxml2 libzip && brew autoremove
 
     - name: Remove dependencies before testing on Ubuntu
       if: matrix.family == 'ubuntu'
