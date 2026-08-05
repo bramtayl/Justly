@@ -2571,6 +2571,37 @@ private slots:
     open_file(song_widget, test_dir.filePath("test_song.xml"));
   };
 
+  void test_piano_roll_notes_mode_axis_starts_at_chord_start() {
+    auto &song_widget = song_editor.song_widget;
+    auto &piano_roll_widget = song_editor.piano_roll_widget;
+    auto &piano_roll_view = piano_roll_widget.piano_roll_view;
+    auto &undo_stack = song_widget.undo_stack;
+
+    // outside notes mode the axis spans the whole song, starting at time 0
+    QCOMPARE(piano_roll_view.time_axis_baseline_ms, 0.0);
+
+    // chord 1 starts at 600ms and its notes run through 1200ms (see
+    // test_piano_roll_time_bounds() above) -- in notes mode the axis should
+    // be rebased to that chord's own start, so it only spans the 600ms
+    // during which chord 1's notes actually play rather than dragging along
+    // the silent 600ms before them
+    switch_to(song_editor, RowType::pitched_note_type, 1);
+    QCOMPARE(piano_roll_view.time_axis_baseline_ms, 600.0);
+    QCOMPARE(piano_roll_view.time_axis_max_time_ms, 600.0);
+
+    const auto &events = piano_roll_view.events;
+    const auto &note_items = piano_roll_view.note_items;
+    for (auto event_index = 0; event_index < events.size();
+        event_index = event_index + 1) {
+      const auto &event = events.at(event_index);
+      QCOMPARE(get_reference(note_items.at(event_index)).rect().x(),
+               (event.start_time_ms - 600.0) * PIANO_ROLL_PIXELS_PER_MS);
+    }
+
+    maybe_switch_back_to_chords(undo_stack, RowType::pitched_note_type);
+    QCOMPARE(piano_roll_view.time_axis_baseline_ms, 0.0);
+  };
+
   // checks that exactly the events matching the given criteria (mirroring
   // get_selected_piano_roll_event_indices) are drawn with a highlight pen,
   // and every other event is drawn plain
@@ -2635,9 +2666,11 @@ private slots:
 
     QVERIFY(piano_roll_widget.piano_roll_view.playhead_item.isVisible());
     // both chord 1's pitched and unpitched notes start where the chord
-    // itself starts -- see test_piano_roll_time_bounds() above
-    QCOMPARE(piano_roll_widget.piano_roll_view.playhead_item.line().x1(),
-             600.0 * PIANO_ROLL_PIXELS_PER_MS);
+    // itself starts -- see test_piano_roll_time_bounds() above -- but in
+    // notes mode the axis is rebased to that same start time (see
+    // test_piano_roll_notes_mode_axis_starts_at_chord_start() below), so
+    // the playhead sits at 0 rather than at chord 1's absolute start time
+    QCOMPARE(piano_roll_widget.piano_roll_view.playhead_item.line().x1(), 0.0);
 
     maybe_switch_back_to_chords(undo_stack, row_type);
   };

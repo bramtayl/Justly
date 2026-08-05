@@ -106,6 +106,13 @@ struct PianoRollNotesView {
   // the full PianoRollWidget::rebuild_scene()
   double time_axis_max_time_ms = 0.0;
   double time_axis_y = PIANO_ROLL_DEFAULT_AXIS_Y;
+  // the absolute song time (ms) that maps to this view's x == PIANO_ROLL_AXIS_X --
+  // 0 normally, but in notes mode (PianoRollWidget::rebuild_scene() scoped
+  // to one chord's notes) it's that chord's own start time, so the axis
+  // only spans the window during which the chord's notes actually play
+  // instead of dragging along every silent millisecond since the song
+  // began; see to_scene_x() below
+  double time_axis_baseline_ms = 0.0;
   // the tick lines + labels currently on screen, so redraw_time_axis_ticks()
   // can remove exactly those before drawing a fresh set at the new spacing,
   // leaving the rest of the scene (notes, pitch axis, playhead) untouched
@@ -136,6 +143,16 @@ struct PianoRollNotesView {
     // up as a gray seam between this view and the axis view even with the
     // layout's spacing at 0 -- dropping the frame removes that seam
     view.setFrameShape(QFrame::NoFrame);
+    // QGraphicsView's default alignment (Qt::AlignCenter) centers the
+    // view.setSceneRect() bounds (set in PianoRollWidget::rebuild_scene(),
+    // starting at PIANO_ROLL_AXIS_X) within the viewport whenever that
+    // content is narrower than the viewport itself -- e.g. a song with only
+    // one short note. That padding isn't clipped, so it reveals whatever
+    // the shared scene actually has to the left of PIANO_ROLL_AXIS_X: the
+    // pitch axis' own ticks/labels, duplicating PianoRollAxisView's. Pinning
+    // to the top-left keeps any leftover space on the right/bottom instead,
+    // where the scene has nothing to leak through.
+    view.setAlignment(Qt::AlignLeft | Qt::AlignTop);
 
     playhead_item.setPen(QPen(Qt::red));
     playhead_item.setZValue(1);
@@ -158,6 +175,14 @@ struct PianoRollNotesView {
 
   NO_MOVE_COPY(PianoRollNotesView)
 };
+
+// converts an absolute song time (ms) to this view's scene x coordinate --
+// identity-scaled by time_axis_baseline_ms, which is 0 outside notes mode
+// (see the field's comment above) so this is a no-op there
+[[nodiscard]] static inline auto to_scene_x(const PianoRollNotesView &notes_view,
+                                            const double time_ms) -> double {
+  return (time_ms - notes_view.time_axis_baseline_ms) * PIANO_ROLL_PIXELS_PER_MS;
+}
 
 // (re)draws the time axis' ticks and labels, spaced (in ms) so they land
 // roughly PIANO_ROLL_TARGET_TICK_PIXEL_SPACING apart on screen at the
@@ -318,7 +343,7 @@ static void hide_selection_rect(PianoRollNotesView &notes_view) {
 static void position_playhead(PianoRollNotesView &notes_view,
                               const double time_ms,
                               const bool follow_view = true) {
-  const auto playhead_x = time_ms * PIANO_ROLL_PIXELS_PER_MS;
+  const auto playhead_x = to_scene_x(notes_view, time_ms);
   const auto &scene_rect = notes_view.scene.sceneRect();
   notes_view.playhead_item.setLine(playhead_x, scene_rect.top(), playhead_x,
                                    scene_rect.bottom());
@@ -363,10 +388,10 @@ static void position_playhead(PianoRollNotesView &notes_view,
       // clamped to playhead_end_ms so a clip shorter than the catch-up
       // window still eases toward where playback actually ends, rather
       // than toward a point in time it never reaches
-      const auto catchup_end_x =
+      const auto catchup_end_x = to_scene_x(
+          notes_view,
           std::min(notes_view.playhead_baseline_ms + PIANO_ROLL_PLAYHEAD_CATCHUP_MS,
-                   notes_view.playhead_end_ms) *
-          PIANO_ROLL_PIXELS_PER_MS;
+                   notes_view.playhead_end_ms));
       const auto center_x =
           notes_view.playhead_catchup_start_center_x +
           (eased_progress *

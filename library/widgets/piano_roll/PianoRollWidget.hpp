@@ -358,8 +358,8 @@ static void apply_selection_highlight(PianoRollWidget &widget) {
   // so it stays visible after the mouse is released, tracks table-driven
   // selection changes too, and disappears only once the selection itself
   // is cleared or moves to a voice table
-  show_selection_rect(piano_roll_view, range_start_ms * PIANO_ROLL_PIXELS_PER_MS,
-                      range_end_ms * PIANO_ROLL_PIXELS_PER_MS);
+  show_selection_rect(piano_roll_view, to_scene_x(piano_roll_view, range_start_ms),
+                      to_scene_x(piano_roll_view, range_end_ms));
 
   // playback already owns the cursor line while it's running, and so does
   // an in-progress manual drag (which set it more precisely than a chord's
@@ -522,12 +522,26 @@ static void rebuild_scene(PianoRollWidget &widget) {
     }
     notes_view.chord_start_times = get_chord_start_times(song);
 
+    // in notes mode the axis should only span the window during which this
+    // chord's own notes play, not every silent millisecond since the song
+    // began -- so rebase time 0 to the chord's own start time (0 outside
+    // notes mode, leaving the axis as the whole song's timeline)
+    const auto &chord_start_times = notes_view.chord_start_times;
+    const auto time_axis_baseline_ms =
+        notes_mode_chord_number != -1 &&
+                notes_mode_chord_number <
+                    static_cast<int>(chord_start_times.size())
+            ? chord_start_times.at(notes_mode_chord_number)
+            : 0.0;
+    notes_view.time_axis_baseline_ms = time_axis_baseline_ms;
+
     auto min_midi = std::numeric_limits<double>::max();
     auto max_midi = std::numeric_limits<double>::lowest();
     auto max_time_ms = 0.0;
     for (const auto &event : events) {
-      max_time_ms =
-          std::max(max_time_ms, event.start_time_ms + event.duration_ms);
+      max_time_ms = std::max(max_time_ms, event.start_time_ms +
+                                              event.duration_ms -
+                                              time_axis_baseline_ms);
       if (event.kind == PianoRollNoteKind::pitched_kind) {
         const auto midi_number = frequency_to_midi_number(event.frequency);
         min_midi = std::min(min_midi, midi_number);
@@ -618,7 +632,7 @@ static void rebuild_scene(PianoRollWidget &widget) {
     for (auto event_index = 0; event_index < events.size();
         event_index = event_index + 1) {
       const auto &event = events.at(event_index);
-      const auto bar_x = event.start_time_ms * PIANO_ROLL_PIXELS_PER_MS;
+      const auto bar_x = to_scene_x(notes_view, event.start_time_ms);
       const auto width =
           std::max(PIANO_ROLL_MIN_BAR_WIDTH,
                    event.duration_ms * PIANO_ROLL_PIXELS_PER_MS);
@@ -815,7 +829,7 @@ static void start_playhead(PianoRollWidget &widget, const double baseline_ms,
   auto &view = piano_roll_view.view;
   const auto initial_center_x =
       view.mapToScene(view.viewport()->rect()).boundingRect().center().x();
-  const auto playhead_x = baseline_ms * PIANO_ROLL_PIXELS_PER_MS;
+  const auto playhead_x = to_scene_x(piano_roll_view, baseline_ms);
   if (playhead_x <= initial_center_x) {
     piano_roll_view.playhead_transition = PlayheadTransition::waiting_to_reach_center;
   } else {
