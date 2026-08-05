@@ -109,9 +109,9 @@ struct PianoRollWidget : public QWidget {
   const SongWidget &song_widget;
 
   PianoRollNotesView piano_roll_view = PianoRollNotesView(*this);
-  // a second, fixed-width view onto piano_roll_view's scene, pinned to the
-  // left edge -- see PianoRollAxisView for details
-  PianoRollAxisView axis_view = PianoRollAxisView(*this, piano_roll_view.scene);
+  // a second, fixed-width view pinned to the left edge, showing the pitch
+  // axis -- see PianoRollAxisView for details
+  PianoRollAxisView axis_view = PianoRollAxisView(*this);
   // a separate scene/view for the voice legend, pinned to the right edge --
   // see PianoRollLegendView for details
   PianoRollLegendView legend_view = PianoRollLegendView(*this);
@@ -483,7 +483,6 @@ static void rebuild_scene(PianoRollWidget &widget) {
     auto &scene = notes_view.scene;
     auto &playhead_item = notes_view.playhead_item;
     auto &selection_rect_item = notes_view.selection_rect_item;
-    auto &view = notes_view.view;
 
     scene.removeItem(&playhead_item);
     const auto saved_line = playhead_item.line();
@@ -499,6 +498,8 @@ static void rebuild_scene(PianoRollWidget &widget) {
     // dangling pointers so redraw_time_axis_ticks() doesn't try to remove
     // them again below
     notes_view.time_axis_items.clear();
+
+    widget.axis_view.scene.clear();
 
     const auto &pitched_voices = song.pitched_voices;
     const auto number_of_pitched_voices =
@@ -585,6 +586,7 @@ static void rebuild_scene(PianoRollWidget &widget) {
     // than drawn there; axis_y ends up a fixed few semitones below the lowest
     // note (not snapped to any tick), so the lowest note's bar never reads as
     // glued to the axis line
+    auto &axis_scene = widget.axis_view.scene;
     const auto axis_y = [&]() -> double {
       if (min_midi > max_midi) {
         return PIANO_ROLL_DEFAULT_AXIS_Y;
@@ -601,14 +603,19 @@ static void rebuild_scene(PianoRollWidget &widget) {
                                        HALFSTEPS_PER_OCTAVE)) *
                          HALFSTEPS_PER_OCTAVE;
 
+      // drawn into axis_view's own scene (not the notes scene) -- it's the
+      // same y = -midi * PIANO_ROLL_PIXELS_PER_SEMITONE coordinate formula
+      // as the note bars below, so the two views' vertical scrollbars
+      // (kept in lockstep by PianoRollWidget's constructor) line the ticks
+      // up with their notes despite living in separate scenes
       for (auto midi_value = first_octave; midi_value <= last_octave;
           midi_value = midi_value + HALFSTEPS_PER_OCTAVE) {
         const auto tick_y = -midi_value * PIANO_ROLL_PIXELS_PER_SEMITONE;
-        scene.addLine(PIANO_ROLL_AXIS_X - PIANO_ROLL_AXIS_TICK_LENGTH, tick_y,
+        axis_scene.addLine(PIANO_ROLL_AXIS_X - PIANO_ROLL_AXIS_TICK_LENGTH, tick_y,
                      PIANO_ROLL_AXIS_X, tick_y);
 
         auto &label =
-            get_reference(scene.addSimpleText(get_note_name(midi_value)));
+            get_reference(axis_scene.addSimpleText(get_note_name(midi_value)));
         const auto &label_rect = label.boundingRect();
         label.setPos(PIANO_ROLL_AXIS_X - PIANO_ROLL_AXIS_TICK_LENGTH -
                         PIANO_ROLL_AXIS_LABEL_GAP - label_rect.width(),
@@ -686,14 +693,6 @@ static void rebuild_scene(PianoRollWidget &widget) {
     scene.addItem(&selection_rect_item);
     selection_rect_item.setRect(saved_selection_rect);
     selection_rect_item.setVisible(selection_rect_was_visible);
-
-    // without this, scrolling this view all the way left would re-reveal
-    // the same axis labels a second time (PianoRollAxisView already owns
-    // that column), doubling them up
-    const auto &notes_scene_rect = scene.sceneRect();
-    view.setSceneRect(PIANO_ROLL_AXIS_X, notes_scene_rect.top(),
-                      notes_scene_rect.right() - PIANO_ROLL_AXIS_X,
-                      notes_scene_rect.height());
   }
 
   // lists every voice (pitched first, then unpitched) as a colored swatch +
@@ -728,20 +727,35 @@ static void rebuild_scene(PianoRollWidget &widget) {
                        (2 * view.frameWidth()));
   }
 
-  const auto &scene_rect = widget.piano_roll_view.scene.sceneRect();
-  // only the pitch axis' ticks/labels have negative x, so the scene
-  // rect's left edge is exactly the widest label's left edge; giving
-  // axis_view that same rect (but overriding its own, view-local scene
-  // rect rather than the shared QGraphicsScene's) as both its fixed
-  // width and its scrollable area keeps it permanently framed on just
-  // the axis column, with zero horizontal scroll range
-  const auto axis_column_width = PIANO_ROLL_AXIS_X - scene_rect.left();
   auto &axis_view = widget.axis_view;
+  auto &axis_scene = axis_view.scene;
+  const auto &scene_rect = widget.piano_roll_view.scene.sceneRect();
+  // the pitch ticks/labels' own scene has no notes to size itself against,
+  // so its bounding rect's left edge is exactly the widest label's left
+  // edge (mirroring the -MARGIN breathing room the notes scene gives
+  // itself); vertically, though, the two views' scrollbars are kept in
+  // lockstep (wired up in the constructor), so their scene rects have to
+  // share one vertical range -- the union of both scenes' own content --
+  // or the two would drift out of alignment whenever a tick/label pokes
+  // slightly above or below the notes scene's own margin
+  const auto axis_left = axis_scene.itemsBoundingRect().left() -
+                         PIANO_ROLL_SCENE_MARGIN;
+  const auto axis_column_width = PIANO_ROLL_AXIS_X - axis_left;
+  const auto vertical_rect = scene_rect.united(axis_scene.itemsBoundingRect());
+
   axis_view.view.setFixedWidth(
       static_cast<int>(std::ceil(axis_column_width)) +
       (2 * axis_view.view.frameWidth()));
-  axis_view.view.setSceneRect(scene_rect.left(), scene_rect.top(),
-                              axis_column_width, scene_rect.height());
+  axis_view.view.setSceneRect(axis_left, vertical_rect.top(), axis_column_width,
+                              vertical_rect.height());
+
+  // without this, scrolling the notes view all the way left would reveal
+  // blank scene space to the left of the axis line (the -MARGIN gutter
+  // baked into scene_rect) rather than clipping flush against it, since
+  // that gutter is meant for axis_view's column, not this one
+  widget.piano_roll_view.view.setSceneRect(
+      PIANO_ROLL_AXIS_X, vertical_rect.top(),
+      scene_rect.right() - PIANO_ROLL_AXIS_X, vertical_rect.height());
 
   // a short song (few voices, narrow pitch range) doesn't need nearly as
   // much vertical space as PIANO_ROLL_MIN_HEIGHT reserves -- letting the
@@ -759,7 +773,7 @@ static void rebuild_scene(PianoRollWidget &widget) {
       widget.row_layout.contentsMargins().bottom();
   widget.setMaximumHeight(static_cast<int>(std::max(
       static_cast<double>(PIANO_ROLL_MIN_HEIGHT),
-      std::ceil(scene_rect.height() + chrome_height))));
+      std::ceil(vertical_rect.height() + chrome_height))));
 
   apply_selection_highlight(widget);
 }

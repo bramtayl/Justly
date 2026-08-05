@@ -431,6 +431,18 @@ static void clear_rows(RowsModel<SubRow> &rows_model) {
   }
 }
 
+// loading a file replaces song.chords wholesale, which would leave
+// pitched_notes_model/unpitched_notes_model pointing at destroyed Chord
+// members if the switch table was drilled into a chord's notes (mirrors the
+// reset that replace_table performs when the user navigates back to chords
+// manually)
+static void reset_switch_table_to_chords(SwitchTable &switch_table) {
+  switch_table.pitched_notes_model.set_rows_pointer();
+  switch_table.unpitched_notes_model.set_rows_pointer();
+  switch_table.delegate.current_row_type = RowType::chord_type;
+  set_model(switch_table, switch_table.chords_model);
+}
+
 [[nodiscard]] static auto xml_to_double(const xmlNode &element) {
   // std::stod uses the current C locale; QString::toDouble is always
   // locale-independent, so this matches set_xml_double above
@@ -515,6 +527,7 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
     return;
   }
 
+  reset_switch_table_to_chords(switch_table);
   clear_rows(chords_model);
   clear_rows(pitched_voices_model);
   clear_rows(unpitched_voices_model);
@@ -841,11 +854,10 @@ static inline void import_musicxml(SongWidget &song_widget,
                                    const QString &filename) {
   auto &undo_stack = song_widget.undo_stack;
   auto &spin_boxes = song_widget.controls_column.spin_boxes;
-  auto &chords_model = song_widget.switch_column.switch_table.chords_model;
-  auto &pitched_voices_model =
-      song_widget.switch_column.switch_table.pitched_voices_model;
-  auto &unpitched_voices_model =
-      song_widget.switch_column.switch_table.unpitched_voices_model;
+  auto &switch_table = song_widget.switch_column.switch_table;
+  auto &chords_model = switch_table.chords_model;
+  auto &pitched_voices_model = switch_table.pitched_voices_model;
+  auto &unpitched_voices_model = switch_table.unpitched_voices_model;
 
   auto document = maybe_read_xml_file(filename);
   if (!check_xml_document(song_widget, document)) {
@@ -1243,6 +1255,7 @@ static inline void import_musicxml(SongWidget &song_widget,
     unpitched_voice_names.push_back(QObject::tr("unpitched voice 1"));
   }
 
+  reset_switch_table_to_chords(switch_table);
   clear_rows(chords_model);
   clear_rows(pitched_voices_model);
   clear_rows(unpitched_voices_model);

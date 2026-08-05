@@ -1338,6 +1338,26 @@ private slots:
     import_musicxml(song_editor.song_widget, test_dir.filePath(file_name));
   };
 
+  // regression test: inserting a chord, then drilling into and inserting one
+  // of its notes, leaves the switch table's notes model pointing directly at
+  // that Chord's notes QList; import_musicxml/open_file must not crash even
+  // though they replace song.chords wholesale while that pointer is live
+  void test_import_musicxml_after_editing_chord_notes() {
+    auto &song_widget = song_editor.song_widget;
+    auto &switch_table = song_widget.switch_column.switch_table;
+    auto &insert_menu = song_editor.song_menu_bar.edit_menu.insert_menu;
+
+    select_cell(switch_table, 0, 0);
+    insert_menu.insert_after_action.trigger();
+    switch_to(song_editor, RowType::pitched_note_type, 1);
+    insert_menu.insert_into_start_action.trigger();
+
+    import_musicxml(song_widget, test_dir.filePath("prelude.musicxml"));
+    QCOMPARE(get_model(switch_table).rowCount(QModelIndex()), MUSIC_XML_ROWS);
+
+    open_file(song_widget, test_dir.filePath("test_song.xml"));
+  };
+
   static void test_next_previous_data() {
     add_table_columns();
 

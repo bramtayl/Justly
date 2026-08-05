@@ -8,17 +8,20 @@
 
 #include "other/helpers.hpp"
 
-// a second, fixed-width view onto the main PianoRollNotesView's scene, locked so
-// it only ever shows the pitch axis' column (x <= PIANO_ROLL_AXIS_X); its
-// vertical scroll is kept in lockstep with the main view's (wired up by
-// PianoRollWidget), so the pitch labels stay pinned to the left edge -- and
-// lined up with their notes -- no matter how far the main view is scrolled
-// horizontally
+// a second, fixed-width view pinned to the left edge, showing just the pitch
+// axis' ticks/labels (drawn into its own scene by
+// PianoRollWidget::rebuild_scene()); its vertical scroll is kept in lockstep
+// with the main PianoRollNotesView's (wired up by PianoRollWidget), and both
+// scenes place items using the same y = -midi * PIANO_ROLL_PIXELS_PER_SEMITONE
+// formula, so the pitch labels stay lined up with their notes no matter how
+// far either view is scrolled vertically
 struct PianoRollAxisView {
+  QGraphicsScene &scene;
   QGraphicsView &view;
 
-  PianoRollAxisView(QWidget &parent_widget, QGraphicsScene &scene)
-      : view(*(new QGraphicsView(&scene, &parent_widget))) {
+  explicit PianoRollAxisView(QWidget &parent_widget)
+      : scene(*(new QGraphicsScene(&parent_widget))),
+        view(*(new QGraphicsView(&scene, &parent_widget))) {
     view.setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     view.setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     view.setFocusPolicy(Qt::NoFocus);
