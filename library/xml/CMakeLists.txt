@@ -5,4 +5,5 @@ target_sources(JustlyLibrary INTERFACE FILE_SET justly_headers FILES
     "XMLSchema.hpp"
     "XMLValidationContext.hpp"
     "XMLValidator.hpp"
+    "ZipArchive.hpp"
 )

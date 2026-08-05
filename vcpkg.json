@@ -4,6 +4,10 @@
     "version": "0.2.0",
     "dependencies": [
         "fluidsynth",
+        {
+            "name": "libzip",
+            "default-features": false
+        },
         "libxml2"
     ]
 }

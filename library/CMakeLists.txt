@@ -3,6 +3,7 @@ target_compile_features(JustlyLibrary INTERFACE cxx_std_20)
 target_link_libraries(JustlyLibrary INTERFACE
     FluidSynth::libfluidsynth
     LibXml2::LibXml2
+    libzip::zip
     Qt6::Core
     Qt6::Gui
     Qt6::Svg

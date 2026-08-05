@@ -33,6 +33,7 @@ endif()
 
 find_package(FluidSynth REQUIRED)
 find_package(LibXml2 REQUIRED)
+find_package(libzip CONFIG REQUIRED)
 find_package(Qt6Core REQUIRED)
 find_package(Qt6Gui REQUIRED)
 find_package(Qt6Svg REQUIRED)
@@ -251,6 +252,7 @@ if (WIN32)
             "^libxml2\\.dll$"
             "^pcre2-16d?\\.dll$"
             "^pcre2-8d?\\.dll$"
+            "^zip\\.dll$"
             "^zlibd?1\\.dll$"
         PRE_EXCLUDE_REGEXES ".*"
         RUNTIME DESTINATION bin

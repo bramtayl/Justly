@@ -63,6 +63,7 @@
 #include "rows/PitchedNote.hpp"
 #include "rows/PitchedVoice.hpp"
 #include "rows/Row.hpp"
+#include "rows/RowType.hpp"
 #include "rows/UnpitchedNote.hpp"
 #include "rows/UnpitchedVoice.hpp"
 #include "rows/Voice.hpp"
@@ -79,6 +80,7 @@
 #include "xml/XMLDocument.hpp"
 #include "xml/XMLValidationContext.hpp"
 #include "xml/XMLValidator.hpp"
+#include "xml/ZipArchive.hpp"
 
 template <RowInterface SubRow> struct RowsModel;
 
@@ -606,18 +608,21 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
   return get_xml_name(node) == name;
 }
 
-[[nodiscard]] static auto get_xml_child(xmlNode &node, const char *name)
-    -> auto & {
-  xmlNode *result_pointer = nullptr;
+[[nodiscard]] static auto maybe_get_xml_child(xmlNode &node, const char *name)
+    -> xmlNode * {
   auto *child_pointer = xmlFirstElementChild(&node);
   while (child_pointer != nullptr) {
     if (node_is(get_reference(child_pointer), name)) {
-      result_pointer = child_pointer;
-      break;
+      return child_pointer;
     }
     child_pointer = xmlNextElementSibling(child_pointer);
   }
-  return get_reference(result_pointer);
+  return nullptr;
+}
+
+[[nodiscard]] static auto get_xml_child(xmlNode &node, const char *name)
+    -> auto & {
+  return get_reference(maybe_get_xml_child(node, name));
 }
 
 [[nodiscard]] static auto get_duration(xmlNode &measure_element) {
@@ -860,6 +865,53 @@ static void add_imported_voices(RowsModel<SubVoice> &voices_model,
   }
 }
 
+// a .mxl file is a zip archive; META-INF/container.xml names the entry that
+// actually holds the MusicXML score (MusicXML spec, "Compressed MusicXML
+// Files"). Returns an empty QByteArray on any failure, leaving the
+// resulting document null so the caller's existing "Invalid XML file"
+// check reports it -- avoids popping up two message boxes for one failure
+[[nodiscard]] static auto
+maybe_read_compressed_musicxml_bytes(const QString &filename) -> QByteArray {
+  const ZipArchive archive(filename);
+  if (archive.internal_pointer == nullptr) {
+    return {};
+  }
+
+  const auto container_bytes =
+      read_zip_entry(archive, "META-INF/container.xml");
+  if (container_bytes.isEmpty()) {
+    return {};
+  }
+
+  const auto container_document = read_xml_document(container_bytes);
+  if (container_document.internal_pointer == nullptr) {
+    return {};
+  }
+
+  auto *rootfiles_pointer =
+      maybe_get_xml_child(get_root(container_document), "rootfiles");
+  auto *rootfile_pointer =
+      rootfiles_pointer == nullptr
+          ? nullptr
+          : maybe_get_xml_child(get_reference(rootfiles_pointer), "rootfile");
+  if (rootfile_pointer == nullptr) {
+    return {};
+  }
+
+  const auto root_path =
+      get_property(get_reference(rootfile_pointer), "full-path");
+
+  return read_zip_entry(archive, root_path);
+}
+
+[[nodiscard]] static auto
+maybe_read_musicxml_document(const QString &filename) -> XMLDocument {
+  if (filename.endsWith(".mxl", Qt::CaseInsensitive)) {
+    return read_xml_document(maybe_read_compressed_musicxml_bytes(filename));
+  }
+  return maybe_read_xml_file(filename);
+}
+
 static inline void import_musicxml(SongWidget &song_widget,
                                    const QString &filename) {
   auto &undo_stack = song_widget.undo_stack;
@@ -869,7 +921,7 @@ static inline void import_musicxml(SongWidget &song_widget,
   auto &pitched_voices_model = switch_table.pitched_voices_model;
   auto &unpitched_voices_model = switch_table.unpitched_voices_model;
 
-  auto document = maybe_read_xml_file(filename);
+  auto document = maybe_read_musicxml_document(filename);
   if (!check_xml_document(song_widget, document)) {
     return;
   }

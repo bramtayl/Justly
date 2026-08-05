@@ -77,7 +77,7 @@ struct FileMenu : public QMenu {
           if (can_discard_changes(song_widget)) {
             auto &dialog = make_file_dialog(
                 song_widget, "Import MusicXML — Justly",
-                "MusicXML file (*.musicxml)", QFileDialog::AcceptOpen,
+                "MusicXML file (*.musicxml *.mxl)", QFileDialog::AcceptOpen,
                 ".musicxml", QFileDialog::ExistingFile);
             if (dialog.exec() != 0) {
               import_musicxml(song_widget,

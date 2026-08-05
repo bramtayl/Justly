@@ -224,7 +224,7 @@ Select "Zoom in" or "Zoom out" from the "View" menu, or hold Ctrl and scroll the
 In the "File" menu, you can choose among the following options:
 
 - "Open" to open a previously saved song.
-- "Import MusicXML" to import an uncompressed MusicXML file (see [Import](#import) below). 
+- "Import MusicXML" to import a MusicXML file, compressed (.mxl) or uncompressed (see [Import](#import) below). 
 - "Save" to save the song in the previous location.
 - "Save As" to save the song in a new location.
 - "Export recording" to export a recording of the song as a wav file.

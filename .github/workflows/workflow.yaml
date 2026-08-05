@@ -44,6 +44,7 @@ jobs:
         libfluidsynth-dev
         libqt6svg6-dev
         libxml2-dev
+        libzip-dev
         qt6-base-dev
         qt6-gtk-platformtheme
 
@@ -67,7 +68,7 @@ jobs:
 
     - name: Install dependencies on MacOS
       if: matrix.family == 'macos'
-      run: brew install fluid-synth ninja qt libxml2
+      run: brew install fluid-synth ninja qt libxml2 libzip
 
     - name: Add MSVC to path on Windows
       if: matrix.family == 'windows'
@@ -138,7 +139,7 @@ jobs:
     # load-command path macdeployqt failed to rewrite to a bundle-relative one
     - name: Remove dependencies before testing on MacOS
       if: matrix.family == 'macos'
-      run: brew uninstall fluid-synth qt libxml2 && brew autoremove
+      run: brew uninstall fluid-synth qt libxml2 libzip && brew autoremove
 
     - name: Remove dependencies before testing on Ubuntu
       if: matrix.family == 'ubuntu'
@@ -148,6 +149,7 @@ jobs:
         libfluidsynth-dev
         libqt6svg6-dev
         libxml2-dev
+        libzip-dev
         qt6-base-dev
         qt6-gtk-platformtheme
         && sudo apt-get autoremove --purge -y
@@ -169,7 +171,7 @@ jobs:
     # on MacOS"
     - name: Reinstall dependencies for the release build on MacOS
       if: matrix.family == 'macos'
-      run: brew install fluid-synth qt libxml2
+      run: brew install fluid-synth qt libxml2 libzip
 
     # the Release build below links against these the same way the Debug
     # build did, so they have to come back before "Configure without tests
@@ -182,6 +184,7 @@ jobs:
         libfluidsynth-dev
         libqt6svg6-dev
         libxml2-dev
+        libzip-dev
         qt6-base-dev
         qt6-gtk-platformtheme
 

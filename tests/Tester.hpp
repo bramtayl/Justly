@@ -72,13 +72,14 @@
 #include "rows/UnpitchedNote.hpp"
 #include "widgets/ControlsColumn.hpp"
 #include "widgets/IntervalRow.hpp"
-#include "widgets/piano_roll/PianoRollWidget.hpp"
 #include "widgets/SongEditor.hpp"
 #include "widgets/SongWidget.hpp"
 #include "widgets/SpinBoxes.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
+#include "widgets/piano_roll/PianoRollNotesView.hpp"
+#include "widgets/piano_roll/PianoRollWidget.hpp"
 
 static const auto BIG_VELOCITY = 126;
 static const auto FIVE = 5;
@@ -1297,6 +1298,7 @@ private slots:
     QTest::addColumn<int>("number_of_chords");
 
     QTest::newRow("prelude") << "prelude.musicxml" << MUSIC_XML_ROWS;
+    QTest::newRow("compressed prelude") << "prelude.mxl" << MUSIC_XML_ROWS;
     QTest::newRow("percussion") << "percussion.musicxml" << PERCUSSION_ROWS;
     QTest::newRow("transposing instruments")
         << "MozartTrio.musicxml" << MOZART_ROWS;
@@ -1322,6 +1324,7 @@ private slots:
 
     QTest::newRow("not musicxml")
         << "not_musicxml.xml" << "Invalid musicxml file";
+    QTest::newRow("invalid mxl") << "invalid.mxl" << "Invalid XML file";
     QTest::newRow("empty") << "empty.musicxml" << "No chords";
     QTest::newRow("grace notes") << "MozartPianoSonata.musicxml"
                                  << "Notes without durations not supported";
