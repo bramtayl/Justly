@@ -2529,6 +2529,48 @@ private slots:
     undo_stack.undo();
   };
 
+  void test_piano_roll_notes_mode_shows_only_chord_notes() {
+    auto &song_widget = song_editor.song_widget;
+    auto &piano_roll_widget = song_editor.piano_roll_widget;
+
+    // two chords, each with a single note of its own, so entering notes
+    // mode for one chord can be checked to hide the other chord's note
+    // rather than keep showing every chord's notes on the timeline
+    static const QString text =
+        "<song><gain>1</gain><starting_key>220</starting_key>"
+        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
+        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
+        "<instrument>Marimba</instrument></pitched_voice></pitched_voices>"
+        "<unpitched_voices><unpitched_voice><name>D</name>"
+        "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
+        "midi_number></unpitched_voice></unpitched_voices><chords>"
+        "<chord><pitched_notes><pitched_note><voice_number>0</voice_number>"
+        "</pitched_note></pitched_notes></chord>"
+        "<chord><pitched_notes><pitched_note><voice_number>0</voice_number>"
+        "</pitched_note></pitched_notes></chord></chords></song>";
+    open_text(song_widget, text);
+
+    QCOMPARE(get_piano_roll_events(song_widget.song).size(), 2);
+
+    switch_to(song_editor, RowType::pitched_note_type, 0);
+    QCOMPARE(piano_roll_widget.piano_roll_view.events.size(), 1);
+    QCOMPARE(piano_roll_widget.piano_roll_view.events.at(0).chord_number, 0);
+    maybe_switch_back_to_chords(song_widget.undo_stack,
+                               RowType::pitched_note_type);
+
+    switch_to(song_editor, RowType::pitched_note_type, 1);
+    QCOMPARE(piano_roll_widget.piano_roll_view.events.size(), 1);
+    QCOMPARE(piano_roll_widget.piano_roll_view.events.at(0).chord_number, 1);
+    maybe_switch_back_to_chords(song_widget.undo_stack,
+                               RowType::pitched_note_type);
+
+    // back in chord mode, both chords' notes are shown again
+    QCOMPARE(piano_roll_widget.piano_roll_view.events.size(), 2);
+
+    // restore the fixture used by the other tests
+    open_file(song_widget, test_dir.filePath("test_song.xml"));
+  };
+
   // checks that exactly the events matching the given criteria (mirroring
   // get_selected_piano_roll_event_indices) are drawn with a highlight pen,
   // and every other event is drawn plain

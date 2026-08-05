@@ -424,6 +424,20 @@ static void rebuild_scene(PianoRollWidget &widget) {
 
     auto &events = notes_view.events;
     events = get_piano_roll_events(song);
+    // in notes mode the switch table only shows one chord's notes at a
+    // time, so the piano roll should mirror that rather than keep drawing
+    // every other chord's notes alongside them
+    const auto notes_mode_chord_number = get_parent_chord_number(
+        widget.song_widget.switch_column.switch_table);
+    if (notes_mode_chord_number != -1) {
+      QList<PianoRollNoteEvent> chord_events;
+      for (const auto &event : events) {
+        if (event.chord_number == notes_mode_chord_number) {
+          chord_events.push_back(event);
+        }
+      }
+      events = std::move(chord_events);
+    }
     notes_view.chord_start_times = get_chord_start_times(song);
 
     auto min_midi = std::numeric_limits<double>::max();
