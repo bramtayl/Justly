@@ -320,7 +320,14 @@ static void apply_selection_highlight(PianoRollWidget &widget) {
       event_index = event_index + 1) {
     auto &note_item = get_reference(note_items.at(event_index));
     if (is_selected.at(event_index)) {
-      note_item.setPen(QPen(Qt::black, PIANO_ROLL_HIGHLIGHT_PEN_WIDTH));
+      // cosmetic so the highlight stroke stays a constant device-pixel
+      // width instead of stretching with the notes view's horizontal zoom
+      // transform (see set_notes_view_time_zoom) -- an uncapped width at
+      // high zoom oversized the selected note's right edge enough to look
+      // like a stray, unlabeled extra tick past the note's true end time
+      auto highlight_pen = QPen(Qt::black, PIANO_ROLL_HIGHLIGHT_PEN_WIDTH);
+      highlight_pen.setCosmetic(true);
+      note_item.setPen(highlight_pen);
       highlighted_bounds =
           highlighted_bounds.united(note_item.sceneBoundingRect());
     } else {

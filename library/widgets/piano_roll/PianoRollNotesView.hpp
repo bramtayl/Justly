@@ -154,14 +154,21 @@ struct PianoRollNotesView {
     // where the scene has nothing to leak through.
     view.setAlignment(Qt::AlignLeft | Qt::AlignTop);
 
-    playhead_item.setPen(QPen(Qt::red));
+    // cosmetic pens keep their stroke width in device pixels regardless of
+    // the view's horizontal zoom transform (see set_notes_view_time_zoom),
+    // rather than stretching along with it
+    auto playhead_pen = QPen(Qt::red);
+    playhead_pen.setCosmetic(true);
+    playhead_item.setPen(playhead_pen);
     playhead_item.setZValue(1);
     playhead_item.hide();
     scene.addItem(&playhead_item);
 
     static const auto selection_rect_color = QColor(60, 140, 255);
-    selection_rect_item.setPen(
-        QPen(selection_rect_color, PIANO_ROLL_SELECTION_RECT_PEN_WIDTH));
+    auto selection_rect_pen =
+        QPen(selection_rect_color, PIANO_ROLL_SELECTION_RECT_PEN_WIDTH);
+    selection_rect_pen.setCosmetic(true);
+    selection_rect_item.setPen(selection_rect_pen);
     selection_rect_item.setBrush(QBrush(
         QColor(selection_rect_color.red(), selection_rect_color.green(),
               selection_rect_color.blue(),
@@ -215,6 +222,14 @@ static void redraw_time_axis_ticks(PianoRollNotesView &notes_view) {
   // (1, 2, 5, then roll over to the next magnitude's 1) that keeps chosen
   // tick values round (0.5s, 1s, 2s, 5s, 10s, ...) instead of arbitrary
   static const QList<double> nice_step_multipliers{1.0, 2.0, 5.0};
+  // cosmetic so the tick stroke width stays in device pixels rather than
+  // stretching with the view's horizontal zoom transform (see
+  // set_notes_view_time_zoom), matching the playhead/selection-box pens
+  static const auto tick_pen = []() -> QPen {
+    auto pen = QPen();
+    pen.setCosmetic(true);
+    return pen;
+  }();
   for (const auto multiplier : nice_step_multipliers) {
     if (fraction <= multiplier) {
       nice_fraction = multiplier;
@@ -231,7 +246,7 @@ static void redraw_time_axis_ticks(PianoRollNotesView &notes_view) {
     const auto tick_x = time_ms * PIANO_ROLL_PIXELS_PER_MS;
     time_axis_items.push_back(
         scene.addLine(tick_x, time_axis_y, tick_x,
-                     time_axis_y + PIANO_ROLL_AXIS_TICK_LENGTH));
+                     time_axis_y + PIANO_ROLL_AXIS_TICK_LENGTH, tick_pen));
 
     // formats a time-axis tick label in whichever unit best suits the
     // current tick spacing (step_ms) -- milliseconds when ticks are
@@ -267,8 +282,17 @@ static void redraw_time_axis_ticks(PianoRollNotesView &notes_view) {
     // centering would push the "0ms"/"0s" label partway into negative x --
     // the pitch axis' column, which this view can no longer scroll into (see
     // the view.setSceneRect() call in PianoRollWidget::rebuild_scene()) --
-    // so clamp every label's left edge to the axis line instead
-    label.setPos(std::max(tick_x - (label.boundingRect().width() / 2),
+    // so clamp every label's left edge to the axis line instead. the label's
+    // boundingRect() is in device pixels (it ignores the view's transform --
+    // see the ItemIgnoresTransformations flag above), while tick_x is in
+    // scene units that the view later scales by time_zoom_factor, so the
+    // half-width has to be converted into scene units before it's compared
+    // against/subtracted from tick_x -- otherwise at high zoom a fixed
+    // device-pixel width looks huge next to the shrunken scene-unit tick_x,
+    // clamping far more than just the first tick and stacking several
+    // labels on top of each other at the axis line
+    label.setPos(std::max(tick_x - (label.boundingRect().width() / 2) /
+                                       notes_view.time_zoom_factor,
                           PIANO_ROLL_AXIS_X),
                 time_axis_y + PIANO_ROLL_AXIS_TICK_LENGTH +
                     PIANO_ROLL_AXIS_LABEL_GAP);
