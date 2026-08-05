@@ -96,6 +96,8 @@ static void select_chord_at_playhead(PianoRollWidget &widget,
                                      double time_ms);
 [[nodiscard]] static auto get_chord_number_at_time(const PianoRollWidget &widget,
                                                    double time_ms) -> int;
+[[nodiscard]] static auto get_chord_number_at_viewport_pos(
+    const PianoRollWidget &widget, const QPoint &viewport_pos) -> int;
 static void select_chord_range_at_playhead(PianoRollWidget &widget,
                                            int anchor_chord_number,
                                            int current_chord_number);
@@ -234,9 +236,14 @@ struct PianoRollWidget : public QWidget {
           stop_playhead(*this);
         }
         piano_roll_view.playhead_dragging = true;
-        const auto playhead_x = drag_playhead_to(piano_roll_view, mouse_event.pos());
+        // resolved before drag_playhead_to() moves the playhead line onto
+        // this exact click position -- that line sits in front of the note
+        // bars (z=1 vs their z=0), so running the hit-test after would have
+        // it hit the playhead line itself instead of whatever note bar is
+        // actually drawn under the click
         drag_start_chord_number =
-            get_chord_number_at_time(*this, playhead_x / PIANO_ROLL_PIXELS_PER_MS);
+            get_chord_number_at_viewport_pos(*this, mouse_event.pos());
+        static_cast<void>(drag_playhead_to(piano_roll_view, mouse_event.pos()));
         select_chord_range_at_playhead(*this, drag_start_chord_number,
                                        drag_start_chord_number);
         return true;
@@ -246,9 +253,9 @@ struct PianoRollWidget : public QWidget {
        piano_roll_view.playhead_dragging && watched_pointer == view.viewport()) {
       const auto &mouse_event =
           get_reference(dynamic_cast<QMouseEvent *>(event_pointer));
-      const auto playhead_x = drag_playhead_to(piano_roll_view, mouse_event.pos());
       const auto current_chord_number =
-          get_chord_number_at_time(*this, playhead_x / PIANO_ROLL_PIXELS_PER_MS);
+          get_chord_number_at_viewport_pos(*this, mouse_event.pos());
+      static_cast<void>(drag_playhead_to(piano_roll_view, mouse_event.pos()));
       select_chord_range_at_playhead(*this, drag_start_chord_number,
                                      current_chord_number);
       return true;
@@ -407,6 +414,32 @@ static void apply_selection_highlight(PianoRollWidget &widget) {
       std::ranges::upper_bound(chord_start_times, time_ms);
   return static_cast<int>(first_later_iterator - chord_start_times.begin()) -
          1;
+}
+
+// prefers whichever note bar is actually drawn under viewport_pos (the same
+// itemAt() lookup the double-click handler uses) over pure time-based lookup
+// -- a note's duration can run longer than its own chord (i.e. past the next
+// chord's start_time), so its bar visually extends into the next chord's
+// time range; without this, clicking that overhang would fall through to
+// get_chord_number_at_time() and select the next chord instead of the one
+// the visible bar actually belongs to. Falls back to get_chord_number_at_time()
+// when the click doesn't land on any note bar (e.g. empty space), matching
+// drag_playhead_to()'s own clamp of negative x to the axis
+[[nodiscard]] static auto get_chord_number_at_viewport_pos(
+    const PianoRollWidget &widget, const QPoint &viewport_pos) -> int {
+  const auto &piano_roll_view = widget.piano_roll_view;
+  const auto scene_pos = piano_roll_view.view.mapToScene(viewport_pos);
+  auto *const item_pointer = piano_roll_view.scene.itemAt(
+      scene_pos, piano_roll_view.view.transform());
+  if (item_pointer != nullptr) {
+    const auto event_index_data = item_pointer->data(0);
+    if (event_index_data.isValid()) {
+      return piano_roll_view.events.at(event_index_data.toInt()).chord_number;
+    }
+  }
+  return get_chord_number_at_time(widget,
+                                  std::max(0.0, scene_pos.x()) /
+                                      PIANO_ROLL_PIXELS_PER_MS);
 }
 
 static void select_chord_at_playhead(PianoRollWidget &widget,
