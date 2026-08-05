@@ -101,6 +101,8 @@ static void select_chord_at_playhead(PianoRollWidget &widget,
 static void select_chord_range_at_playhead(PianoRollWidget &widget,
                                            int anchor_chord_number,
                                            int current_chord_number);
+static void select_note_at_bar(PianoRollWidget &widget,
+                               const PianoRollNoteEvent &event);
 static void rebuild_scene(PianoRollWidget &widget);
 static void zoom_in(PianoRollWidget &widget);
 static void zoom_out(PianoRollWidget &widget);
@@ -243,9 +245,23 @@ struct PianoRollWidget : public QWidget {
         // actually drawn under the click
         drag_start_chord_number =
             get_chord_number_at_viewport_pos(*this, mouse_event.pos());
+        auto *const item_pointer = piano_roll_view.scene.itemAt(
+            view.mapToScene(mouse_event.pos()), view.transform());
+        const auto event_index_data =
+            item_pointer == nullptr ? QVariant() : item_pointer->data(0);
         static_cast<void>(drag_playhead_to(piano_roll_view, mouse_event.pos()));
         select_chord_range_at_playhead(*this, drag_start_chord_number,
                                        drag_start_chord_number);
+        // while in note mode, clicking directly on a note bar also selects
+        // that note's own row in the switch table -- mirroring the
+        // above chord-mode range select, but keyed to the exact bar
+        // clicked (via the same item hit-test note_double_clicked uses)
+        // rather than nearest-chord-by-time, since a click that misses
+        // every bar has no single note row to select
+        if (event_index_data.isValid()) {
+          select_note_at_bar(
+              *this, piano_roll_view.events.at(event_index_data.toInt()));
+        }
         return true;
       }
     }
@@ -464,6 +480,44 @@ static void select_chord_at_playhead(PianoRollWidget &widget,
                                           QItemSelectionModel::Rows);
   widget.selecting_chord_from_playhead = false;
   switch_table.scrollTo(chord_index);
+}
+
+// selects the note row (in whichever of pitched_notes_model /
+// unpitched_notes_model matches the clicked bar's own kind) corresponding to
+// a note bar clicked directly in the piano roll -- the notes-mode
+// counterpart to select_chord_at_playhead/select_chord_range_at_playhead,
+// which only act while the table is in chord mode. A no-op unless the
+// switch table is already showing that exact chord's notes of that exact
+// kind (e.g. clicking a pitched note's bar while the table shows unpitched
+// notes, or another chord's notes, has no row to select).
+static void select_note_at_bar(PianoRollWidget &widget,
+                               const PianoRollNoteEvent &event) {
+  auto &switch_table = widget.song_widget.switch_column.switch_table;
+  const auto current_row_type = switch_table.delegate.current_row_type;
+  const auto is_pitched = event.kind == PianoRollNoteKind::pitched_kind;
+  if (is_pitched
+          ? (current_row_type != RowType::pitched_note_type ||
+             switch_table.pitched_notes_model.parent_chord_number !=
+                 event.chord_number)
+          : (current_row_type != RowType::unpitched_note_type ||
+             switch_table.unpitched_notes_model.parent_chord_number !=
+                 event.chord_number)) {
+    return;
+  }
+
+  auto &selection_model = get_selection_model(switch_table);
+  const auto note_index =
+      is_pitched
+          ? switch_table.pitched_notes_model.index(event.note_number, 0)
+          : switch_table.unpitched_notes_model.index(event.note_number, 0);
+  const auto selected_rows = selection_model.selectedRows();
+  if (selected_rows.size() == 1 && selected_rows.at(0) == note_index) {
+    return;
+  }
+  selection_model.select(note_index, QItemSelectionModel::Select |
+                                          QItemSelectionModel::Clear |
+                                          QItemSelectionModel::Rows);
+  switch_table.scrollTo(note_index);
 }
 
 // selects every chord between anchor_chord_number and current_chord_number

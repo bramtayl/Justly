@@ -2549,6 +2549,80 @@ private slots:
     undo_stack.undo();
   };
 
+  static void test_piano_roll_click_selects_note_data() {
+    QTest::addColumn<RowType>("row_type");
+    QTest::addColumn<PianoRollNoteKind>("kind");
+    QTest::addColumn<int>("note_number");
+
+    QTest::newRow("pitched") << RowType::pitched_note_type
+                              << PianoRollNoteKind::pitched_kind << 2;
+    QTest::newRow("unpitched") << RowType::unpitched_note_type
+                                << PianoRollNoteKind::unpitched_kind << 1;
+  };
+
+  void test_piano_roll_click_selects_note() {
+    QFETCH(const RowType, row_type);
+    QFETCH(const PianoRollNoteKind, kind);
+    QFETCH(const int, note_number);
+
+    auto &piano_roll_widget = song_editor.piano_roll_widget;
+    auto &switch_table = song_editor.song_widget.switch_column.switch_table;
+    auto &undo_stack = song_editor.song_widget.undo_stack;
+
+    // enters note mode for chord 1, matching the fixture used by
+    // test_piano_roll_double_click_selects_note above, then starts on
+    // a different row so the click below has to actually move the
+    // selection rather than leave an already-correct one alone
+    switch_to(song_editor, row_type, 1);
+    select_cell(switch_table, 0, 0);
+
+    const auto &events = piano_roll_widget.piano_roll_view.events;
+    const auto event_iterator = std::ranges::find_if(
+        events, [kind, note_number](const PianoRollNoteEvent &event) -> auto {
+          return event.chord_number == 1 && event.note_number == note_number &&
+                 event.kind == kind;
+        });
+    QVERIFY(event_iterator != events.cend());
+    const auto event_index =
+        static_cast<int>(event_iterator - events.cbegin());
+
+    const QGraphicsItem *note_item_pointer = nullptr;
+    for (auto *const item_pointer : piano_roll_widget.piano_roll_view.scene.items()) {
+      const auto item_data = item_pointer->data(0);
+      if (item_data.isValid() && item_data.toInt() == event_index) {
+        note_item_pointer = item_pointer;
+        break;
+      }
+    }
+    QVERIFY(note_item_pointer != nullptr);
+
+    // drives the actual production event filter with a real QMouseEvent,
+    // the same way test_piano_roll_drag_selects_chord exercises a chord-
+    // mode click, so this covers the full click-to-scene-item-to-
+    // table-selection path rather than calling select_note_at_bar directly
+    const auto view_pos = piano_roll_widget.piano_roll_view.view.mapFromScene(
+        note_item_pointer->sceneBoundingRect().center());
+    const auto global_pos =
+        piano_roll_widget.piano_roll_view.view.viewport()->mapToGlobal(view_pos);
+    QMouseEvent press_event(QEvent::MouseButtonPress, QPointF(view_pos),
+                            QPointF(global_pos), Qt::LeftButton,
+                            Qt::LeftButton, Qt::NoModifier);
+    piano_roll_widget.eventFilter(piano_roll_widget.piano_roll_view.view.viewport(),
+                                  &press_event);
+
+    QCOMPARE(switch_table.delegate.current_row_type, row_type);
+    QCOMPARE(get_parent_chord_number(switch_table), 1);
+    QCOMPARE(get_only_range(switch_table).top(), note_number);
+
+    QMouseEvent release_event(QEvent::MouseButtonRelease, QPointF(view_pos),
+                              QPointF(global_pos), Qt::NoButton, Qt::NoButton,
+                              Qt::NoModifier);
+    piano_roll_widget.eventFilter(piano_roll_widget.piano_roll_view.view.viewport(),
+                                  &release_event);
+
+    maybe_switch_back_to_chords(undo_stack, row_type);
+  };
+
   void test_piano_roll_notes_mode_shows_only_chord_notes() {
     auto &song_widget = song_editor.song_widget;
     auto &piano_roll_widget = song_editor.piano_roll_widget;
