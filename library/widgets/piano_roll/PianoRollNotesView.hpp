@@ -12,6 +12,7 @@
 #include <QtCore/Qt>
 #include <QtCore/QtMinMax>
 #include <QtGui/QBrush>
+#include <QtGui/QColor>
 #include <QtGui/QPen>
 #include <QtGui/QTransform>
 #include <QtWidgets/QFrame>
@@ -53,6 +54,15 @@ static const auto PIANO_ROLL_MAX_TIME_ZOOM = 8.0;
 // PianoRollNotesView::position_playhead()) -- long enough to read as a
 // deliberate scroll, short enough not to lag behind what's actually playing
 static const auto PIANO_ROLL_PLAYHEAD_CATCHUP_MS = 400.0;
+static const auto PIANO_ROLL_SELECTION_RECT_PEN_WIDTH = 1.0;
+static const auto PIANO_ROLL_SELECTION_RECT_FILL_ALPHA = 60;
+// behind the note bars and axis (default z 0), not in front of them --
+// besides reading better as a background wash rather than a mask over the
+// notes, sitting in front would make QGraphicsScene::itemAt() (used by
+// PianoRollWidget's double-click handler) hit the box instead of whatever
+// note is under the cursor, since the box now stays visible for as long as
+// the selection does rather than only during a drag
+static const auto PIANO_ROLL_SELECTION_RECT_Z_VALUE = -1.0;
 
 // the main scrollable graphics view: the note bars, the pitch/time axes,
 // and the playhead cursor + its playback animation all live here
@@ -60,6 +70,13 @@ struct PianoRollNotesView {
   QGraphicsScene &scene;
   QGraphicsView &view;
   QGraphicsLineItem &playhead_item = *(new QGraphicsLineItem);
+  // the shaded box drawn behind the notes over the current selection's
+  // timeline extent -- purely visual feedback for whatever the switch
+  // table's own selection already is (see
+  // PianoRollWidget::apply_selection_highlight()), so it never itself drives
+  // selection and stays visible for as long as that selection does,
+  // including after a drag's mouse release
+  QGraphicsRectItem &selection_rect_item = *(new QGraphicsRectItem);
 
   QTimer &playhead_timer;
   QElapsedTimer playhead_elapsed_timer;
@@ -124,6 +141,17 @@ struct PianoRollNotesView {
     playhead_item.setZValue(1);
     playhead_item.hide();
     scene.addItem(&playhead_item);
+
+    static const auto selection_rect_color = QColor(60, 140, 255);
+    selection_rect_item.setPen(
+        QPen(selection_rect_color, PIANO_ROLL_SELECTION_RECT_PEN_WIDTH));
+    selection_rect_item.setBrush(QBrush(
+        QColor(selection_rect_color.red(), selection_rect_color.green(),
+              selection_rect_color.blue(),
+              PIANO_ROLL_SELECTION_RECT_FILL_ALPHA)));
+    selection_rect_item.setZValue(PIANO_ROLL_SELECTION_RECT_Z_VALUE);
+    selection_rect_item.hide();
+    scene.addItem(&selection_rect_item);
   }
 
   ~PianoRollNotesView() = default;
@@ -259,6 +287,27 @@ static void set_notes_view_time_zoom(PianoRollNotesView &notes_view,
                         scene_rect.bottom());
   playhead_item.show();
   return playhead_x;
+}
+
+// resizes/shows the shaded selection box to span from start_x to end_x (in
+// either order), full scene height -- called from
+// PianoRollWidget::apply_selection_highlight() to mirror whatever chord/note
+// range is currently selected, so it stays put (rather than needing a
+// mouse-driven show/hide of its own) whether that range came from a piano
+// roll drag, a table click, or playback
+static void show_selection_rect(PianoRollNotesView &notes_view,
+                                const double start_x, const double end_x) {
+  const auto &scene_rect = notes_view.scene.sceneRect();
+  const auto left_x = std::min(start_x, end_x);
+  const auto right_x = std::max(start_x, end_x);
+  auto &selection_rect_item = notes_view.selection_rect_item;
+  selection_rect_item.setRect(left_x, scene_rect.top(), right_x - left_x,
+                              scene_rect.height());
+  selection_rect_item.show();
+}
+
+static void hide_selection_rect(PianoRollNotesView &notes_view) {
+  notes_view.selection_rect_item.hide();
 }
 
 // follow_view lets a caller move the playhead line without recentering the

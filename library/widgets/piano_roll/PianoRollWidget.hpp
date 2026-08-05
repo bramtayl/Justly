@@ -94,6 +94,11 @@ struct PianoRollWidget;
 // its complete type
 static void select_chord_at_playhead(PianoRollWidget &widget,
                                      double time_ms);
+[[nodiscard]] static auto get_chord_number_at_time(const PianoRollWidget &widget,
+                                                   double time_ms) -> int;
+static void select_chord_range_at_playhead(PianoRollWidget &widget,
+                                           int anchor_chord_number,
+                                           int current_chord_number);
 static void rebuild_scene(PianoRollWidget &widget);
 static void zoom_in(PianoRollWidget &widget);
 static void zoom_out(PianoRollWidget &widget);
@@ -131,6 +136,13 @@ struct PianoRollWidget : public QWidget {
   int selection_chord_number = -1;
   int selection_first_row_number = -1;
   int selection_number_of_rows = 0;
+
+  // the chord under the cursor when the current playhead drag started (-1
+  // when not dragging), so MouseMove can select the whole range of chords
+  // spanned between there and wherever the drag is now, rather than just
+  // re-targeting a single chord to the latest position and losing everything
+  // dragged over in between
+  int drag_start_chord_number = -1;
 
   // set from outside (SongEditor) once it has access to the song menu bar
   // and song widget needed to switch tables; left empty in contexts (e.g.
@@ -223,7 +235,10 @@ struct PianoRollWidget : public QWidget {
         }
         piano_roll_view.playhead_dragging = true;
         const auto playhead_x = drag_playhead_to(piano_roll_view, mouse_event.pos());
-        select_chord_at_playhead(*this, playhead_x / PIANO_ROLL_PIXELS_PER_MS);
+        drag_start_chord_number =
+            get_chord_number_at_time(*this, playhead_x / PIANO_ROLL_PIXELS_PER_MS);
+        select_chord_range_at_playhead(*this, drag_start_chord_number,
+                                       drag_start_chord_number);
         return true;
       }
     }
@@ -232,12 +247,16 @@ struct PianoRollWidget : public QWidget {
       const auto &mouse_event =
           get_reference(dynamic_cast<QMouseEvent *>(event_pointer));
       const auto playhead_x = drag_playhead_to(piano_roll_view, mouse_event.pos());
-      select_chord_at_playhead(*this, playhead_x / PIANO_ROLL_PIXELS_PER_MS);
+      const auto current_chord_number =
+          get_chord_number_at_time(*this, playhead_x / PIANO_ROLL_PIXELS_PER_MS);
+      select_chord_range_at_playhead(*this, drag_start_chord_number,
+                                     current_chord_number);
       return true;
     }
     if (event_pointer->type() == QEvent::MouseButtonRelease &&
        piano_roll_view.playhead_dragging && watched_pointer == view.viewport()) {
       piano_roll_view.playhead_dragging = false;
+      drag_start_chord_number = -1;
       return true;
     }
     return QWidget::eventFilter(watched_pointer, event_pointer);
@@ -316,8 +335,31 @@ static void apply_selection_highlight(PianoRollWidget &widget) {
     if (!piano_roll_view.playhead_active) {
       piano_roll_view.playhead_item.hide();
     }
+    hide_selection_rect(piano_roll_view);
     return;
   }
+
+  const auto [range_start_ms, range_end_ms] = get_piano_roll_time_bounds(
+      widget.song_widget.song,
+      is_chord_selection ? widget.selection_first_row_number
+                         : widget.selection_chord_number,
+      is_chord_selection ? widget.selection_number_of_rows : 1,
+      is_chord_selection ? 0 : widget.selection_first_row_number,
+      is_chord_selection ? -1 : widget.selection_number_of_rows,
+      is_chord_selection
+          ? std::nullopt
+          : std::make_optional(
+                widget.selection_row_type == RowType::pitched_note_type
+                    ? PianoRollNoteKind::pitched_kind
+                    : PianoRollNoteKind::unpitched_kind));
+
+  // a shaded box over the selected range's own timeline extent -- driven
+  // straight off the committed selection (rather than raw drag position),
+  // so it stays visible after the mouse is released, tracks table-driven
+  // selection changes too, and disappears only once the selection itself
+  // is cleared or moves to a voice table
+  show_selection_rect(piano_roll_view, range_start_ms * PIANO_ROLL_PIXELS_PER_MS,
+                      range_end_ms * PIANO_ROLL_PIXELS_PER_MS);
 
   // playback already owns the cursor line while it's running, and so does
   // an in-progress manual drag (which set it more precisely than a chord's
@@ -327,23 +369,8 @@ static void apply_selection_highlight(PianoRollWidget &widget) {
   // of the three just because the table selection changed underneath it
   if (!piano_roll_view.playhead_active && !piano_roll_view.playhead_dragging &&
      !widget.selecting_chord_from_playhead) {
-    const auto baseline_ms =
-        get_piano_roll_time_bounds(
-            widget.song_widget.song,
-            is_chord_selection ? widget.selection_first_row_number
-                               : widget.selection_chord_number,
-            is_chord_selection ? widget.selection_number_of_rows : 1,
-            is_chord_selection ? 0 : widget.selection_first_row_number,
-            is_chord_selection ? -1 : widget.selection_number_of_rows,
-            is_chord_selection
-                ? std::nullopt
-                : std::make_optional(
-                      widget.selection_row_type == RowType::pitched_note_type
-                          ? PianoRollNoteKind::pitched_kind
-                          : PianoRollNoteKind::unpitched_kind))
-            .first;
     piano_roll_view.playhead_item.show();
-    position_playhead(piano_roll_view, baseline_ms, false);
+    position_playhead(piano_roll_view, range_start_ms, false);
   }
   if (!highlighted_bounds.isNull()) {
     piano_roll_view.view.ensureVisible(highlighted_bounds,
@@ -363,22 +390,25 @@ static void apply_selection_highlight(PianoRollWidget &widget) {
 // while the table is showing chords: a note or voice row has no single
 // "current chord" to reselect into, and reselecting a chord there would
 // kick the user out of whichever chord's notes/voices they're editing.
+// which chord's time range (as laid out by get_chord_start_times) contains
+// time_ms -- the last chord whose start is at or before time_ms, or -1 if
+// there are no chords yet or time_ms falls before the first one
+[[nodiscard]] static auto get_chord_number_at_time(const PianoRollWidget &widget,
+                                                   const double time_ms) -> int {
+  const auto &chord_start_times = widget.piano_roll_view.chord_start_times;
+  const auto first_later_iterator =
+      std::ranges::upper_bound(chord_start_times, time_ms);
+  return static_cast<int>(first_later_iterator - chord_start_times.begin()) -
+         1;
+}
+
 static void select_chord_at_playhead(PianoRollWidget &widget,
                                      const double time_ms) {
   auto &switch_table = widget.song_widget.switch_column.switch_table;
   if (switch_table.delegate.current_row_type != RowType::chord_type) {
     return;
   }
-  // which chord's time range (as laid out by get_chord_start_times)
-  // contains time_ms -- the last chord whose start is at or before
-  // time_ms, or -1 if there are no chords yet or time_ms falls before the
-  // first one
-  const auto &chord_start_times = widget.piano_roll_view.chord_start_times;
-  const auto first_later_iterator =
-      std::ranges::upper_bound(chord_start_times, time_ms);
-  const auto chord_number =
-      static_cast<int>(first_later_iterator - chord_start_times.begin()) -
-      1;
+  const auto chord_number = get_chord_number_at_time(widget, time_ms);
   if (chord_number < 0) {
     return;
   }
@@ -396,6 +426,53 @@ static void select_chord_at_playhead(PianoRollWidget &widget,
   switch_table.scrollTo(chord_index);
 }
 
+// selects every chord between anchor_chord_number and current_chord_number
+// (inclusive, in either order) as one contiguous range -- the drag-select
+// counterpart to select_chord_at_playhead's single-chord reselect, used
+// while a playhead drag is in progress so notes dragged over in between the
+// press and the current mouse position stay selected instead of being
+// dropped in favor of whichever chord is under the cursor right now
+static void select_chord_range_at_playhead(PianoRollWidget &widget,
+                                           const int anchor_chord_number,
+                                           const int current_chord_number) {
+  auto &switch_table = widget.song_widget.switch_column.switch_table;
+  if (switch_table.delegate.current_row_type != RowType::chord_type) {
+    return;
+  }
+  const auto number_of_chords =
+      static_cast<int>(widget.piano_roll_view.chord_start_times.size());
+  if (number_of_chords == 0) {
+    return;
+  }
+  const auto first_chord_number = std::clamp(
+      std::min(anchor_chord_number, current_chord_number), 0,
+      number_of_chords - 1);
+  const auto last_chord_number = std::clamp(
+      std::max(anchor_chord_number, current_chord_number), 0,
+      number_of_chords - 1);
+
+  auto &selection_model = get_selection_model(switch_table);
+  const auto &selection = selection_model.selection();
+  if (!selection.empty()) {
+    const auto &range = get_only(selection);
+    if (range.top() == first_chord_number &&
+       range.bottom() == last_chord_number) {
+      return;
+    }
+  }
+
+  auto &chords_model = switch_table.chords_model;
+  widget.selecting_chord_from_playhead = true;
+  selection_model.select(
+      QItemSelection(chords_model.index(first_chord_number, 0),
+                    chords_model.index(last_chord_number, 0)),
+      QItemSelectionModel::Select | QItemSelectionModel::Clear |
+          QItemSelectionModel::Rows);
+  widget.selecting_chord_from_playhead = false;
+  switch_table.scrollTo(chords_model.index(
+      std::clamp(current_chord_number, 0, number_of_chords - 1), 0));
+}
+
 static void rebuild_scene(PianoRollWidget &widget) {
   const auto &song = widget.song_widget.song;
 
@@ -405,11 +482,16 @@ static void rebuild_scene(PianoRollWidget &widget) {
     auto &notes_view = widget.piano_roll_view;
     auto &scene = notes_view.scene;
     auto &playhead_item = notes_view.playhead_item;
+    auto &selection_rect_item = notes_view.selection_rect_item;
     auto &view = notes_view.view;
 
     scene.removeItem(&playhead_item);
     const auto saved_line = playhead_item.line();
     const auto was_visible = playhead_item.isVisible();
+
+    scene.removeItem(&selection_rect_item);
+    const auto saved_selection_rect = selection_rect_item.rect();
+    const auto selection_rect_was_visible = selection_rect_item.isVisible();
 
     scene.clear();
     notes_view.note_items.clear();
@@ -587,6 +669,10 @@ static void rebuild_scene(PianoRollWidget &widget) {
     playhead_item.setLine(saved_line);
     playhead_item.setVisible(was_visible);
 
+    scene.addItem(&selection_rect_item);
+    selection_rect_item.setRect(saved_selection_rect);
+    selection_rect_item.setVisible(selection_rect_was_visible);
+
     // without this, scrolling this view all the way left would re-reveal
     // the same axis labels a second time (PianoRollAxisView already owns
     // that column), doubling them up
@@ -674,11 +760,6 @@ static void zoom_out(PianoRollWidget &widget) {
   auto &piano_roll_view = widget.piano_roll_view;
   set_notes_view_time_zoom(
       piano_roll_view, piano_roll_view.time_zoom_factor / PIANO_ROLL_TIME_ZOOM_STEP);
-}
-
-static void set_time_zoom(PianoRollWidget &widget,
-                          const double new_zoom_factor) {
-  set_notes_view_time_zoom(widget.piano_roll_view, new_zoom_factor);
 }
 
 // called by SongEditor whenever the switch table's selection changes, so

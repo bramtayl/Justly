@@ -2713,6 +2713,90 @@ private slots:
                                   &release_event);
   };
 
+  void test_piano_roll_drag_selects_chord_range() {
+    auto &piano_roll_widget = song_editor.piano_roll_widget;
+    auto &switch_table = song_editor.song_widget.switch_column.switch_table;
+    auto &view = piano_roll_widget.piano_roll_view.view;
+    auto &selection_rect_item = piano_roll_widget.piano_roll_view.selection_rect_item;
+    const auto &song = song_editor.song_widget.song;
+
+    // start on chord 0 so the drag below has to actually move the
+    // selection rather than leave an already-correct one alone
+    select_cell(switch_table, 0, 0);
+
+    // the box mirrors whatever's selected, so it's already showing chord
+    // 0's own extent before any drag happens
+    {
+      const auto [start_ms, end_ms] = get_piano_roll_time_bounds(song, 0, 1);
+      QVERIFY(selection_rect_item.isVisible());
+      QCOMPARE(selection_rect_item.rect().left(), start_ms * PIANO_ROLL_PIXELS_PER_MS);
+      QCOMPARE(selection_rect_item.rect().right(), end_ms * PIANO_ROLL_PIXELS_PER_MS);
+    }
+
+    const auto &chord_start_times =
+        piano_roll_widget.piano_roll_view.chord_start_times;
+    QVERIFY(chord_start_times.size() > 3);
+
+    const auto press_scene_x = chord_start_times.at(1) * PIANO_ROLL_PIXELS_PER_MS;
+    const auto press_view_pos =
+        view.mapFromScene(QPointF(press_scene_x, 0));
+    const auto press_global_pos =
+        view.viewport()->mapToGlobal(press_view_pos);
+
+    QMouseEvent press_event(QEvent::MouseButtonPress, QPointF(press_view_pos),
+                            QPointF(press_global_pos), Qt::LeftButton,
+                            Qt::LeftButton, Qt::NoModifier);
+    piano_roll_widget.eventFilter(view.viewport(), &press_event);
+
+    QCOMPARE(get_only_range(switch_table).top(), 1);
+    QCOMPARE(get_only_range(switch_table).bottom(), 1);
+
+    // the box follows the newly (single-chord) selection
+    {
+      const auto [start_ms, end_ms] = get_piano_roll_time_bounds(song, 1, 1);
+      QVERIFY(selection_rect_item.isVisible());
+      QCOMPARE(selection_rect_item.rect().left(), start_ms * PIANO_ROLL_PIXELS_PER_MS);
+      QCOMPARE(selection_rect_item.rect().right(), end_ms * PIANO_ROLL_PIXELS_PER_MS);
+    }
+
+    const auto move_scene_x = chord_start_times.at(3) * PIANO_ROLL_PIXELS_PER_MS;
+    const auto move_view_pos = view.mapFromScene(QPointF(move_scene_x, 0));
+    const auto move_global_pos = view.viewport()->mapToGlobal(move_view_pos);
+
+    QMouseEvent move_event(QEvent::MouseMove, QPointF(move_view_pos),
+                           QPointF(move_global_pos), Qt::NoButton,
+                           Qt::LeftButton, Qt::NoModifier);
+    piano_roll_widget.eventFilter(view.viewport(), &move_event);
+
+    // dragging from chord 1 to chord 3 should select the whole range in
+    // between, not just reassign the selection to chord 3 alone
+    QCOMPARE(get_only_range(switch_table).top(), 1);
+    QCOMPARE(get_only_range(switch_table).bottom(), 3);
+
+    // the box now spans the whole selected chord range
+    {
+      const auto [start_ms, end_ms] = get_piano_roll_time_bounds(song, 1, 3);
+      QVERIFY(selection_rect_item.isVisible());
+      QCOMPARE(selection_rect_item.rect().left(), start_ms * PIANO_ROLL_PIXELS_PER_MS);
+      QCOMPARE(selection_rect_item.rect().right(), end_ms * PIANO_ROLL_PIXELS_PER_MS);
+    }
+
+    QMouseEvent release_event(QEvent::MouseButtonRelease,
+                              QPointF(move_view_pos), QPointF(move_global_pos),
+                              Qt::NoButton, Qt::NoButton, Qt::NoModifier);
+    piano_roll_widget.eventFilter(view.viewport(), &release_event);
+
+    // the box mirrors the committed table selection rather than being a
+    // purely in-drag affordance, so it must still be showing the same
+    // range after the mouse is released
+    {
+      const auto [start_ms, end_ms] = get_piano_roll_time_bounds(song, 1, 3);
+      QVERIFY(selection_rect_item.isVisible());
+      QCOMPARE(selection_rect_item.rect().left(), start_ms * PIANO_ROLL_PIXELS_PER_MS);
+      QCOMPARE(selection_rect_item.rect().right(), end_ms * PIANO_ROLL_PIXELS_PER_MS);
+    }
+  };
+
   void test_piano_roll_playback_selects_chord() {
     auto &piano_roll_widget = song_editor.piano_roll_widget;
     auto &switch_table = song_editor.song_widget.switch_column.switch_table;
@@ -2765,6 +2849,6 @@ private slots:
     QCOMPARE(piano_roll_widget.piano_roll_view.time_zoom_factor, PIANO_ROLL_MAX_TIME_ZOOM);
 
     // restore, so later tests see the default 1x zoom
-    set_time_zoom(piano_roll_widget, 1.0);
+    set_notes_view_time_zoom(piano_roll_widget.piano_roll_view, 1.0);
   };
 };
