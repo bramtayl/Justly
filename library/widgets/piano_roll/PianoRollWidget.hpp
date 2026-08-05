@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QtCore/QChar>
+#include <QtCore/QEasingCurve>
 #include <QtCore/QEvent>
 #include <QtCore/QItemSelectionModel>
 #include <QtCore/QList>
@@ -8,10 +10,17 @@
 #include <QtCore/QPoint>
 #include <QtCore/QRectF>
 #include <QtCore/QSize>
+#include <QtCore/QString>
 #include <QtCore/Qt>
+#include <QtGui/QBrush>
+#include <QtGui/QColor>
 #include <QtGui/QPen>
+#include <QtGui/QTransform>
 #include <QtGui/QWheelEvent>
 #include <QtWidgets/QBoxLayout>
+#include <QtWidgets/QGraphicsItem>
+#include <QtWidgets/QGraphicsScene>
+#include <QtWidgets/QGraphicsSimpleTextItem>
 #include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QScrollBar>
 #include <QtWidgets/QVBoxLayout>
@@ -31,6 +40,7 @@
 #include "sound/PlayState.hpp"
 #include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"
+#include "widgets/SwitchTable.hpp"
 #include "widgets/piano_roll/PianoRollAxisView.hpp"
 #include "widgets/piano_roll/PianoRollLegendView.hpp"
 #include "widgets/piano_roll/PianoRollNotesView.hpp"
@@ -51,6 +61,287 @@ static const auto PIANO_ROLL_UNPITCHED_LANE_GAP = 30.0;
 static const auto PIANO_ROLL_LEGEND_GAP = 10.0;
 static const auto PIANO_ROLL_HIGHLIGHT_PEN_WIDTH = 1.5;
 static const auto PIANO_ROLL_TIME_ZOOM_STEP = 1.25;
+
+// the functions below act on PianoRollNotesView/PianoRollLegendView but
+// live here rather than in those structs' own headers, because every
+// caller of theirs is in this file (PianoRollWidget's own methods below) --
+// keeping them in PianoRollNotesView.hpp/PianoRollLegendView.hpp would
+// leave them looking unused whenever one of those headers is compiled on
+// its own (e.g. by clangd, which has no way to see this file's calls when
+// it treats a header opened directly as its own translation unit)
+
+// converts an absolute song time (ms) to this view's scene x coordinate --
+// identity-scaled by time_axis_baseline_ms, which is 0 outside notes mode
+// (see the field's comment above) so this is a no-op there
+[[nodiscard]] static inline auto to_scene_x(const PianoRollNotesView &notes_view,
+                                            const double time_ms) -> double {
+  return (time_ms - notes_view.time_axis_baseline_ms) * PIANO_ROLL_PIXELS_PER_MS;
+}
+
+// (re)draws the time axis' ticks and labels, spaced (in ms) so they land
+// roughly PIANO_ROLL_TARGET_TICK_PIXEL_SPACING apart on screen at the
+// current time_zoom_factor -- called from PianoRollWidget::rebuild_scene()
+// for the initial build and from set_time_zoom() whenever the zoom changes,
+// since a spacing that looked right before a zoom change would otherwise
+// crowd together (zooming in) or spread too far apart (zooming out)
+static void redraw_time_axis_ticks(PianoRollNotesView &notes_view) {
+  auto &scene = notes_view.scene;
+  auto &time_axis_items = notes_view.time_axis_items;
+
+  for (auto *const item_pointer : time_axis_items) {
+    scene.removeItem(item_pointer);
+    delete item_pointer; // NOLINT(cppcoreguidelines-owning-memory)
+  }
+  time_axis_items.clear();
+
+  // picks a "nice" (1/2/5 * 10^n) tick interval, in ms, close to the raw
+  // interval that would give PIANO_ROLL_TARGET_TICK_PIXEL_SPACING at the
+  // current zoom -- so ticks land on round numbers (0.5s, 1s, 2s, ...)
+  // rather than an arbitrary value like 437ms
+  const auto raw_step_ms = PIANO_ROLL_TARGET_TICK_PIXEL_SPACING /
+                           (PIANO_ROLL_PIXELS_PER_MS * notes_view.time_zoom_factor);
+  const auto magnitude = std::pow(PIANO_ROLL_NICE_STEP_ROLLOVER,
+                                  std::floor(std::log10(raw_step_ms)));
+  const auto fraction = raw_step_ms / magnitude;
+  auto nice_fraction = PIANO_ROLL_NICE_STEP_ROLLOVER;
+  // candidate tick-step multipliers, tried in increasing order against
+  // each power-of-ten magnitude -- the classic "nice numbers" progression
+  // (1, 2, 5, then roll over to the next magnitude's 1) that keeps chosen
+  // tick values round (0.5s, 1s, 2s, 5s, 10s, ...) instead of arbitrary
+  static const QList<double> nice_step_multipliers{1.0, 2.0, 5.0};
+  // cosmetic so the tick stroke width stays in device pixels rather than
+  // stretching with the view's horizontal zoom transform (see
+  // set_notes_view_time_zoom), matching the playhead/selection-box pens
+  static const auto tick_pen = []() -> QPen {
+    auto pen = QPen();
+    pen.setCosmetic(true);
+    return pen;
+  }();
+  for (const auto multiplier : nice_step_multipliers) {
+    if (fraction <= multiplier) {
+      nice_fraction = multiplier;
+      break;
+    }
+  }
+  const auto step_ms = nice_fraction * magnitude;
+  const auto time_axis_y = notes_view.time_axis_y;
+  const auto time_axis_max_time_ms = notes_view.time_axis_max_time_ms;
+  for (auto step_number = 0;
+      step_number * step_ms <= time_axis_max_time_ms;
+      step_number = step_number + 1) {
+    const auto time_ms = step_number * step_ms;
+    const auto tick_x = time_ms * PIANO_ROLL_PIXELS_PER_MS;
+    time_axis_items.push_back(
+        scene.addLine(tick_x, time_axis_y, tick_x,
+                     time_axis_y + PIANO_ROLL_AXIS_TICK_LENGTH, tick_pen));
+
+    // formats a time-axis tick label in whichever unit best suits the
+    // current tick spacing (step_ms) -- milliseconds when ticks are
+    // sub-second, seconds (with a decimal only when the step itself needs
+    // one) once ticks are a second or more apart, and minutes:seconds
+    // once they're a minute or more apart -- so labels stay round and
+    // readable at every zoom level rather than always being expressed in
+    // one fixed unit
+    auto &label = get_reference(scene.addSimpleText([&]() -> QString {
+      if (step_ms < PIANO_ROLL_MS_PER_SECOND) {
+        return QString::number(std::llround(time_ms)) + "ms";
+      }
+      if (step_ms < PIANO_ROLL_MS_PER_MINUTE) {
+        const auto has_sub_second_step =
+            std::fmod(step_ms, PIANO_ROLL_MS_PER_SECOND) != 0.0;
+        return QString::number(time_ms / PIANO_ROLL_MS_PER_SECOND, 'f',
+                               has_sub_second_step ? 1 : 0) +
+               "s";
+      }
+      const auto total_seconds =
+          std::llround(time_ms / PIANO_ROLL_MS_PER_SECOND);
+      const auto minutes = total_seconds / PIANO_ROLL_SECONDS_PER_MINUTE;
+      const auto seconds = total_seconds % PIANO_ROLL_SECONDS_PER_MINUTE;
+      return QString("%1:%2").arg(minutes).arg(
+          seconds, 2, PIANO_ROLL_LABEL_DECIMAL_BASE, QChar('0'));
+    }()));
+    // keeps the label's on-screen size constant across zoom levels --
+    // without this, since the label lives in the same scene as the notes
+    // it gets rendered through this view's time-axis-only x scale (see
+    // set_time_zoom()), stretching or squeezing its glyphs horizontally
+    // instead of just moving the ticks further apart
+    label.setFlag(QGraphicsItem::ItemIgnoresTransformations);
+    // centering would push the "0ms"/"0s" label partway into negative x --
+    // the pitch axis' column, which this view can no longer scroll into (see
+    // the view.setSceneRect() call in PianoRollWidget::rebuild_scene()) --
+    // so clamp every label's left edge to the axis line instead. the label's
+    // boundingRect() is in device pixels (it ignores the view's transform --
+    // see the ItemIgnoresTransformations flag above), while tick_x is in
+    // scene units that the view later scales by time_zoom_factor, so the
+    // half-width has to be converted into scene units before it's compared
+    // against/subtracted from tick_x -- otherwise at high zoom a fixed
+    // device-pixel width looks huge next to the shrunken scene-unit tick_x,
+    // clamping far more than just the first tick and stacking several
+    // labels on top of each other at the axis line
+    label.setPos(std::max(tick_x - (label.boundingRect().width() / 2) /
+                                       notes_view.time_zoom_factor,
+                          PIANO_ROLL_AXIS_X),
+                time_axis_y + PIANO_ROLL_AXIS_TICK_LENGTH +
+                    PIANO_ROLL_AXIS_LABEL_GAP);
+    time_axis_items.push_back(&label);
+  }
+}
+
+// sets notes_view's horizontal scale directly (rather than accumulating
+// via QGraphicsView::scale()) so repeated zoom_in()/zoom_out() calls can't
+// drift and clamping is just one std::clamp on the absolute factor; the
+// vertical scale is always left at 1, so the pitch axis (and
+// PianoRollAxisView, which is never zoomed) stays visually fixed while
+// only the time axis expands/contracts
+static void set_notes_view_time_zoom(PianoRollNotesView &notes_view,
+                                     const double new_zoom_factor) {
+  notes_view.time_zoom_factor = std::clamp(
+      new_zoom_factor, PIANO_ROLL_MIN_TIME_ZOOM, PIANO_ROLL_MAX_TIME_ZOOM);
+  notes_view.view.setTransform(
+      QTransform::fromScale(notes_view.time_zoom_factor, 1.0));
+  // the tick spacing (in ms) that keeps ticks ~evenly spaced on screen
+  // depends on the zoom factor, so every zoom change needs a fresh set of
+  // ticks/labels -- just the time axis, not a full
+  // PianoRollWidget::rebuild_scene()
+  redraw_time_axis_ticks(notes_view);
+}
+
+// moves the playhead line to the time under the given viewport position,
+// without recentering the view on it the way position_playhead() does for
+// playback -- while the user is actively dragging, the view should hold
+// still under the mouse rather than fight the drag by scrolling; returns
+// the playhead's new x position (in scene coordinates) so the caller can
+// translate it back to a time and sync the switch table's selection
+[[nodiscard]] static auto drag_playhead_to(PianoRollNotesView &notes_view,
+                                          const QPoint &viewport_pos)
+    -> double {
+  const auto playhead_x =
+      std::max(0.0, notes_view.view.mapToScene(viewport_pos).x());
+  const auto &scene_rect = notes_view.scene.sceneRect();
+  auto &playhead_item = notes_view.playhead_item;
+  playhead_item.setLine(playhead_x, scene_rect.top(), playhead_x,
+                        scene_rect.bottom());
+  playhead_item.show();
+  return playhead_x;
+}
+
+// resizes/shows the shaded selection box to span from start_x to end_x (in
+// either order), full scene height -- called from
+// PianoRollWidget::apply_selection_highlight() to mirror whatever chord/note
+// range is currently selected, so it stays put (rather than needing a
+// mouse-driven show/hide of its own) whether that range came from a piano
+// roll drag, a table click, or playback
+static void show_selection_rect(PianoRollNotesView &notes_view,
+                                const double start_x, const double end_x) {
+  const auto &scene_rect = notes_view.scene.sceneRect();
+  const auto left_x = std::min(start_x, end_x);
+  const auto right_x = std::max(start_x, end_x);
+  auto &selection_rect_item = notes_view.selection_rect_item;
+  selection_rect_item.setRect(left_x, scene_rect.top(), right_x - left_x,
+                              scene_rect.height());
+  selection_rect_item.show();
+}
+
+static void hide_selection_rect(PianoRollNotesView &notes_view) {
+  notes_view.selection_rect_item.hide();
+}
+
+// follow_view lets a caller move the playhead line without recentering the
+// view on it -- used when playback has already stopped (see
+// PianoRollWidget::apply_selection_highlight()), where forcibly
+// recentering would yank the view away from wherever the user had it
+// scrolled
+static void position_playhead(PianoRollNotesView &notes_view,
+                              const double time_ms,
+                              const bool follow_view = true) {
+  const auto playhead_x = to_scene_x(notes_view, time_ms);
+  const auto &scene_rect = notes_view.scene.sceneRect();
+  notes_view.playhead_item.setLine(playhead_x, scene_rect.top(), playhead_x,
+                                   scene_rect.bottom());
+  if (!follow_view) {
+    return;
+  }
+
+  // eases a just-started playhead onto the view's center instead of
+  // snapping there instantly (see PlayheadTransition for the two ways it
+  // does that), then keeps it centered horizontally for the rest of
+  // playback, without disturbing the user's vertical scroll position --
+  // centerOn() can't scroll past the view's own scene rect (set in
+  // PianoRollWidget::rebuild_scene()), so near the start/end of the song,
+  // where centering the playhead would need to scroll past that edge, it
+  // instead settles as close to centered as the edge allows
+  auto &view = notes_view.view;
+  const auto visible_scene_rect =
+      view.mapToScene(view.viewport()->rect()).boundingRect();
+  const auto vertical_center = visible_scene_rect.center().y();
+
+  auto &playhead_transition = notes_view.playhead_transition;
+
+  if (playhead_transition == PlayheadTransition::waiting_to_reach_center) {
+    // view stays put; playback's own forward motion is what carries the
+    // playhead across to the (fixed) center
+    if (playhead_x < visible_scene_rect.center().x()) {
+      return;
+    }
+    playhead_transition = PlayheadTransition::none;
+  } else if (playhead_transition == PlayheadTransition::catching_up) {
+    const auto elapsed_ms =
+        static_cast<double>(notes_view.playhead_elapsed_timer.elapsed());
+    if (elapsed_ms < PIANO_ROLL_PLAYHEAD_CATCHUP_MS) {
+      // eases the view from where it started to exactly where the
+      // playhead will be once the catch-up window ends, so the animated
+      // scroll and the playhead's real-time motion converge together at
+      // the center, rather than the view sliding at some arbitrary rate
+      // and hoping it happens to line up
+      const auto progress = elapsed_ms / PIANO_ROLL_PLAYHEAD_CATCHUP_MS;
+      const auto eased_progress =
+          QEasingCurve(QEasingCurve::InOutQuad).valueForProgress(progress);
+      // clamped to playhead_end_ms so a clip shorter than the catch-up
+      // window still eases toward where playback actually ends, rather
+      // than toward a point in time it never reaches
+      const auto catchup_end_x = to_scene_x(
+          notes_view,
+          std::min(notes_view.playhead_baseline_ms + PIANO_ROLL_PLAYHEAD_CATCHUP_MS,
+                   notes_view.playhead_end_ms));
+      const auto center_x =
+          notes_view.playhead_catchup_start_center_x +
+          (eased_progress *
+           (catchup_end_x - notes_view.playhead_catchup_start_center_x));
+      view.centerOn(center_x, vertical_center);
+      return;
+    }
+    playhead_transition = PlayheadTransition::none;
+  }
+
+  view.centerOn(playhead_x, vertical_center);
+}
+
+[[nodiscard]] static auto get_voice_color(const int global_voice_index)
+    -> QColor {
+  // fixed categorical order (never cycled) -- a voice beyond the 8th falls
+  // back to a shared "other" color rather than reusing an earlier hue
+  static const QList<QColor> voice_colors{
+      QColor("#2a78d6"), QColor("#eb6834"), QColor("#1baf7a"), QColor("#eda100"),
+      QColor("#e87ba4"), QColor("#008300"), QColor("#4a3aa7"), QColor("#e34948"),
+  };
+  if (global_voice_index >= 0 && global_voice_index < voice_colors.size()) {
+    return voice_colors.at(global_voice_index);
+  }
+  static const auto other_voice_color = QColor("#898781");
+  return other_voice_color;
+}
+
+static void draw_legend_row(QGraphicsScene &legend_scene, const QString &name,
+                            const int global_voice_index, const double row_y) {
+  legend_scene.addRect(0, row_y, PIANO_ROLL_LEGEND_SWATCH_SIZE,
+               PIANO_ROLL_LEGEND_SWATCH_SIZE, QPen(Qt::NoPen),
+               QBrush(get_voice_color(global_voice_index)));
+  auto &label = get_reference(legend_scene.addSimpleText(name));
+  label.setPos(PIANO_ROLL_LEGEND_SWATCH_SIZE + PIANO_ROLL_AXIS_LABEL_GAP,
+              row_y - ((label.boundingRect().height() -
+                       PIANO_ROLL_LEGEND_SWATCH_SIZE) /
+                      2));
+}
 
 // number_of_notes == -1 (default) means "every note in every chord in
 // [first_chord_number, first_chord_number + number_of_chords)". A concrete
@@ -609,7 +900,7 @@ static void rebuild_scene(QWidget &widget, const SongWidget &song_widget,
                                                 event.voice_number;
       auto &note_item = get_reference(scene.addRect(
           bar_x, bar_y, width, PIANO_ROLL_NOTE_BAR_THICKNESS, QPen(Qt::NoPen),
-          QBrush(PianoRollLegendView::get_voice_color(global_voice_index))));
+          QBrush(get_voice_color(global_voice_index))));
       // lets the double-click event filter trace a clicked rect back to the
       // PianoRollNoteEvent (and thus chord/note) it represents
       note_item.setData(0, event_index);
@@ -776,7 +1067,7 @@ struct PianoRollWidget : public QWidget {
 
   // true for the duration of select_chord_at_playhead()'s own call to
   // QItemSelectionModel::select() -- that select() re-enters this widget
-  // synchronously via SongEditor's selectionChanged connection
+  // synchronously via ReplaceTable's selectionChanged connection
   // (update_piano_roll_selection() -> update_piano_roll_widget_selection() ->
   // apply_selection_highlight()); without this guard, apply_selection_highlight()
   // would treat the sync as an ordinary table-driven selection change and
@@ -784,7 +1075,7 @@ struct PianoRollWidget : public QWidget {
   // backwards away from wherever the drag/playback actually put it
   bool selecting_chord_from_playhead = false;
 
-  // the switch table's current selection, mirrored here by SongEditor
+  // the switch table's current selection, mirrored here by ReplaceTable.hpp
   // (via update_piano_roll_widget_selection()) every time it changes, so rebuild_scene() can
   // reapply the same highlight/cursor after redrawing a fresh set of items.
   // number_of_rows == 0 means nothing is selected (the default at startup)
@@ -955,85 +1246,3 @@ struct PianoRollWidget : public QWidget {
     return QWidget::eventFilter(watched_pointer, event_pointer);
   }
 };
-
-// convenience overloads of the field-based functions above, for callers
-// (SongEditor, tests) that only have the whole PianoRollWidget on hand --
-// kept only where that's actually needed by more than one such caller;
-// otherwise the fields are pulled out directly at the single call site
-static void rebuild_scene(PianoRollWidget &widget) {
-  rebuild_scene(widget, widget.song_widget, widget.piano_roll_view,
-               widget.axis_view, widget.legend_view, widget.row_layout,
-               widget.selection_row_type, widget.selection_chord_number,
-               widget.selection_first_row_number,
-               widget.selection_number_of_rows,
-               widget.selecting_chord_from_playhead);
-}
-
-static void zoom_in(PianoRollWidget &widget) {
-  zoom_in(widget.piano_roll_view);
-}
-
-static void zoom_out(PianoRollWidget &widget) {
-  zoom_out(widget.piano_roll_view);
-}
-
-static void stop_playhead(PianoRollWidget &widget) {
-  stop_playhead(widget.piano_roll_view, widget.axis_view,
-               widget.song_widget.song, widget.selection_row_type,
-               widget.selection_chord_number, widget.selection_first_row_number,
-               widget.selection_number_of_rows,
-               widget.selecting_chord_from_playhead);
-}
-
-// called by SongEditor whenever the switch table's selection changes, so
-// the piano roll can mirror it: highlight the corresponding note bar(s),
-// jump the cursor to the selection's start, and scroll to keep both in
-// view. number_of_rows == 0 clears the highlight and hides the cursor
-// (used both for "nothing selected" and for voice-row selections, which
-// have no timeline position).
-static void update_piano_roll_widget_selection(PianoRollWidget &widget,
-                                               const RowType row_type,
-                                               const int chord_number,
-                                               const int first_row_number,
-                                               const int number_of_rows) {
-  widget.selection_row_type = row_type;
-  widget.selection_chord_number = chord_number;
-  widget.selection_first_row_number = first_row_number;
-  widget.selection_number_of_rows = number_of_rows;
-  apply_selection_highlight(widget.song_widget.song, widget.piano_roll_view,
-                            widget.selection_row_type,
-                            widget.selection_chord_number,
-                            widget.selection_first_row_number,
-                            widget.selection_number_of_rows,
-                            widget.selecting_chord_from_playhead);
-}
-
-static void start_playhead(PianoRollWidget &widget, const double baseline_ms,
-                          const double end_ms) {
-  set_manual_scrolling_enabled(widget.piano_roll_view, widget.axis_view,
-                               false);
-
-  auto &piano_roll_view = widget.piano_roll_view;
-  piano_roll_view.playhead_baseline_ms = baseline_ms;
-  piano_roll_view.playhead_end_ms = end_ms;
-  piano_roll_view.playhead_elapsed_timer.restart();
-  piano_roll_view.playhead_active = true;
-  piano_roll_view.playhead_item.show();
-
-  // decides which transition position_playhead() should run, based on
-  // where the playhead is starting relative to the view's current
-  // (not-yet-moved) center -- see PlayheadTransition
-  auto &view = piano_roll_view.view;
-  const auto initial_center_x =
-      view.mapToScene(view.viewport()->rect()).boundingRect().center().x();
-  const auto playhead_x = to_scene_x(piano_roll_view, baseline_ms);
-  if (playhead_x <= initial_center_x) {
-    piano_roll_view.playhead_transition = PlayheadTransition::waiting_to_reach_center;
-  } else {
-    piano_roll_view.playhead_transition = PlayheadTransition::catching_up;
-    piano_roll_view.playhead_catchup_start_center_x = initial_center_x;
-  }
-
-  position_playhead(piano_roll_view, baseline_ms);
-  piano_roll_view.playhead_timer.start(PIANO_ROLL_TIMER_INTERVAL_MS);
-}

@@ -47,11 +47,11 @@
 #include "rows/RowType.hpp"
 #include "widgets/ControlsColumn.hpp"
 #include "widgets/IntervalRow.hpp"
-#include "widgets/piano_roll/PianoRollWidget.hpp"
 #include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
+#include "widgets/piano_roll/PianoRollWidget.hpp"
 
 static auto get_string_picker_width(const QList<QString> &names) {
   StringPicker editor(nullptr, names);
@@ -68,6 +68,30 @@ static auto set_minimum_column_size(QTableView &view, const int column_number,
 
 static auto get_is_voice(const RowType row_type) -> bool {
   return row_type == RowType::pitched_voice_type || row_type == RowType::unpitched_voice_type;
+}
+
+// applies a selection directly to piano_roll_widget's own fields: highlight
+// the corresponding note bar(s), jump the cursor to the selection's start,
+// and scroll to keep both in view. number_of_rows == 0 clears the highlight
+// and hides the cursor (used both for "nothing selected" and for voice-row
+// selections, which have no timeline position). Only called from
+// update_piano_roll_selection() below, which derives these arguments from
+// the switch table's own current selection.
+static void update_piano_roll_widget_selection(PianoRollWidget &widget,
+                                               const RowType row_type,
+                                               const int chord_number,
+                                               const int first_row_number,
+                                               const int number_of_rows) {
+  widget.selection_row_type = row_type;
+  widget.selection_chord_number = chord_number;
+  widget.selection_first_row_number = first_row_number;
+  widget.selection_number_of_rows = number_of_rows;
+  apply_selection_highlight(widget.song_widget.song, widget.piano_roll_view,
+                            widget.selection_row_type,
+                            widget.selection_chord_number,
+                            widget.selection_first_row_number,
+                            widget.selection_number_of_rows,
+                            widget.selecting_chord_from_playhead);
 }
 
 // mirrors the switch table's current selection onto the piano roll (which

@@ -38,12 +38,13 @@
 #include "other/PianoRoll.hpp"
 #include "other/helpers.hpp"
 #include "rows/RowType.hpp"
-#include "widgets/piano_roll/PianoRollWidget.hpp"
 #include "widgets/SongWidget.hpp"
 #include "widgets/SpinBoxes.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
+#include "widgets/piano_roll/PianoRollWidget.hpp"
+#include "widgets/piano_roll/PlayheadTransition.hpp"
 
 static void add_replace_table(SongMenuBar &song_menu_bar,
                               SongWidget &song_widget,
@@ -87,6 +88,68 @@ static void connect_navigate_chord_action(QAction &action, QObject &context,
                           get_parent_chord_number(switch_table) + delta,
                           piano_roll_widget);
       });
+}
+
+// convenience wrappers around PianoRollWidget's own field-based functions,
+// for this file's callers (event-loop connections, Play menu handlers) that
+// only have the whole PianoRollWidget on hand -- named distinctly from their
+// destructured counterparts (rebuild_scene/zoom_in/zoom_out/stop_playhead in
+// PianoRollWidget.hpp) since both are visible here once PianoRollWidget.hpp
+// is included
+static void rebuild_piano_roll_scene(PianoRollWidget &widget) {
+  rebuild_scene(widget, widget.song_widget, widget.piano_roll_view,
+               widget.axis_view, widget.legend_view, widget.row_layout,
+               widget.selection_row_type, widget.selection_chord_number,
+               widget.selection_first_row_number,
+               widget.selection_number_of_rows,
+               widget.selecting_chord_from_playhead);
+}
+
+static void zoom_in_piano_roll(PianoRollWidget &widget) {
+  zoom_in(widget.piano_roll_view);
+}
+
+static void zoom_out_piano_roll(PianoRollWidget &widget) {
+  zoom_out(widget.piano_roll_view);
+}
+
+static void stop_piano_roll_playhead(PianoRollWidget &widget) {
+  stop_playhead(widget.piano_roll_view, widget.axis_view,
+               widget.song_widget.song, widget.selection_row_type,
+               widget.selection_chord_number, widget.selection_first_row_number,
+               widget.selection_number_of_rows,
+               widget.selecting_chord_from_playhead);
+}
+
+static void start_piano_roll_playhead(PianoRollWidget &widget,
+                                      const double baseline_ms,
+                                      const double end_ms) {
+  set_manual_scrolling_enabled(widget.piano_roll_view, widget.axis_view,
+                               false);
+
+  auto &piano_roll_view = widget.piano_roll_view;
+  piano_roll_view.playhead_baseline_ms = baseline_ms;
+  piano_roll_view.playhead_end_ms = end_ms;
+  piano_roll_view.playhead_elapsed_timer.restart();
+  piano_roll_view.playhead_active = true;
+  piano_roll_view.playhead_item.show();
+
+  // decides which transition position_playhead() should run, based on
+  // where the playhead is starting relative to the view's current
+  // (not-yet-moved) center -- see PlayheadTransition
+  auto &view = piano_roll_view.view;
+  const auto initial_center_x =
+      view.mapToScene(view.viewport()->rect()).boundingRect().center().x();
+  const auto playhead_x = to_scene_x(piano_roll_view, baseline_ms);
+  if (playhead_x <= initial_center_x) {
+    piano_roll_view.playhead_transition = PlayheadTransition::waiting_to_reach_center;
+  } else {
+    piano_roll_view.playhead_transition = PlayheadTransition::catching_up;
+    piano_roll_view.playhead_catchup_start_center_x = initial_center_x;
+  }
+
+  position_playhead(piano_roll_view, baseline_ms);
+  piano_roll_view.playhead_timer.start(PIANO_ROLL_TIMER_INTERVAL_MS);
 }
 
 struct SongEditor : public QMainWindow {
@@ -167,23 +230,23 @@ public:
     QObject::connect(&song_menu_bar.view_menu.zoom_in_action,
                      &QAction::triggered, &piano_roll_widget_ref,
                      [&piano_roll_widget_ref]() -> auto {
-                       zoom_in(piano_roll_widget_ref);
+                       zoom_in_piano_roll(piano_roll_widget_ref);
                      });
     QObject::connect(&song_menu_bar.view_menu.zoom_out_action,
                      &QAction::triggered, &piano_roll_widget_ref,
                      [&piano_roll_widget_ref]() -> auto {
-                       zoom_out(piano_roll_widget_ref);
+                       zoom_out_piano_roll(piano_roll_widget_ref);
                      });
 
     QObject::connect(&undo_stack, &QUndoStack::indexChanged, this,
                      [&piano_roll_widget_ref]() -> auto {
-                       rebuild_scene(piano_roll_widget_ref);
+                       rebuild_piano_roll_scene(piano_roll_widget_ref);
                      });
 
     // open/import replace the song wholesale, bypassing the undo stack, so
     // indexChanged above won't fire for them -- refresh explicitly instead
     song_widget.song_reloaded = [&piano_roll_widget_ref]() -> void {
-      rebuild_scene(piano_roll_widget_ref);
+      rebuild_piano_roll_scene(piano_roll_widget_ref);
     };
 
     // double-clicking a note in the piano roll opens the pitched/unpitched
@@ -213,7 +276,7 @@ public:
           if (selection.row_type == RowType::pitched_voice_type ||
               selection.row_type == RowType::unpitched_voice_type) {
             // voice audition/preview has no timeline position
-            stop_playhead(piano_roll_widget_ref);
+            stop_piano_roll_playhead(piano_roll_widget_ref);
             return;
           }
           const auto is_chord_selection = selection.row_type == RowType::chord_type;
@@ -229,7 +292,7 @@ public:
                   : std::make_optional(selection.row_type == RowType::pitched_note_type
                                            ? PianoRollNoteKind::pitched_kind
                                            : PianoRollNoteKind::unpitched_kind));
-          start_playhead(piano_roll_widget_ref, baseline_ms, end_ms);
+          start_piano_roll_playhead(piano_roll_widget_ref, baseline_ms, end_ms);
         });
     QObject::connect(
         &play_menu.play_to_end_action, &QAction::triggered, this,
@@ -239,7 +302,7 @@ public:
           if (selection.row_type == RowType::pitched_voice_type ||
               selection.row_type == RowType::unpitched_voice_type) {
             // voice audition/preview has no timeline position
-            stop_playhead(piano_roll_widget_ref);
+            stop_piano_roll_playhead(piano_roll_widget_ref);
             return;
           }
           const auto is_chord_selection = selection.row_type == RowType::chord_type;
@@ -262,11 +325,11 @@ public:
               song, first_chord_number,
               static_cast<int>(song.chords.size()) - first_chord_number)
                                   .second;
-          start_playhead(piano_roll_widget_ref, baseline_ms, end_ms);
+          start_piano_roll_playhead(piano_roll_widget_ref, baseline_ms, end_ms);
         });
     QObject::connect(
         &play_menu.stop_playing_action, &QAction::triggered, this,
-        [&piano_roll_widget_ref]() -> auto { stop_playhead(piano_roll_widget_ref); });
+        [&piano_roll_widget_ref]() -> auto { stop_piano_roll_playhead(piano_roll_widget_ref); });
 
     add_replace_table(song_menu_bar, song_widget, RowType::pitched_voice_type, -1,
                       piano_roll_widget);

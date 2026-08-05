@@ -2938,7 +2938,7 @@ private slots:
     // pressed
     select_cell(switch_table, 0, 0);
 
-    start_playhead(piano_roll_widget, 1200.0, 1800.0);
+    start_piano_roll_playhead(piano_roll_widget, 1200.0, 1800.0);
     QCOMPARE(get_only_range(switch_table).top(), 0);
 
     // simulates one playback timer tick without waiting on the real
@@ -2949,7 +2949,7 @@ private slots:
                              piano_roll_widget.selecting_chord_from_playhead);
     QCOMPARE(get_only_range(switch_table).top(), 2);
 
-    stop_playhead(piano_roll_widget);
+    stop_piano_roll_playhead(piano_roll_widget);
   };
 
   void test_piano_roll_zoom() {
@@ -2958,25 +2958,25 @@ private slots:
     QCOMPARE(piano_roll_widget.piano_roll_view.view.transform().m11(), 1.0);
     QCOMPARE(piano_roll_widget.piano_roll_view.view.transform().m22(), 1.0);
 
-    zoom_in(piano_roll_widget);
+    zoom_in_piano_roll(piano_roll_widget);
     // only the time (x) axis scales -- the pitch (y) axis has to stay fixed
     // so it stays aligned with axis_view, which is never zoomed
     QCOMPARE(piano_roll_widget.piano_roll_view.view.transform().m11(),
             PIANO_ROLL_TIME_ZOOM_STEP);
     QCOMPARE(piano_roll_widget.piano_roll_view.view.transform().m22(), 1.0);
 
-    zoom_out(piano_roll_widget);
+    zoom_out_piano_roll(piano_roll_widget);
     QCOMPARE(piano_roll_widget.piano_roll_view.view.transform().m11(), 1.0);
 
     // clamped rather than unbounded, so repeated zooming can't shrink/grow
     // the time axis into something unusable
     for (auto zoom_count = 0; zoom_count < 20; zoom_count = zoom_count + 1) {
-      zoom_out(piano_roll_widget);
+      zoom_out_piano_roll(piano_roll_widget);
     }
     QCOMPARE(piano_roll_widget.piano_roll_view.time_zoom_factor, PIANO_ROLL_MIN_TIME_ZOOM);
 
     for (auto zoom_count = 0; zoom_count < 40; zoom_count = zoom_count + 1) {
-      zoom_in(piano_roll_widget);
+      zoom_in_piano_roll(piano_roll_widget);
     }
     QCOMPARE(piano_roll_widget.piano_roll_view.time_zoom_factor, PIANO_ROLL_MAX_TIME_ZOOM);
 
