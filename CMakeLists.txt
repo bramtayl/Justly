@@ -12,7 +12,7 @@ if (APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0" CACHE STRING "Minimum macOS version")
 endif()
 
-project(Justly VERSION 1.1.2 LANGUAGES CXX)
+project(Justly VERSION 1.1.3 LANGUAGES CXX)
 
 # download https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2
 # and put it into the share folder
