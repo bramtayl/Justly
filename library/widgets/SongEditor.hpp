@@ -180,6 +180,12 @@ public:
                        rebuild_scene(piano_roll_widget_ref);
                      });
 
+    // open/import replace the song wholesale, bypassing the undo stack, so
+    // indexChanged above won't fire for them -- refresh explicitly instead
+    song_widget.song_reloaded = [&piano_roll_widget_ref]() -> void {
+      rebuild_scene(piano_roll_widget_ref);
+    };
+
     // double-clicking a note in the piano roll opens the pitched/unpitched
     // notes table for its chord, scrolled to and highlighting that note --
     // mirroring the chords table's own double-click-into-notes behavior

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QChar>
 #include <QtCore/QItemSelectionModel>
@@ -96,6 +98,11 @@ struct SongWidget : public QWidget {
   QString current_file;
   QString current_folder =
       QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+
+  // fired after the song is replaced wholesale (open/import), which bypasses
+  // the undo stack and so doesn't trigger the usual indexChanged-driven
+  // refresh -- lets outside views (e.g. the piano roll) know to reload
+  std::function<void()> song_reloaded;
 
   SwitchColumn &switch_column = *(new SwitchColumn(undo_stack, song));
   ControlsColumn &controls_column = *(new ControlsColumn(
@@ -590,6 +597,9 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
   song_widget.current_file = filename;
 
   clear_and_clean(undo_stack);
+  if (song_widget.song_reloaded) {
+    song_widget.song_reloaded();
+  }
 }
 
 [[nodiscard]] static auto node_is(const xmlNode &node, const char *name) {
@@ -1299,6 +1309,9 @@ static inline void import_musicxml(SongWidget &song_widget,
                      get_max_duration(parse_chord.unpitched_notes)));
 
   clear_and_clean(undo_stack);
+  if (song_widget.song_reloaded) {
+    song_widget.song_reloaded();
+  }
 }
 
 static inline void add_menu_action(
