@@ -8,18 +8,34 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        os: [macos-latest, macos-15-intel, ubuntu-26.04, windows-latest]
+        include:
+          - os: macos-latest
+            family: macos
+            cpack_generator: ZIP
+            package_name: Justly-MacOS-arm64
+          - os: macos-15-intel
+            family: macos
+            cpack_generator: ZIP
+            package_name: Justly-MacOS-Intel
+          - os: ubuntu-26.04
+            family: ubuntu
+            cpack_generator: TGZ
+            package_name: Justly-Linux
+          - os: windows-latest
+            family: windows
+            cpack_generator: ZIP
+            package_name: Justly-Windows
     runs-on: ${{matrix.os}}
     steps:
     - name: Download
       uses: actions/checkout@v7
 
     - name: Update Ubuntu
-      if: matrix.os == 'ubuntu-26.04'
+      if: matrix.family == 'ubuntu'
       run: sudo apt-get update
-    
+
     - name: Install dependencies on Ubuntu
-      if: matrix.os == 'ubuntu-26.04'
+      if: matrix.family == 'ubuntu'
       run: >
         sudo apt-get install
         binutils
@@ -32,7 +48,7 @@ jobs:
         qt6-gtk-platformtheme
 
     - name: Install baseline runtime libraries on Ubuntu
-      if: matrix.os == 'ubuntu-26.04'
+      if: matrix.family == 'ubuntu'
       run: >
         sudo apt-get install
         libapparmor1
@@ -46,32 +62,32 @@ jobs:
         libxcb1
 
     - name: Install gcovr on Ubuntu
-      if: matrix.os == 'ubuntu-26.04'
+      if: matrix.family == 'ubuntu'
       run: pipx install gcovr
 
     - name: Install dependencies on MacOS
-      if: matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
+      if: matrix.family == 'macos'
       run: brew install fluid-synth ninja qt libxml2
 
     - name: Add MSVC to path on Windows
-      if: matrix.os == 'windows-latest'
+      if: matrix.family == 'windows'
       uses: ilammy/msvc-dev-cmd@v1
 
     - name: Install cmake on Windows
-      if: matrix.os == 'windows-latest'
+      if: matrix.family == 'windows'
       uses: lukka/get-cmake@latest
       with:
         cmakeVersion: "~4.4.0"
 
     - name: Install Qt on Windows
-      if: matrix.os == 'windows-latest'
+      if: matrix.family == 'windows'
       uses: jurplel/install-qt-action@v4
       with:
         version: "6.10.1"
         cache: true
 
     - name: Restore vcpkg binary cache
-      if: matrix.os == 'windows-latest'
+      if: matrix.family == 'windows'
       uses: actions/cache@v6
       with:
         path: vcpkg_archives
@@ -79,7 +95,7 @@ jobs:
 
     - name: Install vcpkg packages on windows
       uses: lukka/run-vcpkg@v11
-      if: matrix.os == 'windows-latest'
+      if: matrix.family == 'windows'
       with:
         vcpkgGitCommitId: 'f6729a3ac3bfdefc999aa8e3664f8014370886b8'
 
@@ -103,58 +119,29 @@ jobs:
       run: >
         curl "${{env.instruments_url}}/MuseScore_General_License.md"
         --output "share/MuseScore_General_License.md"
-    
-    - name: Configure with tests on Unix
-      if: matrix.os != 'windows-latest'
-      run: >
-        cmake -S . -B with_tests
-        -DBUILD_TESTS=ON
-        -DCMAKE_BUILD_TYPE=Debug
-        -DNO_REALTIME_AUDIO=ON
-        -DTRACK_COVERAGE=ON
 
-    - name: Configure with tests on Windows
-      if: matrix.os == 'windows-latest'
+    - name: Configure with tests
       run: >
         cmake -S . -B with_tests
         -DBUILD_TESTS=ON
         -DCMAKE_BUILD_TYPE=Debug
-        -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
         -DNO_REALTIME_AUDIO=ON
+        ${{ matrix.family == 'windows' && format('-DCMAKE_TOOLCHAIN_FILE={0}/scripts/buildsystems/vcpkg.cmake', env.VCPKG_ROOT) || '-DTRACK_COVERAGE=ON' }}
 
     - name: Build with tests
       run: cmake --build with_tests --config Debug
-  
+
     # proves the deploy script in CMakeLists.txt actually bundled everything
     # run_tests needs -- otherwise this and the Release build below would
     # both silently pass/link against the brew-installed copies regardless of
     # what macdeployqt actually bundled, since dyld falls back to any
     # load-command path macdeployqt failed to rewrite to a bundle-relative one
     - name: Remove dependencies before testing on MacOS
-      if: matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
+      if: matrix.family == 'macos'
       run: brew uninstall fluid-synth qt libxml2 && brew autoremove
 
-    - name: Test on MacOS
-      if: matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
-      run: cd with_tests; QT_DEBUG_PLUGINS=1 QT_QPA_PLATFORM=offscreen ctest --build-config Debug --verbose
-
-    # ctest's captured stdout never contains QTest's own Start/Totals/
-    # Finished summary on Windows (see CMakeLists.txt) -- the test now
-    # writes that summary to a file instead, so print it here to keep it
-    # visible in the CI log on every platform.
-    - name: Show QTest output on MacOS
-      if: always() && (matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel')
-      run: cat with_tests/test_output.txt
-
-    # the Release build below links against these the same way the Debug
-    # build did, so they have to come back before "Configure without tests
-    # on MacOS"
-    - name: Reinstall dependencies for the release build on MacOS
-      if: matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
-      run: brew install fluid-synth qt libxml2
-
     - name: Remove dependencies before testing on Ubuntu
-      if: matrix.os == 'ubuntu-26.04'
+      if: matrix.family == 'ubuntu'
       run: >
         sudo apt-get remove --purge -y
         fluidsynth
@@ -165,19 +152,30 @@ jobs:
         qt6-gtk-platformtheme
         && sudo apt-get autoremove --purge -y
 
-    - name: Test on Ubuntu
-      if: matrix.os == 'ubuntu-26.04'
+    - name: Test on MacOS and Ubuntu
+      if: matrix.family != 'windows'
       run: cd with_tests; QT_DEBUG_PLUGINS=1 QT_QPA_PLATFORM=offscreen ctest --build-config Debug --verbose
 
-    - name: Show QTest output on Ubuntu
-      if: always() && matrix.os == 'ubuntu-26.04'
+    # ctest's captured stdout never contains QTest's own Start/Totals/
+    # Finished summary on Windows (see CMakeLists.txt) -- the test now
+    # writes that summary to a file instead, so print it here to keep it
+    # visible in the CI log on every platform.
+    - name: Show QTest output on MacOS and Ubuntu
+      if: always() && matrix.family != 'windows'
       run: cat with_tests/test_output.txt
+
+    # the Release build below links against these the same way the Debug
+    # build did, so they have to come back before "Configure without tests
+    # on MacOS"
+    - name: Reinstall dependencies for the release build on MacOS
+      if: matrix.family == 'macos'
+      run: brew install fluid-synth qt libxml2
 
     # the Release build below links against these the same way the Debug
     # build did, so they have to come back before "Configure without tests
     # on Ubuntu"
     - name: Reinstall dependencies for the release build on Ubuntu
-      if: matrix.os == 'ubuntu-26.04'
+      if: matrix.family == 'ubuntu'
       run: >
         sudo apt-get install -y
         fluidsynth
@@ -195,7 +193,7 @@ jobs:
     # scoped to the step's own process, so no reinstall step is needed --
     # the Release build below still sees the original PATH/QT_PLUGIN_PATH.
     - name: Test on Windows
-      if: matrix.os == 'windows-latest'
+      if: matrix.family == 'windows'
       shell: pwsh
       run: |
         $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -notlike "$env:QT_ROOT_DIR*" }) -join ';'
@@ -204,12 +202,12 @@ jobs:
         ctest --build-config Debug --verbose
 
     - name: Show QTest output on Windows
-      if: always() && matrix.os == 'windows-latest'
+      if: always() && matrix.family == 'windows'
       shell: pwsh
       run: Get-Content with_tests/test_output.txt
 
     - name: Run gcovr
-      if: matrix.os == 'ubuntu-26.04'
+      if: matrix.family == 'ubuntu'
       # --filter targets library/ (renamed from src/ in 704b1074, which
       # silently broke this filter -- gcovr matched 0 files and uploaded an
       # empty report for the past year). Most `default: Q_ASSERT(false);`
@@ -231,43 +229,18 @@ jobs:
 
     - name: Upload code coverage
       uses: codecov/codecov-action@v7
-      if: matrix.os == 'ubuntu-26.04'
+      if: matrix.family == 'ubuntu'
       with:
         files: ./coverage.xml
         token: ${{ secrets.CODECOV_TOKEN }}
-    
-    - name: Configure without tests on MacOS 13
-      if: matrix.os == 'macos-15-intel'
-      run: >
-        cmake -S . -B without_tests
-        -DCMAKE_BUILD_TYPE=Release
-        -DCPACK_GENERATOR=ZIP
-        -DCPACK_PACKAGE_FILE_NAME=Justly-MacOS-Intel
 
-    - name: Configure without tests on MacOS latest
-      if: matrix.os == 'macos-latest'
+    - name: Configure without tests
       run: >
         cmake -S . -B without_tests
         -DCMAKE_BUILD_TYPE=Release
-        -DCPACK_GENERATOR=ZIP
-        -DCPACK_PACKAGE_FILE_NAME=Justly-MacOS-arm64
-
-    - name: Configure without tests on Ubuntu
-      if: matrix.os == 'ubuntu-26.04'
-      run: >
-        cmake -S . -B without_tests
-        -DCMAKE_BUILD_TYPE=Release
-        -DCPACK_GENERATOR=TGZ
-        -DCPACK_PACKAGE_FILE_NAME=Justly-Linux
-        
-    - name: Configure without tests on Windows
-      if: matrix.os == 'windows-latest'
-      run: >
-        cmake -S . -B without_tests
-        -DCMAKE_BUILD_TYPE=Release
-        -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
-        -DCPACK_GENERATOR=ZIP
-        -DCPACK_PACKAGE_FILE_NAME=Justly-Windows
+        -DCPACK_GENERATOR=${{ matrix.cpack_generator }}
+        -DCPACK_PACKAGE_FILE_NAME=${{ matrix.package_name }}
+        ${{ matrix.family == 'windows' && format('-DCMAKE_TOOLCHAIN_FILE={0}/scripts/buildsystems/vcpkg.cmake', env.VCPKG_ROOT) || '' }}
 
     - name: Build without tests
       run: cmake --build without_tests --config Release
