@@ -272,7 +272,7 @@ static void position_playhead(PianoRollNotesView &notes_view,
   // instead settles as close to centered as the edge allows
   auto &view = notes_view.view;
   const auto visible_scene_rect =
-      view.mapToScene(view.viewport()->rect()).boundingRect();
+      view.mapToScene(get_reference(view.viewport()).rect()).boundingRect();
   const auto vertical_center = visible_scene_rect.center().y();
 
   auto &playhead_transition = notes_view.playhead_transition;
@@ -554,7 +554,7 @@ static void zoom_out(PianoRollNotesView &piano_roll_view) {
 
 static void set_vertical_scrolling_enabled(QGraphicsView &view,
                                            const bool enabled) {
-  view.verticalScrollBar()->setEnabled(enabled);
+  get_reference(view.verticalScrollBar()).setEnabled(enabled);
 }
 
 // position_playhead() recenters the view every tick while playing, fighting
@@ -566,7 +566,7 @@ static void set_vertical_scrolling_enabled(QGraphicsView &view,
 static void set_manual_scrolling_enabled(PianoRollNotesView &piano_roll_view,
                                          PianoRollAxisView &axis_view,
                                          const bool enabled) {
-  piano_roll_view.view.horizontalScrollBar()->setEnabled(enabled);
+  get_reference(piano_roll_view.view.horizontalScrollBar()).setEnabled(enabled);
   set_vertical_scrolling_enabled(piano_roll_view.view, enabled);
   set_vertical_scrolling_enabled(axis_view.view, enabled);
 }
@@ -996,7 +996,7 @@ static void rebuild_scene(QWidget &widget, const SongWidget &song_widget,
   auto &notes_view_view = piano_roll_view.view;
   const auto chrome_height =
       (2 * notes_view_view.frameWidth()) +
-      notes_view_view.horizontalScrollBar()->sizeHint().height() +
+      get_reference(notes_view_view.horizontalScrollBar()).sizeHint().height() +
       row_layout.contentsMargins().top() +
       row_layout.contentsMargins().bottom();
   widget.setMaximumHeight(static_cast<int>(std::max(
@@ -1113,7 +1113,7 @@ struct PianoRollWidget : public QWidget {
     QObject::connect(piano_roll_view.view.verticalScrollBar(),
                      &QScrollBar::valueChanged, this,
                      [this](const int value) -> auto {
-                       axis_view.view.verticalScrollBar()->setValue(value);
+                       get_reference(axis_view.view.verticalScrollBar()).setValue(value);
                      });
     // kept symmetric so that scrolling with the mouse wheel while hovered
     // over the axis column (still possible despite the hidden scrollbar)
@@ -1121,8 +1121,8 @@ struct PianoRollWidget : public QWidget {
     QObject::connect(axis_view.view.verticalScrollBar(),
                      &QScrollBar::valueChanged, this,
                      [this](const int value) -> auto {
-                       piano_roll_view.view.verticalScrollBar()->setValue(
-                           value);
+                       get_reference(piano_roll_view.view.verticalScrollBar())
+                           .setValue(value);
                      });
 
     QObject::connect(&piano_roll_view.playhead_timer, &QTimer::timeout, this,
@@ -1137,7 +1137,7 @@ struct PianoRollWidget : public QWidget {
     // custom QGraphicsView subclass), so double-clicks and ctrl+wheel zoom
     // are picked up via an event filter on the viewport rather than
     // overriding QGraphicsView
-    piano_roll_view.view.viewport()->installEventFilter(this);
+    get_reference(piano_roll_view.view.viewport()).installEventFilter(this);
 
     rebuild_scene(*this, song_widget, piano_roll_view, axis_view, legend_view,
                  row_layout, selection_row_type, selection_chord_number,
@@ -1149,7 +1149,7 @@ struct PianoRollWidget : public QWidget {
       -> bool override {
     auto &view = piano_roll_view.view;
     auto &switch_table = song_widget.switch_column.switch_table;
-    if (event_pointer->type() == QEvent::Wheel &&
+    if (get_reference(event_pointer).type() == QEvent::Wheel &&
        watched_pointer == view.viewport()) {
       auto &wheel_event = get_reference(dynamic_cast<QWheelEvent *>(event_pointer));
       if (wheel_event.modifiers().testFlag(Qt::ControlModifier)) {
@@ -1162,7 +1162,7 @@ struct PianoRollWidget : public QWidget {
         return true;
       }
     }
-    if (event_pointer->type() == QEvent::MouseButtonDblClick &&
+    if (get_reference(event_pointer).type() == QEvent::MouseButtonDblClick &&
        watched_pointer == view.viewport()) {
       const auto &mouse_event =
           get_reference(dynamic_cast<QMouseEvent *>(event_pointer));
@@ -1178,7 +1178,7 @@ struct PianoRollWidget : public QWidget {
         }
       }
     }
-    if (event_pointer->type() == QEvent::MouseButtonPress &&
+    if (get_reference(event_pointer).type() == QEvent::MouseButtonPress &&
        watched_pointer == view.viewport()) {
       const auto &mouse_event =
           get_reference(dynamic_cast<QMouseEvent *>(event_pointer));
@@ -1223,7 +1223,7 @@ struct PianoRollWidget : public QWidget {
         return true;
       }
     }
-    if (event_pointer->type() == QEvent::MouseMove &&
+    if (get_reference(event_pointer).type() == QEvent::MouseMove &&
        piano_roll_view.playhead_dragging && watched_pointer == view.viewport()) {
       const auto &mouse_event =
           get_reference(dynamic_cast<QMouseEvent *>(event_pointer));
@@ -1237,7 +1237,7 @@ struct PianoRollWidget : public QWidget {
           current_chord_number);
       return true;
     }
-    if (event_pointer->type() == QEvent::MouseButtonRelease &&
+    if (get_reference(event_pointer).type() == QEvent::MouseButtonRelease &&
        piano_roll_view.playhead_dragging && watched_pointer == view.viewport()) {
       piano_roll_view.playhead_dragging = false;
       drag_start_chord_number = -1;

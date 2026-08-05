@@ -139,7 +139,7 @@ static void start_piano_roll_playhead(PianoRollWidget &widget,
   // (not-yet-moved) center -- see PlayheadTransition
   auto &view = piano_roll_view.view;
   const auto initial_center_x =
-      view.mapToScene(view.viewport()->rect()).boundingRect().center().x();
+      view.mapToScene(get_reference(view.viewport()).rect()).boundingRect().center().x();
   const auto playhead_x = to_scene_x(piano_roll_view, baseline_ms);
   if (playhead_x <= initial_center_x) {
     piano_roll_view.playhead_transition = PlayheadTransition::waiting_to_reach_center;

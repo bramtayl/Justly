@@ -2524,7 +2524,7 @@ private slots:
 
     const QGraphicsItem *note_item_pointer = nullptr;
     for (auto *const item_pointer : piano_roll_widget.piano_roll_view.scene.items()) {
-      const auto item_data = item_pointer->data(0);
+      const auto item_data = get_reference(item_pointer).data(0);
       if (item_data.isValid() && item_data.toInt() == event_index) {
         note_item_pointer = item_pointer;
         break;
@@ -2538,7 +2538,8 @@ private slots:
     const auto view_pos = piano_roll_widget.piano_roll_view.view.mapFromScene(
         note_item_pointer->sceneBoundingRect().center());
     const auto global_pos =
-        piano_roll_widget.piano_roll_view.view.viewport()->mapToGlobal(view_pos);
+        get_reference(piano_roll_widget.piano_roll_view.view.viewport())
+            .mapToGlobal(view_pos);
     QMouseEvent double_click_event(
         QEvent::MouseButtonDblClick, QPointF(view_pos), QPointF(global_pos),
         Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
@@ -2591,7 +2592,7 @@ private slots:
 
     const QGraphicsItem *note_item_pointer = nullptr;
     for (auto *const item_pointer : piano_roll_widget.piano_roll_view.scene.items()) {
-      const auto item_data = item_pointer->data(0);
+      const auto item_data = get_reference(item_pointer).data(0);
       if (item_data.isValid() && item_data.toInt() == event_index) {
         note_item_pointer = item_pointer;
         break;
@@ -2606,7 +2607,8 @@ private slots:
     const auto view_pos = piano_roll_widget.piano_roll_view.view.mapFromScene(
         note_item_pointer->sceneBoundingRect().center());
     const auto global_pos =
-        piano_roll_widget.piano_roll_view.view.viewport()->mapToGlobal(view_pos);
+        get_reference(piano_roll_widget.piano_roll_view.view.viewport())
+            .mapToGlobal(view_pos);
     QMouseEvent press_event(QEvent::MouseButtonPress, QPointF(view_pos),
                             QPointF(global_pos), Qt::LeftButton,
                             Qt::LeftButton, Qt::NoModifier);
@@ -2825,7 +2827,8 @@ private slots:
     const auto view_pos = piano_roll_widget.piano_roll_view.view.mapFromScene(
         QPointF(1200.0 * PIANO_ROLL_PIXELS_PER_MS, 0));
     const auto global_pos =
-        piano_roll_widget.piano_roll_view.view.viewport()->mapToGlobal(view_pos);
+        get_reference(piano_roll_widget.piano_roll_view.view.viewport())
+            .mapToGlobal(view_pos);
 
     QMouseEvent press_event(QEvent::MouseButtonPress, QPointF(view_pos),
                             QPointF(global_pos), Qt::LeftButton,
@@ -2871,7 +2874,7 @@ private slots:
     const auto press_view_pos =
         view.mapFromScene(QPointF(press_scene_x, 0));
     const auto press_global_pos =
-        view.viewport()->mapToGlobal(press_view_pos);
+        get_reference(view.viewport()).mapToGlobal(press_view_pos);
 
     QMouseEvent press_event(QEvent::MouseButtonPress, QPointF(press_view_pos),
                             QPointF(press_global_pos), Qt::LeftButton,
@@ -2891,7 +2894,8 @@ private slots:
 
     const auto move_scene_x = chord_start_times.at(3) * PIANO_ROLL_PIXELS_PER_MS;
     const auto move_view_pos = view.mapFromScene(QPointF(move_scene_x, 0));
-    const auto move_global_pos = view.viewport()->mapToGlobal(move_view_pos);
+    const auto move_global_pos =
+        get_reference(view.viewport()).mapToGlobal(move_view_pos);
 
     QMouseEvent move_event(QEvent::MouseMove, QPointF(move_view_pos),
                            QPointF(move_global_pos), Qt::NoButton,
