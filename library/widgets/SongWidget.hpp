@@ -172,8 +172,10 @@ static void play_note(Player &player, const int channel_number,
                              program.preset_number);
   send_event_at(sequencer, event, current_time);
 
-  fluid_synth_cc(player.synth.internal_pointer, channel_number, BREATH_ID,
-                 velocity);
+  fluid_event_control_change(event.internal_pointer, channel_number,
+                             BREATH_ID, velocity);
+  send_event_at(sequencer, event, current_time);
+
   fluid_event_noteon(event.internal_pointer, channel_number, midi_number,
                      velocity);
   send_event_at(sequencer, event, current_time);
