@@ -16,6 +16,8 @@
 #include <QtCore/QObject>
 #include <QtCore/QPoint>
 #include <QtCore/QRect>
+#include <QtCore/QSettings>
+#include <QtCore/QStandardPaths>
 #include <QtCore/QString>
 #include <QtCore/QTemporaryFile>
 #include <QtCore/QThread>
@@ -31,6 +33,7 @@
 #include <QtGui/QPen>
 #include <QtGui/QTransform>
 #include <QtGui/QUndoStack>
+#include <QtTest/QSignalSpy>
 #include <QtTest/QTest>
 #include <QtTest/QTestData>
 #include <QtTest/qtestcase.h>
@@ -101,6 +104,10 @@ static const auto STARTING_TEMPO_2 = 125.0;
 static const auto STARTING_VELOCITY_1 = 70.0;
 static const auto STARTING_VELOCITY_2 = 80.0;
 static const auto WAIT_TIME = 500;
+
+static const auto RECOVERY_PROMPT_TEXT =
+    "Justly didn't close properly last time. Restore the unsaved work "
+    "from your last session?";
 
 static const auto A_MINUS_FREQUENCY = 217;
 static const auto A_PLUS_FREQUENCY = 223;
@@ -236,6 +243,32 @@ close_messages_later(QWidget &parent, bool &waiting_for_message,
           } else {
             timer.start(WAIT_TIME);
           }
+        }
+      });
+  timer.start(WAIT_TIME);
+  QVERIFY(!waiting_before);
+};
+
+// like close_message_later, but for a Yes/No QMessageBox::question -- clicks
+// the given standard button instead of always accepting via Enter, so tests
+// can drive either branch (e.g. the recovery-restore prompt)
+static void answer_question_later(QWidget &parent, bool &waiting_for_message,
+                                  const QString &expected_text,
+                                  QMessageBox::StandardButton answer) {
+  const auto waiting_before = waiting_for_message;
+  waiting_for_message = true;
+  auto &timer = // NOLINT(cppcoreguidelines-owning-memory)
+      *(new QTimer(&parent));
+  timer.setSingleShot(true);
+  QObject::connect(
+      &timer, &QTimer::timeout, &parent,
+      [expected_text, answer, &waiting_for_message]() -> auto {
+        auto *const box_pointer = find_top_level_message_box();
+        if (box_pointer != nullptr) {
+          auto actual_text = box_pointer->text();
+          waiting_for_message = false;
+          get_reference(box_pointer->button(answer)).click();
+          QCOMPARE(actual_text, expected_text);
         }
       });
   timer.start(WAIT_TIME);
@@ -423,6 +456,11 @@ public:
   QTimer unexpected_message_timer;
 
   Tester() {
+    // redirects QStandardPaths::AppDataLocation and QSettings's default
+    // storage (used by the crash-recovery feature) away from the real
+    // per-user Justly config/data dirs, so running tests can't clobber a
+    // recovery file left behind by a real crashed session
+    QStandardPaths::setTestModeEnabled(true);
     set_up();
     const auto fixture_file = test_dir.filePath("test_song.xml");
     // fail fast here instead of letting open_file's "Invalid XML file"
@@ -2082,6 +2120,120 @@ private slots:
     QCOMPARE_NE(original_text, get_file_text(save_filename));
 
     QFile(save_filename).remove();
+  };
+
+  void test_recovery_removed_on_save_and_open() {
+    auto &song_widget = song_editor.song_widget;
+    auto fixture_file = test_dir.filePath("test_song.xml");
+
+    write_recovery_file(song_widget);
+    QVERIFY(QFile::exists(get_recovery_file_path()));
+
+    auto save_filename = test_dir.filePath("test_recovery_save.xml");
+    save_as_file(song_widget, save_filename);
+    QVERIFY(!QFile::exists(get_recovery_file_path()));
+    QFile(save_filename).remove();
+
+    write_recovery_file(song_widget);
+    QVERIFY(QFile::exists(get_recovery_file_path()));
+
+    // reloading also restores current_file/song state for later tests
+    open_file(song_widget, fixture_file);
+    QVERIFY(!QFile::exists(get_recovery_file_path()));
+  };
+
+  void test_recovery_timer_debounce() {
+    auto &song_widget = song_editor.song_widget;
+    auto &gain_editor = song_widget.controls_column.spin_boxes.gain_editor;
+    auto &recovery_timer = song_widget.recovery_timer;
+
+    remove_recovery_file();
+    // other tests' edits may still have the debounce timer counting down
+    // from earlier in the run -- start from a known-stopped state instead of
+    // asserting on that incidental timing
+    recovery_timer.stop();
+
+    const auto old_gain = get_gain(song_widget);
+    QCOMPARE_NE(old_gain, NEW_GAIN_1);
+    gain_editor.setValue(NEW_GAIN_1);
+    QVERIFY(recovery_timer.isActive());
+
+    // force the debounce timer to fire now rather than waiting out the real
+    // multi-second interval
+    QSignalSpy timeout_spy(&recovery_timer, &QTimer::timeout);
+    recovery_timer.start(0);
+    QVERIFY(timeout_spy.wait());
+    QVERIFY(QFile::exists(get_recovery_file_path()));
+
+    song_widget.undo_stack.undo();
+    QCOMPARE(get_gain(song_widget), old_gain);
+    QVERIFY(recovery_timer.isActive());
+
+    recovery_timer.start(0);
+    QVERIFY(timeout_spy.wait());
+    // back at the clean index, so the debounced write removes rather than
+    // rewrites the now-stale recovery file
+    QVERIFY(!QFile::exists(get_recovery_file_path()));
+  };
+
+  void test_recovery_restore_accepted() {
+    auto &song_widget = song_editor.song_widget;
+    auto fixture_file = test_dir.filePath("test_song.xml");
+
+    open_file(song_widget, fixture_file);
+    const auto old_gain = get_gain(song_widget);
+    QCOMPARE_NE(old_gain, NEW_GAIN_1);
+
+    song_widget.controls_column.spin_boxes.gain_editor.setValue(NEW_GAIN_1);
+    write_recovery_file(song_widget);
+    // undoing approximates relaunching without the unsaved edit -- the
+    // recovery file itself is untouched, since only save/open/import/close
+    // clear it, not undo
+    song_widget.undo_stack.undo();
+    QCOMPARE(get_gain(song_widget), old_gain);
+
+    answer_question_later(song_editor, waiting_for_message,
+                          RECOVERY_PROMPT_TEXT, QMessageBox::Yes);
+    maybe_restore_recovery(song_widget);
+
+    QCOMPARE(get_gain(song_widget), NEW_GAIN_1);
+    QCOMPARE(song_widget.current_file, fixture_file);
+    QVERIFY(!song_widget.undo_stack.isClean());
+    QVERIFY(!QFile::exists(get_recovery_file_path()));
+    QVERIFY(!QSettings().contains("recovery/original_file"));
+
+    open_file(song_widget, fixture_file);
+  };
+
+  void test_recovery_restore_declined() {
+    auto &song_widget = song_editor.song_widget;
+    auto fixture_file = test_dir.filePath("test_song.xml");
+
+    open_file(song_widget, fixture_file);
+    const auto old_gain = get_gain(song_widget);
+    QCOMPARE_NE(old_gain, NEW_GAIN_1);
+
+    song_widget.controls_column.spin_boxes.gain_editor.setValue(NEW_GAIN_1);
+    write_recovery_file(song_widget);
+    song_widget.undo_stack.undo();
+
+    answer_question_later(song_editor, waiting_for_message,
+                          RECOVERY_PROMPT_TEXT, QMessageBox::No);
+    maybe_restore_recovery(song_widget);
+
+    QCOMPARE(get_gain(song_widget), old_gain);
+    QCOMPARE(song_widget.current_file, fixture_file);
+    QVERIFY(song_widget.undo_stack.isClean());
+    QVERIFY(!QFile::exists(get_recovery_file_path()));
+    QVERIFY(!QSettings().contains("recovery/original_file"));
+  };
+
+  void test_recovery_no_prompt_when_missing() {
+    remove_recovery_file();
+    QVERIFY(!QFile::exists(get_recovery_file_path()));
+    // the class-wide unexpected_message_timer watchdog fails the test if a
+    // dialog appears here, so no explicit assertion is needed
+    maybe_restore_recovery(song_editor.song_widget);
   };
 
   void test_starting_control_data() {

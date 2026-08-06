@@ -243,6 +243,8 @@ public:
                        rebuild_piano_roll_scene(piano_roll_widget_ref);
                      });
 
+    connect_recovery_timer(song_widget);
+
     // open/import replace the song wholesale, bypassing the undo stack, so
     // indexChanged above won't fire for them -- refresh explicitly instead
     song_widget.song_reloaded = [&piano_roll_widget_ref]() -> void {
@@ -346,6 +348,7 @@ public:
       get_reference(close_event_pointer).ignore();
       return;
     }
+    remove_recovery_file();
     QMainWindow::closeEvent(close_event_pointer);
   };
 };
@@ -364,6 +367,10 @@ static void write_rational(QTextStream &stream, const Rational &rational) {
 inline void set_up() {
   LIBXML_TEST_VERSION
 
+  // needed for QStandardPaths::AppDataLocation and QSettings (used by the
+  // crash-recovery feature) to resolve to a stable, Justly-specific location
+  QApplication::setOrganizationName("Justly");
+  QApplication::setApplicationName("Justly");
   QApplication::setApplicationDisplayName("Justly");
 
   const QPixmap pixmap(get_share_file("Justly.svg").c_str());

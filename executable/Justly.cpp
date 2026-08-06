@@ -17,5 +17,6 @@ auto main(int number_of_arguments, char *arguments[]) -> int {
   set_up();
   SongEditor song_editor;
   song_editor.show();
+  maybe_restore_recovery(song_editor.song_widget);
   QApplication::exec();
 }

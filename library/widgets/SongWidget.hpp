@@ -4,15 +4,19 @@
 
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QChar>
+#include <QtCore/QDir>
+#include <QtCore/QFile>
 #include <QtCore/QItemSelectionModel>
 #include <QtCore/QIterator>
 #include <QtCore/QList>
 #include <QtCore/QMap>
 #include <QtCore/QObject>
 #include <QtCore/QSet>
+#include <QtCore/QSettings>
 #include <QtCore/QStandardPaths>
 #include <QtCore/QString>
 #include <QtCore/QTextStream>
+#include <QtCore/QTimer>
 #include <QtCore/QTypeInfo>
 #include <QtCore/Qt>
 #include <QtCore/QtAssert>
@@ -88,6 +92,7 @@ static const auto DEFAULT_REPEAT_TIMES = 2;
 static const auto FIFTH_HALFSTEPS = 7;
 static const auto START_END_MILLISECONDS = 500;
 static const auto VOICE_PREVIEW_MILLISECONDS = 1000;
+static const auto RECOVERY_DEBOUNCE_MILLISECONDS = 5000;
 
 [[nodiscard]] static auto get_property(xmlNode &node, const char *name) {
   return xml_string_to_string(xmlGetProp(&node, c_string_to_xml_string(name)));
@@ -100,6 +105,11 @@ struct SongWidget : public QWidget {
   QString current_file;
   QString current_folder =
       QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+
+  // debounced autosave for crash recovery -- restarted on every undo_stack
+  // change and wired up by connect_recovery_timer once save_as_file and
+  // friends are defined later in this header (see comment there)
+  QTimer &recovery_timer = *(new QTimer(this));
 
   // fired after the song is replaced wholesale (open/import), which bypasses
   // the undo stack and so doesn't trigger the usual indexChanged-driven
@@ -394,12 +404,10 @@ static void set_xml_double(xmlNode &node, const char *const field_name,
       QString::number(value, 'g', double_digits).toStdString());
 }
 
-static inline void save_as_file(SongWidget &song_widget,
-                                const QString &filename) {
-  Q_ASSERT(filename.isValidUtf16());
+static void populate_song_document(SongWidget &song_widget,
+                                   XMLDocument &document) {
   const auto &song = song_widget.song;
 
-  XMLDocument document;
   auto &song_node = make_root(document, "song");
 
   set_xml_double(song_node, "gain", get_gain(song_widget));
@@ -410,12 +418,48 @@ static inline void save_as_file(SongWidget &song_widget,
   maybe_set_xml_rows(song_node, "chords", song.chords);
   maybe_set_xml_rows(song_node, "pitched_voices", song.pitched_voices);
   maybe_set_xml_rows(song_node, "unpitched_voices", song.unpitched_voices);
+}
+
+// recovery.xml's presence means the app didn't reach a clean shutdown last
+// time (see connect_recovery_timer and SongEditor::closeEvent); its content
+// mirrors save_as_file's format so it can be reloaded via open_file
+[[nodiscard]] static inline auto get_recovery_file_path() {
+  const auto directory =
+      QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+  QDir().mkpath(directory);
+  return directory + "/recovery.xml";
+}
+
+static inline void remove_recovery_file() {
+  QFile::remove(get_recovery_file_path());
+  QSettings().remove("recovery/original_file");
+}
+
+static inline void write_recovery_file(SongWidget &song_widget) {
+  XMLDocument document;
+  populate_song_document(song_widget, document);
+  xmlSaveFile(get_recovery_file_path().toStdString().c_str(),
+             document.internal_pointer);
+
+  // remembers where the recovered content should be saved back to, since
+  // open_file (used to reload recovery.xml) always overwrites current_file
+  // with whatever path it's given
+  QSettings().setValue("recovery/original_file", song_widget.current_file);
+}
+
+static inline void save_as_file(SongWidget &song_widget,
+                                const QString &filename) {
+  Q_ASSERT(filename.isValidUtf16());
+
+  XMLDocument document;
+  populate_song_document(song_widget, document);
 
   xmlSaveFile(filename.toStdString().c_str(), document.internal_pointer);
 
   song_widget.current_file = filename;
 
   song_widget.undo_stack.setClean();
+  remove_recovery_file();
 }
 
 [[nodiscard]] static auto check_xml_document(QWidget &parent,
@@ -599,9 +643,61 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
   song_widget.current_file = filename;
 
   clear_and_clean(undo_stack);
+  remove_recovery_file();
   if (song_widget.song_reloaded) {
     song_widget.song_reloaded();
   }
+}
+
+// call after SongEditor is constructed and shown: recovery.xml only exists
+// if the previous session didn't reach a clean shutdown (see
+// connect_recovery_timer and SongEditor::closeEvent)
+static inline void maybe_restore_recovery(SongWidget &song_widget) {
+  const auto recovery_file = get_recovery_file_path();
+  if (!QFile::exists(recovery_file)) {
+    return;
+  }
+
+  if (QMessageBox::question(
+          &song_widget, SongWidget::tr("Recover unsaved work"),
+          SongWidget::tr("Justly didn't close properly last time. Restore "
+                         "the unsaved work from your last session?")) !=
+      QMessageBox::Yes) {
+    remove_recovery_file();
+    return;
+  }
+
+  const auto original_file =
+      QSettings().value("recovery/original_file").toString();
+
+  // open_file always points current_file at whatever filename it's given,
+  // and removes recovery.xml as a side effect once loaded
+  open_file(song_widget, recovery_file);
+  song_widget.current_file = original_file;
+
+  // the recovered content was never saved, so mark it dirty even though
+  // open_file's normal load path leaves the undo stack clean
+  song_widget.undo_stack.resetClean();
+}
+
+static inline void connect_recovery_timer(SongWidget &song_widget) {
+  auto &recovery_timer = song_widget.recovery_timer;
+  auto &undo_stack = song_widget.undo_stack;
+
+  recovery_timer.setSingleShot(true);
+
+  QObject::connect(&undo_stack, &QUndoStack::indexChanged, &recovery_timer,
+                   [&recovery_timer]() -> auto {
+                     recovery_timer.start(RECOVERY_DEBOUNCE_MILLISECONDS);
+                   });
+  QObject::connect(&recovery_timer, &QTimer::timeout, &song_widget,
+                   [&song_widget]() -> auto {
+                     if (song_widget.undo_stack.isClean()) {
+                       remove_recovery_file();
+                     } else {
+                       write_recovery_file(song_widget);
+                     }
+                   });
 }
 
 [[nodiscard]] static auto node_is(const xmlNode &node, const char *name) {
@@ -1361,6 +1457,7 @@ static inline void import_musicxml(SongWidget &song_widget,
                      get_max_duration(parse_chord.unpitched_notes)));
 
   clear_and_clean(undo_stack);
+  remove_recovery_file();
   if (song_widget.song_reloaded) {
     song_widget.song_reloaded();
   }
