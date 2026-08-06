@@ -152,11 +152,30 @@ static void initialize_play(SongWidget &song_widget) {
   }
 }
 
+// picks whichever channel has been free the longest -- not necessarily
+// actually free yet, see channel_is_free below
 [[nodiscard]] static auto
-get_free_channel_number(const QList<double> &channel_schedules) {
+pick_channel_index(const QList<double> &channel_end_times) -> int {
   return static_cast<int>(
-      std::distance(std::begin(channel_schedules),
-                    std::ranges::min_element(channel_schedules)));
+      std::distance(std::begin(channel_end_times),
+                    std::ranges::min_element(channel_end_times)));
+}
+
+// false means every channel is still sounding a still-releasing note at
+// start_time -- there are more notes sounding at once than available MIDI
+// channels, so the caller should warn and abort rather than steal a channel
+// out from under a note that hasn't finished yet
+[[nodiscard]] static auto
+channel_is_free(QWidget &parent, const QList<double> &channel_end_times,
+                const int channel_index, const double start_time) -> bool {
+  if (channel_end_times.at(channel_index) <= start_time) {
+    return true;
+  }
+  QMessageBox::warning(
+      &parent, QObject::tr("MIDI channel exhausted"),
+      QObject::tr("More notes are sounding at once than there are "
+                  "available MIDI channels"));
+  return false;
 }
 
 static void play_note(Player &player, const int channel_number,
@@ -200,8 +219,11 @@ play_voices(Player &player, const QList<SubVoice> &voices,
   for (auto voice_number = first_voice_number;
        voice_number < first_voice_number + number_of_voices;
        voice_number = voice_number + 1) {
-    const auto channel_number =
-        get_free_channel_number(player.channel_schedules);
+    const auto channel_number = pick_channel_index(player.channel_schedules);
+    if (!channel_is_free(parent, player.channel_schedules, channel_number,
+                         current_time)) {
+      return false;
+    }
 
     const auto &voice = voices.at(voice_number);
 
@@ -243,16 +265,23 @@ play_notes(Player &player, const QList<PitchedVoice> &pitched_voices,
   for (auto note_number = first_note_number;
        note_number < first_note_number + number_of_notes;
        note_number = note_number + 1) {
-    const auto channel_number =
-        get_free_channel_number(player.channel_schedules);
+    const auto channel_number = pick_channel_index(player.channel_schedules);
+    if (!channel_is_free(parent, player.channel_schedules, channel_number,
+                         current_time)) {
+      return false;
+    }
     const auto &sub_note = sub_notes.at(note_number);
 
     const auto &program =
         sub_note.get_program(pitched_voices, unpitched_voices);
 
-    const auto midi_number =
+    const auto maybe_midi_number =
         sub_note.get_closest_midi(parent, player, unpitched_voices,
                                   channel_number, chord_number, note_number);
+    if (!maybe_midi_number.has_value()) {
+      return false;
+    }
+    const auto midi_number = *maybe_midi_number;
 
     const auto &voice_velocity_ratio =
         sub_note.get_voice_velocity_ratio(pitched_voices, unpitched_voices);
@@ -434,13 +463,6 @@ static const auto NUMBER_OF_STANDARD_MIDI_CHANNELS = 16;
   return channels;
 }
 
-[[nodiscard]] static auto
-pick_pitched_channel_index(const QList<double> &channel_end_times) -> int {
-  return static_cast<int>(
-      std::distance(std::begin(channel_end_times),
-                    std::ranges::min_element(channel_end_times)));
-}
-
 static inline void export_midi_to_file(SongWidget &song_widget,
                                        const QString &output_file) {
   Q_ASSERT(output_file.isValidUtf16());
@@ -487,13 +509,28 @@ static inline void export_midi_to_file(SongWidget &song_widget,
   short percussion_preset_number = 0;
 
   for (const auto &event : get_piano_roll_events(song)) {
-    // matches play_notes' velocity computation, but clamps rather than
-    // warning-and-aborting -- a batch export shouldn't stop partway through
-    // and pop up a dialog per bad note
-    const auto velocity = std::clamp(
-        static_cast<int>(std::round(event.velocity)), 0, MAX_VELOCITY);
     const auto start_tick = event.start_time_ms;
     const auto end_tick = event.start_time_ms + event.duration_ms;
+
+    // matches play_notes' velocity check exactly -- export aborts on the
+    // same problems live playback would, rather than silently clamping
+    // and producing a file with quieter notes than the user asked for
+    const auto velocity = static_cast<int>(std::round(event.velocity));
+    if (velocity > MAX_VELOCITY) {
+      QString message;
+      QTextStream stream(&message);
+      stream << QObject::tr("Velocity ") << velocity << QObject::tr(" exceeds ")
+             << MAX_VELOCITY;
+      if (event.kind == PianoRollNoteKind::pitched_kind) {
+        add_note_location<PitchedNote>(stream, event.chord_number,
+                                       event.note_number);
+      } else {
+        add_note_location<UnpitchedNote>(stream, event.chord_number,
+                                         event.note_number);
+      }
+      QMessageBox::warning(&song_widget, QObject::tr("Velocity error"), message);
+      return;
+    }
 
     if (event.kind == PianoRollNoteKind::pitched_kind) {
       const auto frequency = event.frequency;
@@ -506,10 +543,10 @@ static inline void export_midi_to_file(SongWidget &song_widget,
                << QString::number(frequency, 'g', 3);
         add_note_location<PitchedNote>(stream, event.chord_number,
                                        event.note_number);
-        stream << QObject::tr(" is out of MIDI export range; note skipped");
+        stream << QObject::tr(" is out of MIDI export range");
         QMessageBox::warning(&song_widget, QObject::tr("Frequency error"),
                              message);
-        continue;
+        return;
       }
 
       const auto midi_float = frequency_to_midi_number(frequency);
@@ -518,8 +555,11 @@ static inline void export_midi_to_file(SongWidget &song_widget,
                                 ZERO_BEND_HALFSTEPS) *
                                BEND_PER_HALFSTEP);
 
-      const auto channel_index =
-          pick_pitched_channel_index(pitched_channel_end_times);
+      const auto channel_index = pick_channel_index(pitched_channel_end_times);
+      if (!channel_is_free(song_widget, pitched_channel_end_times,
+                           channel_index, start_tick)) {
+        return;
+      }
       const auto channel_number = pitched_channels.at(channel_index);
       pitched_channel_end_times[channel_index] = end_tick + MAX_RELEASE_TIME;
 
@@ -558,10 +598,10 @@ static inline void export_midi_to_file(SongWidget &song_widget,
                                          event.note_number);
         stream << QObject::tr(
             " starts at the same time as a different percussion instrument "
-            "on the shared MIDI percussion channel; note skipped");
+            "on the shared MIDI percussion channel");
         QMessageBox::warning(&song_widget, QObject::tr("Percussion channel conflict"),
                              message);
-        continue;
+        return;
       }
       has_percussion_program = true;
       percussion_tick = start_tick;

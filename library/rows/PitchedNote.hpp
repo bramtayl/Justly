@@ -9,6 +9,7 @@
 #include <QtCore/QtAssert>
 #include <QtWidgets/QMessageBox>
 #include <cmath>
+#include <optional>
 #include <fluidsynth.h>
 #include <fluidsynth/event.h>
 #include <fluidsynth/seq.h>
@@ -132,7 +133,8 @@ struct PitchedNote : Note {
   get_closest_midi(QWidget &parent, Player &player,
                    const QList<UnpitchedVoice> & /*unpitched_voices*/,
                    const int channel_number, const int chord_number,
-                   const int note_number) const -> short override {
+                   const int note_number) const
+      -> std::optional<short> override {
     const auto &play_state = player.play_state;
     auto &event = player.event;
     const auto frequency =

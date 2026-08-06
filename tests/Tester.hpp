@@ -772,20 +772,19 @@ private slots:
     temp_export_file.close();
     // the fixture's chord 2 has three different unpitched voices starting
     // at the same tick, which can't all occupy GM's single shared
-    // percussion channel at once -- export warns and skips the losers
-    close_messages_later(
+    // percussion channel at once -- export aborts on the first conflict
+    // rather than silently writing a file missing notes the user didn't
+    // ask to drop
+    close_message_later(
         song_editor, waiting_for_message,
-        {"Percussion instrument Room for chord 2, unpitched note 2 starts "
-         "at the same time as a different percussion instrument on the "
-         "shared MIDI percussion channel; note skipped",
-         "Percussion instrument Power for chord 2, unpitched note 3 starts "
-         "at the same time as a different percussion instrument on the "
-         "shared MIDI percussion channel; note skipped"});
+        "Percussion instrument Room for chord 2, unpitched note 2 starts "
+        "at the same time as a different percussion instrument on the "
+        "shared MIDI percussion channel");
     export_midi_to_file(song_widget, temp_export_file.fileName());
 
     QFile written_file(temp_export_file.fileName());
     QVERIFY(written_file.open(QIODevice::ReadOnly));
-    QCOMPARE(written_file.read(4), QByteArray("MThd"));
+    QCOMPARE(written_file.read(4), QByteArray());
   };
 
   static void test_flag_data() {

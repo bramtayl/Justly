@@ -6,6 +6,7 @@
 #include <QtCore/QVariant>
 #include <QtCore/QtAssert>
 #include <libxml/parser.h>
+#include <optional>
 
 #include "cell_types/Program.hpp"
 #include "cell_types/Rational.hpp"
@@ -81,7 +82,8 @@ struct UnpitchedNote : Note {
   get_closest_midi(QWidget & /*parent*/, Player & /*player*/,
                    const QList<UnpitchedVoice> &unpitched_voices,
                    const int /*channel_number*/, int /*chord_number*/,
-                   int /*note_number*/) const -> short override {
+                   int /*note_number*/) const
+      -> std::optional<short> override {
     return unpitched_voices.at(voice_number).midi_number;
   };
 

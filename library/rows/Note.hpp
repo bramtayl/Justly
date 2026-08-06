@@ -4,6 +4,7 @@
 #include <QtCore/QString>
 #include <QtCore/QTextStream>
 #include <concepts>
+#include <optional>
 
 #include "cell_types/Rational.hpp"
 #include "rows/Row.hpp"
@@ -25,11 +26,14 @@ struct Note : Row {
   Rational velocity_ratio;
   QString words;
 
+  // nullopt means the note is unplayable as-is (e.g. a pitched note whose
+  // frequency is out of MIDI range) and the caller should abort rather than
+  // play a bogus note
   [[nodiscard]] virtual auto
   get_closest_midi(QWidget &parent, Player &player,
                    const QList<UnpitchedVoice> &unpitched_voices,
                    int channel_number, int chord_number, int note_number) const
-      -> short = 0;
+      -> std::optional<short> = 0;
 
   [[nodiscard]] virtual auto
   get_program(const QList<PitchedVoice> &pitched_voices,
