@@ -44,6 +44,7 @@
 #include <libxml/xmlschemas.h>
 #include <limits>
 #include <numeric>
+#include <optional>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -150,6 +151,7 @@ static void initialize_play(SongWidget &song_widget) {
     Q_ASSERT(index < channel_schedules.size());
     channel_schedules[index] = 0;
   }
+  player.percussion_channels.clear();
 }
 
 // picks whichever channel has been free the longest -- not necessarily
@@ -178,6 +180,39 @@ channel_is_free(QWidget &parent, const QList<double> &channel_end_times,
   return false;
 }
 
+// pitched notes always pick from the shared least-recently-free pool, since
+// each one may need its own pitch bend and must wait out the previous
+// occupant's release before reusing its channel. Percussion programs instead
+// get a single channel permanently reserved on first use (see
+// Player::percussion_channels) -- nullopt means every channel is claimed and
+// the caller should warn and abort, matching channel_is_free's contract
+[[nodiscard]] static auto
+get_channel_number(QWidget &parent, Player &player, const Program &program,
+                   const double current_time) -> std::optional<int> {
+  if (!is_pitched_bank_number(program.bank_number)) {
+    auto &percussion_channels = player.percussion_channels;
+    const auto existing = percussion_channels.constFind(&program);
+    if (existing != percussion_channels.constEnd()) {
+      return existing.value();
+    }
+  }
+
+  const auto channel_number = pick_channel_index(player.channel_schedules);
+  if (!channel_is_free(parent, player.channel_schedules, channel_number,
+                       current_time)) {
+    return std::nullopt;
+  }
+
+  if (!is_pitched_bank_number(program.bank_number)) {
+    // claimed forever: play_note skips the usual release-time reschedule for
+    // percussion channels, so this channel drops out of the pool for good
+    player.channel_schedules[channel_number] =
+        std::numeric_limits<double>::max();
+    player.percussion_channels[&program] = channel_number;
+  }
+  return channel_number;
+}
+
 static void play_note(Player &player, const int channel_number,
                       const Program &program, const short midi_number,
                       const short velocity, const double current_time,
@@ -202,8 +237,13 @@ static void play_note(Player &player, const int channel_number,
   fluid_event_noteoff(event.internal_pointer, channel_number, midi_number);
   send_event_at(sequencer, event, end_time);
 
-  player.channel_schedules[channel_number] =
-      end_time + program.release_milliseconds;
+  // a permanently-claimed percussion channel (see get_channel_number) must
+  // never gain a finite schedule again, or it could look free to a pitched
+  // note once that time passes, undoing the permanent claim
+  if (is_pitched_bank_number(program.bank_number)) {
+    player.channel_schedules[channel_number] =
+        end_time + program.release_milliseconds;
+  }
 }
 
 template <VoiceInterface SubVoice>
@@ -220,15 +260,16 @@ play_voices(Player &player, const QList<SubVoice> &voices,
   for (auto voice_number = first_voice_number;
        voice_number < first_voice_number + number_of_voices;
        voice_number = voice_number + 1) {
-    const auto channel_number = pick_channel_index(player.channel_schedules);
-    if (!channel_is_free(parent, player.channel_schedules, channel_number,
-                         current_time)) {
-      return false;
-    }
-
     const auto &voice = voices.at(voice_number);
 
     const auto &program = get_voice_program(programs, voices, voice_number);
+
+    const auto maybe_channel_number =
+        get_channel_number(parent, player, program, current_time);
+    if (!maybe_channel_number.has_value()) {
+      return false;
+    }
+    const auto channel_number = *maybe_channel_number;
 
     const auto midi_number = voice.get_preview_midi_number();
 
@@ -266,15 +307,17 @@ play_notes(Player &player, const QList<PitchedVoice> &pitched_voices,
   for (auto note_number = first_note_number;
        note_number < first_note_number + number_of_notes;
        note_number = note_number + 1) {
-    const auto channel_number = pick_channel_index(player.channel_schedules);
-    if (!channel_is_free(parent, player.channel_schedules, channel_number,
-                         current_time)) {
-      return false;
-    }
     const auto &sub_note = sub_notes.at(note_number);
 
     const auto &program =
         sub_note.get_program(pitched_voices, unpitched_voices);
+
+    const auto maybe_channel_number =
+        get_channel_number(parent, player, program, current_time);
+    if (!maybe_channel_number.has_value()) {
+      return false;
+    }
+    const auto channel_number = *maybe_channel_number;
 
     const auto maybe_midi_number =
         sub_note.get_closest_midi(parent, player, unpitched_voices,

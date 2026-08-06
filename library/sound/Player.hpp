@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QtCore/QHash>
 #include <QtCore/QList>
 #include <QtCore/QObject>
 #include <QtCore/QtAssert>
@@ -85,6 +86,14 @@ struct Player {
 
   // play state fields
   QList<double> channel_schedules = QList<double>(NUMBER_OF_MIDI_CHANNELS, 0);
+  // percussion programs don't send pitch bend and (per MuseScore_General.sf2)
+  // have no breath-controller modulators, so unlike pitched notes, a channel
+  // can safely be shared by overlapping notes of the same percussion program
+  // -- once a program claims a channel here, play_note never lets
+  // channel_schedules make it eligible for reuse by anything else, so
+  // switching a channel's program mid-decay (the actual source of glitches)
+  // can't happen for percussion at all
+  QHash<const Program *, int> percussion_channels;
   PlayState play_state;
 
   double final_time = 0;
