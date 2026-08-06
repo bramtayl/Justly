@@ -764,6 +764,19 @@ private slots:
     export_to_file(song_widget, temp_export_file.fileName());
   };
 
+  void test_export_midi() {
+    auto &song_widget = song_editor.song_widget;
+
+    QTemporaryFile temp_export_file;
+    QVERIFY(temp_export_file.open());
+    temp_export_file.close();
+    export_midi_to_file(song_widget, temp_export_file.fileName());
+
+    QFile written_file(temp_export_file.fileName());
+    QVERIFY(written_file.open(QIODevice::ReadOnly));
+    QCOMPARE(written_file.read(4), QByteArray("MThd"));
+  };
+
   static void test_flag_data() {
     add_table_columns();
     QTest::addColumn<int>("column_number");

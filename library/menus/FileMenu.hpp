@@ -44,6 +44,7 @@ struct FileMenu : public QMenu {
   QAction save_as_action = QAction(FileMenu::tr("&Save As..."));
   QAction import_action = QAction(FileMenu::tr("&Import MusicXML"));
   QAction export_action = QAction(FileMenu::tr("&Export recording"));
+  QAction export_midi_action = QAction(FileMenu::tr("Export &MIDI"));
 
   explicit FileMenu(SongWidget &song_widget) : QMenu(FileMenu::tr("&File")) {
     auto &save_action_ref = this->save_action;
@@ -53,6 +54,7 @@ struct FileMenu : public QMenu {
     add_menu_action(*this, save_action, QKeySequence::Save, false);
     add_menu_action(*this, save_as_action, QKeySequence::SaveAs);
     add_menu_action(*this, export_action);
+    add_menu_action(*this, export_midi_action);
 
     QObject::connect(&song_widget.undo_stack, &QUndoStack::cleanChanged, this,
                      [&save_action_ref, &song_widget]() -> auto {
@@ -109,6 +111,18 @@ struct FileMenu : public QMenu {
           dialog.setLabelText(QFileDialog::Accept, "Export");
           if (dialog.exec() != 0) {
             export_to_file(song_widget, get_selected_file(song_widget, dialog));
+          }
+        });
+
+    QObject::connect(
+        &export_midi_action, &QAction::triggered, this, [&song_widget]() -> auto {
+          auto &dialog = make_file_dialog(
+              song_widget, "Export MIDI — Justly", "MIDI file (*.mid)",
+              QFileDialog::AcceptSave, ".mid", QFileDialog::AnyFile);
+          dialog.setLabelText(QFileDialog::Accept, "Export");
+          if (dialog.exec() != 0) {
+            export_midi_to_file(song_widget,
+                                get_selected_file(song_widget, dialog));
           }
         });
   }

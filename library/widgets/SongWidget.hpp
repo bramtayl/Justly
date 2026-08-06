@@ -60,6 +60,8 @@
 #include "musicxml/MusicXMLChord.hpp"
 #include "musicxml/MusicXMLNote.hpp"
 #include "musicxml/PartInfo.hpp"
+#include "other/MidiFile.hpp"
+#include "other/PianoRoll.hpp"
 #include "other/Song.hpp"
 #include "other/helpers.hpp"
 #include "rows/Chord.hpp"
@@ -388,6 +390,179 @@ static inline void export_to_file(SongWidget &song_widget,
   set_fluid_int(settings, "synth.lock-memory", 1);
   player.driver =
       make_audio_driver(player.parent, player.settings, player.synth);
+}
+
+// 1 tick == 1 millisecond at this fixed tempo (500000 microseconds per
+// quarter / 500 ticks per quarter == 1000 microseconds per tick), so the
+// piano roll's already-computed absolute millisecond timestamps can be used
+// directly as tick values; the declared tempo itself is arbitrary and
+// doesn't reflect the song's actual tempo, which (like in live playback and
+// WAV export) is already baked into those timestamps via each chord's
+// tempo_ratio
+static const auto MIDI_TICKS_PER_QUARTER = 500;
+static const auto MIDI_MICROSECONDS_PER_QUARTER = 500000;
+static const auto MIDI_PERCUSSION_CHANNEL = 9;
+static const auto MIDI_FORMAT_MULTI_TRACK = 1;
+// same-tick ordering: a note-off must land before any note-on (so a
+// still-sounding note doesn't get truncated), and a program change/pitch
+// bend must land before the note-on it's meant to apply to
+static const auto MIDI_EXPORT_NOTE_OFF_TIE_BREAK = 0;
+static const auto MIDI_EXPORT_PROGRAM_CHANGE_TIE_BREAK = 1;
+static const auto MIDI_EXPORT_PITCH_BEND_TIE_BREAK = 2;
+static const auto MIDI_EXPORT_NOTE_ON_TIE_BREAK = 3;
+// the standard MIDI file format has a hard 16-channel limit (a 4-bit
+// channel nibble), unlike FluidSynth's own NUMBER_OF_MIDI_CHANNELS (64),
+// which is an internal extension used only for live playback/WAV rendering
+static const auto NUMBER_OF_STANDARD_MIDI_CHANNELS = 16;
+
+[[nodiscard]] static inline auto get_pitched_midi_channels() -> const QList<int> & {
+  static const auto channels = []() -> QList<int> {
+    QList<int> result;
+    for (auto channel_number = 0;
+         channel_number < NUMBER_OF_STANDARD_MIDI_CHANNELS;
+         channel_number = channel_number + 1) {
+      if (channel_number != MIDI_PERCUSSION_CHANNEL) {
+        result.push_back(channel_number);
+      }
+    }
+    return result;
+  }();
+  return channels;
+}
+
+[[nodiscard]] static auto
+pick_pitched_channel_index(const QList<double> &channel_end_times) -> int {
+  return static_cast<int>(
+      std::distance(std::begin(channel_end_times),
+                    std::ranges::min_element(channel_end_times)));
+}
+
+static inline void export_midi_to_file(SongWidget &song_widget,
+                                       const QString &output_file) {
+  Q_ASSERT(output_file.isValidUtf16());
+
+  const auto &song = song_widget.song;
+  const auto &pitched_voices = song.pitched_voices;
+  const auto &unpitched_voices = song.unpitched_voices;
+  const auto number_of_pitched_voices =
+      static_cast<int>(pitched_voices.size());
+  const auto number_of_unpitched_voices =
+      static_cast<int>(unpitched_voices.size());
+
+  QList<QList<MidiTrackEvent>> tracks(1 + number_of_pitched_voices +
+                                      number_of_unpitched_voices);
+  tracks[0].push_back(
+      {.tick = 0,
+       .tie_break = 0,
+       .bytes = make_tempo_meta(MIDI_MICROSECONDS_PER_QUARTER)});
+  for (auto voice_number = 0; voice_number < number_of_pitched_voices;
+       voice_number = voice_number + 1) {
+    tracks[1 + voice_number].push_back(
+        {.tick = 0,
+         .tie_break = 0,
+         .bytes = make_track_name_meta(pitched_voices.at(voice_number).name)});
+  }
+  for (auto voice_number = 0; voice_number < number_of_unpitched_voices;
+       voice_number = voice_number + 1) {
+    tracks[1 + number_of_pitched_voices + voice_number].push_back(
+        {.tick = 0,
+         .tie_break = 0,
+         .bytes =
+             make_track_name_meta(unpitched_voices.at(voice_number).name)});
+  }
+
+  const auto &pitched_channels = get_pitched_midi_channels();
+  QList<double> pitched_channel_end_times(pitched_channels.size(), 0.0);
+
+  for (const auto &event : get_piano_roll_events(song)) {
+    // matches play_notes' velocity computation, but clamps rather than
+    // warning-and-aborting -- a batch export shouldn't stop partway through
+    // and pop up a dialog per bad note
+    const auto velocity = std::clamp(
+        static_cast<int>(std::round(event.velocity)), 0, MAX_VELOCITY);
+    const auto start_tick = event.start_time_ms;
+    const auto end_tick = event.start_time_ms + event.duration_ms;
+
+    if (event.kind == PianoRollNoteKind::pitched_kind) {
+      const auto frequency = event.frequency;
+      static const auto minimum_frequency =
+          midi_number_to_frequency(0 - QUARTER_STEP);
+      if (frequency < minimum_frequency || frequency >= MAX_FREQUENCY) {
+        QString message;
+        QTextStream stream(&message);
+        stream << QObject::tr("Frequency ")
+               << QString::number(frequency, 'g', 3);
+        add_note_location<PitchedNote>(stream, event.chord_number,
+                                       event.note_number);
+        stream << QObject::tr(" is out of MIDI export range; note skipped");
+        QMessageBox::warning(&song_widget, QObject::tr("Frequency error"),
+                             message);
+        continue;
+      }
+
+      const auto midi_float = frequency_to_midi_number(frequency);
+      const auto closest_midi = to_int(midi_float);
+      const auto bend = to_int((midi_float - closest_midi +
+                                ZERO_BEND_HALFSTEPS) *
+                               BEND_PER_HALFSTEP);
+
+      const auto channel_index =
+          pick_pitched_channel_index(pitched_channel_end_times);
+      const auto channel_number = pitched_channels.at(channel_index);
+      pitched_channel_end_times[channel_index] = end_tick + MAX_RELEASE_TIME;
+
+      const auto &program = get_voice_program(get_some_programs(true),
+                                              pitched_voices,
+                                              event.voice_number);
+      auto &track = tracks[1 + event.voice_number];
+      track.push_back(
+          {.tick = start_tick,
+           .tie_break = MIDI_EXPORT_PROGRAM_CHANGE_TIE_BREAK,
+           .bytes = make_program_change(channel_number, program.preset_number)});
+      track.push_back(
+          {.tick = start_tick,
+           .tie_break = MIDI_EXPORT_PITCH_BEND_TIE_BREAK,
+           .bytes = make_pitch_bend(channel_number, bend)});
+      track.push_back(
+          {.tick = start_tick,
+           .tie_break = MIDI_EXPORT_NOTE_ON_TIE_BREAK,
+           .bytes = make_note_on(channel_number, closest_midi, velocity)});
+      track.push_back(
+          {.tick = end_tick,
+           .tie_break = MIDI_EXPORT_NOTE_OFF_TIE_BREAK,
+           .bytes = make_note_off(channel_number, closest_midi)});
+    } else {
+      const auto &voice = unpitched_voices.at(event.voice_number);
+      const auto &program = get_voice_program(get_some_programs(false),
+                                              unpitched_voices,
+                                              event.voice_number);
+      auto &track =
+          tracks[1 + number_of_pitched_voices + event.voice_number];
+      track.push_back(
+          {.tick = start_tick,
+           .tie_break = MIDI_EXPORT_PROGRAM_CHANGE_TIE_BREAK,
+           .bytes = make_program_change(MIDI_PERCUSSION_CHANNEL,
+                                        program.preset_number)});
+      track.push_back(
+          {.tick = start_tick,
+           .tie_break = MIDI_EXPORT_NOTE_ON_TIE_BREAK,
+           .bytes = make_note_on(MIDI_PERCUSSION_CHANNEL, voice.midi_number,
+                                 velocity)});
+      track.push_back(
+          {.tick = end_tick,
+           .tie_break = MIDI_EXPORT_NOTE_OFF_TIE_BREAK,
+           .bytes = make_note_off(MIDI_PERCUSSION_CHANNEL, voice.midi_number)});
+    }
+  }
+
+  QFile file(output_file);
+  if (!file.open(QIODevice::WriteOnly)) {
+    QMessageBox::warning(&song_widget, QObject::tr("File error"),
+                         QObject::tr("Cannot open file for writing"));
+    return;
+  }
+  file.write(build_standard_midi_file(MIDI_FORMAT_MULTI_TRACK,
+                                      MIDI_TICKS_PER_QUARTER, tracks));
 }
 
 static void set_xml_double(xmlNode &node, const char *const field_name,
