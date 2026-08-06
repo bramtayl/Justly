@@ -406,12 +406,14 @@ static const auto MIDI_MICROSECONDS_PER_QUARTER = 500000;
 static const auto MIDI_PERCUSSION_CHANNEL = 9;
 static const auto MIDI_FORMAT_MULTI_TRACK = 1;
 // same-tick ordering: a note-off must land before any note-on (so a
-// still-sounding note doesn't get truncated), and a program change/pitch
-// bend must land before the note-on it's meant to apply to
+// still-sounding note doesn't get truncated), a bank select must land before
+// the program change it's meant to modify, and a program change/pitch bend
+// must land before the note-on it's meant to apply to
 static const auto MIDI_EXPORT_NOTE_OFF_TIE_BREAK = 0;
-static const auto MIDI_EXPORT_PROGRAM_CHANGE_TIE_BREAK = 1;
-static const auto MIDI_EXPORT_PITCH_BEND_TIE_BREAK = 2;
-static const auto MIDI_EXPORT_NOTE_ON_TIE_BREAK = 3;
+static const auto MIDI_EXPORT_BANK_SELECT_TIE_BREAK = 1;
+static const auto MIDI_EXPORT_PROGRAM_CHANGE_TIE_BREAK = 2;
+static const auto MIDI_EXPORT_PITCH_BEND_TIE_BREAK = 3;
+static const auto MIDI_EXPORT_NOTE_ON_TIE_BREAK = 4;
 // the standard MIDI file format has a hard 16-channel limit (a 4-bit
 // channel nibble), unlike FluidSynth's own NUMBER_OF_MIDI_CHANNELS (64),
 // which is an internal extension used only for live playback/WAV rendering
@@ -476,6 +478,14 @@ static inline void export_midi_to_file(SongWidget &song_widget,
   const auto &pitched_channels = get_pitched_midi_channels();
   QList<double> pitched_channel_end_times(pitched_channels.size(), 0.0);
 
+  // General MIDI has exactly one percussion channel, so two unpitched
+  // voices with different programs can't both sound at the same tick --
+  // a program change is channel-wide state, and only one can be in effect
+  // when the resulting note-ons fire
+  auto has_percussion_program = false;
+  auto percussion_tick = 0.0;
+  short percussion_preset_number = 0;
+
   for (const auto &event : get_piano_roll_events(song)) {
     // matches play_notes' velocity computation, but clamps rather than
     // warning-and-aborting -- a batch export shouldn't stop partway through
@@ -538,8 +548,32 @@ static inline void export_midi_to_file(SongWidget &song_widget,
       const auto &program = get_voice_program(get_some_programs(false),
                                               unpitched_voices,
                                               event.voice_number);
+
+      if (has_percussion_program && start_tick == percussion_tick &&
+          program.preset_number != percussion_preset_number) {
+        QString message;
+        QTextStream stream(&message);
+        stream << QObject::tr("Percussion instrument ") << program.name;
+        add_note_location<UnpitchedNote>(stream, event.chord_number,
+                                         event.note_number);
+        stream << QObject::tr(
+            " starts at the same time as a different percussion instrument "
+            "on the shared MIDI percussion channel; note skipped");
+        QMessageBox::warning(&song_widget, QObject::tr("Percussion channel conflict"),
+                             message);
+        continue;
+      }
+      has_percussion_program = true;
+      percussion_tick = start_tick;
+      percussion_preset_number = program.preset_number;
+
       auto &track =
           tracks[1 + number_of_pitched_voices + event.voice_number];
+      track.push_back(
+          {.tick = start_tick,
+           .tie_break = MIDI_EXPORT_BANK_SELECT_TIE_BREAK,
+           .bytes = make_bank_select_msb(MIDI_PERCUSSION_CHANNEL,
+                                         GM2_PERCUSSION_BANK_SELECT_MSB)});
       track.push_back(
           {.tick = start_tick,
            .tie_break = MIDI_EXPORT_PROGRAM_CHANGE_TIE_BREAK,

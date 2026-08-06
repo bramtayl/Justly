@@ -27,6 +27,12 @@ static const auto MIDI_PROGRAM_CHANGE_STATUS = 0xC0U;
 static const auto MIDI_NOTE_ON_STATUS = 0x90U;
 static const auto MIDI_NOTE_OFF_STATUS = 0x80U;
 static const auto MIDI_PITCH_BEND_STATUS = 0xE0U;
+static const auto MIDI_CONTROL_CHANGE_STATUS = 0xB0U;
+static const auto MIDI_BANK_SELECT_MSB_CONTROLLER = 0x00U;
+// GM2's standard bank-select value for the percussion bank -- distinct from
+// this soundfont's own internal SF2 bank number (128, which doesn't even fit
+// in a 7-bit MIDI data byte) used to look up drum presets within FluidSynth
+static const auto GM2_PERCUSSION_BANK_SELECT_MSB = 120U;
 
 static const auto MIDI_CHUNK_ID_LENGTH = 4;
 
@@ -94,6 +100,17 @@ make_tempo_meta(unsigned int microseconds_per_quarter) -> QByteArray {
 [[nodiscard]] static inline auto
 make_track_name_meta(const QString &name) -> QByteArray {
   return make_meta_event(MIDI_TRACK_NAME_META_TYPE, name.toUtf8());
+}
+
+[[nodiscard]] static inline auto
+make_bank_select_msb(unsigned int channel_number,
+                     unsigned int bank_msb) -> QByteArray {
+  QByteArray bytes;
+  bytes.append(static_cast<char>(MIDI_CONTROL_CHANGE_STATUS |
+                                 (channel_number & MIDI_CHANNEL_MASK)));
+  bytes.append(static_cast<char>(MIDI_BANK_SELECT_MSB_CONTROLLER));
+  bytes.append(static_cast<char>(bank_msb & MIDI_DATA_BYTE_MASK));
+  return bytes;
 }
 
 [[nodiscard]] static inline auto
