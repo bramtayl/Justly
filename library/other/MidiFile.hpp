@@ -103,14 +103,21 @@ make_track_name_meta(const QString &name) -> QByteArray {
 }
 
 [[nodiscard]] static inline auto
-make_bank_select_msb(unsigned int channel_number,
-                     unsigned int bank_msb) -> QByteArray {
+make_control_change(unsigned int channel_number, unsigned int controller,
+                    unsigned int value) -> QByteArray {
   QByteArray bytes;
   bytes.append(static_cast<char>(MIDI_CONTROL_CHANGE_STATUS |
                                  (channel_number & MIDI_CHANNEL_MASK)));
-  bytes.append(static_cast<char>(MIDI_BANK_SELECT_MSB_CONTROLLER));
-  bytes.append(static_cast<char>(bank_msb & MIDI_DATA_BYTE_MASK));
+  bytes.append(static_cast<char>(controller & MIDI_DATA_BYTE_MASK));
+  bytes.append(static_cast<char>(value & MIDI_DATA_BYTE_MASK));
   return bytes;
+}
+
+[[nodiscard]] static inline auto
+make_bank_select_msb(unsigned int channel_number,
+                     unsigned int bank_msb) -> QByteArray {
+  return make_control_change(channel_number, MIDI_BANK_SELECT_MSB_CONTROLLER,
+                             bank_msb);
 }
 
 [[nodiscard]] static inline auto

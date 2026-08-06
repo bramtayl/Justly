@@ -202,7 +202,8 @@ static void play_note(Player &player, const int channel_number,
   fluid_event_noteoff(event.internal_pointer, channel_number, midi_number);
   send_event_at(sequencer, event, end_time);
 
-  player.channel_schedules[channel_number] = end_time + MAX_RELEASE_TIME;
+  player.channel_schedules[channel_number] =
+      end_time + program.release_milliseconds;
 }
 
 template <VoiceInterface SubVoice>
@@ -442,7 +443,8 @@ static const auto MIDI_EXPORT_NOTE_OFF_TIE_BREAK = 0;
 static const auto MIDI_EXPORT_BANK_SELECT_TIE_BREAK = 1;
 static const auto MIDI_EXPORT_PROGRAM_CHANGE_TIE_BREAK = 2;
 static const auto MIDI_EXPORT_PITCH_BEND_TIE_BREAK = 3;
-static const auto MIDI_EXPORT_NOTE_ON_TIE_BREAK = 4;
+static const auto MIDI_EXPORT_BREATH_TIE_BREAK = 4;
+static const auto MIDI_EXPORT_NOTE_ON_TIE_BREAK = 5;
 // the standard MIDI file format has a hard 16-channel limit (a 4-bit
 // channel nibble), unlike FluidSynth's own NUMBER_OF_MIDI_CHANNELS (64),
 // which is an internal extension used only for live playback/WAV rendering
@@ -561,12 +563,19 @@ static inline void export_midi_to_file(SongWidget &song_widget,
         return;
       }
       const auto channel_number = pitched_channels.at(channel_index);
-      pitched_channel_end_times[channel_index] = end_tick + MAX_RELEASE_TIME;
-
       const auto &program = get_voice_program(get_some_programs(true),
                                               pitched_voices,
                                               event.voice_number);
+      pitched_channel_end_times[channel_index] =
+          end_tick + program.release_milliseconds;
+
       auto &track = tracks[1 + event.voice_number];
+      // no bank-select here: program.bank_number is this soundfont's own
+      // private numbering (e.g. 17 for "Expr." variants), not a portable GM2
+      // bank -- an unrecognized bank-select MSB is undefined behavior on
+      // generic GM2 hardware, so the exported instrument intentionally falls
+      // back to the plain bank-0 sibling everywhere except when reopened with
+      // this exact soundfont
       track.push_back(
           {.tick = start_tick,
            .tie_break = MIDI_EXPORT_PROGRAM_CHANGE_TIE_BREAK,
@@ -575,6 +584,14 @@ static inline void export_midi_to_file(SongWidget &song_widget,
           {.tick = start_tick,
            .tie_break = MIDI_EXPORT_PITCH_BEND_TIE_BREAK,
            .bytes = make_pitch_bend(channel_number, bend)});
+      // mirrors play_note's live-playback behavior: single note dynamics
+      // (see MuseScore_General.sf2's "Expr." presets) read note volume from
+      // the breath controller, not note-on velocity, so both must carry the
+      // same value for expressive instruments to have correct dynamics
+      track.push_back(
+          {.tick = start_tick,
+           .tie_break = MIDI_EXPORT_BREATH_TIE_BREAK,
+           .bytes = make_control_change(channel_number, BREATH_ID, velocity)});
       track.push_back(
           {.tick = start_tick,
            .tie_break = MIDI_EXPORT_NOTE_ON_TIE_BREAK,
