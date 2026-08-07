@@ -228,7 +228,7 @@ In the "File" menu, you can choose among the following options:
 - "Save" to save the song in the previous location.
 - "Save As" to save the song in a new location.
 - "Export recording" to export a recording of the song as a wav file.
-- "Export MIDI" to export the song as a MIDI file, for use in other software (e.g. a DAW). Since standard MIDI files are limited to 12-tone equal temperament, Justly represents each note's true pitch with a pitch bend, rotating pitched notes across the available MIDI channels so simultaneous notes can carry different bends; percussion notes need no pitch bend and all share the percussion channel. If more than 15 pitched notes sound at the exact same instant, some will share a channel and may bend incorrectly.
+- "Export MIDI" to export the song as a MIDI file.
 
 ### Edit Menu
 
