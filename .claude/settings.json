@@ -58,7 +58,11 @@
       "Bash(tee /tmp/claude-1000/-home-brandon-Justly/*/scratchpad/*)",
       "Bash(wait)",
       "Bash(xargs -I{} sh -c *)",
-      "Bash(xmllint --format *)"
+      "Bash(xmllint --format *)",
+      "Bash(grep -v -E '\\\\.\\(json|lock|md|txt|toml|yml|yaml\\)$')",
+      "Bash(grep -E '\\\\.\\(hpp|cpp\\)$')",
+      "Bash(xargs -I{} wc -l {})",
+      "Bash(xargs -I{} sh -c 'echo {}; grep -n \"times\\\\|duration\\\\|fifths\\\\|octave-change\\\\|chromatic\" {} | head -20')"
     ]
   }
 }

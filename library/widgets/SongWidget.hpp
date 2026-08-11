@@ -1709,7 +1709,7 @@ static inline void import_musicxml(SongWidget &song_widget,
                           : xml_string_to_string(times_property);
                   measure_info.repeat_times = times_text.empty()
                                                    ? DEFAULT_REPEAT_TIMES
-                                                   : std::stoi(times_text);
+                                                   : string_to_int(times_text);
                 }
               } else if (node_is(child, "ending")) {
                 if (get_property(child, "type") == "start") {

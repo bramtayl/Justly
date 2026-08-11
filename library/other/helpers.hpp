@@ -96,20 +96,23 @@ template <typename SubType>
   return xml_string_to_string(content.internal_pointer);
 }
 
-[[nodiscard]] static inline auto xml_to_int(const xmlNode &element) {
-  const auto content = get_content(element);
+[[nodiscard]] static inline auto string_to_int(const std::string &content) {
   try {
     return std::stoi(content);
   } catch (const std::out_of_range &) {
-    // some musicxml fields (e.g. fifths, octave-change) are unbounded
-    // xs:integer with no schema-enforced range, so a malformed or hostile
-    // file can contain a magnitude that overflows int; clamp instead of
-    // letting std::stoi's exception propagate uncaught and crash the app --
-    // whatever consumes the clamped value then fails through its own
+    // some musicxml fields (e.g. fifths, octave-change, repeat times) are
+    // unbounded xs:integer with no schema-enforced range, so a malformed or
+    // hostile file can contain a magnitude that overflows int; clamp instead
+    // of letting std::stoi's exception propagate uncaught and crash the app
+    // -- whatever consumes the clamped value then fails through its own
     // existing bounds checks (e.g. the frequency-range warning) instead
     return content.starts_with('-') ? std::numeric_limits<int>::min()
                                     : std::numeric_limits<int>::max();
   }
+}
+
+[[nodiscard]] static inline auto xml_to_int(const xmlNode &element) {
+  return string_to_int(get_content(element));
 }
 
 [[nodiscard]] static auto
