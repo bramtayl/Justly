@@ -195,15 +195,15 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
   }
 
   void insert_xml_rows(const int first_row_number, xmlNode &rows_node) {
-    auto count = 0;
-    xmlNode *xml_row_pointer = xmlFirstElementChild(&rows_node);
-    while (xml_row_pointer != nullptr) {
-      count++;
-      xml_row_pointer = xmlNextElementSibling(xml_row_pointer);
-    }
+    QList<SubRow> new_rows;
+    xml_to_rows(new_rows, rows_node);
+    const auto number_of_rows = static_cast<int>(new_rows.size());
+
+    auto &rows = get_rows();
     beginInsertRows(QModelIndex(), first_row_number,
-                    first_row_number + count - 1);
-    xml_to_rows(get_rows(), rows_node);
+                    first_row_number + number_of_rows - 1);
+    std::copy(new_rows.cbegin(), new_rows.cend(),
+              std::inserter(rows, rows.begin() + first_row_number));
     endInsertRows();
   }
 

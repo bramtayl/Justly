@@ -1519,6 +1519,33 @@ private slots:
     QCOMPARE(interval.octave, 3);
   };
 
+  // regression test: insert_xml_rows used to always push_back the parsed
+  // rows onto the end of the underlying list while announcing the insertion
+  // at first_row_number via beginInsertRows/endInsertRows -- correct only
+  // when first_row_number happens to equal the list's current size. Every
+  // production call site loads into a freshly-cleared, empty model at row 0,
+  // where append and position-0-insert coincide, so the bug was never
+  // triggered in practice. Inserting a second batch ahead of already-loaded
+  // rows exercises the general case directly against the model.
+  static void test_insert_xml_rows_respects_first_row_number() {
+    Song song;
+    QUndoStack undo_stack;
+    ChordsModel chords_model(undo_stack, song);
+    chords_model.set_rows_pointer(&song.chords);
+
+    const auto second_document = read_xml_document(
+        "<chords><chord><words>second</words></chord></chords>");
+    chords_model.insert_xml_rows(0, get_root(second_document));
+
+    const auto first_document = read_xml_document(
+        "<chords><chord><words>first</words></chord></chords>");
+    chords_model.insert_xml_rows(0, get_root(first_document));
+
+    QCOMPARE(chords_model.rowCount(QModelIndex()), 2);
+    QCOMPARE(song.chords.at(0).words, QString("first"));
+    QCOMPARE(song.chords.at(1).words, QString("second"));
+  };
+
   static void test_musicxml_data() {
     QTest::addColumn<QString>("file_name");
     QTest::addColumn<int>("number_of_chords");
