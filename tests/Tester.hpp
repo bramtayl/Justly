@@ -2437,6 +2437,41 @@ private slots:
     QFile(save_filename).remove();
   };
 
+  void test_save_error_does_not_lose_work() {
+    auto &song_widget = song_editor.song_widget;
+    auto &undo_stack = song_widget.undo_stack;
+
+    const auto old_current_file = song_widget.current_file;
+
+    write_recovery_file(song_widget);
+    QVERIFY(QFile::exists(get_recovery_file_path()));
+
+    song_widget.controls_column.spin_boxes.gain_editor.setValue(NEW_GAIN_1);
+    QVERIFY(!undo_stack.isClean());
+
+    // a directory can never be opened for writing as a file, so this
+    // deterministically fails xmlSaveFile without depending on filesystem
+    // permissions
+    const auto unwritable_path = test_dir.filePath("test_save_error_dir");
+    QDir(unwritable_path).removeRecursively();
+    QVERIFY(QDir().mkpath(unwritable_path));
+
+    close_message_later(song_editor, waiting_for_message,
+                        "Failed to save file");
+    save_as_file(song_widget, unwritable_path);
+
+    // a failed save must not be mistaken for a successful one: the current
+    // file, dirty undo stack, and recovery file are all still what they were
+    // before the failed save attempt
+    QCOMPARE(song_widget.current_file, old_current_file);
+    QVERIFY(!undo_stack.isClean());
+    QVERIFY(QFile::exists(get_recovery_file_path()));
+
+    QDir(unwritable_path).removeRecursively();
+    undo_stack.undo();
+    remove_recovery_file();
+  };
+
   void test_recovery_removed_on_save_and_open() {
     auto &song_widget = song_editor.song_widget;
     auto fixture_file = test_dir.filePath("test_song.xml");

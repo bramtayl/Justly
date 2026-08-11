@@ -815,8 +815,12 @@ static inline void remove_recovery_file() {
 static inline void write_recovery_file(SongWidget &song_widget) {
   XMLDocument document;
   populate_song_document(song_widget, document);
-  xmlSaveFile(get_recovery_file_path().toStdString().c_str(),
-             document.internal_pointer);
+  if (xmlSaveFile(get_recovery_file_path().toStdString().c_str(),
+                  document.internal_pointer) < 0) {
+    // leave any pre-existing recovery.xml and its original_file setting
+    // alone rather than pointing them at content that was never written
+    return;
+  }
 
   // remembers where the recovered content should be saved back to, since
   // open_file (used to reload recovery.xml) always overwrites current_file
@@ -831,7 +835,12 @@ static inline void save_as_file(SongWidget &song_widget,
   XMLDocument document;
   populate_song_document(song_widget, document);
 
-  xmlSaveFile(filename.toStdString().c_str(), document.internal_pointer);
+  if (xmlSaveFile(filename.toStdString().c_str(), document.internal_pointer) <
+      0) {
+    QMessageBox::warning(&song_widget, QObject::tr("Save error"),
+                         QObject::tr("Failed to save file"));
+    return;
+  }
 
   song_widget.current_file = filename;
 
