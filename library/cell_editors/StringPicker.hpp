@@ -29,10 +29,6 @@ public:
     setStyleSheet("combobox-popup: 0;");
   }
 
-  [[nodiscard]] auto value() const -> const auto & {
-    return strings.at(currentIndex());
-  }
-
   void setValue(const QString &new_value) {
     const auto iterator = std::ranges::find(strings, new_value);
     Q_ASSERT(iterator != strings.cend());
