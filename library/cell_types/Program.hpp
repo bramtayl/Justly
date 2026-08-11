@@ -15,6 +15,7 @@
 #include <fluidsynth/gen.h>
 #include <fluidsynth/misc.h>
 #include <fluidsynth/sfont.h>
+#include <fluidsynth/settings.h>
 #include <fluidsynth/synth.h>
 #include <fluidsynth/types.h>
 #include <fluidsynth/voice.h>
@@ -168,14 +169,21 @@ get_actual_release_milliseconds(FluidSynth &synth,
     -> auto & {
   static const auto all_programs = []() -> QList<Program> {
     FluidSettings settings;
-    FluidSynth synth(settings);
     // fluid_synth_stop() releases a voice but doesn't reclaim its slot until
     // the engine actually renders past its release tail -- this synth never
     // renders audio, so without headroom well beyond the default polyphony
     // (256), later get_actual_release_milliseconds calls would silently fail
-    // to start and fall back to MAX_RELEASE_TIME
+    // to start and fall back to MAX_RELEASE_TIME. This has to be set on the
+    // settings before construction, not via fluid_synth_set_polyphony()
+    // afterward: that call only resizes the voice-slot array, not the
+    // eventhandler ringbuffer new_fluid_synth() sizes as polyphony * 64 --
+    // left at the default, that ringbuffer never drains (no audio is ever
+    // rendered here) and overflows partway through the hundreds of
+    // start/stop calls below, logging "Ringbuffer full" for the rest
     static const auto INTROSPECTION_POLYPHONY = 8192;
-    fluid_synth_set_polyphony(synth.internal_pointer, INTROSPECTION_POLYPHONY);
+    Q_ASSERT(fluid_settings_setint(settings.internal_pointer, "synth.polyphony",
+                                   INTROSPECTION_POLYPHONY) == FLUID_OK);
+    FluidSynth synth(settings);
 
     fluid_sfont_t *const soundfont_pointer = fluid_synth_get_sfont_by_id(
         synth.internal_pointer, get_soundfont_id(synth));
