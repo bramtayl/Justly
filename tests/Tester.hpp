@@ -1612,6 +1612,20 @@ private slots:
     QCOMPARE(interval.octave, 3);
   };
 
+  // regression test: Rational::operator/ used to only rely on the
+  // constructor's Q_ASSERT(denominator_input != 0), which compiles out in
+  // release builds -- dividing by a zero-numerator Rational silently built a
+  // zero-denominator result instead of failing here.
+  static void test_rational_division_by_zero_numerator_throws() {
+    const Rational one(1, 1);
+    Rational zero_numerator;
+    zero_numerator.numerator = 0;
+    zero_numerator.denominator = 1;
+
+    QVERIFY_EXCEPTION_THROWN(static_cast<void>(one / zero_numerator),
+                             std::runtime_error);
+  };
+
   // regression test: insert_xml_rows used to always push_back the parsed
   // rows onto the end of the underlying list while announcing the insertion
   // at first_row_number via beginInsertRows/endInsertRows -- correct only
