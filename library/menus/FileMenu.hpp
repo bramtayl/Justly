@@ -71,6 +71,7 @@ struct FileMenu : public QMenu {
         if (dialog.exec() != 0) {
           open_file(song_widget, get_selected_file(song_widget, dialog));
         }
+        dialog.deleteLater();
       }
     });
 
@@ -85,6 +86,7 @@ struct FileMenu : public QMenu {
               import_musicxml(song_widget,
                               get_selected_file(song_widget, dialog));
             }
+            dialog.deleteLater();
           }
         });
 
@@ -101,6 +103,7 @@ struct FileMenu : public QMenu {
           if (dialog.exec() != 0) {
             save_as_file(song_widget, get_selected_file(song_widget, dialog));
           }
+          dialog.deleteLater();
         });
 
     QObject::connect(
@@ -112,6 +115,7 @@ struct FileMenu : public QMenu {
           if (dialog.exec() != 0) {
             export_to_file(song_widget, get_selected_file(song_widget, dialog));
           }
+          dialog.deleteLater();
         });
 
     QObject::connect(
@@ -124,6 +128,7 @@ struct FileMenu : public QMenu {
             export_midi_to_file(song_widget,
                                 get_selected_file(song_widget, dialog));
           }
+          dialog.deleteLater();
         });
   }
 };

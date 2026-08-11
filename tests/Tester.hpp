@@ -15,6 +15,7 @@
 #include <QtCore/QMimeData>
 #include <QtCore/QObject>
 #include <QtCore/QPoint>
+#include <QtCore/QPointer>
 #include <QtCore/QRect>
 #include <QtCore/QSettings>
 #include <QtCore/QStandardPaths>
@@ -42,6 +43,7 @@
 #include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QDockWidget>
+#include <QtWidgets/QFileDialog>
 #include <QtWidgets/QGraphicsLineItem>
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsView>
@@ -190,6 +192,16 @@ static void open_text(SongWidget &song_widget, const QString &song_text) {
     auto *const box_pointer = dynamic_cast<QMessageBox *>(widget_pointer);
     if (box_pointer != nullptr && box_pointer->isVisible()) {
       return box_pointer;
+    }
+  }
+  return nullptr;
+}
+
+[[nodiscard]] static auto find_top_level_file_dialog() -> QFileDialog * {
+  for (auto *const widget_pointer : QApplication::topLevelWidgets()) {
+    auto *const dialog_pointer = dynamic_cast<QFileDialog *>(widget_pointer);
+    if (dialog_pointer != nullptr && dialog_pointer->isVisible()) {
+      return dialog_pointer;
     }
   }
   return nullptr;
@@ -787,6 +799,34 @@ private slots:
     QFile written_file(temp_export_file.fileName());
     QVERIFY(written_file.open(QIODevice::ReadOnly));
     QCOMPARE(written_file.read(4), QByteArray());
+  };
+
+  // regression test: FileMenu's dialogs (make_file_dialog) must not leak --
+  // Open/Import/Save As/Export/Export MIDI used to create a new QFileDialog
+  // with no matching deleteLater(), so every use of a file dialog left a
+  // live QFileDialog parented to song_widget for the rest of the process
+  void test_file_dialog_cleanup() {
+    auto &file_menu = song_editor.song_menu_bar.file_menu;
+
+    QPointer<QFileDialog> dialog_pointer;
+    auto &timer = // NOLINT(cppcoreguidelines-owning-memory)
+        *(new QTimer(&song_editor));
+    timer.setSingleShot(true);
+    QObject::connect(&timer, &QTimer::timeout, &song_editor,
+                     [&dialog_pointer]() -> auto {
+                       auto *const found_dialog = find_top_level_file_dialog();
+                       QVERIFY(found_dialog != nullptr);
+                       dialog_pointer = found_dialog;
+                       found_dialog->reject();
+                     });
+    timer.start(WAIT_TIME);
+
+    file_menu.save_as_action.trigger();
+
+    // the dialog is still alive right after trigger() returns -- deleteLater()
+    // only schedules its destruction for the next trip through the event loop
+    QVERIFY(!dialog_pointer.isNull());
+    QTRY_VERIFY(dialog_pointer.isNull());
   };
 
   static void test_flag_data() {
