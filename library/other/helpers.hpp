@@ -56,6 +56,10 @@ template <typename Item>
 [[nodiscard]] static auto copy_items(const QList<Item> &items,
                                      const int first_row_number,
                                      const int number_of_rows) {
+  Q_ASSERT(first_row_number >= 0);
+  Q_ASSERT(number_of_rows >= 0);
+  Q_ASSERT(first_row_number + number_of_rows <= items.size());
+
   QList<Item> copied;
   std::copy(items.cbegin() + first_row_number,
             items.cbegin() + first_row_number + number_of_rows,
