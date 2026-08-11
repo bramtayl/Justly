@@ -41,7 +41,7 @@ static const auto UNPITCHED_BANK_NUMBER = 128;
 [[nodiscard]] static inline auto get_soundfont_id(FluidSynth &synth) {
   const auto soundfont_id =
       fluid_synth_sfload(synth.internal_pointer,
-                         get_share_file("MuseScore_General.sf2").c_str(), 1);
+                         get_share_file("MS_Basic.sf3").c_str(), 1);
   Q_ASSERT(soundfont_id >= 0);
   return soundfont_id;
 }

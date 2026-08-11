@@ -14,8 +14,8 @@ endif()
 
 project(Justly VERSION 1.1.3 LANGUAGES CXX)
 
-# download https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2
-# and put it into the share folder
+# download https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic.sf3
+# and put it into the share folder as MS_Basic.sf3
 # too big to commit to git
 
 include(CTest)

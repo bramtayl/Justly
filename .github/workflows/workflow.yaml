@@ -1,7 +1,7 @@
 on:
   push:
 env:
-  instruments_url: "https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General"
+  instruments_url: "https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound"
   VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/vcpkg_archives,readwrite"
 jobs:
   main_job:
@@ -105,21 +105,21 @@ jobs:
       uses: actions/cache@v6
       with:
         path: |
-          share/MuseScore_General.sf2
-          share/MuseScore_General_License.md
-        key: ${{matrix.os}}-soundfont_cache-v2
+          share/MS_Basic.sf3
+          share/MS_Basic_License.md
+        key: ${{matrix.os}}-soundfont_cache-v3
 
     - name: Download the soundfont if not in the cache
       if: steps.soundfont_step.outputs.cache-hit != 'true'
       run: >
-        curl "${{env.instruments_url}}/MuseScore_General.sf2"
-        --output "share/MuseScore_General.sf2"
+        curl -L "${{env.instruments_url}}/MS%20Basic.sf3"
+        --output "share/MS_Basic.sf3"
 
     - name: Download the soundfont license if not in the cache
       if: steps.soundfont_step.outputs.cache-hit != 'true'
       run: >
-        curl "${{env.instruments_url}}/MuseScore_General_License.md"
-        --output "share/MuseScore_General_License.md"
+        curl -L "${{env.instruments_url}}/MS%20Basic_License.md"
+        --output "share/MS_Basic_License.md"
 
     - name: Configure with tests
       run: >

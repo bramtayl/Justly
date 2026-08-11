@@ -46,7 +46,7 @@ brew install fluid-synth qt libxml2
 
 On Windows, install dependencies with [vcpkg](https://github.com/microsoft/vcpkg) and pass `-DCMAKE_TOOLCHAIN_FILE=<path to vcpkg>/scripts/buildsystems/vcpkg.cmake` to CMake.
 
-You will also need to download the [MuseScore General soundfont](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2) and its [license](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General_License.md) into the `share` folder.
+You will also need to download the [MS Basic soundfont](https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic.sf3) and its [license](https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic_License.md) into the `share` folder, named `MS_Basic.sf3` and `MS_Basic_License.md` respectively.
 
 Then configure, build, and install:
 
@@ -134,7 +134,7 @@ In Justly, there are two kinds of volume: "gain", which is the speaker volume, a
 
 ### Instruments
 
-You can use any of the instruments included with [MuseScore soundfont](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/).
+You can use any of the instruments included with [MuseScore's MS Basic soundfont](https://github.com/musescore/MuseScore/tree/master/share/sound).
 
 Percussion instruments are nested into "percussion sets". Each percussion set has a name and a set of sounds associated with the MIDI numbers 0-127. Some of these MIDI numbers will have no sounds associated with them, and the sound associated with a particular number will vary. The sounds roughly correspond to the [Roland MIDI standard](https://www.voidaudio.net/percussion.html).
 

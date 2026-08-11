@@ -639,7 +639,7 @@ static inline void export_midi_to_file(SongWidget &song_widget,
               .bend_14_bit = bend_14_bit}});
 
       // mirrors play_note's live-playback behavior: single note dynamics
-      // (see MuseScore_General.sf2's "Expr." presets) read note volume from
+      // (see MS_Basic.sf3's "Expr." presets) read note volume from
       // the breath controller, not note-on velocity, so both must carry the
       // same value for expressive instruments to have correct dynamics
       track.push_back(MidiTrackEvent{

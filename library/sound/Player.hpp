@@ -86,7 +86,7 @@ struct Player {
 
   // play state fields
   QList<double> channel_schedules = QList<double>(NUMBER_OF_MIDI_CHANNELS, 0);
-  // percussion programs don't send pitch bend and (per MuseScore_General.sf2)
+  // percussion programs don't send pitch bend and (per MS_Basic.sf3)
   // have no breath-controller modulators, so unlike pitched notes, a channel
   // can safely be shared by overlapping notes of the same percussion program
   // -- once a program claims a channel here, play_note never lets
