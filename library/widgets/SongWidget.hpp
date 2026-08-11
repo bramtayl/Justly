@@ -522,32 +522,27 @@ static inline void export_midi_to_file(SongWidget &song_widget,
 
   QList<QList<MidiTrackEvent>> tracks(1 + number_of_pitched_voices +
                                       number_of_unpitched_voices);
-  QByteArray tempo_payload;
-  tempo_payload.append(static_cast<char>(
-      (MIDI_MICROSECONDS_PER_QUARTER >> (2 * MIDI_BITS_PER_BYTE)) &
-      MIDI_BYTE_MASK));
-  tempo_payload.append(static_cast<char>(
-      (MIDI_MICROSECONDS_PER_QUARTER >> MIDI_BITS_PER_BYTE) &
-      MIDI_BYTE_MASK));
-  tempo_payload.append(
-      static_cast<char>(MIDI_MICROSECONDS_PER_QUARTER & MIDI_BYTE_MASK));
-  MidiTrackEvent tempo_event{.tick = 0, .tie_break = 0, .bytes = {}};
-  append_meta_event(tempo_event.bytes, MIDI_TEMPO_META_TYPE, tempo_payload);
-  tracks[0].push_back(std::move(tempo_event));
+  tracks[0].push_back(MidiTrackEvent{
+      .tick = 0,
+      .tie_break = 0,
+      .info = TempoEventInfo{
+          .microseconds_per_quarter = MIDI_MICROSECONDS_PER_QUARTER}});
   for (auto voice_number = 0; voice_number < number_of_pitched_voices;
        voice_number = voice_number + 1) {
-    MidiTrackEvent name_event{.tick = 0, .tie_break = 0, .bytes = {}};
-    append_track_name_meta(name_event.bytes,
-                           pitched_voices.at(voice_number).name);
-    tracks[1 + voice_number].push_back(std::move(name_event));
+    tracks[1 + voice_number].push_back(MidiTrackEvent{
+        .tick = 0,
+        .tie_break = 0,
+        .info = TrackNameEventInfo{
+            .name = pitched_voices.at(voice_number).name}});
   }
   for (auto voice_number = 0; voice_number < number_of_unpitched_voices;
        voice_number = voice_number + 1) {
-    MidiTrackEvent name_event{.tick = 0, .tie_break = 0, .bytes = {}};
-    append_track_name_meta(name_event.bytes,
-                           unpitched_voices.at(voice_number).name);
     tracks[1 + number_of_pitched_voices + voice_number].push_back(
-        std::move(name_event));
+        MidiTrackEvent{
+            .tick = 0,
+            .tie_break = 0,
+            .info = TrackNameEventInfo{
+                .name = unpitched_voices.at(voice_number).name}});
   }
 
   const auto &pitched_channels = get_pitched_midi_channels();
@@ -627,53 +622,48 @@ static inline void export_midi_to_file(SongWidget &song_widget,
       // generic GM2 hardware, so the exported instrument intentionally falls
       // back to the plain bank-0 sibling everywhere except when reopened with
       // this exact soundfont
-      MidiTrackEvent program_change_event{
+      track.push_back(MidiTrackEvent{
           .tick = start_tick,
           .tie_break = MIDI_EXPORT_PROGRAM_CHANGE_TIE_BREAK,
-          .bytes = {}};
-      append_program_change(program_change_event.bytes, channel_number,
-                            program.preset_number);
-      track.push_back(std::move(program_change_event));
+          .info = ProgramChangeEventInfo{
+              .channel_number = static_cast<unsigned int>(channel_number),
+              .program_number =
+                  static_cast<unsigned int>(program.preset_number)}});
 
       const auto bend_14_bit = static_cast<unsigned int>(bend);
-      MidiTrackEvent pitch_bend_event{
+      track.push_back(MidiTrackEvent{
           .tick = start_tick,
           .tie_break = MIDI_EXPORT_PITCH_BEND_TIE_BREAK,
-          .bytes = {}};
-      auto &pitch_bend_bytes = pitch_bend_event.bytes;
-      pitch_bend_bytes.append(static_cast<char>(
-          MIDI_PITCH_BEND_STATUS |
-          (static_cast<unsigned int>(channel_number) & MIDI_CHANNEL_MASK)));
-      pitch_bend_bytes.append(
-          static_cast<char>(bend_14_bit & MIDI_DATA_BYTE_MASK));
-      pitch_bend_bytes.append(static_cast<char>(
-          (bend_14_bit >> MIDI_SEPTET_BITS) & MIDI_DATA_BYTE_MASK));
-      track.push_back(std::move(pitch_bend_event));
+          .info = PitchBendEventInfo{
+              .channel_number = static_cast<unsigned int>(channel_number),
+              .bend_14_bit = bend_14_bit}});
 
       // mirrors play_note's live-playback behavior: single note dynamics
       // (see MuseScore_General.sf2's "Expr." presets) read note volume from
       // the breath controller, not note-on velocity, so both must carry the
       // same value for expressive instruments to have correct dynamics
-      MidiTrackEvent breath_event{.tick = start_tick,
-                                  .tie_break = MIDI_EXPORT_BREATH_TIE_BREAK,
-                                  .bytes = {}};
-      append_control_change(breath_event.bytes, channel_number, BREATH_ID,
-                            velocity);
-      track.push_back(std::move(breath_event));
+      track.push_back(MidiTrackEvent{
+          .tick = start_tick,
+          .tie_break = MIDI_EXPORT_BREATH_TIE_BREAK,
+          .info = ControlChangeEventInfo{
+              .channel_number = static_cast<unsigned int>(channel_number),
+              .controller = BREATH_ID,
+              .value = static_cast<unsigned int>(velocity)}});
 
-      MidiTrackEvent note_on_event{.tick = start_tick,
-                                   .tie_break = MIDI_EXPORT_NOTE_ON_TIE_BREAK,
-                                   .bytes = {}};
-      append_note_on(note_on_event.bytes, channel_number, closest_midi,
-                     velocity);
-      track.push_back(std::move(note_on_event));
+      track.push_back(MidiTrackEvent{
+          .tick = start_tick,
+          .tie_break = MIDI_EXPORT_NOTE_ON_TIE_BREAK,
+          .info = NoteOnEventInfo{
+              .channel_number = static_cast<unsigned int>(channel_number),
+              .midi_number = static_cast<unsigned int>(closest_midi),
+              .velocity = static_cast<unsigned int>(velocity)}});
 
-      MidiTrackEvent note_off_event{
+      track.push_back(MidiTrackEvent{
           .tick = end_tick,
           .tie_break = MIDI_EXPORT_NOTE_OFF_TIE_BREAK,
-          .bytes = {}};
-      append_note_off(note_off_event.bytes, channel_number, closest_midi);
-      track.push_back(std::move(note_off_event));
+          .info = NoteOffEventInfo{
+              .channel_number = static_cast<unsigned int>(channel_number),
+              .midi_number = static_cast<unsigned int>(closest_midi)}});
     } else {
       const auto &voice = unpitched_voices.at(event.voice_number);
       const auto &program = get_voice_program(get_some_programs(false),
@@ -700,37 +690,40 @@ static inline void export_midi_to_file(SongWidget &song_widget,
 
       auto &track =
           tracks[1 + number_of_pitched_voices + event.voice_number];
-      MidiTrackEvent bank_select_event{
+      track.push_back(MidiTrackEvent{
           .tick = start_tick,
           .tie_break = MIDI_EXPORT_BANK_SELECT_TIE_BREAK,
-          .bytes = {}};
-      append_control_change(bank_select_event.bytes, MIDI_PERCUSSION_CHANNEL,
-                            MIDI_BANK_SELECT_MSB_CONTROLLER,
-                            GM2_PERCUSSION_BANK_SELECT_MSB);
-      track.push_back(std::move(bank_select_event));
+          .info = ControlChangeEventInfo{
+              .channel_number =
+                  static_cast<unsigned int>(MIDI_PERCUSSION_CHANNEL),
+              .controller = MIDI_BANK_SELECT_MSB_CONTROLLER,
+              .value = GM2_PERCUSSION_BANK_SELECT_MSB}});
 
-      MidiTrackEvent program_change_event{
+      track.push_back(MidiTrackEvent{
           .tick = start_tick,
           .tie_break = MIDI_EXPORT_PROGRAM_CHANGE_TIE_BREAK,
-          .bytes = {}};
-      append_program_change(program_change_event.bytes,
-                            MIDI_PERCUSSION_CHANNEL, program.preset_number);
-      track.push_back(std::move(program_change_event));
+          .info = ProgramChangeEventInfo{
+              .channel_number =
+                  static_cast<unsigned int>(MIDI_PERCUSSION_CHANNEL),
+              .program_number =
+                  static_cast<unsigned int>(program.preset_number)}});
 
-      MidiTrackEvent note_on_event{.tick = start_tick,
-                                   .tie_break = MIDI_EXPORT_NOTE_ON_TIE_BREAK,
-                                   .bytes = {}};
-      append_note_on(note_on_event.bytes, MIDI_PERCUSSION_CHANNEL,
-                     voice.midi_number, velocity);
-      track.push_back(std::move(note_on_event));
+      track.push_back(MidiTrackEvent{
+          .tick = start_tick,
+          .tie_break = MIDI_EXPORT_NOTE_ON_TIE_BREAK,
+          .info = NoteOnEventInfo{
+              .channel_number =
+                  static_cast<unsigned int>(MIDI_PERCUSSION_CHANNEL),
+              .midi_number = static_cast<unsigned int>(voice.midi_number),
+              .velocity = static_cast<unsigned int>(velocity)}});
 
-      MidiTrackEvent note_off_event{
+      track.push_back(MidiTrackEvent{
           .tick = end_tick,
           .tie_break = MIDI_EXPORT_NOTE_OFF_TIE_BREAK,
-          .bytes = {}};
-      append_note_off(note_off_event.bytes, MIDI_PERCUSSION_CHANNEL,
-                      voice.midi_number);
-      track.push_back(std::move(note_off_event));
+          .info = NoteOffEventInfo{
+              .channel_number =
+                  static_cast<unsigned int>(MIDI_PERCUSSION_CHANNEL),
+              .midi_number = static_cast<unsigned int>(voice.midi_number)}});
     }
   }
 
@@ -763,7 +756,7 @@ static inline void export_midi_to_file(SongWidget &song_widget,
     for (const auto &event : sorted_events) {
       const auto tick = static_cast<unsigned int>(std::llround(event.tick));
       append_variable_length(track_data, tick - previous_tick);
-      track_data.append(event.bytes);
+      event.write(track_data);
       previous_tick = tick;
     }
     append_variable_length(track_data, 0);

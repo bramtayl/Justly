@@ -3,6 +3,7 @@
 #include <QtCore/QByteArray>
 #include <QtCore/QList>
 #include <QtCore/QString>
+#include <variant>
 
 static const auto MIDI_BITS_PER_BYTE = 8U;
 static const auto MIDI_SEPTET_BITS = 7U; // a variable-length-quantity group,
@@ -33,16 +34,6 @@ static const auto MIDI_BANK_SELECT_MSB_CONTROLLER = 0x00U;
 static const auto GM2_PERCUSSION_BANK_SELECT_MSB = 120U;
 
 static const auto MIDI_CHUNK_ID_LENGTH = 4;
-
-// a single channel or meta event, timed in absolute ticks; tie_break orders
-// same-tick events (lower first), e.g. so a note-off lands before a note-on
-// that starts at the exact same tick, and a program/pitch-bend change lands
-// before the note-on it's meant to apply to
-struct MidiTrackEvent {
-  double tick = 0;
-  int tie_break = 0;
-  QByteArray bytes;
-};
 
 static inline void append_variable_length(QByteArray &bytes,
                                           unsigned int value) {
@@ -116,6 +107,16 @@ static inline void append_note_off(QByteArray &bytes,
   bytes.append(static_cast<char>(0));
 }
 
+static inline void append_pitch_bend(QByteArray &bytes,
+                                     unsigned int channel_number,
+                                     unsigned int bend_14_bit) {
+  bytes.append(static_cast<char>(MIDI_PITCH_BEND_STATUS |
+                                 (channel_number & MIDI_CHANNEL_MASK)));
+  bytes.append(static_cast<char>(bend_14_bit & MIDI_DATA_BYTE_MASK));
+  bytes.append(static_cast<char>((bend_14_bit >> MIDI_SEPTET_BITS) &
+                                 MIDI_DATA_BYTE_MASK));
+}
+
 static inline void append_be16(QByteArray &bytes, unsigned int value) {
   bytes.append(
       static_cast<char>((value >> MIDI_BITS_PER_BYTE) & MIDI_BYTE_MASK));
@@ -135,3 +136,103 @@ static inline void append_chunk(QByteArray &output, const char *const chunk_id,
   output.append(static_cast<char>(length & MIDI_BYTE_MASK));
   output.append(chunk_data);
 }
+
+// base of the per-event-kind payload hierarchy; each subclass knows how to
+// write only its own bytes, so a MidiTrackEvent never owns a QByteArray of
+// its own -- the payload is written straight into the track's shared buffer
+// at export time instead of being allocated and copied per event. Dispatch
+// goes through std::visit on MidiEventPayload below, never through an
+// EventInfo pointer/reference, so this base stays non-polymorphic
+struct EventInfo {};
+
+struct TempoEventInfo : EventInfo {
+  unsigned int microseconds_per_quarter = 0;
+
+  void write(QByteArray &track_data) const {
+    QByteArray payload;
+    payload.append(static_cast<char>(
+        (microseconds_per_quarter >> (2 * MIDI_BITS_PER_BYTE)) &
+        MIDI_BYTE_MASK));
+    payload.append(static_cast<char>(
+        (microseconds_per_quarter >> MIDI_BITS_PER_BYTE) & MIDI_BYTE_MASK));
+    payload.append(
+        static_cast<char>(microseconds_per_quarter & MIDI_BYTE_MASK));
+    append_meta_event(track_data, MIDI_TEMPO_META_TYPE, payload);
+  }
+};
+
+struct TrackNameEventInfo : EventInfo {
+  QString name;
+
+  void write(QByteArray &track_data) const {
+    append_track_name_meta(track_data, name);
+  }
+};
+
+struct ProgramChangeEventInfo : EventInfo {
+  unsigned int channel_number = 0;
+  unsigned int program_number = 0;
+
+  void write(QByteArray &track_data) const {
+    append_program_change(track_data, channel_number, program_number);
+  }
+};
+
+struct PitchBendEventInfo : EventInfo {
+  unsigned int channel_number = 0;
+  unsigned int bend_14_bit = 0;
+
+  void write(QByteArray &track_data) const {
+    append_pitch_bend(track_data, channel_number, bend_14_bit);
+  }
+};
+
+struct ControlChangeEventInfo : EventInfo {
+  unsigned int channel_number = 0;
+  unsigned int controller = 0;
+  unsigned int value = 0;
+
+  void write(QByteArray &track_data) const {
+    append_control_change(track_data, channel_number, controller, value);
+  }
+};
+
+struct NoteOnEventInfo : EventInfo {
+  unsigned int channel_number = 0;
+  unsigned int midi_number = 0;
+  unsigned int velocity = 0;
+
+  void write(QByteArray &track_data) const {
+    append_note_on(track_data, channel_number, midi_number, velocity);
+  }
+};
+
+struct NoteOffEventInfo : EventInfo {
+  unsigned int channel_number = 0;
+  unsigned int midi_number = 0;
+
+  void write(QByteArray &track_data) const {
+    append_note_off(track_data, channel_number, midi_number);
+  }
+};
+
+using MidiEventPayload =
+    std::variant<TempoEventInfo, TrackNameEventInfo, ProgramChangeEventInfo,
+                 PitchBendEventInfo, ControlChangeEventInfo, NoteOnEventInfo,
+                 NoteOffEventInfo>;
+
+// a single channel or meta event, timed in absolute ticks; tie_break orders
+// same-tick events (lower first), e.g. so a note-off lands before a note-on
+// that starts at the exact same tick, and a program/pitch-bend change lands
+// before the note-on it's meant to apply to
+struct MidiTrackEvent {
+  double tick = 0;
+  int tie_break = 0;
+  MidiEventPayload info;
+
+  void write(QByteArray &track_data) const {
+    std::visit([&track_data](const auto &event_info) -> void {
+      event_info.write(track_data);
+    }, info);
+  }
+};
