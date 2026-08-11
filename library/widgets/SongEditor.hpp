@@ -35,7 +35,7 @@
 #include "menus/PlayMenu.hpp"
 #include "menus/SongMenuBar.hpp"
 #include "menus/ViewMenu.hpp"
-#include "other/PianoRoll.hpp"
+#include "other/PianoRollNoteEvent.hpp"
 #include "other/helpers.hpp"
 #include "rows/RowType.hpp"
 #include "widgets/SongWidget.hpp"
@@ -257,9 +257,9 @@ public:
     piano_roll_widget.note_double_clicked =
         [&song_menu_bar_ref, &song_widget_ref,
         &piano_roll_widget_ref](const int chord_number, const int note_number,
-                                const PianoRollNoteKind kind) -> void {
+                                const bool is_pitched) -> void {
           add_replace_table(song_menu_bar_ref, song_widget_ref,
-                            kind == PianoRollNoteKind::pitched_kind
+                            is_pitched
                                 ? RowType::pitched_note_type
                                 : RowType::unpitched_note_type,
                             chord_number, piano_roll_widget_ref, note_number);
@@ -291,9 +291,8 @@ public:
               is_chord_selection ? -1 : selection.number_of_rows,
               is_chord_selection
                   ? std::nullopt
-                  : std::make_optional(selection.row_type == RowType::pitched_note_type
-                                           ? PianoRollNoteKind::pitched_kind
-                                           : PianoRollNoteKind::unpitched_kind));
+                  : std::make_optional(
+                        selection.row_type == RowType::pitched_note_type));
           start_piano_roll_playhead(piano_roll_widget_ref, baseline_ms, end_ms);
         });
     QObject::connect(
@@ -317,9 +316,8 @@ public:
               is_chord_selection ? -1 : selection.number_of_rows,
               is_chord_selection
                   ? std::nullopt
-                  : std::make_optional(selection.row_type == RowType::pitched_note_type
-                                           ? PianoRollNoteKind::pitched_kind
-                                           : PianoRollNoteKind::unpitched_kind)).first;
+                  : std::make_optional(
+                        selection.row_type == RowType::pitched_note_type)).first;
           // "play to end" always continues through every remaining chord in
           // full, regardless of note-row selection, so the end bound must
           // span the whole remaining song rather than just the selected notes

@@ -62,7 +62,7 @@
 #include "musicxml/MusicXMLNote.hpp"
 #include "musicxml/PartInfo.hpp"
 #include "other/MidiFile.hpp"
-#include "other/PianoRoll.hpp"
+#include "other/PianoRollNoteEvent.hpp"
 #include "other/Song.hpp"
 #include "other/helpers.hpp"
 #include "rows/Chord.hpp"
@@ -574,7 +574,7 @@ static inline void export_midi_to_file(SongWidget &song_widget,
       QTextStream stream(&message);
       stream << QObject::tr("Velocity ") << velocity << QObject::tr(" exceeds ")
              << MAX_VELOCITY;
-      if (event.kind == PianoRollNoteKind::pitched_kind) {
+      if (event.is_pitched) {
         add_note_location<PitchedNote>(stream, event.chord_number,
                                        event.note_number);
       } else {
@@ -585,7 +585,7 @@ static inline void export_midi_to_file(SongWidget &song_widget,
       return;
     }
 
-    if (event.kind == PianoRollNoteKind::pitched_kind) {
+    if (event.is_pitched) {
       const auto frequency = event.frequency;
       static const auto minimum_frequency =
           midi_number_to_frequency(0 - QUARTER_STEP);

@@ -4,7 +4,6 @@
 #include <QtCore/QTypeInfo>
 #include <QtCore/QtMinMax>
 #include <QtCore/QtSwap>
-#include <cstdint>
 #include <type_traits>
 
 #include "cell_types/Interval.hpp"
@@ -20,17 +19,15 @@ struct PitchedVoice;
 struct UnpitchedNote;
 struct UnpitchedVoice;
 
-enum class PianoRollNoteKind : std::uint8_t { pitched_kind, unpitched_kind };
-
 struct PianoRollNoteEvent {
   double start_time_ms = 0;
   double duration_ms = 0;
-  double frequency = 0; // only meaningful when kind == pitched_kind
+  double frequency = 0; // only meaningful when is_pitched
   int voice_number = 0;
   double velocity = 0;
   int chord_number = 0;
   int note_number = 0; // index within chord.pitched_notes / .unpitched_notes
-  PianoRollNoteKind kind = PianoRollNoteKind::pitched_kind;
+  bool is_pitched = true;
 };
 
 template <NoteInterface SubNote>
@@ -58,11 +55,11 @@ append_piano_roll_events(QList<PianoRollNoteEvent> &events,
     event.chord_number = chord_number;
     event.note_number = note_number;
     if constexpr (std::is_same_v<SubNote, PitchedNote>) {
-      event.kind = PianoRollNoteKind::pitched_kind;
+      event.is_pitched = true;
       event.frequency =
           play_state.current_key * interval_to_double(sub_note.interval);
     } else {
-      event.kind = PianoRollNoteKind::unpitched_kind;
+      event.is_pitched = false;
     }
     events.push_back(event);
   }
@@ -91,23 +88,4 @@ append_piano_roll_events(QList<PianoRollNoteEvent> &events,
     move_time(play_state, chord);
   }
   return events;
-}
-
-// each chord's start time, in chord order -- chords are laid out back-to-
-// back with no gaps, so a chord's own end time is simply the next chord's
-// start (or, for the last chord, whatever the caller already knows the
-// song's end time to be)
-[[nodiscard]] static inline auto get_chord_start_times(const Song &song)
-    -> QList<double> {
-  QList<double> start_times;
-
-  PlayState play_state;
-  initialize_playstate(song, play_state, 0);
-
-  for (const auto &chord : song.chords) {
-    modulate(play_state, chord);
-    start_times.push_back(play_state.current_time);
-    move_time(play_state, chord);
-  }
-  return start_times;
 }

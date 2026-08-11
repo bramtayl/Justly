@@ -32,7 +32,7 @@
 #include <optional>
 #include <utility>
 
-#include "other/PianoRoll.hpp"
+#include "other/PianoRollNoteEvent.hpp"
 #include "other/Song.hpp"
 #include "other/helpers.hpp"
 #include "rows/PitchedNote.hpp"
@@ -352,7 +352,7 @@ static void draw_legend_row(QGraphicsScene &legend_scene, const QString &name,
     const Song &song, const int first_chord_number,
     const int number_of_chords, const int first_note_number = 0,
     const int number_of_notes = -1,
-    const std::optional<PianoRollNoteKind> kind_filter = std::nullopt)
+    const std::optional<bool> pitched_filter = std::nullopt)
     -> std::pair<double, double> {
   const auto baseline_ms =
       get_play_state_at_chord(song, first_chord_number).current_time;
@@ -369,7 +369,7 @@ static void draw_legend_row(QGraphicsScene &legend_scene, const QString &name,
           event.note_number >= first_note_number + number_of_notes) {
         continue;
       }
-      if (kind_filter.has_value() && event.kind != *kind_filter) {
+      if (pitched_filter.has_value() && event.is_pitched != *pitched_filter) {
         continue;
       }
     }
@@ -385,7 +385,7 @@ static void draw_legend_row(QGraphicsScene &legend_scene, const QString &name,
 // declaration. PianoRollWidget-taking overloads of the ones also needed by
 // outside callers (SongEditor, tests) follow after the struct.
 
-// which chord's time range (as laid out by get_chord_start_times) contains
+// which chord's time range (as laid out in chord_start_times) contains
 // time_ms -- the last chord whose start is at or before time_ms, or -1 if
 // there are no chords yet or time_ms falls before the first one
 [[nodiscard]] static auto get_chord_number_at_time(
@@ -470,7 +470,7 @@ static void select_chord_at_playhead(SwitchTable &switch_table,
 static void select_note_at_bar(SwitchTable &switch_table,
                                const PianoRollNoteEvent &event) {
   const auto current_row_type = switch_table.delegate.current_row_type;
-  const auto is_pitched = event.kind == PianoRollNoteKind::pitched_kind;
+  const auto is_pitched = event.is_pitched;
   if (is_pitched
           ? (current_row_type != RowType::pitched_note_type ||
              switch_table.pitched_notes_model.parent_chord_number !=
@@ -595,10 +595,8 @@ static void apply_selection_highlight(
   // timeline position and always highlight nothing.
   QList<bool> is_selected(static_cast<int>(events.size()), false);
   if (is_chord_selection || is_note_selection) {
-    const auto kind_filter =
-        selection_row_type == RowType::pitched_note_type
-            ? PianoRollNoteKind::pitched_kind
-            : PianoRollNoteKind::unpitched_kind;
+    const auto pitched_filter =
+        selection_row_type == RowType::pitched_note_type;
     for (auto event_index = 0; event_index < events.size();
         event_index = event_index + 1) {
       const auto &event = events.at(event_index);
@@ -609,7 +607,7 @@ static void apply_selection_highlight(
           is_selected[event_index] = true;
         }
       } else if (event.chord_number == selection_chord_number &&
-                event.kind == kind_filter &&
+                event.is_pitched == pitched_filter &&
                 event.note_number >= selection_first_row_number &&
                 event.note_number <
                     selection_first_row_number + selection_number_of_rows) {
@@ -664,9 +662,7 @@ static void apply_selection_highlight(
       is_chord_selection
           ? std::nullopt
           : std::make_optional(
-                selection_row_type == RowType::pitched_note_type
-                    ? PianoRollNoteKind::pitched_kind
-                    : PianoRollNoteKind::unpitched_kind));
+                selection_row_type == RowType::pitched_note_type));
 
   // a shaded box over the selected range's own timeline extent -- driven
   // straight off the committed selection (rather than raw drag position),
@@ -751,7 +747,21 @@ static void rebuild_scene(QWidget &widget, const SongWidget &song_widget,
       }
       events = std::move(chord_events);
     }
-    notes_view.chord_start_times = get_chord_start_times(song);
+    // each chord's start time, in chord order -- chords are laid out back-
+    // to-back with no gaps, so a chord's own end time is simply the next
+    // chord's start (or, for the last chord, whatever the caller already
+    // knows the song's end time to be)
+    auto &chord_start_times_out = notes_view.chord_start_times;
+    chord_start_times_out.clear();
+    {
+      PlayState play_state;
+      initialize_playstate(song, play_state, 0);
+      for (const auto &chord : song.chords) {
+        modulate(play_state, chord);
+        chord_start_times_out.push_back(play_state.current_time);
+        move_time(play_state, chord);
+      }
+    }
 
     // in notes mode the axis should only span the window during which this
     // chord's own notes play, not every silent millisecond since the song
@@ -773,7 +783,7 @@ static void rebuild_scene(QWidget &widget, const SongWidget &song_widget,
       max_time_ms = std::max(max_time_ms, event.start_time_ms +
                                               event.duration_ms -
                                               time_axis_baseline_ms);
-      if (event.kind == PianoRollNoteKind::pitched_kind) {
+      if (event.is_pitched) {
         const auto midi_number = frequency_to_midi_number(event.frequency);
         min_midi = std::min(min_midi, midi_number);
         max_midi = std::max(max_midi, midi_number);
@@ -788,7 +798,7 @@ static void rebuild_scene(QWidget &widget, const SongWidget &song_widget,
     for (auto event_index = 0; event_index < events.size();
         event_index = event_index + 1) {
       const auto &event = events.at(event_index);
-      if (event.kind != PianoRollNoteKind::unpitched_kind) {
+      if (event.is_pitched) {
         continue;
       }
       auto assigned_lane = -1;
@@ -874,7 +884,7 @@ static void rebuild_scene(QWidget &widget, const SongWidget &song_widget,
           std::max(PIANO_ROLL_MIN_BAR_WIDTH,
                    event.duration_ms * PIANO_ROLL_PIXELS_PER_MS);
 
-      const auto is_pitched = event.kind == PianoRollNoteKind::pitched_kind;
+      const auto is_pitched = event.is_pitched;
       const auto lane_y =
           is_pitched ? -frequency_to_midi_number(event.frequency) *
                            PIANO_ROLL_PIXELS_PER_SEMITONE
@@ -1094,8 +1104,7 @@ struct PianoRollWidget : public QWidget {
   // set from outside (SongEditor) once it has access to the song menu bar
   // and song widget needed to switch tables; left empty in contexts (e.g.
   // tests) that never wire it up
-  std::function<void(int chord_number, int note_number,
-                     PianoRollNoteKind kind)>
+  std::function<void(int chord_number, int note_number, bool is_pitched)>
       note_double_clicked;
 
   explicit PianoRollWidget(const SongWidget &song_widget_input)
@@ -1174,7 +1183,7 @@ struct PianoRollWidget : public QWidget {
           const auto &event =
               piano_roll_view.events.at(event_index_data.toInt());
           note_double_clicked(event.chord_number, event.note_number,
-                             event.kind);
+                             event.is_pitched);
         }
       }
     }

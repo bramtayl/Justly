@@ -15,7 +15,7 @@
 #include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QWidget>
 
-#include "other/PianoRoll.hpp"
+#include "other/PianoRollNoteEvent.hpp"
 #include "other/helpers.hpp"
 #include "widgets/piano_roll/PlayheadTransition.hpp"
 

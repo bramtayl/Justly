@@ -66,7 +66,7 @@
 #include "menus/PlayMenu.hpp"
 #include "menus/SongMenuBar.hpp"
 #include "menus/ViewMenu.hpp"
-#include "other/PianoRoll.hpp"
+#include "other/PianoRollNoteEvent.hpp"
 #include "other/Song.hpp"
 #include "other/helpers.hpp"
 #include "rows/Chord.hpp"
@@ -2609,7 +2609,7 @@ private slots:
     const auto matching_event = std::ranges::find_if(
         events, [note_number](const PianoRollNoteEvent &event) -> auto {
           return event.chord_number == 1 && event.note_number == note_number &&
-                 event.kind == PianoRollNoteKind::pitched_kind;
+                 event.is_pitched;
         });
     QVERIFY(matching_event != events.cend());
     QCOMPARE(matching_event->start_time_ms, 600.0);
@@ -2666,18 +2666,16 @@ private slots:
   };
 
   static void test_piano_roll_double_click_selects_note_data() {
-    QTest::addColumn<PianoRollNoteKind>("kind");
+    QTest::addColumn<bool>("is_pitched");
     QTest::addColumn<int>("note_number");
     QTest::addColumn<RowType>("expected_row_type");
 
-    QTest::newRow("pitched")
-        << PianoRollNoteKind::pitched_kind << 2 << RowType::pitched_note_type;
-    QTest::newRow("unpitched")
-        << PianoRollNoteKind::unpitched_kind << 1 << RowType::unpitched_note_type;
+    QTest::newRow("pitched") << true << 2 << RowType::pitched_note_type;
+    QTest::newRow("unpitched") << false << 1 << RowType::unpitched_note_type;
   };
 
   void test_piano_roll_double_click_selects_note() {
-    QFETCH(const PianoRollNoteKind, kind);
+    QFETCH(const bool, is_pitched);
     QFETCH(const int, note_number);
     QFETCH(const RowType, expected_row_type);
 
@@ -2689,9 +2687,9 @@ private slots:
     // notes, matching the fixture used by the other piano-roll tests above
     const auto &events = piano_roll_widget.piano_roll_view.events;
     const auto event_iterator = std::ranges::find_if(
-        events, [kind, note_number](const PianoRollNoteEvent &event) -> auto {
+        events, [is_pitched, note_number](const PianoRollNoteEvent &event) -> auto {
           return event.chord_number == 1 && event.note_number == note_number &&
-                 event.kind == kind;
+                 event.is_pitched == is_pitched;
         });
     QVERIFY(event_iterator != events.cend());
     const auto event_index =
@@ -2730,18 +2728,16 @@ private slots:
 
   static void test_piano_roll_click_selects_note_data() {
     QTest::addColumn<RowType>("row_type");
-    QTest::addColumn<PianoRollNoteKind>("kind");
+    QTest::addColumn<bool>("is_pitched");
     QTest::addColumn<int>("note_number");
 
-    QTest::newRow("pitched") << RowType::pitched_note_type
-                              << PianoRollNoteKind::pitched_kind << 2;
-    QTest::newRow("unpitched") << RowType::unpitched_note_type
-                                << PianoRollNoteKind::unpitched_kind << 1;
+    QTest::newRow("pitched") << RowType::pitched_note_type << true << 2;
+    QTest::newRow("unpitched") << RowType::unpitched_note_type << false << 1;
   };
 
   void test_piano_roll_click_selects_note() {
     QFETCH(const RowType, row_type);
-    QFETCH(const PianoRollNoteKind, kind);
+    QFETCH(const bool, is_pitched);
     QFETCH(const int, note_number);
 
     auto &piano_roll_widget = song_editor.piano_roll_widget;
@@ -2757,9 +2753,9 @@ private slots:
 
     const auto &events = piano_roll_widget.piano_roll_view.events;
     const auto event_iterator = std::ranges::find_if(
-        events, [kind, note_number](const PianoRollNoteEvent &event) -> auto {
+        events, [is_pitched, note_number](const PianoRollNoteEvent &event) -> auto {
           return event.chord_number == 1 && event.note_number == note_number &&
-                 event.kind == kind;
+                 event.is_pitched == is_pitched;
         });
     QVERIFY(event_iterator != events.cend());
     const auto event_index =
@@ -2893,9 +2889,8 @@ private slots:
               ? event.chord_number == selection_chord_number
               : event.chord_number == selection_chord_number &&
                     event.note_number == selection_note_number &&
-                    event.kind == (selection_row_type == RowType::pitched_note_type
-                                       ? PianoRollNoteKind::pitched_kind
-                                       : PianoRollNoteKind::unpitched_kind);
+                    event.is_pitched ==
+                        (selection_row_type == RowType::pitched_note_type);
       QCOMPARE(get_reference(note_items.at(event_index)).pen().style() !=
                    Qt::NoPen,
                is_highlighted);
