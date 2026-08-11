@@ -1225,11 +1225,20 @@ private slots:
     QFETCH(const QString, error_message);
 
     auto &song_widget = song_editor.song_widget;
+    auto &chords_model = song_widget.switch_column.switch_table.chords_model;
+    const auto old_current_file = song_widget.current_file;
+    const auto old_chord_count = chords_model.rowCount(QModelIndex());
+    QVERIFY(old_chord_count > 0);
+
     close_message_later(song_editor, waiting_for_message, error_message);
     open_text(song_widget, text);
 
-    // restore the fixture, since the failed open left the song empty
-    open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
+    // a file that fails voice validation must leave the previously open
+    // song untouched rather than clearing it out from under the user (open_file
+    // used to clear/repopulate the models before validating, so a rejected
+    // file silently wiped out whatever was open, with no undo path back)
+    QCOMPARE(song_widget.current_file, old_current_file);
+    QCOMPARE(chords_model.rowCount(QModelIndex()), old_chord_count);
   };
 
   static void test_voice_name_rejected_data() {

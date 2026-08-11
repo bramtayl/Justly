@@ -966,12 +966,59 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
     return;
   }
 
+  auto &song_node = get_root(document);
+
+  // parse into scratch lists and validate voice names/references before
+  // touching the current song, so a file that fails validation can't wipe
+  // out the switch table's contents (see open_file's history for the bug
+  // this avoids: clearing/repopulating first meant a rejected file still
+  // destroyed whatever was previously open, with no way to undo back to it)
+  QList<Chord> new_chords;
+  QList<PitchedVoice> new_pitched_voices;
+  QList<UnpitchedVoice> new_unpitched_voices;
+  for (auto *field_pointer = xmlFirstElementChild(&song_node);
+       field_pointer != nullptr;
+       field_pointer = xmlNextElementSibling(field_pointer)) {
+    auto &field_node = get_reference(field_pointer);
+    const auto name = get_xml_name(field_node);
+    if (name == "chords") {
+      xml_to_rows(new_chords, field_node);
+    } else if (name == "pitched_voices") {
+      xml_to_rows(new_pitched_voices, field_node);
+    } else if (name == "unpitched_voices") {
+      xml_to_rows(new_unpitched_voices, field_node);
+    }
+  }
+
+  auto names_and_voices_ok =
+      check_duplicate_or_empty_voice_names(song_widget, new_pitched_voices) &&
+      check_duplicate_or_empty_voice_names(song_widget, new_unpitched_voices);
+  if (names_and_voices_ok) {
+    const auto number_of_pitched_voices =
+        static_cast<int>(new_pitched_voices.size());
+    const auto number_of_unpitched_voices =
+        static_cast<int>(new_unpitched_voices.size());
+    for (auto chord_number = 0; chord_number < new_chords.size();
+        chord_number = chord_number + 1) {
+      const auto &chord = new_chords.at(chord_number);
+      if (!check_note_voices(song_widget, chord.pitched_notes,
+                             number_of_pitched_voices, chord_number) ||
+          !check_note_voices(song_widget, chord.unpitched_notes,
+                             number_of_unpitched_voices, chord_number)) {
+        names_and_voices_ok = false;
+        break;
+      }
+    }
+  }
+
+  if (!names_and_voices_ok) {
+    return;
+  }
+
   reset_switch_table_to_chords(switch_table);
   clear_rows(chords_model);
   clear_rows(pitched_voices_model);
   clear_rows(unpitched_voices_model);
-
-  auto &song_node = get_root(document);
 
   auto *field_pointer = xmlFirstElementChild(&song_node);
   while (field_pointer != nullptr) {
@@ -995,35 +1042,6 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
       Q_ASSERT(false);
     }
     field_pointer = xmlNextElementSibling(field_pointer);
-  }
-
-  const auto &song = song_widget.song;
-  auto names_and_voices_ok =
-      check_duplicate_or_empty_voice_names(song_widget, song.pitched_voices) &&
-      check_duplicate_or_empty_voice_names(song_widget, song.unpitched_voices);
-  if (names_and_voices_ok) {
-    const auto number_of_pitched_voices =
-        static_cast<int>(song.pitched_voices.size());
-    const auto number_of_unpitched_voices =
-        static_cast<int>(song.unpitched_voices.size());
-    for (auto chord_number = 0; chord_number < song.chords.size();
-        chord_number = chord_number + 1) {
-      const auto &chord = song.chords.at(chord_number);
-      if (!check_note_voices(song_widget, chord.pitched_notes,
-                             number_of_pitched_voices, chord_number) ||
-          !check_note_voices(song_widget, chord.unpitched_notes,
-                             number_of_unpitched_voices, chord_number)) {
-        names_and_voices_ok = false;
-        break;
-      }
-    }
-  }
-
-  if (!names_and_voices_ok) {
-    clear_rows(chords_model);
-    clear_rows(pitched_voices_model);
-    clear_rows(unpitched_voices_model);
-    return;
   }
 
   song_widget.current_file = filename;
