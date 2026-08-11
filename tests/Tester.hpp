@@ -1749,6 +1749,40 @@ private slots:
     QCOMPARE(compute_measure_expansion(measure_infos), expected_expansion);
   };
 
+  // regression test: the musicxml importer's in-progress-tie lookup used to
+  // be keyed by pitch alone, shared across every voice (and every part) in
+  // the whole document. Two simultaneous voices tying the same pitch (here,
+  // two instruments in one piano part) would clobber each other's still-open
+  // note: the second voice's tie-start silently overwrote the first voice's
+  // map entry, so the first voice's tie-stop resolved onto the wrong note
+  // (wrong words/duration) and the second voice's own tie-stop then found no
+  // entry at all. Keying the lookup by voice as well as pitch keeps
+  // overlapping ties on the same pitch independent.
+  void test_import_musicxml_ties_do_not_cross_voices() {
+    auto &song_widget = song_editor.song_widget;
+
+    import_musicxml(song_widget, test_dir.filePath("tied_voices.musicxml"));
+
+    auto &song = song_widget.song;
+    QCOMPARE(song.chords.size(), 2);
+
+    const auto &left_hand_notes = song.chords.at(0).pitched_notes;
+    QCOMPARE(left_hand_notes.size(), 1);
+    QCOMPARE(left_hand_notes.at(0).voice_number, 0);
+    QVERIFY(left_hand_notes.at(0).words.contains("Left Hand"));
+    QCOMPARE(left_hand_notes.at(0).beats.numerator, 8);
+    QCOMPARE(left_hand_notes.at(0).beats.denominator, 1);
+
+    const auto &right_hand_notes = song.chords.at(1).pitched_notes;
+    QCOMPARE(right_hand_notes.size(), 1);
+    QCOMPARE(right_hand_notes.at(0).voice_number, 1);
+    QVERIFY(right_hand_notes.at(0).words.contains("Right Hand"));
+    QCOMPARE(right_hand_notes.at(0).beats.numerator, 8);
+    QCOMPARE(right_hand_notes.at(0).beats.denominator, 1);
+
+    open_file(song_widget, test_dir.filePath("test_song.xml"));
+  };
+
   // regression test: read_zip_entry casts a zip entry's reported size down
   // to int before allocating its buffer, but reads however many bytes the
   // (uncast, 64-bit) size claims -- an entry whose declared size doesn't fit

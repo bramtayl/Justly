@@ -1,0 +1,56 @@
+<score-partwise version="4.0">
+   <part-list>
+      <score-part id="P1">
+         <part-name>Piano</part-name>
+         <score-instrument id="P1-X1">
+            <instrument-name>Left Hand</instrument-name>
+         </score-instrument>
+         <score-instrument id="P1-X2">
+            <instrument-name>Right Hand</instrument-name>
+         </score-instrument>
+      </score-part>
+   </part-list>
+   <part id="P1">
+      <measure number="1">
+         <attributes>
+            <divisions>1</divisions>
+         </attributes>
+         <note>
+            <pitch>
+               <step>C</step>
+               <octave>4</octave>
+            </pitch>
+            <duration>4</duration>
+            <tie type="start"/>
+            <instrument id="P1-X1"/>
+         </note>
+         <note>
+            <pitch>
+               <step>C</step>
+               <octave>4</octave>
+            </pitch>
+            <duration>4</duration>
+            <tie type="start"/>
+            <instrument id="P1-X2"/>
+         </note>
+         <note>
+            <pitch>
+               <step>C</step>
+               <octave>4</octave>
+            </pitch>
+            <duration>4</duration>
+            <tie type="stop"/>
+            <instrument id="P1-X1"/>
+         </note>
+         <note>
+            <pitch>
+               <step>C</step>
+               <octave>4</octave>
+            </pitch>
+            <duration>4</duration>
+            <tie type="stop"/>
+            <instrument id="P1-X2"/>
+         </note>
+      </measure>
+   </part>
+</score-partwise>

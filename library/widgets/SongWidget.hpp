@@ -1442,7 +1442,6 @@ static inline void import_musicxml(SongWidget &song_widget,
   // Get part-list
   QMap<std::string, PartInfo> part_info_dict;
 
-  QMap<int, MusicXMLNote> tied_notes;
   auto song_divisions = 1;
 
   QMap<QString, int> pitched_voice_numbers;
@@ -1492,6 +1491,7 @@ static inline void import_musicxml(SongWidget &song_widget,
       auto measure_number = 1;
       auto current_transpose_semitones = 0;
 
+      QMap<QString, MusicXMLNote> tied_notes;
       QList<MeasureRepeatInfo> measure_infos;
       QList<int> active_ending_numbers;
 
@@ -1625,8 +1625,21 @@ static inline void import_musicxml(SongWidget &song_widget,
               current_time += note_duration;
             }
             if (!is_rest) {
+              QString voice_key;
+              QTextStream voice_key_stream(&voice_key);
+              voice_key_stream << QString::fromStdString(part_id) << ":"
+                               << QString::fromStdString(instrument_id);
+              // a tie only ever connects notes within the same voice, so an
+              // in-progress tie must be looked up by voice as well as pitch
+              // -- otherwise two simultaneous voices (e.g. two instruments
+              // in one part, or an unresolved tie carried over from an
+              // earlier part) tying the same pitch clobber each other's
+              // still-open note
+              const auto tied_note_key =
+                  voice_key + ":" + QString::number(midi_number);
               if (tie_end) {
-                const auto tied_notes_iterator = tied_notes.find(midi_number);
+                const auto tied_notes_iterator =
+                    tied_notes.find(tied_note_key);
                 Q_ASSERT(tied_notes_iterator != tied_notes.end());
                 auto &previous_note = tied_notes_iterator.value();
                 previous_note.duration = previous_note.duration + note_duration;
@@ -1649,10 +1662,6 @@ static inline void import_musicxml(SongWidget &song_widget,
                                                  : unpitched_voice_numbers;
                 auto &voice_names =
                     is_pitched ? pitched_voice_names : unpitched_voice_names;
-                QString voice_key;
-                QTextStream voice_key_stream(&voice_key);
-                voice_key_stream << QString::fromStdString(part_id) << ":"
-                                 << QString::fromStdString(instrument_id);
                 const auto voice_name = instrument_name.isEmpty()
                                             ? part_info.part_name
                                             : instrument_name;
@@ -1665,7 +1674,7 @@ static inline void import_musicxml(SongWidget &song_widget,
                   voice_names.push_back(voice_name);
                 }
                 if (tie_start) { // also not tie end
-                  tied_notes[midi_number] = std::move(new_note);
+                  tied_notes[tied_note_key] = std::move(new_note);
                 } else { // not tie start or end
                   add_note_and_maybe_chord(part_chords_dict,
                                            std::move(new_note), is_pitched);
