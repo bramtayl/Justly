@@ -1725,6 +1725,29 @@ private slots:
     QCOMPARE(zip_entry_size_is_safe(entry_stat), is_safe);
   };
 
+  // regression test: read_xml_document casts a QByteArray's size down to int
+  // before handing it to xmlReadMemory, but xmlReadMemory reads however many
+  // bytes the (uncast) length claims -- a buffer whose size doesn't fit in an
+  // int must be rejected up front instead of under-reporting its length
+  static void test_xml_bytes_size_is_safe_data() {
+    QTest::addColumn<qsizetype>("size");
+    QTest::addColumn<bool>("is_safe");
+
+    QTest::newRow("ordinary small buffer") << qsizetype{13} << true;
+    QTest::newRow("largest int-sized buffer")
+        << static_cast<qsizetype>(std::numeric_limits<int>::max()) << true;
+    QTest::newRow("just over int-sized buffer")
+        << static_cast<qsizetype>(std::numeric_limits<int>::max()) + 1
+        << false;
+  };
+
+  static void test_xml_bytes_size_is_safe() {
+    QFETCH(const qsizetype, size);
+    QFETCH(const bool, is_safe);
+
+    QCOMPARE(xml_bytes_size_is_safe(size), is_safe);
+  };
+
   // regression test: some musicxml fields (e.g. fifths, octave-change) are
   // unbounded xs:integer with no schema-enforced range, so std::stoi can
   // throw std::out_of_range on a magnitude that doesn't fit in int; xml_to_int

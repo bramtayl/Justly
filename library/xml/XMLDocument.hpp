@@ -1,7 +1,9 @@
 #pragma once
 
 #include <QtCore/QByteArray>
+#include <QtCore/qtypes.h>
 #include <libxml/parser.h>
+#include <limits>
 
 #include "other/helpers.hpp"
 
@@ -41,8 +43,18 @@ document_to_byte_array(const XMLDocument &document) -> QByteArray {
           buffer_size};
 }
 
+// rejects buffers that don't fit in the int size xmlReadMemory takes --
+// casting an oversized qsizetype down to int would both under-report the
+// buffer length and cause xmlReadMemory to read past the end of it
+[[nodiscard]] static inline auto xml_bytes_size_is_safe(qsizetype size) -> bool {
+  return size <= static_cast<qsizetype>(std::numeric_limits<int>::max());
+}
+
 [[nodiscard]] static inline auto
 read_xml_document(const QByteArray &bytes) -> XMLDocument {
+  if (!xml_bytes_size_is_safe(bytes.size())) {
+    return XMLDocument(nullptr);
+  }
   return XMLDocument(xmlReadMemory(bytes.constData(),
                                    static_cast<int>(bytes.size()), nullptr,
                                    nullptr, 0));
