@@ -18,9 +18,14 @@ struct Interval {
   explicit Interval(Rational ratio_input = Rational(1, 1),
                     const int octave_input = 0)
       : ratio(ratio_input), octave(octave_input) {
-    while (ratio.numerator % 2 == 0) {
-      ratio.numerator = ratio.numerator / 2;
-      octave = octave + 1;
+    // a numerator of 0 can never become odd by halving -- 0 % 2 == 0 forever
+    // -- so skip the folding loop rather than hang; a 0 ratio isn't a valid
+    // frequency ratio anyway, so there's nothing meaningful to fold
+    if (ratio.numerator != 0) {
+      while (ratio.numerator % 2 == 0) {
+        ratio.numerator = ratio.numerator / 2;
+        octave = octave + 1;
+      }
     }
     while (ratio.denominator % 2 == 0) {
       ratio.denominator = ratio.denominator / 2;

@@ -1502,6 +1502,23 @@ private slots:
     open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
   };
 
+  // regression test: Interval's folding constructor used to halve the
+  // numerator while it was even without checking for 0 first -- 0 % 2 == 0
+  // forever, so a 0 numerator hung the constructor instead of terminating.
+  // Not reachable through the UI or schema-validated XML today (both bound
+  // numerator to >= 1), but the constructor shouldn't hang on it regardless.
+  static void test_interval_zero_numerator_does_not_hang() {
+    Rational zero_ratio;
+    zero_ratio.numerator = 0;
+    zero_ratio.denominator = 1;
+
+    const Interval interval(zero_ratio, 3);
+
+    QCOMPARE(interval.ratio.numerator, 0);
+    QCOMPARE(interval.ratio.denominator, 1);
+    QCOMPARE(interval.octave, 3);
+  };
+
   static void test_musicxml_data() {
     QTest::addColumn<QString>("file_name");
     QTest::addColumn<int>("number_of_chords");
