@@ -78,7 +78,7 @@ make_remove_command(RowsModel<SubRow> &rows_model, const int first_row_number,
   return new InsertRemoveRows( // NOLINT(cppcoreguidelines-owning-memory)
       rows_model, first_row_number,
       copy_items(rows_model.get_rows(), first_row_number, number_of_rows), 0,
-      SubRow::get_number_of_columns(), true);
+      SubRow::get_number_of_columns() - 1, true);
 }
 
 template <RowInterface SubRow>

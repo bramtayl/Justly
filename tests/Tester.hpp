@@ -2054,6 +2054,14 @@ private slots:
     undo_stack.undo();
     QCOMPARE(model.rowCount(), old_row_count);
 
+    // undoing a row removal should select the restored row across every
+    // column, not leave the selection empty
+    const auto &restored_range = get_only_range(switch_table);
+    QCOMPARE(restored_range.top(), 0);
+    QCOMPARE(restored_range.bottom(), 0);
+    QCOMPARE(restored_range.left(), 0);
+    QCOMPARE(restored_range.right(), model.columnCount() - 1);
+
     maybe_switch_back_to_chords(undo_stack, row_type);
   };
 

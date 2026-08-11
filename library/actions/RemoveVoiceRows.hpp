@@ -68,7 +68,7 @@ struct RemoveVoiceRows : public QUndoCommand {
 
   void undo() override {
     voices_model.insert_rows(first_row_number, old_voice_rows, 0,
-                             SubVoice::get_number_of_columns());
+                             SubVoice::get_number_of_columns() - 1);
     auto &chords = voices_model.song.chords;
     offset_voice_numbers<SubVoice, SubNote>(
         chords, renumbered_notes, static_cast<int>(old_voice_rows.size()));
