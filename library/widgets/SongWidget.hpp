@@ -475,7 +475,7 @@ static inline void export_to_file(SongWidget &song_widget,
 // WAV export) is already baked into those timestamps via each chord's
 // tempo_ratio
 static const auto MIDI_TICKS_PER_QUARTER = 500;
-static const auto MIDI_MICROSECONDS_PER_QUARTER = 500000;
+static const auto MIDI_MICROSECONDS_PER_QUARTER = 500000U;
 static const auto MIDI_PERCUSSION_CHANNEL = 9;
 static const auto MIDI_FORMAT_MULTI_TRACK = 1;
 // same-tick ordering: a note-off must land before any note-on (so a
@@ -522,24 +522,32 @@ static inline void export_midi_to_file(SongWidget &song_widget,
 
   QList<QList<MidiTrackEvent>> tracks(1 + number_of_pitched_voices +
                                       number_of_unpitched_voices);
-  tracks[0].push_back(
-      {.tick = 0,
-       .tie_break = 0,
-       .bytes = make_tempo_meta(MIDI_MICROSECONDS_PER_QUARTER)});
+  QByteArray tempo_payload;
+  tempo_payload.append(static_cast<char>(
+      (MIDI_MICROSECONDS_PER_QUARTER >> (2 * MIDI_BITS_PER_BYTE)) &
+      MIDI_BYTE_MASK));
+  tempo_payload.append(static_cast<char>(
+      (MIDI_MICROSECONDS_PER_QUARTER >> MIDI_BITS_PER_BYTE) &
+      MIDI_BYTE_MASK));
+  tempo_payload.append(
+      static_cast<char>(MIDI_MICROSECONDS_PER_QUARTER & MIDI_BYTE_MASK));
+  MidiTrackEvent tempo_event{.tick = 0, .tie_break = 0, .bytes = {}};
+  append_meta_event(tempo_event.bytes, MIDI_TEMPO_META_TYPE, tempo_payload);
+  tracks[0].push_back(std::move(tempo_event));
   for (auto voice_number = 0; voice_number < number_of_pitched_voices;
        voice_number = voice_number + 1) {
-    tracks[1 + voice_number].push_back(
-        {.tick = 0,
-         .tie_break = 0,
-         .bytes = make_track_name_meta(pitched_voices.at(voice_number).name)});
+    MidiTrackEvent name_event{.tick = 0, .tie_break = 0, .bytes = {}};
+    append_track_name_meta(name_event.bytes,
+                           pitched_voices.at(voice_number).name);
+    tracks[1 + voice_number].push_back(std::move(name_event));
   }
   for (auto voice_number = 0; voice_number < number_of_unpitched_voices;
        voice_number = voice_number + 1) {
+    MidiTrackEvent name_event{.tick = 0, .tie_break = 0, .bytes = {}};
+    append_track_name_meta(name_event.bytes,
+                           unpitched_voices.at(voice_number).name);
     tracks[1 + number_of_pitched_voices + voice_number].push_back(
-        {.tick = 0,
-         .tie_break = 0,
-         .bytes =
-             make_track_name_meta(unpitched_voices.at(voice_number).name)});
+        std::move(name_event));
   }
 
   const auto &pitched_channels = get_pitched_midi_channels();
@@ -619,30 +627,53 @@ static inline void export_midi_to_file(SongWidget &song_widget,
       // generic GM2 hardware, so the exported instrument intentionally falls
       // back to the plain bank-0 sibling everywhere except when reopened with
       // this exact soundfont
-      track.push_back(
-          {.tick = start_tick,
-           .tie_break = MIDI_EXPORT_PROGRAM_CHANGE_TIE_BREAK,
-           .bytes = make_program_change(channel_number, program.preset_number)});
-      track.push_back(
-          {.tick = start_tick,
-           .tie_break = MIDI_EXPORT_PITCH_BEND_TIE_BREAK,
-           .bytes = make_pitch_bend(channel_number, bend)});
+      MidiTrackEvent program_change_event{
+          .tick = start_tick,
+          .tie_break = MIDI_EXPORT_PROGRAM_CHANGE_TIE_BREAK,
+          .bytes = {}};
+      append_program_change(program_change_event.bytes, channel_number,
+                            program.preset_number);
+      track.push_back(std::move(program_change_event));
+
+      const auto bend_14_bit = static_cast<unsigned int>(bend);
+      MidiTrackEvent pitch_bend_event{
+          .tick = start_tick,
+          .tie_break = MIDI_EXPORT_PITCH_BEND_TIE_BREAK,
+          .bytes = {}};
+      auto &pitch_bend_bytes = pitch_bend_event.bytes;
+      pitch_bend_bytes.append(static_cast<char>(
+          MIDI_PITCH_BEND_STATUS |
+          (static_cast<unsigned int>(channel_number) & MIDI_CHANNEL_MASK)));
+      pitch_bend_bytes.append(
+          static_cast<char>(bend_14_bit & MIDI_DATA_BYTE_MASK));
+      pitch_bend_bytes.append(static_cast<char>(
+          (bend_14_bit >> MIDI_SEPTET_BITS) & MIDI_DATA_BYTE_MASK));
+      track.push_back(std::move(pitch_bend_event));
+
       // mirrors play_note's live-playback behavior: single note dynamics
       // (see MuseScore_General.sf2's "Expr." presets) read note volume from
       // the breath controller, not note-on velocity, so both must carry the
       // same value for expressive instruments to have correct dynamics
-      track.push_back(
-          {.tick = start_tick,
-           .tie_break = MIDI_EXPORT_BREATH_TIE_BREAK,
-           .bytes = make_control_change(channel_number, BREATH_ID, velocity)});
-      track.push_back(
-          {.tick = start_tick,
-           .tie_break = MIDI_EXPORT_NOTE_ON_TIE_BREAK,
-           .bytes = make_note_on(channel_number, closest_midi, velocity)});
-      track.push_back(
-          {.tick = end_tick,
-           .tie_break = MIDI_EXPORT_NOTE_OFF_TIE_BREAK,
-           .bytes = make_note_off(channel_number, closest_midi)});
+      MidiTrackEvent breath_event{.tick = start_tick,
+                                  .tie_break = MIDI_EXPORT_BREATH_TIE_BREAK,
+                                  .bytes = {}};
+      append_control_change(breath_event.bytes, channel_number, BREATH_ID,
+                            velocity);
+      track.push_back(std::move(breath_event));
+
+      MidiTrackEvent note_on_event{.tick = start_tick,
+                                   .tie_break = MIDI_EXPORT_NOTE_ON_TIE_BREAK,
+                                   .bytes = {}};
+      append_note_on(note_on_event.bytes, channel_number, closest_midi,
+                     velocity);
+      track.push_back(std::move(note_on_event));
+
+      MidiTrackEvent note_off_event{
+          .tick = end_tick,
+          .tie_break = MIDI_EXPORT_NOTE_OFF_TIE_BREAK,
+          .bytes = {}};
+      append_note_off(note_off_event.bytes, channel_number, closest_midi);
+      track.push_back(std::move(note_off_event));
     } else {
       const auto &voice = unpitched_voices.at(event.voice_number);
       const auto &program = get_voice_program(get_some_programs(false),
@@ -669,25 +700,37 @@ static inline void export_midi_to_file(SongWidget &song_widget,
 
       auto &track =
           tracks[1 + number_of_pitched_voices + event.voice_number];
-      track.push_back(
-          {.tick = start_tick,
-           .tie_break = MIDI_EXPORT_BANK_SELECT_TIE_BREAK,
-           .bytes = make_bank_select_msb(MIDI_PERCUSSION_CHANNEL,
-                                         GM2_PERCUSSION_BANK_SELECT_MSB)});
-      track.push_back(
-          {.tick = start_tick,
-           .tie_break = MIDI_EXPORT_PROGRAM_CHANGE_TIE_BREAK,
-           .bytes = make_program_change(MIDI_PERCUSSION_CHANNEL,
-                                        program.preset_number)});
-      track.push_back(
-          {.tick = start_tick,
-           .tie_break = MIDI_EXPORT_NOTE_ON_TIE_BREAK,
-           .bytes = make_note_on(MIDI_PERCUSSION_CHANNEL, voice.midi_number,
-                                 velocity)});
-      track.push_back(
-          {.tick = end_tick,
-           .tie_break = MIDI_EXPORT_NOTE_OFF_TIE_BREAK,
-           .bytes = make_note_off(MIDI_PERCUSSION_CHANNEL, voice.midi_number)});
+      MidiTrackEvent bank_select_event{
+          .tick = start_tick,
+          .tie_break = MIDI_EXPORT_BANK_SELECT_TIE_BREAK,
+          .bytes = {}};
+      append_control_change(bank_select_event.bytes, MIDI_PERCUSSION_CHANNEL,
+                            MIDI_BANK_SELECT_MSB_CONTROLLER,
+                            GM2_PERCUSSION_BANK_SELECT_MSB);
+      track.push_back(std::move(bank_select_event));
+
+      MidiTrackEvent program_change_event{
+          .tick = start_tick,
+          .tie_break = MIDI_EXPORT_PROGRAM_CHANGE_TIE_BREAK,
+          .bytes = {}};
+      append_program_change(program_change_event.bytes,
+                            MIDI_PERCUSSION_CHANNEL, program.preset_number);
+      track.push_back(std::move(program_change_event));
+
+      MidiTrackEvent note_on_event{.tick = start_tick,
+                                   .tie_break = MIDI_EXPORT_NOTE_ON_TIE_BREAK,
+                                   .bytes = {}};
+      append_note_on(note_on_event.bytes, MIDI_PERCUSSION_CHANNEL,
+                     voice.midi_number, velocity);
+      track.push_back(std::move(note_on_event));
+
+      MidiTrackEvent note_off_event{
+          .tick = end_tick,
+          .tie_break = MIDI_EXPORT_NOTE_OFF_TIE_BREAK,
+          .bytes = {}};
+      append_note_off(note_off_event.bytes, MIDI_PERCUSSION_CHANNEL,
+                      voice.midi_number);
+      track.push_back(std::move(note_off_event));
     }
   }
 
@@ -697,8 +740,38 @@ static inline void export_midi_to_file(SongWidget &song_widget,
                          QObject::tr("Cannot open file for writing"));
     return;
   }
-  file.write(build_standard_midi_file(MIDI_FORMAT_MULTI_TRACK,
-                                      MIDI_TICKS_PER_QUARTER, tracks));
+  QByteArray output;
+
+  QByteArray header;
+  append_be16(header, MIDI_FORMAT_MULTI_TRACK);
+  append_be16(header, static_cast<unsigned int>(tracks.size()));
+  append_be16(header, MIDI_TICKS_PER_QUARTER);
+  append_chunk(output, "MThd", header);
+
+  for (const auto &track_events : tracks) {
+    auto sorted_events = track_events;
+    std::ranges::stable_sort(
+        sorted_events, [](const MidiTrackEvent &first,
+                          const MidiTrackEvent &second) -> auto {
+          if (first.tick != second.tick) {
+            return first.tick < second.tick;
+          }
+          return first.tie_break < second.tie_break;
+        });
+    QByteArray track_data;
+    auto previous_tick = 0U;
+    for (const auto &event : sorted_events) {
+      const auto tick = static_cast<unsigned int>(std::llround(event.tick));
+      append_variable_length(track_data, tick - previous_tick);
+      track_data.append(event.bytes);
+      previous_tick = tick;
+    }
+    append_variable_length(track_data, 0);
+    append_meta_event(track_data, MIDI_END_OF_TRACK_META_TYPE, {});
+    append_chunk(output, "MTrk", track_data);
+  }
+
+  file.write(output);
 }
 
 static void set_xml_double(xmlNode &node, const char *const field_name,
