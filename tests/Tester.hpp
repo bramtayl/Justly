@@ -1783,6 +1783,27 @@ private slots:
     open_file(song_widget, test_dir.filePath("test_song.xml"));
   };
 
+  // regression test: a <tie type="stop"/> with no matching earlier
+  // <tie type="start"/> for the same pitch/voice used to dereference a
+  // missing map entry, guarded only by a release-mode-noop Q_ASSERT -- a
+  // malformed or hand-edited musicxml file could trigger undefined behavior.
+  // It must now import as an ordinary, unstarted note instead.
+  void test_import_musicxml_orphan_tie_stop() {
+    auto &song_widget = song_editor.song_widget;
+
+    import_musicxml(song_widget, test_dir.filePath("orphan_tie.musicxml"));
+
+    auto &song = song_widget.song;
+    QCOMPARE(song.chords.size(), 1);
+
+    const auto &notes = song.chords.at(0).pitched_notes;
+    QCOMPARE(notes.size(), 1);
+    QCOMPARE(notes.at(0).beats.numerator, 4);
+    QCOMPARE(notes.at(0).beats.denominator, 1);
+
+    open_file(song_widget, test_dir.filePath("test_song.xml"));
+  };
+
   // regression test: read_zip_entry casts a zip entry's reported size down
   // to int before allocating its buffer, but reads however many bytes the
   // (uncast, 64-bit) size claims -- an entry whose declared size doesn't fit

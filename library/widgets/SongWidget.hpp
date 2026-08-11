@@ -1637,10 +1637,16 @@ static inline void import_musicxml(SongWidget &song_widget,
               // still-open note
               const auto tied_note_key =
                   voice_key + ":" + QString::number(midi_number);
+              if (tie_end && !tied_notes.contains(tied_note_key)) {
+                // no matching tie-start -- the schema doesn't require ties
+                // to be well-formed, so a malformed or hand-edited file can
+                // have an orphan tie-stop; fall back to treating this as an
+                // unstarted note rather than dereferencing a missing entry
+                tie_end = false;
+              }
               if (tie_end) {
                 const auto tied_notes_iterator =
                     tied_notes.find(tied_note_key);
-                Q_ASSERT(tied_notes_iterator != tied_notes.end());
                 auto &previous_note = tied_notes_iterator.value();
                 previous_note.duration = previous_note.duration + note_duration;
                 if (!tie_start) {

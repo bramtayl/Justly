@@ -62,7 +62,9 @@
       "Bash(grep -v -E '\\\\.\\(json|lock|md|txt|toml|yml|yaml\\)$')",
       "Bash(grep -E '\\\\.\\(hpp|cpp\\)$')",
       "Bash(xargs -I{} wc -l {})",
-      "Bash(xargs -I{} sh -c 'echo {}; grep -n \"times\\\\|duration\\\\|fifths\\\\|octave-change\\\\|chromatic\" {} | head -20')"
+      "Bash(xargs -I{} sh -c 'echo {}; grep -n \"times\\\\|duration\\\\|fifths\\\\|octave-change\\\\|chromatic\" {} | head -20')",
+      "Bash(QT_QPA_PLATFORM=offscreen xvfb-run -a ./bin/JustlyTests)",
+      "Bash(QT_QPA_PLATFORM=offscreen ./bin/JustlyTests test_import_musicxml_orphan_tie_stop)"
     ]
   }
 }
