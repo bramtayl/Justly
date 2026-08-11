@@ -61,7 +61,7 @@
 #include "musicxml/MusicXMLChord.hpp"
 #include "musicxml/MusicXMLNote.hpp"
 #include "musicxml/PartInfo.hpp"
-#include "other/MidiFile.hpp"
+#include "other/MidiTrackEvent.hpp"
 #include "other/PianoRollNoteEvent.hpp"
 #include "other/Song.hpp"
 #include "other/helpers.hpp"
