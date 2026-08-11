@@ -945,6 +945,40 @@ private slots:
     QCOMPARE(get_gain(song_widget), old_gain);
   };
 
+  // regression test: FluidDriver's move-assignment operator must free any
+  // audio driver it already owns before taking on a new one, and must be a
+  // no-op on self-move-assignment -- the original bug overwrote
+  // internal_pointer unconditionally, which would leak a live driver on
+  // reassignment and, on self-move specifically, null out internal_pointer
+  // without ever freeing it, losing the handle entirely
+  void test_fluid_driver_move_assign() {
+    FluidSettings settings;
+#ifdef __linux__
+    set_fluid_string(settings, "audio.driver", "pulseaudio");
+#endif
+    FluidSynth synth(settings);
+    auto *const audio_driver_pointer = new_fluid_audio_driver(
+        settings.internal_pointer, synth.internal_pointer);
+    if (audio_driver_pointer == nullptr) {
+      QSKIP("no audio driver available in this environment");
+    }
+    FluidDriver driver(audio_driver_pointer);
+
+    // an intermediate reference keeps this a genuine self-move at runtime
+    // without the literal "driver = std::move(driver)" syntax that trips
+    // -Wself-move
+    auto &driver_ref = driver;
+    driver = std::move(driver_ref);
+    QCOMPARE(driver.internal_pointer, audio_driver_pointer);
+
+    FluidDriver empty_driver(nullptr);
+    driver = std::move(empty_driver);
+    QCOMPARE(driver.internal_pointer,
+             static_cast<fluid_audio_driver_t *>(nullptr));
+    QCOMPARE(empty_driver.internal_pointer,
+             static_cast<fluid_audio_driver_t *>(nullptr));
+  };
+
   static void test_insert_after_data() { add_tables(); };
 
   void test_insert_after() {
