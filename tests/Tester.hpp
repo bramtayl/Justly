@@ -1691,6 +1691,13 @@ private slots:
     QTest::newRow("timewise")
         << "timewise.musicxml"
         << "Justly only supports partwise musicxml scores";
+    // regression test: divisions is xs:decimal in the musicxml schema (to
+    // allow fractional divisions), but xml_to_int used to silently truncate
+    // fractional content via std::stoi instead of rejecting it, corrupting
+    // note timing with no warning
+    QTest::newRow("fractional divisions")
+        << "fractional_divisions.musicxml"
+        << "Fractional divisions are not supported";
   };
 
   void test_musicxml_error() {

@@ -111,6 +111,16 @@ template <typename SubType>
   }
 }
 
+[[nodiscard]] static inline auto xml_content_is_integer(const xmlNode &element)
+    -> bool {
+  // some musicxml fields (e.g. divisions, duration, transpose chromatic,
+  // pitch alter) are xs:decimal rather than xs:integer, to allow fractional
+  // divisions or microtones -- xml_to_int would silently truncate those
+  // instead of parsing them, so callers that don't support fractional
+  // values must check this first and reject the file instead
+  return get_content(element).find('.') == std::string::npos;
+}
+
 [[nodiscard]] static inline auto xml_to_int(const xmlNode &element) {
   return string_to_int(get_content(element));
 }

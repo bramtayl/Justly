@@ -1125,8 +1125,13 @@ static inline void connect_recovery_timer(SongWidget &song_widget) {
   return get_reference(maybe_get_xml_child(node, name));
 }
 
-[[nodiscard]] static auto get_duration(xmlNode &measure_element) {
-  return xml_to_int(get_xml_child(measure_element, "duration"));
+[[nodiscard]] static auto get_duration(xmlNode &measure_element)
+    -> std::optional<int> {
+  auto &duration_element = get_xml_child(measure_element, "duration");
+  if (!xml_content_is_integer(duration_element)) {
+    return std::nullopt;
+  }
+  return xml_to_int(duration_element);
 }
 
 [[nodiscard]] static auto get_interval(const int midi_interval) {
@@ -1519,13 +1524,28 @@ static inline void import_musicxml(SongWidget &song_widget,
                     xml_to_int(get_xml_child(attribute_element, "fifths")));
                 part_midi_keys_dict[current_time] = MIDDLE_C_MIDI + degree;
               } else if (attribute_name == "divisions") {
+                if (!xml_content_is_integer(attribute_element)) {
+                  QMessageBox::warning(
+                      &song_widget, QObject::tr("Divisions error"),
+                      QObject::tr("Fractional divisions are not supported"));
+                  return; // endpoint
+                }
                 const auto new_divisions = xml_to_int(attribute_element);
                 Q_ASSERT(new_divisions > 0);
                 song_divisions = std::lcm(song_divisions, new_divisions);
                 part_divisions_dict[current_time] = new_divisions;
               } else if (attribute_name == "transpose") {
+                auto &chromatic_element =
+                    get_xml_child(attribute_element, "chromatic");
+                if (!xml_content_is_integer(chromatic_element)) {
+                  QMessageBox::warning(
+                      &song_widget, QObject::tr("Transpose error"),
+                      QObject::tr(
+                          "Microtonal transpositions are not supported"));
+                  return; // endpoint
+                }
                 const auto chromatic_semitones =
-                    xml_to_int(get_xml_child(attribute_element, "chromatic"));
+                    xml_to_int(chromatic_element);
                 auto octave_change_octaves = 0;
                 auto *transpose_field_pointer =
                     xmlFirstElementChild(&attribute_element);
@@ -1581,6 +1601,13 @@ static inline void import_musicxml(SongWidget &song_widget,
                   } else if (pitch_field_name == "octave") {
                     octave_number = xml_to_int(pitch_field);
                   } else if (pitch_field_name == "alter") {
+                    if (!xml_content_is_integer(pitch_field)) {
+                      QMessageBox::warning(
+                          &song_widget, QObject::tr("Pitch error"),
+                          QObject::tr(
+                              "Microtonal pitches are not supported"));
+                      return; // endpoint
+                    }
                     alter = xml_to_int(pitch_field);
                   }
                   pitch_field_pointer =
@@ -1589,6 +1616,13 @@ static inline void import_musicxml(SongWidget &song_widget,
                 midi_number = midi_degree + alter +
                               octave_number * HALFSTEPS_PER_OCTAVE + C_0_MIDI;
               } else if (name == "duration") {
+                if (!xml_content_is_integer(note_field)) {
+                  QMessageBox::warning(
+                      &song_widget, QObject::tr("Note duration error"),
+                      QObject::tr(
+                          "Fractional note durations are not supported"));
+                  return; // endpoint
+                }
                 note_duration = xml_to_int(note_field);
               } else if (name == "unpitched") {
                 is_pitched = false;
@@ -1688,10 +1722,24 @@ static inline void import_musicxml(SongWidget &song_widget,
               }
             }
           } else if (measure_element_name == "backup") {
-            current_time -= get_duration(measure_element);
+            const auto duration = get_duration(measure_element);
+            if (!duration.has_value()) {
+              QMessageBox::warning(
+                  &song_widget, QObject::tr("Duration error"),
+                  QObject::tr("Fractional durations are not supported"));
+              return; // endpoint
+            }
+            current_time -= duration.value();
             chord_start_time = current_time;
           } else if (measure_element_name == "forward") {
-            current_time += get_duration(measure_element);
+            const auto duration = get_duration(measure_element);
+            if (!duration.has_value()) {
+              QMessageBox::warning(
+                  &song_widget, QObject::tr("Duration error"),
+                  QObject::tr("Fractional durations are not supported"));
+              return; // endpoint
+            }
+            current_time += duration.value();
             chord_start_time = current_time;
           } else if (measure_element_name == "barline") {
             // records forward/backward repeats and first/second-ending
