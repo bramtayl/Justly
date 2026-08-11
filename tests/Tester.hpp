@@ -1548,6 +1548,32 @@ private slots:
     QCOMPARE(zip_entry_size_is_safe(entry_stat), is_safe);
   };
 
+  // regression test: some musicxml fields (e.g. fifths, octave-change) are
+  // unbounded xs:integer with no schema-enforced range, so std::stoi can
+  // throw std::out_of_range on a magnitude that doesn't fit in int; xml_to_int
+  // must clamp instead of letting that exception propagate uncaught and
+  // crash the app
+  static void test_xml_to_int_clamps_out_of_range_data() {
+    QTest::addColumn<QByteArray>("xml");
+    QTest::addColumn<int>("expected");
+
+    QTest::newRow("ordinary value") << QByteArray("<n>42</n>") << 42;
+    QTest::newRow("overflow positive")
+        << QByteArray("<n>99999999999999999999</n>")
+        << std::numeric_limits<int>::max();
+    QTest::newRow("overflow negative")
+        << QByteArray("<n>-99999999999999999999</n>")
+        << std::numeric_limits<int>::min();
+  };
+
+  static void test_xml_to_int_clamps_out_of_range() {
+    QFETCH(const QByteArray, xml);
+    QFETCH(const int, expected);
+
+    const auto document = read_xml_document(xml);
+    QCOMPARE(xml_to_int(get_root(document)), expected);
+  };
+
   // regression test: inserting a chord, then drilling into and inserting one
   // of its notes, leaves the switch table's notes model pointing directly at
   // that Chord's notes QList; import_musicxml/open_file must not crash even

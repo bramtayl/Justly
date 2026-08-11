@@ -14,6 +14,8 @@
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/xmlstring.h>
+#include <limits>
+#include <stdexcept>
 #include <string>
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
@@ -91,7 +93,19 @@ template <typename SubType>
 }
 
 [[nodiscard]] static inline auto xml_to_int(const xmlNode &element) {
-  return std::stoi(get_content(element));
+  const auto content = get_content(element);
+  try {
+    return std::stoi(content);
+  } catch (const std::out_of_range &) {
+    // some musicxml fields (e.g. fifths, octave-change) are unbounded
+    // xs:integer with no schema-enforced range, so a malformed or hostile
+    // file can contain a magnitude that overflows int; clamp instead of
+    // letting std::stoi's exception propagate uncaught and crash the app --
+    // whatever consumes the clamped value then fails through its own
+    // existing bounds checks (e.g. the frequency-range warning) instead
+    return content.starts_with('-') ? std::numeric_limits<int>::min()
+                                    : std::numeric_limits<int>::max();
+  }
 }
 
 [[nodiscard]] static auto
