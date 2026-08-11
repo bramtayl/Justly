@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QtCore/QtAssert>
 #include <fluidsynth.h>
 #include <fluidsynth/seq.h>
 #include <fluidsynth/seqbind.h>
@@ -8,19 +9,32 @@
 #include "other/helpers.hpp"
 #include "sound/FluidSynth.hpp"
 
+// asserts before registering so a failed new_fluid_sequencer2 (e.g. OOM)
+// never gets passed into fluid_sequencer_register_fluidsynth -- a member
+// initializer can't be preceded by a constructor-body assert, since member
+// initializers all run before the body does
+[[nodiscard]] static inline auto
+register_fluidsynth_client(fluid_sequencer_t *const sequencer_pointer,
+                           FluidSynth &synth) -> fluid_seq_id_t {
+  Q_ASSERT(sequencer_pointer != nullptr);
+  return fluid_sequencer_register_fluidsynth(sequencer_pointer,
+                                             synth.internal_pointer);
+}
+
 struct FluidSequencer {
   fluid_sequencer_t *const internal_pointer;
   const fluid_seq_id_t sequencer_id;
 
   explicit FluidSequencer(FluidSynth &synth)
       : internal_pointer(new_fluid_sequencer2(0)),
-        sequencer_id(fluid_sequencer_register_fluidsynth(
-            internal_pointer, synth.internal_pointer)) {}
+        sequencer_id(register_fluidsynth_client(internal_pointer, synth)) {}
 
   NO_MOVE_COPY(FluidSequencer)
 
   ~FluidSequencer() {
-    fluid_sequencer_unregister_client(internal_pointer, sequencer_id);
-    delete_fluid_sequencer(internal_pointer);
+    if (internal_pointer != nullptr) {
+      fluid_sequencer_unregister_client(internal_pointer, sequencer_id);
+      delete_fluid_sequencer(internal_pointer);
+    }
   }
 };

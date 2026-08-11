@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QtCore/QtAssert>
 #include <fluidsynth.h>
 #include <fluidsynth/settings.h>
 #include <fluidsynth/types.h>
@@ -9,7 +10,9 @@
 struct FluidSettings {
   fluid_settings_t *internal_pointer;
 
-  FluidSettings() : internal_pointer(new_fluid_settings()) {}
+  FluidSettings() : internal_pointer(new_fluid_settings()) {
+    Q_ASSERT(internal_pointer != nullptr);
+  }
 
   NO_COPY(FluidSettings)
   auto operator=(FluidSettings &&other) noexcept -> FluidSettings & = delete;
