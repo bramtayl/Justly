@@ -86,23 +86,28 @@ struct RemoveVoiceRows : public QUndoCommand {
     const auto number_of_rows = static_cast<int>(old_voice_rows.size());
     auto &chords = voices_model.song.chords;
 
+    // finish every mutation to song.chords and voices_model before showing
+    // the warning dialog below -- QMessageBox::warning runs a nested event
+    // loop, and anything that repaints while it's up (e.g. the notes table)
+    // must never see a note's voice_number pointing at a voice list that
+    // hasn't been shrunk to match yet
     offset_voice_numbers<SubVoice, SubNote>(chords, renumbered_notes,
                                             -number_of_rows);
+    for (const auto &affected_note : reassigned_notes) {
+      get_voice_notes<SubVoice, SubNote>(
+          chords[affected_note.chord_number])[affected_note.note_number]
+          .voice_number = 0;
+    }
+    voices_model.remove_rows(first_row_number, number_of_rows);
 
     if (!reassigned_notes.empty()) {
       warn_reassigned_voices<SubNote>(voices_model.parent,
                                      static_cast<int>(reassigned_notes.size()),
                                      first_voice_name);
-      for (const auto &affected_note : reassigned_notes) {
-        get_voice_notes<SubVoice, SubNote>(
-            chords[affected_note.chord_number])[affected_note.note_number]
-            .voice_number = 0;
-      }
     }
 
     renumber_clipboard_voice_numbers<SubNote>(
         first_row_number, number_of_rows, /*is_insertion=*/false,
         &voices_model.parent, first_voice_name);
-    voices_model.remove_rows(first_row_number, number_of_rows);
   }
 };

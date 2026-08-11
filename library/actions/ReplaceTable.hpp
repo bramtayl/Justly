@@ -352,6 +352,13 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
   auto &selection_model = get_selection_model(switch_table);
   update_actions(song_menu_bar, song_widget, selection_model);
   update_piano_roll_selection(piano_roll_widget, song_widget);
+  // set_model only swaps in a new selection model when row_type_changed, so
+  // when it's false this reconnects to the same selection model as last
+  // time; disconnect first so repeated calls (e.g. navigating between
+  // chords of the same note type) don't pile up duplicate connections that
+  // would each independently re-run update_actions/update_piano_roll_selection
+  QObject::disconnect(&selection_model, &QItemSelectionModel::selectionChanged,
+                      &selection_model, nullptr);
   QObject::connect(
       &selection_model, &QItemSelectionModel::selectionChanged,
       &selection_model,

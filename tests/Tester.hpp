@@ -1396,6 +1396,78 @@ private slots:
     open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
   };
 
+  // regression test: RemoveVoiceRows::redo() used to shift note voice_numbers
+  // and remove the voice rows only *after* showing the "reassigned" warning
+  // dialog. QMessageBox::warning runs a nested event loop, so anything that
+  // repainted while that dialog was up would see a voices list that hadn't
+  // shrunk yet alongside notes already (or not yet) renumbered to match the
+  // post-removal state -- a transient mismatch. This checks that by the time
+  // the warning dialog appears, song.pitched_voices and every note's
+  // voice_number already agree with each other.
+  void test_remove_voice_row_consistent_during_warning() {
+    auto &song_widget = song_editor.song_widget;
+    auto &switch_table = song_widget.switch_column.switch_table;
+    auto &undo_stack = song_widget.undo_stack;
+    auto &song = song_widget.song;
+
+    open_text(
+        song_widget,
+        "<song><gain>1</gain><starting_key>220</starting_key>"
+        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
+        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
+        "<instrument>Marimba</instrument></pitched_voice><pitched_voice>"
+        "<name>B</name><instrument>Grand Piano</instrument></pitched_voice>"
+        "<pitched_voice><name>C</name><instrument>Harp</instrument></"
+        "pitched_voice></pitched_voices><unpitched_voices><unpitched_voice>"
+        "<name>D</name><percussion_set_pointer>Room</percussion_set_pointer>"
+        "<midi_number>36</midi_number></unpitched_voice></unpitched_voices>"
+        "<chords><chord><pitched_notes><pitched_note><voice_number>0</"
+        "voice_number></pitched_note><pitched_note><voice_number>1</"
+        "voice_number></pitched_note><pitched_note><voice_number>2</"
+        "voice_number></pitched_note></pitched_notes></chord></chords></"
+        "song>");
+
+    switch_to(song_editor, RowType::pitched_voice_type, -1);
+    select_cell(switch_table, 1, 0);
+
+    const auto waiting_before = waiting_for_message;
+    waiting_for_message = true;
+    auto &timer = // NOLINT(cppcoreguidelines-owning-memory)
+        *(new QTimer(&song_editor));
+    timer.setSingleShot(true);
+    QObject::connect(
+        &timer, &QTimer::timeout, &song_editor,
+        [this, &song]() -> auto {
+          auto *const box_pointer = find_top_level_message_box();
+          if (box_pointer != nullptr) {
+            waiting_for_message = false;
+            QCOMPARE(song.pitched_voices.size(), 2);
+            for (const auto &note : song.chords.at(0).pitched_notes) {
+              QVERIFY(note.voice_number >= 0 &&
+                      note.voice_number < song.pitched_voices.size());
+            }
+            QTest::keyEvent(QTest::Press, box_pointer, Qt::Key_Enter);
+          }
+        });
+    timer.start(WAIT_TIME);
+    QVERIFY(!waiting_before);
+
+    song_editor.song_menu_bar.edit_menu.remove_rows_action.trigger();
+    QVERIFY(!waiting_for_message);
+
+    QCOMPARE(song.pitched_voices.size(), 2);
+    const auto &notes = song.chords.at(0).pitched_notes;
+    QCOMPARE(notes.at(0).voice_number, 0);
+    QCOMPARE(notes.at(1).voice_number, 0);
+    QCOMPARE(notes.at(2).voice_number, 1);
+
+    undo_stack.undo(); // undo the voice removal
+    maybe_switch_back_to_chords(undo_stack, RowType::pitched_voice_type);
+
+    // restore the shared fixture
+    open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
+  }
+
   static void test_remove_last_voice_error_data() {
     QTest::addColumn<QString>("text");
     QTest::addColumn<bool>("is_pitched");
@@ -1737,6 +1809,55 @@ private slots:
     view_menu.next_chord_action.trigger();
     QCOMPARE(get_parent_chord_number(switch_table), chord_number);
     maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
+  };
+
+  // replace_table() (ReplaceTable.hpp) reconnects an update lambda to the
+  // switch table's selection model on every call, but only swaps in a fresh
+  // selection model (via set_model) when the row type actually changes --
+  // when it doesn't (e.g. next/previous_chord_action, exercised above),
+  // the same QItemSelectionModel is reused across calls, so a bare
+  // connect() without a preceding disconnect() piles up one duplicate
+  // connection per call. This reproduces that exact connect/reconnect
+  // pattern against the real selection model object used by the switch
+  // table, using a private receiver so it can't disturb replace_table's own
+  // connection to that same model.
+  void test_reconnecting_selection_model_does_not_duplicate_connections() {
+    auto &switch_table = song_editor.song_widget.switch_column.switch_table;
+    auto &selection_model = get_selection_model(switch_table);
+
+    // control: connecting without disconnecting first (the pre-fix pattern)
+    // really does accumulate one call per reconnect
+    {
+      select_cell(switch_table, 0, 1);
+      QObject receiver;
+      auto call_count = 0;
+      for (auto attempt = 0; attempt < 5; attempt = attempt + 1) {
+        QObject::connect(&selection_model,
+                         &QItemSelectionModel::selectionChanged, &receiver,
+                         [&call_count]() -> auto { call_count = call_count + 1; });
+      }
+      select_cell(switch_table, 0, 0);
+      QCOMPARE(call_count, 5);
+    }
+
+    // the fix: disconnecting before reconnecting keeps exactly one
+    // connection alive no matter how many times replace_table() re-runs
+    // against the same selection model
+    {
+      select_cell(switch_table, 0, 1);
+      QObject receiver;
+      auto call_count = 0;
+      for (auto attempt = 0; attempt < 5; attempt = attempt + 1) {
+        QObject::disconnect(&selection_model,
+                            &QItemSelectionModel::selectionChanged, &receiver,
+                            nullptr);
+        QObject::connect(&selection_model,
+                         &QItemSelectionModel::selectionChanged, &receiver,
+                         [&call_count]() -> auto { call_count = call_count + 1; });
+      }
+      select_cell(switch_table, 0, 0);
+      QCOMPARE(call_count, 1);
+    }
   };
 
   void test_octave_bound() {
