@@ -13,6 +13,9 @@ struct FluidSynth;
 struct Song;
 struct SwitchTable;
 
+static const auto FIVE = 5;
+static const auto SEVEN = 7;
+
 struct ControlsColumn : public QWidget {
   SpinBoxes &spin_boxes;
   IntervalRow &third_row;
@@ -25,12 +28,12 @@ struct ControlsColumn : public QWidget {
                  SwitchTable &switch_table)
       : spin_boxes(*new SpinBoxes(song, synth, undo_stack)),
         third_row(*new IntervalRow(undo_stack, switch_table, "Major third",
-                                   Interval(Rational(5, 4), 0))),
+                                   Interval(Rational(FIVE, 4), 0))),
         fifth_row(*new IntervalRow(undo_stack, switch_table, "Perfect fifth",
                                    Interval(Rational(3, 2), 0))),
         seventh_row(*new IntervalRow(undo_stack, switch_table,
                                      "Harmonic seventh",
-                                     Interval(Rational(7, 4), 0))),
+                                     Interval(Rational(SEVEN, 4), 0))),
         octave_row(*new IntervalRow(undo_stack, switch_table, "Octave",
                                     Interval(Rational(), 1))) {
     column_layout.addWidget(&spin_boxes);

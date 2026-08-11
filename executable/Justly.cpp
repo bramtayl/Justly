@@ -3,6 +3,7 @@
 // #include "SDL.h"
 
 #include "widgets/SongEditor.hpp"
+#include "widgets/SongWidget.hpp"
 
 auto main(int number_of_arguments, char *arguments[]) -> int {
   // SDL_Init(SDL_INIT_AUDIO);

@@ -53,10 +53,19 @@
 #include <QtWidgets/QStyleOption>
 #include <QtWidgets/QWidget>
 #include <algorithm>
+#include <fluidsynth.h>
+#include <fluidsynth/audio.h>
+#include <fluidsynth/types.h>
 #include <limits>
 #include <memory>
+#include <stdexcept>
 #include <string>
+#include <utility>
+#include <zip.h>
+#include <zipconf.h>
 
+#include "cell_types/Interval.hpp"
+#include "cell_types/Rational.hpp"
 #include "column_numbers/ChordColumn.hpp"
 #include "column_numbers/PitchedNoteColumn.hpp"
 #include "column_numbers/PitchedVoiceColumn.hpp"
@@ -69,6 +78,7 @@
 #include "menus/PlayMenu.hpp"
 #include "menus/SongMenuBar.hpp"
 #include "menus/ViewMenu.hpp"
+#include "models/ChordsModel.hpp"
 #include "other/PianoRollNoteEvent.hpp"
 #include "other/Song.hpp"
 #include "other/helpers.hpp"
@@ -76,6 +86,9 @@
 #include "rows/PitchedNote.hpp"
 #include "rows/RowType.hpp"
 #include "rows/UnpitchedNote.hpp"
+#include "sound/FluidDriver.hpp"
+#include "sound/FluidSettings.hpp"
+#include "sound/Player.hpp"
 #include "widgets/ControlsColumn.hpp"
 #include "widgets/IntervalRow.hpp"
 #include "widgets/SongEditor.hpp"
@@ -86,14 +99,13 @@
 #include "widgets/SwitchTable.hpp"
 #include "widgets/piano_roll/PianoRollNotesView.hpp"
 #include "widgets/piano_roll/PianoRollWidget.hpp"
+#include "xml/XMLDocument.hpp"
 #include "xml/ZipArchive.hpp"
 
 static const auto BIG_VELOCITY = 126;
-static const auto FIVE = 5;
 static const auto PERCUSSION_ROWS = 16;
 static const auto MOZART_ROWS = 147;
 static const auto SALTARELLO_ROWS = 184;
-static const auto SEVEN = 7;
 static const auto MUSIC_XML_ROWS = 545;
 static const auto NEW_GAIN_1 = 2;
 static const auto NEW_GAIN_2 = 3;
@@ -991,7 +1003,7 @@ private slots:
   // internal_pointer unconditionally, which would leak a live driver on
   // reassignment and, on self-move specifically, null out internal_pointer
   // without ever freeing it, losing the handle entirely
-  void test_fluid_driver_move_assign() {
+  static void test_fluid_driver_move_assign() {
     FluidSettings settings;
 #ifdef __linux__
     set_fluid_string(settings, "audio.driver", "pulseaudio");
@@ -1605,14 +1617,14 @@ private slots:
     QTest::addColumn<bool>("is_safe");
 
     QTest::newRow("ordinary small entry")
-        << static_cast<unsigned int>(ZIP_STAT_SIZE) << zip_uint64_t{13}
+        << ZIP_STAT_SIZE << zip_uint64_t{13}
         << true;
     QTest::newRow("largest int-sized entry")
-        << static_cast<unsigned int>(ZIP_STAT_SIZE)
+        << ZIP_STAT_SIZE
         << static_cast<zip_uint64_t>(std::numeric_limits<int>::max())
         << true;
     QTest::newRow("just over int-sized entry")
-        << static_cast<unsigned int>(ZIP_STAT_SIZE)
+        << ZIP_STAT_SIZE
         << static_cast<zip_uint64_t>(std::numeric_limits<int>::max()) + 1
         << false;
     QTest::newRow("size libzip couldn't report")
@@ -1669,7 +1681,7 @@ private slots:
         std::runtime_error);
   };
 
-  void test_get_share_file_existing() {
+  void test_get_share_file_existing() const {
     QCOMPARE(get_share_file("Justly.svg"),
              test_dir.filePath("Justly.svg").toStdString());
   };

@@ -35,7 +35,6 @@
 #include "menus/PlayMenu.hpp"
 #include "menus/SongMenuBar.hpp"
 #include "menus/ViewMenu.hpp"
-#include "other/PianoRollNoteEvent.hpp"
 #include "other/helpers.hpp"
 #include "rows/RowType.hpp"
 #include "widgets/SongWidget.hpp"

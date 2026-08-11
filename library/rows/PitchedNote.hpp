@@ -9,11 +9,11 @@
 #include <QtCore/QtAssert>
 #include <QtWidgets/QMessageBox>
 #include <cmath>
-#include <optional>
 #include <fluidsynth.h>
 #include <fluidsynth/event.h>
 #include <fluidsynth/seq.h>
 #include <libxml/parser.h>
+#include <optional>
 
 #include "cell_types/Interval.hpp"
 #include "cell_types/Program.hpp"

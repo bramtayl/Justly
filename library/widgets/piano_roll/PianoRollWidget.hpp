@@ -35,6 +35,7 @@
 #include "other/PianoRollNoteEvent.hpp"
 #include "other/Song.hpp"
 #include "other/helpers.hpp"
+#include "rows/Chord.hpp"
 #include "rows/PitchedNote.hpp"
 #include "rows/RowType.hpp"
 #include "sound/PlayState.hpp"
