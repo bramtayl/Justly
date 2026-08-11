@@ -1390,6 +1390,78 @@ private slots:
     open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
   };
 
+  static void test_unreduced_ratio_from_xml_data() {
+    QTest::addColumn<QString>("text");
+    QTest::addColumn<int>("column_number");
+    QTest::addColumn<QString>("expected_text");
+
+    static const QString header =
+        "<song><gain>1</gain><starting_key>220</starting_key>"
+        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
+        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
+        "<instrument>Marimba</instrument></pitched_voice></pitched_voices>"
+        "<unpitched_voices><unpitched_voice><name>B</name>"
+        "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
+        "midi_number></unpitched_voice></unpitched_voices><chords><chord>";
+    static const QString footer = "</chord></chords></song>";
+
+    QTest::newRow("unreduced ratio folds to default")
+        << header +
+               "<velocity_ratio><numerator>2</numerator><denominator>2</"
+               "denominator></velocity_ratio>" +
+               footer
+        << static_cast<int>(ChordColumn::chord_velocity_ratio_column) << "";
+    QTest::newRow("unreduced ratio folds by gcd")
+        << header +
+               "<velocity_ratio><numerator>4</numerator><denominator>6</"
+               "denominator></velocity_ratio>" +
+               footer
+        << static_cast<int>(ChordColumn::chord_velocity_ratio_column) << "2/3";
+    QTest::newRow("unreduced interval ratio folds into octave")
+        << header +
+               "<interval><ratio><numerator>4</numerator></ratio></interval>" +
+               footer
+        << static_cast<int>(ChordColumn::chord_interval_column) << "o2";
+  };
+
+  // regression test: a chord's ratio/interval loaded from XML whose
+  // numerator/denominator aren't already coprime (the schema only bounds
+  // each to [1, 999], not that the pair is reduced) must be normalized to
+  // the same canonical form every Rational/Interval constructor produces.
+  // Otherwise the cell displays a value the UI can never actually produce
+  // (e.g. "2/2" instead of blank), and re-committing the unchanged value
+  // through the editor -- which always writes back a reduced value -- looks
+  // like a real edit and pushes a spurious undo entry.
+  void test_unreduced_ratio_from_xml() {
+    QFETCH(const QString, text);
+    QFETCH(const int, column_number);
+    QFETCH(const QString, expected_text);
+
+    auto &song_widget = song_editor.song_widget;
+    auto &switch_table = song_widget.switch_column.switch_table;
+    auto &undo_stack = song_widget.undo_stack;
+
+    open_text(song_widget, text);
+
+    auto &model = get_model(switch_table);
+    const auto test_index = model.index(0, column_number);
+
+    QCOMPARE(test_index.data().toString(), expected_text);
+
+    const auto old_undo_count = undo_stack.count();
+    auto &delegate = get_reference(switch_table.itemDelegate());
+    auto &cell_editor = get_reference(
+        delegate.createEditor(&get_reference(switch_table.viewport()),
+                              QStyleOptionViewItem(), test_index));
+    delegate.setEditorData(&cell_editor, test_index);
+    delegate.setModelData(&cell_editor, &model, test_index);
+
+    QCOMPARE(undo_stack.count(), old_undo_count);
+
+    // restore the shared fixture
+    open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
+  };
+
   static void test_musicxml_data() {
     QTest::addColumn<QString>("file_name");
     QTest::addColumn<int>("number_of_chords");

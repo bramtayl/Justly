@@ -64,6 +64,10 @@ static inline void set_interval_from_xml(Interval &interval, xmlNode &node) {
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }
+  // route through the normalizing constructor so an XML ratio with even
+  // numerator/denominator factors folds into octave, matching the canonical
+  // form every other Interval comes in (see set_rational_from_xml)
+  interval = Interval(interval.ratio, interval.octave);
 }
 
 static inline void maybe_add_interval_to_xml(xmlNode &node,

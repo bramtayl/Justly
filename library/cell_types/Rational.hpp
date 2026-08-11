@@ -53,19 +53,26 @@ Q_DECLARE_METATYPE(Rational);
 }
 
 static inline void set_rational_from_xml(Rational &rational, xmlNode &node) {
+  auto numerator = rational.numerator;
+  auto denominator = rational.denominator;
   auto *field_pointer = xmlFirstElementChild(&node);
   while (field_pointer != nullptr) {
     auto &field_node = get_reference(field_pointer);
     const auto &name = get_xml_name(field_node);
     if (name == "numerator") {
-      rational.numerator = xml_to_int(field_node);
+      numerator = xml_to_int(field_node);
     } else if (name == "denominator") {
-      rational.denominator = xml_to_int(field_node);
+      denominator = xml_to_int(field_node);
     } else {
       Q_ASSERT(false);
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }
+  // the schema only bounds numerator/denominator to [1, 999], not that
+  // they're coprime, so route through the reducing constructor to match the
+  // canonical form every other Rational comes in (operator== and
+  // rational_is_default both assume reduced form)
+  rational = Rational(numerator, denominator);
 }
 
 static void maybe_add_int_to_xml(xmlNode &node,
