@@ -1701,6 +1701,54 @@ private slots:
     import_musicxml(song_editor.song_widget, test_dir.filePath(file_name));
   };
 
+  // regression test: a backward repeat with no forward repeat since the
+  // last block boundary (e.g. a repeat that implicitly continues right
+  // after an earlier, already-expanded repeated section) must replay from
+  // that block boundary, not from measure 0 -- otherwise an earlier,
+  // already-consumed repeated section gets incorrectly replayed again, and
+  // the plain measures between the two sections get silently dropped
+  // instead of flushed
+  static void test_compute_measure_expansion_lone_backward_repeat() {
+    QList<MeasureRepeatInfo> measure_infos;
+
+    MeasureRepeatInfo measure_0;
+    measure_0.start_time = 0;
+    measure_0.end_time = 10;
+    measure_0.has_forward_repeat = true;
+    measure_infos.push_back(measure_0);
+
+    MeasureRepeatInfo measure_1;
+    measure_1.start_time = 10;
+    measure_1.end_time = 20;
+    measure_1.has_backward_repeat = true;
+    measure_infos.push_back(measure_1);
+
+    MeasureRepeatInfo measure_2;
+    measure_2.start_time = 20;
+    measure_2.end_time = 30;
+    measure_infos.push_back(measure_2);
+
+    MeasureRepeatInfo measure_3;
+    measure_3.start_time = 30;
+    measure_3.end_time = 40;
+    measure_infos.push_back(measure_3);
+
+    // a lone backward repeat: no forward repeat since measure 2
+    MeasureRepeatInfo measure_4;
+    measure_4.start_time = 40;
+    measure_4.end_time = 50;
+    measure_4.has_backward_repeat = true;
+    measure_infos.push_back(measure_4);
+
+    const QList<std::pair<int, int>> expected_expansion = {
+        {0, 10}, {10, 20}, {0, 10}, {10, 20},  // measures 0-1, twice
+        {20, 30}, {30, 40}, {40, 50},          // measures 2-4, ...
+        {20, 30}, {30, 40}, {40, 50},          // ...twice
+    };
+
+    QCOMPARE(compute_measure_expansion(measure_infos), expected_expansion);
+  };
+
   // regression test: read_zip_entry casts a zip entry's reported size down
   // to int before allocating its buffer, but reads however many bytes the
   // (uncast, 64-bit) size claims -- an entry whose declared size doesn't fit

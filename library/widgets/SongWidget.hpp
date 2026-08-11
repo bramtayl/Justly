@@ -1245,11 +1245,8 @@ compute_measure_expansion(const QList<MeasureRepeatInfo> &measure_infos) {
       block_start_index = measure_index;
     }
     if (measure_info.has_backward_repeat) {
-      const auto start_index =
-          repeat_start_index == -1 ? 0 : repeat_start_index;
-      if (repeat_start_index == -1) {
-        flush(block_start_index, start_index - 1);
-      }
+      const auto start_index = repeat_start_index == -1 ? block_start_index
+                                                          : repeat_start_index;
       // a later ending (e.g. the second ending) has no repeat barline of
       // its own; it just continues on directly after the measure with the
       // backward repeat, so absorb any immediately-following ending measures
