@@ -1658,6 +1658,22 @@ private slots:
     QCOMPARE(xml_to_int(get_root(document)), expected);
   };
 
+  // regression test: Q_ASSERT compiles out in release builds, so a broken
+  // or incomplete installation missing a bundled resource (an xsd schema,
+  // the icon, the soundfont) used to silently hand callers a nonexistent
+  // path instead of failing; get_share_file must reject a missing file
+  // regardless of build type
+  static void test_get_share_file_missing_throws() {
+    QVERIFY_EXCEPTION_THROWN(
+        static_cast<void>(get_share_file("no_such_share_file.xyz")),
+        std::runtime_error);
+  };
+
+  void test_get_share_file_existing() {
+    QCOMPARE(get_share_file("Justly.svg"),
+             test_dir.filePath("Justly.svg").toStdString());
+  };
+
   // regression test: inserting a chord, then drilling into and inserting one
   // of its notes, leaves the switch table's notes model pointing directly at
   // that Chord's notes QList; import_musicxml/open_file must not crash even

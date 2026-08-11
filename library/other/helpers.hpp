@@ -146,9 +146,17 @@ static inline void set_xml_int(xmlNode &node, const char *const field_name,
   return folder;
 }
 
-[[nodiscard]] static inline auto get_share_file(const char *file_name) {
+[[nodiscard]] static inline auto get_share_file(const char *file_name)
+    -> std::string {
   static const auto share_folder = get_share_folder();
   const auto result_file = share_folder.filePath(file_name);
-  Q_ASSERT(QFile::exists(result_file));
+  if (!QFile::exists(result_file)) {
+    // Q_ASSERT compiles out in release builds, so a broken/incomplete
+    // installation missing a bundled resource (xsd schema, icon,
+    // soundfont) would otherwise silently hand the caller a nonexistent
+    // path instead of failing here
+    throw std::runtime_error("missing bundled resource file: " +
+                             result_file.toStdString());
+  }
   return result_file.toStdString();
 }
