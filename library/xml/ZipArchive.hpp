@@ -3,6 +3,7 @@
 #include <QtCore/QByteArray>
 #include <QtCore/QString>
 #include <QtCore/QtAssert>
+#include <limits>
 #include <string>
 #include <zip.h>
 #include <zipconf.h>
@@ -26,6 +27,16 @@ public:
   NO_MOVE_COPY(ZipArchive)
 };
 
+// rejects entries whose size libzip couldn't report, or that don't fit in
+// the int QByteArray sizes itself with -- casting an oversized size_t down
+// to int would both under-allocate the buffer and over-read into it
+[[nodiscard]] static inline auto
+zip_entry_size_is_safe(const zip_stat_t &entry_stat) -> bool {
+  return (entry_stat.valid & ZIP_STAT_SIZE) != 0 &&
+        entry_stat.size <=
+            static_cast<zip_uint64_t>(std::numeric_limits<int>::max());
+}
+
 // returns an empty QByteArray if the entry is missing or can't be read
 [[nodiscard]] static inline auto
 read_zip_entry(const ZipArchive &archive,
@@ -35,6 +46,10 @@ read_zip_entry(const ZipArchive &archive,
   zip_stat_t entry_stat;
   if (zip_stat(archive.internal_pointer, entry_name.c_str(), 0,
               &entry_stat) != 0) {
+    return {};
+  }
+
+  if (!zip_entry_size_is_safe(entry_stat)) {
     return {};
   }
 

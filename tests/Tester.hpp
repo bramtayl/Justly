@@ -51,6 +51,7 @@
 #include <QtWidgets/QStyleOption>
 #include <QtWidgets/QWidget>
 #include <algorithm>
+#include <limits>
 #include <memory>
 #include <string>
 
@@ -83,6 +84,7 @@
 #include "widgets/SwitchTable.hpp"
 #include "widgets/piano_roll/PianoRollNotesView.hpp"
 #include "widgets/piano_roll/PianoRollWidget.hpp"
+#include "xml/ZipArchive.hpp"
 
 static const auto BIG_VELOCITY = 126;
 static const auto FIVE = 5;
@@ -1400,6 +1402,44 @@ private slots:
 
     close_message_later(song_editor, waiting_for_message, error_message);
     import_musicxml(song_editor.song_widget, test_dir.filePath(file_name));
+  };
+
+  // regression test: read_zip_entry casts a zip entry's reported size down
+  // to int before allocating its buffer, but reads however many bytes the
+  // (uncast, 64-bit) size claims -- an entry whose declared size doesn't fit
+  // in an int, or whose size libzip couldn't report at all, must be rejected
+  // up front instead of under-allocating the destination buffer
+  static void test_zip_entry_size_is_safe_data() {
+    QTest::addColumn<unsigned int>("valid_flags");
+    QTest::addColumn<zip_uint64_t>("size");
+    QTest::addColumn<bool>("is_safe");
+
+    QTest::newRow("ordinary small entry")
+        << static_cast<unsigned int>(ZIP_STAT_SIZE) << zip_uint64_t{13}
+        << true;
+    QTest::newRow("largest int-sized entry")
+        << static_cast<unsigned int>(ZIP_STAT_SIZE)
+        << static_cast<zip_uint64_t>(std::numeric_limits<int>::max())
+        << true;
+    QTest::newRow("just over int-sized entry")
+        << static_cast<unsigned int>(ZIP_STAT_SIZE)
+        << static_cast<zip_uint64_t>(std::numeric_limits<int>::max()) + 1
+        << false;
+    QTest::newRow("size libzip couldn't report")
+        << static_cast<unsigned int>(0) << zip_uint64_t{13} << false;
+  };
+
+  static void test_zip_entry_size_is_safe() {
+    QFETCH(const unsigned int, valid_flags);
+    QFETCH(const zip_uint64_t, size);
+    QFETCH(const bool, is_safe);
+
+    zip_stat_t entry_stat;
+    zip_stat_init(&entry_stat);
+    entry_stat.valid = valid_flags;
+    entry_stat.size = size;
+
+    QCOMPARE(zip_entry_size_is_safe(entry_stat), is_safe);
   };
 
   // regression test: inserting a chord, then drilling into and inserting one
