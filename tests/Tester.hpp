@@ -1725,6 +1725,18 @@ private slots:
     QCOMPARE(zip_entry_size_is_safe(entry_stat), is_safe);
   };
 
+  // regression test: read_zip_entry used to only Q_ASSERT that
+  // internal_pointer wasn't null before dereferencing it -- an assert that
+  // compiles away in release builds. A ZipArchive constructed from a file
+  // that doesn't exist (or isn't a zip) leaves internal_pointer null, and
+  // read_zip_entry must degrade to its documented "empty QByteArray" return
+  // instead of crashing.
+  void test_read_zip_entry_null_archive() {
+    const ZipArchive archive(test_dir.filePath("does_not_exist.zip"));
+    QCOMPARE(archive.internal_pointer, nullptr);
+    QCOMPARE(read_zip_entry(archive, "anything"), QByteArray());
+  };
+
   // regression test: read_xml_document casts a QByteArray's size down to int
   // before handing it to xmlReadMemory, but xmlReadMemory reads however many
   // bytes the (uncast) length claims -- a buffer whose size doesn't fit in an

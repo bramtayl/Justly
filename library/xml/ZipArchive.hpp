@@ -41,7 +41,9 @@ zip_entry_size_is_safe(const zip_stat_t &entry_stat) -> bool {
 [[nodiscard]] static inline auto
 read_zip_entry(const ZipArchive &archive,
                const std::string &entry_name) -> QByteArray {
-  Q_ASSERT(archive.internal_pointer != nullptr);
+  if (archive.internal_pointer == nullptr) {
+    return {};
+  }
 
   zip_stat_t entry_stat;
   if (zip_stat(archive.internal_pointer, entry_name.c_str(), 0,
