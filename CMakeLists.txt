@@ -259,17 +259,22 @@ if (WIN32)
     # otherwise make file(GET_RUNTIME_DEPENDENCIES) hard-error with "Could
     # not resolve runtime dependencies": Qt's own DLLs (windeployqt deploys
     # those separately, see above) and a couple of Windows-internal names
-    # (HvsiFileTrust.dll, wtdccm.dll) that don't correspond to a real file
+    # (hvsifiletrust.dll, wtdccm.dll) that don't correspond to a real file
     # anywhere CMake looks, observed by actually running this and reading
     # the resulting error message -- if a future dependency addition hits
-    # the same error, add its name here too
+    # the same error, add its name here too.
+    #
+    # since CMake 3.31, dependency names are lowercased before matching
+    # against these regexes, so every pattern here must be lowercase or it
+    # silently never matches (this is what broke "^Qt6" -- the actual name
+    # being matched is "qt6cored.dll", not "Qt6Cored.dll")
     install(RUNTIME_DEPENDENCY_SET vcpkg_deps
         DIRECTORIES "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin"
         PRE_EXCLUDE_REGEXES
             "^api-ms-"
             "^ext-ms-"
-            "^Qt6"
-            "^HvsiFileTrust\\.dll$"
+            "^qt6"
+            "^hvsifiletrust\\.dll$"
             "^wtdccm\\.dll$"
         POST_EXCLUDE_REGEXES
             ".*/[Ss]ystem32/.*\\.dll"
