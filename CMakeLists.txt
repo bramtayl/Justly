@@ -242,27 +242,18 @@ if (WIN32)
         install(TARGETS ${app_target} RUNTIME_DEPENDENCY_SET vcpkg_deps)
     endforeach()
 
+    # deny-list instead of an allowlist so a newly added vcpkg dependency
+    # (e.g. the sndfile/vorbis/flac/opus/mpg123/mp3lame/ogg chain pulled in
+    # for SF3 support) gets deployed automatically -- an allowlist silently
+    # drops anything nobody remembered to add, which is exactly what let
+    # JustlyTests.exe ship without sndfile.dll and fail to even start
     install(RUNTIME_DEPENDENCY_SET vcpkg_deps
         DIRECTORIES "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin"
-        PRE_INCLUDE_REGEXES
-            "^[Ff][Ll][Aa][Cc]\\.[Dd][Ll][Ll]$"
-            "^glib-2\\.0-0\\.dll$"
-            "^iconv-2\\.dll$"
-            "^intl-8\\.dll$"
-            "^libfluidsynth-3\\.dll$"
-            "^libmp3lame\\.[Dd][Ll][Ll]$"
-            "^libxml2\\.dll$"
-            "^mpg123\\.dll$"
-            "^ogg\\.dll$"
-            "^opus\\.dll$"
-            "^pcre2-16d?\\.dll$"
-            "^pcre2-8d?\\.dll$"
-            "^sndfile\\.dll$"
-            "^vorbis\\.dll$"
-            "^vorbisenc\\.dll$"
-            "^zip\\.dll$"
-            "^zlibd?1\\.dll$"
-        PRE_EXCLUDE_REGEXES ".*"
+        PRE_EXCLUDE_REGEXES
+            "^api-ms-"
+            "^ext-ms-"
+        POST_EXCLUDE_REGEXES
+            ".*/[Ss]ystem32/.*\\.dll"
         RUNTIME DESTINATION bin
     )
 endif()
@@ -381,7 +372,17 @@ if (BUILD_TESTS)
     # copy/paste tests can read back whatever the desktop's clipboard last
     # held (e.g. a browser copy) instead of the data the test just copied,
     # popping an unexpected QMessageBox that nothing is waiting to close
-    set_tests_properties(run_tests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    #
+    # QT_TEST_FUNCTION_TIMEOUT makes QTest itself abort whichever single test
+    # function is stuck, with a message naming it, instead of the whole
+    # process hanging silently until something external (ctest's TIMEOUT
+    # here, or the CI-level timeout used instead of ctest) kills it blind --
+    # this is what would have turned the sndfile.dll deployment gap into an
+    # immediate, attributable failure instead of a 25-minute silent hang
+    set_tests_properties(run_tests PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_TEST_FUNCTION_TIMEOUT=120000"
+        TIMEOUT 300
+    )
 endif()
 
 include(CPack)

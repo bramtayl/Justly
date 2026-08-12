@@ -154,9 +154,54 @@ jobs:
         qt6-gtk-platformtheme
         && sudo apt-get autoremove --purge -y
 
+    # runs the installed test binary directly instead of through ctest, with
+    # its own timeout watchdog -- ctest's own captured stdout has the same
+    # Start/Totals/Finished-goes-missing quirk as Windows here too, and a
+    # bare `ctest --timeout` gives no attribution when a single test hangs.
+    # QT_TEST_FUNCTION_TIMEOUT makes QTest itself abort (and name) whichever
+    # test function is actually stuck; the 300s kill below is only a
+    # last-resort backstop for a hang QTest's own watchdog doesn't catch
+    # (e.g. before/after any test function runs)
     - name: Test on MacOS and Ubuntu
       if: matrix.family != 'windows'
-      run: cd with_tests; QT_DEBUG_PLUGINS=1 QT_QPA_PLATFORM=offscreen ctest --build-config Debug --verbose
+      run: |
+        cd with_tests
+        if [ "${{ matrix.family }}" = "macos" ]; then
+          exe="../test_install/JustlyTests.app/Contents/MacOS/JustlyTests"
+        else
+          exe="../test_install/bin/JustlyTests"
+        fi
+
+        QT_DEBUG_PLUGINS=1 QT_QPA_PLATFORM=offscreen QT_TEST_FUNCTION_TIMEOUT=120000 "$exe" -o test_output.txt,txt &
+        pid=$!
+        ( sleep 300 && kill -9 "$pid" 2>/dev/null ) &
+        watchdog=$!
+
+        run_tests_code=0
+        wait "$pid" || run_tests_code=$?
+        kill "$watchdog" 2>/dev/null || true
+        wait "$watchdog" 2>/dev/null || true
+
+        overall_code=$run_tests_code
+        if [ "$run_tests_code" -ne 0 ]; then
+          echo "::error::run_tests exited with code $run_tests_code (137 means it was killed after the 300s watchdog)"
+        fi
+
+        # separate from run_tests: launches via LaunchServices (as Finder
+        # would) to catch bundle-structure problems that direct-binary
+        # invocation above wouldn't (e.g. bad Info.plist); open's own exit
+        # code only reflects whether the launch succeeded, not the app's
+        # exit status, so this can't replace run_tests as a pass/fail check
+        if [ "${{ matrix.family }}" = "macos" ]; then
+          bundle_code=0
+          open -W -a "../test_install/JustlyTests.app" || bundle_code=$?
+          if [ "$bundle_code" -ne 0 ]; then
+            echo "::error::bundle_opens exited with code $bundle_code"
+            overall_code=$bundle_code
+          fi
+        fi
+
+        exit "$overall_code"
 
     # ctest's captured stdout never contains QTest's own Start/Totals/
     # Finished summary on Windows (see CMakeLists.txt) -- the test now
@@ -195,14 +240,41 @@ jobs:
     # qt_generate_deploy_app_script/windeployqt actually deployed. This is
     # scoped to the step's own process, so no reinstall step is needed --
     # the Release build below still sees the original PATH/QT_PLUGIN_PATH.
+    # runs the installed test binary directly instead of through ctest --
+    # ctest's captured stdout never contains QTest's own Start/Totals/
+    # Finished summary here (see CMakeLists.txt), and a hang inside ctest
+    # gave zero attribution beyond "timed out after 1500s". QT_TEST_
+    # FUNCTION_TIMEOUT makes QTest itself abort (and name) whichever test
+    # function is actually stuck; the 300s kill below is only a last-resort
+    # backstop, and dumps thread state so a hang outside any test function
+    # is still diagnosable instead of silent
     - name: Test on Windows
       if: matrix.family == 'windows'
       shell: pwsh
       run: |
         $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -notlike "$env:QT_ROOT_DIR*" }) -join ';'
         Remove-Item Env:\QT_PLUGIN_PATH -ErrorAction SilentlyContinue
+        $env:QT_QPA_PLATFORM = "offscreen"
+        $env:QT_TEST_FUNCTION_TIMEOUT = "120000"
         cd with_tests
-        ctest --build-config Debug --verbose
+        $exePath = (Resolve-Path "..\test_install\bin\JustlyTests.exe").Path
+        $workDir = (Get-Location).Path
+        $proc = Start-Process -FilePath $exePath -WorkingDirectory $workDir -ArgumentList "-o", "test_output.txt,txt" -NoNewWindow -PassThru -RedirectStandardOutput "run_tests_stdout.txt" -RedirectStandardError "run_tests_stderr.txt"
+        $finished = $proc.WaitForExit(300000)
+        if (-not $finished) {
+          Write-Host "::error::run_tests timed out after 300s -- thread count: $($proc.Threads.Count)"
+          Get-Process -Id $proc.Id | Select-Object -ExpandProperty Threads | Format-Table Id, ThreadState, WaitReason
+          Write-Host "=== captured stdout so far ==="
+          Get-Content run_tests_stdout.txt -ErrorAction SilentlyContinue
+          Write-Host "=== captured stderr so far ==="
+          Get-Content run_tests_stderr.txt -ErrorAction SilentlyContinue
+          Stop-Process -Id $proc.Id -Force
+          exit 1
+        }
+        if ($proc.ExitCode -ne 0) {
+          Write-Host "::error::run_tests exited with code $($proc.ExitCode)"
+          exit $proc.ExitCode
+        }
 
     - name: Show QTest output on Windows
       if: always() && matrix.family == 'windows'
