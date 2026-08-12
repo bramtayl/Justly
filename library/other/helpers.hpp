@@ -9,13 +9,14 @@
 #include <QtCore/QtAssert>
 #include <QtGui/QClipboard>
 #include <QtGui/QGuiApplication>
+#include <QtWidgets/QMessageBox>
 #include <algorithm>
+#include <cstdlib>
 #include <iterator>
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/xmlstring.h>
 #include <limits>
-#include <stdexcept>
 #include <string>
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
@@ -171,9 +172,13 @@ static inline void set_xml_int(xmlNode &node, const char *const field_name,
     // Q_ASSERT compiles out in release builds, so a broken/incomplete
     // installation missing a bundled resource (xsd schema, icon,
     // soundfont) would otherwise silently hand the caller a nonexistent
-    // path instead of failing here
-    throw std::runtime_error("missing bundled resource file: " +
-                             result_file.toStdString());
+    // path instead of failing here; there's no valid path to hand back,
+    // so report it to the user and exit rather than throwing
+    QMessageBox::critical(
+        nullptr, QObject::tr("Missing resource file"),
+        QObject::tr("Missing bundled resource file: %1")
+            .arg(result_file));
+    std::exit(EXIT_FAILURE); // NOLINT(concurrency-mt-unsafe)
   }
   return result_file.toStdString();
 }

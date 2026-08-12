@@ -101,7 +101,8 @@
       "Bash(cmake --help-command file)",
       "Bash(git fetch *)",
       "Bash(/tmp/claude-1000/-home-brandon-Justly/f01af3d8-c64d-4405-998e-e0ca6b499e3e/scratchpad/watch_run.sh 31637048184)",
-      "Bash(git merge *)"
+      "Bash(git merge *)",
+      "Bash(xvfb-run -a ./bin/JustlyTests test_get_share_file_existing)"
     ]
   }
 }

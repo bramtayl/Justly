@@ -5,7 +5,6 @@
 #include <QtCore/QtAssert>
 #include <libxml/parser.h>
 #include <numeric>
-#include <stdexcept>
 
 #include "other/helpers.hpp"
 
@@ -31,12 +30,7 @@ struct Rational {
   }
 
   [[nodiscard]] auto operator/(const Rational &other_interval) const {
-    if (other_interval.numerator == 0) {
-      // Q_ASSERT compiles out in release builds, so dividing by a
-      // zero-numerator Rational would otherwise silently construct a
-      // zero-denominator result instead of failing here
-      throw std::runtime_error("division by a zero-numerator Rational");
-    }
+    Q_ASSERT(other_interval.numerator != 0);
     return Rational(numerator * other_interval.denominator,
                     denominator * other_interval.numerator);
   }

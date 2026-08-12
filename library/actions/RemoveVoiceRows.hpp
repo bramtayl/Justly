@@ -81,13 +81,13 @@ struct RemoveVoiceRows : public QUndoCommand {
         first_row_number, static_cast<int>(old_voice_rows.size()),
         /*is_insertion=*/true);
   }
-
+ 
   void redo() override {
     const auto number_of_rows = static_cast<int>(old_voice_rows.size());
     auto &chords = voices_model.song.chords;
 
     // finish every mutation to song.chords and voices_model before showing
-    // the warning dialog below -- QMessageBox::warning runs a nested event
+    // the warning dialog below -- use::warning runs a nested event
     // loop, and anything that repaints while it's up (e.g. the notes table)
     // must never see a note's voice_number pointing at a voice list that
     // hasn't been shrunk to match yet
