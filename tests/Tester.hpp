@@ -27,6 +27,7 @@
 #include <QtCore/QVariant>
 #include <QtCore/Qt>
 #include <QtCore/QtAssert>
+#include <QtCore/QtTypes>
 #include <QtCore/qtmetamacros.h>
 #include <QtGui/QAction>
 #include <QtGui/QClipboard>
@@ -79,6 +80,7 @@
 #include "menus/SongMenuBar.hpp"
 #include "menus/ViewMenu.hpp"
 #include "models/ChordsModel.hpp"
+#include "musicxml/MeasureRepeatInfo.hpp"
 #include "other/PianoRollNoteEvent.hpp"
 #include "other/Song.hpp"
 #include "other/helpers.hpp"
@@ -1855,7 +1857,7 @@ private slots:
   // that doesn't exist (or isn't a zip) leaves internal_pointer null, and
   // read_zip_entry must degrade to its documented "empty QByteArray" return
   // instead of crashing.
-  void test_read_zip_entry_null_archive() {
+  void test_read_zip_entry_null_archive() const {
     const ZipArchive archive(test_dir.filePath("does_not_exist.zip"));
     QCOMPARE(archive.internal_pointer, nullptr);
     QCOMPARE(read_zip_entry(archive, "anything"), QByteArray());
