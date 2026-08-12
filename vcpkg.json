@@ -3,7 +3,12 @@
     "name": "justly",
     "version": "0.2.0",
     "dependencies": [
-        "fluidsynth",
+        {
+            "name": "fluidsynth",
+            "features": [
+                "sndfile"
+            ]
+        },
         {
             "name": "libzip",
             "default-features": false

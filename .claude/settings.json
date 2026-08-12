@@ -65,7 +65,10 @@
       "Bash(xargs -I{} sh -c 'echo {}; grep -n \"times\\\\|duration\\\\|fifths\\\\|octave-change\\\\|chromatic\" {} | head -20')",
       "Bash(QT_QPA_PLATFORM=offscreen xvfb-run -a ./bin/JustlyTests)",
       "Bash(QT_QPA_PLATFORM=offscreen ./bin/JustlyTests test_import_musicxml_orphan_tie_stop)",
-      "Bash(QT_QPA_PLATFORM=offscreen ./bin/JustlyTests test_musicxml_error)"
+      "Bash(QT_QPA_PLATFORM=offscreen ./bin/JustlyTests test_musicxml_error)",
+      "Bash(find / -path /proc -prune -o -iname \"portfile.cmake\" -path \"*fluidsynth*\" -print)",
+      "Bash(find / -path /proc -prune -o -iname \"vcpkg.json\" -path \"*fluidsynth*\" -print)",
+      "Bash(python3 -c \"import json; json.load\\(open\\('vcpkg.json'\\)\\)\")"
     ]
   }
 }
