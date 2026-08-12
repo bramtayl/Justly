@@ -156,15 +156,14 @@ jobs:
 
     - name: Test on MacOS and Ubuntu
       if: matrix.family != 'windows'
-      run: cd with_tests; QT_DEBUG_PLUGINS=1 QT_QPA_PLATFORM=offscreen ctest --build-config Debug --verbose
-
-    # ctest's captured stdout never contains QTest's own Start/Totals/
-    # Finished summary on Windows (see CMakeLists.txt) -- the test now
-    # writes that summary to a file instead, so print it here to keep it
-    # visible in the CI log on every platform.
-    - name: Show QTest output on MacOS and Ubuntu
-      if: always() && matrix.family != 'windows'
-      run: cat with_tests/test_output.txt
+      run: |
+        cd with_tests
+        if [ "${{ matrix.family }}" = "macos" ]; then
+          exe="../test_install/JustlyTests.app/Contents/MacOS/JustlyTests"
+        else
+          exe="../test_install/bin/JustlyTests"
+        fi
+        QT_QPA_PLATFORM=offscreen $exe
 
     # the Release build below links against these the same way the Debug
     # build did, so they have to come back before "Configure without tests
@@ -201,8 +200,9 @@ jobs:
       run: |
         $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -notlike "$env:QT_ROOT_DIR*" }) -join ';'
         Remove-Item Env:\QT_PLUGIN_PATH -ErrorAction SilentlyContinue
+        $env:QT_QPA_PLATFORM = "offscreen"
         cd with_tests
-        ctest --build-config Debug --verbose
+        ..\test_install\bin\JustlyTests.exe -o test_output.txt,txt
 
     - name: Show QTest output on Windows
       if: always() && matrix.family == 'windows'

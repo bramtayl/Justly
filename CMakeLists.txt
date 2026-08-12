@@ -242,27 +242,42 @@ if (WIN32)
         install(TARGETS ${app_target} RUNTIME_DEPENDENCY_SET vcpkg_deps)
     endforeach()
 
+    # normalizes paths (forward slashes only) before POST_EXCLUDE_REGEXES
+    # matching -- without this, file(GET_RUNTIME_DEPENDENCIES) can hand back
+    # mixed-separator paths (e.g. "C:\Windows\system32/foo.dll") depending on
+    # how a dependency was found, which would make the System32 exclude below
+    # silently fail to match on some but not all of them
+    cmake_policy(SET CMP0207 NEW)
+
+    # deny-list instead of an allowlist so a newly added vcpkg dependency
+    # (e.g. the sndfile/vorbis/flac/opus/mpg123/mp3lame/ogg chain pulled in
+    # for SF3 support) gets deployed automatically -- an allowlist silently
+    # drops anything nobody remembered to add, which is exactly what let
+    # JustlyTests.exe ship without sndfile.dll and fail to even start.
+    #
+    # PRE_EXCLUDE_REGEXES skips resolution entirely for names that would
+    # otherwise make file(GET_RUNTIME_DEPENDENCIES) hard-error with "Could
+    # not resolve runtime dependencies": Qt's own DLLs (windeployqt deploys
+    # those separately, see above) and a couple of Windows-internal names
+    # (hvsifiletrust.dll, wtdccm.dll) that don't correspond to a real file
+    # anywhere CMake looks, observed by actually running this and reading
+    # the resulting error message -- if a future dependency addition hits
+    # the same error, add its name here too.
+    #
+    # since CMake 3.31, dependency names are lowercased before matching
+    # against these regexes, so every pattern here must be lowercase or it
+    # silently never matches (this is what broke "^Qt6" -- the actual name
+    # being matched is "qt6cored.dll", not "Qt6Cored.dll")
     install(RUNTIME_DEPENDENCY_SET vcpkg_deps
         DIRECTORIES "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin"
-        PRE_INCLUDE_REGEXES
-            "^[Ff][Ll][Aa][Cc]\\.[Dd][Ll][Ll]$"
-            "^glib-2\\.0-0\\.dll$"
-            "^iconv-2\\.dll$"
-            "^intl-8\\.dll$"
-            "^libfluidsynth-3\\.dll$"
-            "^libmp3lame\\.[Dd][Ll][Ll]$"
-            "^libxml2\\.dll$"
-            "^mpg123\\.dll$"
-            "^ogg\\.dll$"
-            "^opus\\.dll$"
-            "^pcre2-16d?\\.dll$"
-            "^pcre2-8d?\\.dll$"
-            "^sndfile\\.dll$"
-            "^vorbis\\.dll$"
-            "^vorbisenc\\.dll$"
-            "^zip\\.dll$"
-            "^zlibd?1\\.dll$"
-        PRE_EXCLUDE_REGEXES ".*"
+        PRE_EXCLUDE_REGEXES
+            "^api-ms-"
+            "^ext-ms-"
+            "^qt6"
+            "^hvsifiletrust\\.dll$"
+            "^wtdccm\\.dll$"
+        POST_EXCLUDE_REGEXES
+            ".*/[Ss]ystem32/.*\\.dll"
         RUNTIME DESTINATION bin
     )
 endif()
@@ -381,7 +396,17 @@ if (BUILD_TESTS)
     # copy/paste tests can read back whatever the desktop's clipboard last
     # held (e.g. a browser copy) instead of the data the test just copied,
     # popping an unexpected QMessageBox that nothing is waiting to close
-    set_tests_properties(run_tests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    #
+    # QT_TEST_FUNCTION_TIMEOUT makes QTest itself abort whichever single test
+    # function is stuck, with a message naming it, instead of the whole
+    # process hanging silently until something external (ctest's TIMEOUT
+    # here, or the CI-level timeout used instead of ctest) kills it blind --
+    # this is what would have turned the sndfile.dll deployment gap into an
+    # immediate, attributable failure instead of a 25-minute silent hang
+    set_tests_properties(run_tests PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_TEST_FUNCTION_TIMEOUT=120000"
+        TIMEOUT 300
+    )
 endif()
 
 include(CPack)
