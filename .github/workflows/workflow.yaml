@@ -165,6 +165,7 @@ jobs:
     - name: Test on MacOS and Ubuntu
       if: matrix.family != 'windows'
       run: |
+        repo_root="$(pwd)"
         cd with_tests
         if [ "${{ matrix.family }}" = "macos" ]; then
           exe="../test_install/JustlyTests.app/Contents/MacOS/JustlyTests"
@@ -174,13 +175,13 @@ jobs:
 
         QT_DEBUG_PLUGINS=1 QT_QPA_PLATFORM=offscreen QT_TEST_FUNCTION_TIMEOUT=120000 "$exe" -o test_output.txt,txt &
         pid=$!
+        # last-resort backstop if QT_TEST_FUNCTION_TIMEOUT doesn't catch it
+        # (e.g. a hang outside any test function); if run_tests exits first
+        # this sleep just gets reaped as a harmless orphan by the runner
         ( sleep 300 && kill -9 "$pid" 2>/dev/null ) &
-        watchdog=$!
 
         run_tests_code=0
         wait "$pid" || run_tests_code=$?
-        kill "$watchdog" 2>/dev/null || true
-        wait "$watchdog" 2>/dev/null || true
 
         overall_code=$run_tests_code
         if [ "$run_tests_code" -ne 0 ]; then
@@ -191,10 +192,13 @@ jobs:
         # would) to catch bundle-structure problems that direct-binary
         # invocation above wouldn't (e.g. bad Info.plist); open's own exit
         # code only reflects whether the launch succeeded, not the app's
-        # exit status, so this can't replace run_tests as a pass/fail check
+        # exit status, so this can't replace run_tests as a pass/fail check.
+        # `open -a` needs an absolute path -- given a relative one it treats
+        # it as an app name to look up via LaunchServices instead and fails
+        # with "Unable to find application named ..."
         if [ "${{ matrix.family }}" = "macos" ]; then
           bundle_code=0
-          open -W -a "../test_install/JustlyTests.app" || bundle_code=$?
+          open -W -a "$repo_root/test_install/JustlyTests.app" || bundle_code=$?
           if [ "$bundle_code" -ne 0 ]; then
             echo "::error::bundle_opens exited with code $bundle_code"
             overall_code=$bundle_code

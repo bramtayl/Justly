@@ -242,16 +242,35 @@ if (WIN32)
         install(TARGETS ${app_target} RUNTIME_DEPENDENCY_SET vcpkg_deps)
     endforeach()
 
+    # normalizes paths (forward slashes only) before POST_EXCLUDE_REGEXES
+    # matching -- without this, file(GET_RUNTIME_DEPENDENCIES) can hand back
+    # mixed-separator paths (e.g. "C:\Windows\system32/foo.dll") depending on
+    # how a dependency was found, which would make the System32 exclude below
+    # silently fail to match on some but not all of them
+    cmake_policy(SET CMP0207 NEW)
+
     # deny-list instead of an allowlist so a newly added vcpkg dependency
     # (e.g. the sndfile/vorbis/flac/opus/mpg123/mp3lame/ogg chain pulled in
     # for SF3 support) gets deployed automatically -- an allowlist silently
     # drops anything nobody remembered to add, which is exactly what let
-    # JustlyTests.exe ship without sndfile.dll and fail to even start
+    # JustlyTests.exe ship without sndfile.dll and fail to even start.
+    #
+    # PRE_EXCLUDE_REGEXES skips resolution entirely for names that would
+    # otherwise make file(GET_RUNTIME_DEPENDENCIES) hard-error with "Could
+    # not resolve runtime dependencies": Qt's own DLLs (windeployqt deploys
+    # those separately, see above) and a couple of Windows-internal names
+    # (HvsiFileTrust.dll, wtdccm.dll) that don't correspond to a real file
+    # anywhere CMake looks, observed by actually running this and reading
+    # the resulting error message -- if a future dependency addition hits
+    # the same error, add its name here too
     install(RUNTIME_DEPENDENCY_SET vcpkg_deps
         DIRECTORIES "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin"
         PRE_EXCLUDE_REGEXES
             "^api-ms-"
             "^ext-ms-"
+            "^Qt6"
+            "^HvsiFileTrust\\.dll$"
+            "^wtdccm\\.dll$"
         POST_EXCLUDE_REGEXES
             ".*/[Ss]ystem32/.*\\.dll"
         RUNTIME DESTINATION bin
