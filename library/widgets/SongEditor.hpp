@@ -124,16 +124,18 @@ static void open_file_and_reload(SongMenuBar &song_menu_bar,
                                  SongWidget &song_widget,
                                  PianoRollWidget &piano_roll_widget,
                                  const QString &filename) {
-  open_file(song_widget, filename);
-  song_reloaded(song_menu_bar, song_widget, piano_roll_widget);
+  if (open_file(song_widget, filename)) {
+    song_reloaded(song_menu_bar, song_widget, piano_roll_widget);
+  }
 }
 
 static void import_musicxml_and_reload(SongMenuBar &song_menu_bar,
                                        SongWidget &song_widget,
                                        PianoRollWidget &piano_roll_widget,
                                        const QString &filename) {
-  import_musicxml(song_widget, filename);
-  song_reloaded(song_menu_bar, song_widget, piano_roll_widget);
+  if (import_musicxml(song_widget, filename)) {
+    song_reloaded(song_menu_bar, song_widget, piano_roll_widget);
+  }
 }
 
 static void zoom_in_piano_roll(PianoRollWidget &widget) {

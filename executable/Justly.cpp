@@ -18,8 +18,9 @@ auto main(int number_of_arguments, char *arguments[]) -> int {
   set_up();
   SongEditor song_editor;
   song_editor.show();
-  maybe_restore_recovery(song_editor.song_widget);
-  song_reloaded(song_editor.song_menu_bar, song_editor.song_widget,
-               song_editor.piano_roll_widget);
+  if (maybe_restore_recovery(song_editor.song_widget)) {
+    song_reloaded(song_editor.song_menu_bar, song_editor.song_widget,
+                 song_editor.piano_roll_widget);
+  }
   return QApplication::exec();
 }

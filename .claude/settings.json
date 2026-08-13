@@ -106,7 +106,12 @@
       "Bash(clang-format -i library/widgets/SongWidget.hpp library/other/helpers.hpp)",
       "Bash(xvfb-run -a ./bin/JustlyTests test_string_to_maybe_int test_musicxml_error)",
       "Bash(xvfb-run -a ./bin/JustlyTests)",
-      "Bash(grep -iE \"Justly$|Justly:\")"
+      "Bash(grep -iE \"Justly$|Justly:\")",
+      "Bash(xargs -I{} sh -c 'echo ==={}; grep -n -i \"insert.*voice\\\\|voice.*insert\\\\|middle\" {}')",
+      "Bash(QT_QPA_PLATFORM=offscreen ./bin/JustlyTests test_insert_after)",
+      "Bash(awk 'NR==1438,NR==1998' /home/brandon/Justly/library/widgets/SongWidget.hpp)",
+      "Bash(awk -F: '$1>=1438 && $1<=1987')",
+      "Bash(awk -F: '$1>=1445 && $1<=1997')"
     ]
   }
 }

@@ -962,7 +962,8 @@ check_note_voices(QWidget &parent, const QList<SubNote> &notes,
   return true;
 }
 
-static inline void open_file(SongWidget &song_widget, const QString &filename) {
+[[nodiscard]] static inline auto open_file(SongWidget &song_widget,
+                                           const QString &filename) -> bool {
 
   Q_ASSERT(filename.isValidUtf16());
   auto &undo_stack = song_widget.undo_stack;
@@ -974,14 +975,14 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
 
   auto document = maybe_read_xml_file(filename);
   if (!check_xml_document(song_widget, document)) {
-    return;
+    return false;
   }
 
   static XMLValidator song_validator("song.xsd");
   if (validate_against_schema(song_validator, document) != 0) {
     QMessageBox::warning(&song_widget, QObject::tr("Validation Error"),
                          QObject::tr("Invalid song file"));
-    return;
+    return false;
   }
 
   auto &song_node = get_root(document);
@@ -1030,7 +1031,7 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
   }
 
   if (!names_and_voices_ok) {
-    return;
+    return false;
   }
 
   reset_switch_table_to_chords(song_widget.switch_column);
@@ -1066,15 +1067,18 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
 
   clear_and_clean(undo_stack);
   remove_recovery_file();
+  return true;
 }
 
 // call after SongEditor is constructed and shown: recovery.xml only exists
 // if the previous session didn't reach a clean shutdown (see
-// connect_recovery_timer and SongEditor::closeEvent)
-static inline void maybe_restore_recovery(SongWidget &song_widget) {
+// connect_recovery_timer and SongEditor::closeEvent). Returns whether a
+// recovery was actually loaded, so callers know whether to refresh
+[[nodiscard]] static inline auto
+maybe_restore_recovery(SongWidget &song_widget) -> bool {
   const auto recovery_file = get_recovery_file_path();
   if (!QFile::exists(recovery_file)) {
-    return;
+    return false;
   }
 
   if (QMessageBox::question(
@@ -1083,7 +1087,7 @@ static inline void maybe_restore_recovery(SongWidget &song_widget) {
                          "the unsaved work from your last session?")) !=
       QMessageBox::Yes) {
     remove_recovery_file();
-    return;
+    return false;
   }
 
   const auto original_file =
@@ -1091,12 +1095,15 @@ static inline void maybe_restore_recovery(SongWidget &song_widget) {
 
   // open_file always points current_file at whatever filename it's given,
   // and removes recovery.xml as a side effect once loaded
-  open_file(song_widget, recovery_file);
+  if (!open_file(song_widget, recovery_file)) {
+    return false;
+  }
   song_widget.current_file = original_file;
 
   // the recovered content was never saved, so mark it dirty even though
   // open_file's normal load path leaves the undo stack clean
   song_widget.undo_stack.resetClean();
+  return true;
 }
 
 static inline void connect_recovery_timer(SongWidget &song_widget) {
@@ -1435,8 +1442,8 @@ maybe_read_musicxml_document(const QString &filename) -> XMLDocument {
   return maybe_read_xml_file(filename);
 }
 
-static inline void import_musicxml(SongWidget &song_widget,
-                                   const QString &filename) {
+[[nodiscard]] static inline auto import_musicxml(SongWidget &song_widget,
+                                                 const QString &filename) -> bool {
   auto &undo_stack = song_widget.undo_stack;
   auto &spin_boxes = song_widget.controls_column.spin_boxes;
   auto &switch_table = song_widget.switch_column.switch_table;
@@ -1446,14 +1453,14 @@ static inline void import_musicxml(SongWidget &song_widget,
 
   auto document = maybe_read_musicxml_document(filename);
   if (!check_xml_document(song_widget, document)) {
-    return;
+    return false;
   }
 
   static XMLValidator musicxml_validator("musicxml.xsd");
   if (validate_against_schema(musicxml_validator, document) != 0) {
     QMessageBox::warning(&song_widget, QObject::tr("Validation Error"),
                          QObject::tr("Invalid musicxml file"));
-    return;
+    return false;
   }
 
   // Get root_pointer element
@@ -1462,7 +1469,7 @@ static inline void import_musicxml(SongWidget &song_widget,
     QMessageBox::warning(
         &song_widget, QObject::tr("Partwise error"),
         QObject::tr("Justly only supports partwise musicxml scores"));
-    return; // endpoint
+    return false; // endpoint
   }
 
   // Get part-list
@@ -1545,7 +1552,7 @@ static inline void import_musicxml(SongWidget &song_widget,
                     QObject::tr("Key error"),
                     QObject::tr("Fifths value is out of range"));
                 if (!maybe_fifths.has_value()) {
-                  return; // endpoint
+                  return false; // endpoint
                 }
                 const auto [octave, degree] = get_octave_degree(
                     FIFTH_HALFSTEPS * maybe_fifths.value());
@@ -1555,14 +1562,14 @@ static inline void import_musicxml(SongWidget &song_widget,
                   QMessageBox::warning(
                       &song_widget, QObject::tr("Divisions error"),
                       QObject::tr("Fractional divisions are not supported"));
-                  return; // endpoint
+                  return false; // endpoint
                 }
                 const auto maybe_divisions = get_int_or_warn(
                     song_widget, attribute_element,
                     QObject::tr("Divisions error"),
                     QObject::tr("Divisions value is out of range"));
                 if (!maybe_divisions.has_value()) {
-                  return; // endpoint
+                  return false; // endpoint
                 }
                 const auto new_divisions = maybe_divisions.value();
                 Q_ASSERT(new_divisions > 0);
@@ -1576,14 +1583,14 @@ static inline void import_musicxml(SongWidget &song_widget,
                       &song_widget, QObject::tr("Transpose error"),
                       QObject::tr(
                           "Microtonal transpositions are not supported"));
-                  return; // endpoint
+                  return false; // endpoint
                 }
                 const auto maybe_chromatic = get_int_or_warn(
                     song_widget, chromatic_element,
                     QObject::tr("Transpose error"),
                     QObject::tr("Chromatic value is out of range"));
                 if (!maybe_chromatic.has_value()) {
-                  return; // endpoint
+                  return false; // endpoint
                 }
                 const auto chromatic_semitones = maybe_chromatic.value();
                 auto octave_change_octaves = 0;
@@ -1598,7 +1605,7 @@ static inline void import_musicxml(SongWidget &song_widget,
                         QObject::tr("Transpose error"),
                         QObject::tr("Octave change value is out of range"));
                     if (!maybe_octave_change.has_value()) {
-                      return; // endpoint
+                      return false; // endpoint
                     }
                     octave_change_octaves = maybe_octave_change.value();
                   }
@@ -1653,13 +1660,13 @@ static inline void import_musicxml(SongWidget &song_widget,
                           &song_widget, QObject::tr("Pitch error"),
                           QObject::tr(
                               "Microtonal pitches are not supported"));
-                      return; // endpoint
+                      return false; // endpoint
                     }
                     const auto maybe_alter = get_int_or_warn(
                         song_widget, pitch_field, QObject::tr("Pitch error"),
                         QObject::tr("Alter value is out of range"));
                     if (!maybe_alter.has_value()) {
-                      return; // endpoint
+                      return false; // endpoint
                     }
                     alter = maybe_alter.value();
                   }
@@ -1674,14 +1681,14 @@ static inline void import_musicxml(SongWidget &song_widget,
                       &song_widget, QObject::tr("Note duration error"),
                       QObject::tr(
                           "Fractional note durations are not supported"));
-                  return; // endpoint
+                  return false; // endpoint
                 }
                 const auto maybe_duration = get_int_or_warn(
                     song_widget, note_field,
                     QObject::tr("Note duration error"),
                     QObject::tr("Note duration is out of range"));
                 if (!maybe_duration.has_value()) {
-                  return; // endpoint
+                  return false; // endpoint
                 }
                 note_duration = maybe_duration.value();
               } else if (name == "unpitched") {
@@ -1712,7 +1719,7 @@ static inline void import_musicxml(SongWidget &song_widget,
               QMessageBox::warning(
                   &song_widget, QObject::tr("Note duration error"),
                   QObject::tr("Notes without durations not supported"));
-              return; // endpoint
+              return false; // endpoint
             }
             if (new_chord) {
               chord_start_time = current_time;
@@ -1784,14 +1791,14 @@ static inline void import_musicxml(SongWidget &song_widget,
           } else if (measure_element_name == "backup") {
             const auto duration = get_duration(song_widget, measure_element);
             if (!duration.has_value()) {
-              return; // endpoint
+              return false; // endpoint
             }
             current_time -= duration.value();
             chord_start_time = current_time;
           } else if (measure_element_name == "forward") {
             const auto duration = get_duration(song_widget, measure_element);
             if (!duration.has_value()) {
-              return; // endpoint
+              return false; // endpoint
             }
             current_time += duration.value();
             chord_start_time = current_time;
@@ -1822,7 +1829,7 @@ static inline void import_musicxml(SongWidget &song_widget,
                         song_widget, times_text, QObject::tr("Repeat error"),
                         QObject::tr("Repeat times is out of range"));
                     if (!maybe_times.has_value()) {
-                      return; // endpoint
+                      return false; // endpoint
                     }
                     measure_info.repeat_times = maybe_times.value();
                   }
@@ -1928,7 +1935,7 @@ static inline void import_musicxml(SongWidget &song_widget,
   if (chord_state == chord_dict_end) {
     QMessageBox::warning(&song_widget, QObject::tr("Empty MusicXML error"),
                          QObject::tr("No chords"));
-    return; // endpoint
+    return false; // endpoint
   }
 
   if (unpitched_voice_names.empty()) {
@@ -1984,6 +1991,7 @@ static inline void import_musicxml(SongWidget &song_widget,
 
   clear_and_clean(undo_stack);
   remove_recovery_file();
+  return true;
 }
 
 static inline void add_menu_action(

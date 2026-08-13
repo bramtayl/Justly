@@ -1050,11 +1050,7 @@ private slots:
 
     const auto old_row_count = model.rowCount();
 
-    // voices can only be appended after the last row, not inserted in the
-    // middle
-    const auto is_voice =
-        row_type == RowType::pitched_voice_type || row_type == RowType::unpitched_voice_type;
-    select_cell(switch_table, is_voice ? old_row_count - 1 : 0, 0);
+    select_cell(switch_table, 0, 0);
     song_editor.song_menu_bar.edit_menu.insert_menu.insert_after_action
         .trigger();
 
@@ -1945,6 +1941,76 @@ private slots:
 
     open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
                          song_editor.piano_roll_widget, test_dir.filePath("test_song.xml"));
+  };
+
+  // regression test: opening/importing a file bypasses the undo stack, so
+  // replace_table (which normally resets the switch column's label and the
+  // view menu's actions whenever the table switches to a different row
+  // type) never runs for them; open_file_and_reload/import_musicxml_and_reload
+  // must reapply that same reset explicitly (via song_reloaded) instead of
+  // leaving the label/actions stuck showing whatever was being edited before
+  void test_open_after_editing_chord_notes_resets_menu() {
+    auto &song_widget = song_editor.song_widget;
+    auto &switch_column = song_widget.switch_column;
+    auto &view_menu = song_editor.song_menu_bar.view_menu;
+
+    switch_to(song_editor, RowType::pitched_note_type, 0);
+    QCOMPARE(switch_column.editing_text.text(), "Pitched notes for chord 1");
+    QVERIFY(view_menu.back_to_chords_action.isEnabled());
+
+    open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                         song_editor.piano_roll_widget,
+                         test_dir.filePath("test_song.xml"));
+
+    QCOMPARE(switch_column.editing_text.text(), "Chords");
+    QVERIFY(!view_menu.back_to_chords_action.isEnabled());
+    QVERIFY(view_menu.edit_pitched_voices_action.isEnabled());
+    QVERIFY(view_menu.edit_unpitched_voices_action.isEnabled());
+    QVERIFY(!view_menu.previous_chord_action.isEnabled());
+    QVERIFY(!view_menu.next_chord_action.isEnabled());
+  };
+
+  // regression test: File > Open used to be disabled while viewing anything
+  // other than chords (pitched/unpitched notes or voices), even though
+  // there's no reason opening a different file requires navigating back to
+  // the chords view first
+  void test_open_action_enabled_outside_chords_view() {
+    auto &undo_stack = song_editor.song_widget.undo_stack;
+    auto &open_action = song_editor.song_menu_bar.file_menu.open_action;
+
+    QVERIFY(open_action.isEnabled());
+
+    switch_to(song_editor, RowType::pitched_voice_type, -1);
+    QVERIFY(open_action.isEnabled());
+    maybe_switch_back_to_chords(undo_stack, RowType::pitched_voice_type);
+
+    switch_to(song_editor, RowType::pitched_note_type, 0);
+    QVERIFY(open_action.isEnabled());
+    maybe_switch_back_to_chords(undo_stack, RowType::pitched_note_type);
+  };
+
+  // regression test: song_reloaded (which resets the switch column's label/
+  // view menu and rebuilds the piano roll) must only run once open_file/
+  // import_musicxml actually succeed -- a rejected file must leave whatever
+  // view the user was on (including mid-note-editing) completely alone
+  // rather than silently bouncing them back to the chords view
+  void test_failed_import_does_not_reset_notes_view() {
+    auto &song_widget = song_editor.song_widget;
+    auto &switch_column = song_widget.switch_column;
+
+    switch_to(song_editor, RowType::pitched_note_type, 0);
+    QCOMPARE(switch_column.editing_text.text(), "Pitched notes for chord 1");
+
+    close_message_later(song_editor, waiting_for_message,
+                        "Invalid musicxml file");
+    import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                               song_editor.piano_roll_widget,
+                               test_dir.filePath("not_musicxml.xml"));
+
+    QCOMPARE(switch_column.editing_text.text(), "Pitched notes for chord 1");
+
+    maybe_switch_back_to_chords(song_widget.undo_stack,
+                               RowType::pitched_note_type);
   };
 
   static void test_next_previous_data() {
@@ -2838,7 +2904,7 @@ private slots:
 
     answer_question_later(song_editor, waiting_for_message,
                           RECOVERY_PROMPT_TEXT, QMessageBox::Yes);
-    maybe_restore_recovery(song_widget);
+    QVERIFY(maybe_restore_recovery(song_widget));
 
     QCOMPARE(get_gain(song_widget), NEW_GAIN_1);
     QCOMPARE(song_widget.current_file, fixture_file);
@@ -2865,7 +2931,7 @@ private slots:
 
     answer_question_later(song_editor, waiting_for_message,
                           RECOVERY_PROMPT_TEXT, QMessageBox::No);
-    maybe_restore_recovery(song_widget);
+    QVERIFY(!maybe_restore_recovery(song_widget));
 
     QCOMPARE(get_gain(song_widget), old_gain);
     QCOMPARE(song_widget.current_file, fixture_file);
@@ -2878,8 +2944,8 @@ private slots:
     remove_recovery_file();
     QVERIFY(!QFile::exists(get_recovery_file_path()));
     // the class-wide unexpected_message_timer watchdog fails the test if a
-    // dialog appears here, so no explicit assertion is needed
-    maybe_restore_recovery(song_editor.song_widget);
+    // dialog appears here
+    QVERIFY(!maybe_restore_recovery(song_editor.song_widget));
   };
 
   void test_starting_control_data() {
