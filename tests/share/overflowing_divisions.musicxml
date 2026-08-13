@@ -1,0 +1,21 @@
+<score-partwise version="4.0">
+   <part-list>
+      <score-part id="P1">
+         <part-name>Piano</part-name>
+      </score-part>
+   </part-list>
+   <part id="P1">
+      <measure number="1">
+         <attributes>
+            <divisions>99999999999999999999</divisions>
+         </attributes>
+         <note>
+            <pitch>
+               <step>C</step>
+               <octave>4</octave>
+            </pitch>
+            <duration>4</duration>
+         </note>
+      </measure>
+   </part>
+</score-partwise>

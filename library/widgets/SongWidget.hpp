@@ -862,6 +862,31 @@ static inline void save_as_file(SongWidget &song_widget,
   return XMLDocument(xmlReadFile(filename.toStdString().c_str(), nullptr, 0));
 }
 
+// some musicxml fields (e.g. fifths, octave-change, repeat times) are
+// unbounded xs:integer with no schema-enforced range, so a malformed or
+// hostile file can contain a magnitude that overflows int; used by
+// import_musicxml to reject such a file with a warning instead of letting
+// string_to_int assert
+[[nodiscard]] static auto get_int_or_warn(QWidget &parent,
+                                          const std::string &content,
+                                          const QString &title,
+                                          const QString &message)
+    -> std::optional<int> {
+  auto maybe_int = string_to_maybe_int(content);
+  if (!maybe_int.has_value()) {
+    QMessageBox::warning(&parent, title, message);
+  }
+  return maybe_int;
+}
+
+[[nodiscard]] static auto get_int_or_warn(QWidget &parent,
+                                          const xmlNode &element,
+                                          const QString &title,
+                                          const QString &message)
+    -> std::optional<int> {
+  return get_int_or_warn(parent, get_content(element), title, message);
+}
+
 template <RowInterface SubRow>
 static void clear_rows(RowsModel<SubRow> &rows_model) {
   const auto number_of_rows = rows_model.rowCount(QModelIndex());
@@ -1125,13 +1150,19 @@ static inline void connect_recovery_timer(SongWidget &song_widget) {
   return get_reference(maybe_get_xml_child(node, name));
 }
 
-[[nodiscard]] static auto get_duration(xmlNode &measure_element)
+[[nodiscard]] static auto get_duration(QWidget &parent,
+                                       xmlNode &measure_element)
     -> std::optional<int> {
   auto &duration_element = get_xml_child(measure_element, "duration");
   if (!xml_content_is_integer(duration_element)) {
+    QMessageBox::warning(
+        &parent, QObject::tr("Duration error"),
+        QObject::tr("Fractional durations are not supported"));
     return std::nullopt;
   }
-  return xml_to_int(duration_element);
+  return get_int_or_warn(parent, duration_element,
+                         QObject::tr("Duration error"),
+                         QObject::tr("Duration is out of range"));
 }
 
 [[nodiscard]] static auto get_interval(const int midi_interval) {
@@ -1519,9 +1550,15 @@ static inline void import_musicxml(SongWidget &song_widget,
                   get_reference(attribute_element_pointer);
               const auto attribute_name = get_xml_name(attribute_element);
               if (attribute_name == "key") {
+                const auto maybe_fifths = get_int_or_warn(
+                    song_widget, get_xml_child(attribute_element, "fifths"),
+                    QObject::tr("Key error"),
+                    QObject::tr("Fifths value is out of range"));
+                if (!maybe_fifths.has_value()) {
+                  return; // endpoint
+                }
                 const auto [octave, degree] = get_octave_degree(
-                    FIFTH_HALFSTEPS *
-                    xml_to_int(get_xml_child(attribute_element, "fifths")));
+                    FIFTH_HALFSTEPS * maybe_fifths.value());
                 part_midi_keys_dict[current_time] = MIDDLE_C_MIDI + degree;
               } else if (attribute_name == "divisions") {
                 if (!xml_content_is_integer(attribute_element)) {
@@ -1530,7 +1567,14 @@ static inline void import_musicxml(SongWidget &song_widget,
                       QObject::tr("Fractional divisions are not supported"));
                   return; // endpoint
                 }
-                const auto new_divisions = xml_to_int(attribute_element);
+                const auto maybe_divisions = get_int_or_warn(
+                    song_widget, attribute_element,
+                    QObject::tr("Divisions error"),
+                    QObject::tr("Divisions value is out of range"));
+                if (!maybe_divisions.has_value()) {
+                  return; // endpoint
+                }
+                const auto new_divisions = maybe_divisions.value();
                 Q_ASSERT(new_divisions > 0);
                 song_divisions = std::lcm(song_divisions, new_divisions);
                 part_divisions_dict[current_time] = new_divisions;
@@ -1544,8 +1588,14 @@ static inline void import_musicxml(SongWidget &song_widget,
                           "Microtonal transpositions are not supported"));
                   return; // endpoint
                 }
-                const auto chromatic_semitones =
-                    xml_to_int(chromatic_element);
+                const auto maybe_chromatic = get_int_or_warn(
+                    song_widget, chromatic_element,
+                    QObject::tr("Transpose error"),
+                    QObject::tr("Chromatic value is out of range"));
+                if (!maybe_chromatic.has_value()) {
+                  return; // endpoint
+                }
+                const auto chromatic_semitones = maybe_chromatic.value();
                 auto octave_change_octaves = 0;
                 auto *transpose_field_pointer =
                     xmlFirstElementChild(&attribute_element);
@@ -1553,7 +1603,14 @@ static inline void import_musicxml(SongWidget &song_widget,
                   auto &transpose_field =
                       get_reference(transpose_field_pointer);
                   if (node_is(transpose_field, "octave-change")) {
-                    octave_change_octaves = xml_to_int(transpose_field);
+                    const auto maybe_octave_change = get_int_or_warn(
+                        song_widget, transpose_field,
+                        QObject::tr("Transpose error"),
+                        QObject::tr("Octave change value is out of range"));
+                    if (!maybe_octave_change.has_value()) {
+                      return; // endpoint
+                    }
+                    octave_change_octaves = maybe_octave_change.value();
                   }
                   transpose_field_pointer =
                       xmlNextElementSibling(transpose_field_pointer);
@@ -1608,7 +1665,13 @@ static inline void import_musicxml(SongWidget &song_widget,
                               "Microtonal pitches are not supported"));
                       return; // endpoint
                     }
-                    alter = xml_to_int(pitch_field);
+                    const auto maybe_alter = get_int_or_warn(
+                        song_widget, pitch_field, QObject::tr("Pitch error"),
+                        QObject::tr("Alter value is out of range"));
+                    if (!maybe_alter.has_value()) {
+                      return; // endpoint
+                    }
+                    alter = maybe_alter.value();
                   }
                   pitch_field_pointer =
                       xmlNextElementSibling(pitch_field_pointer);
@@ -1623,7 +1686,14 @@ static inline void import_musicxml(SongWidget &song_widget,
                           "Fractional note durations are not supported"));
                   return; // endpoint
                 }
-                note_duration = xml_to_int(note_field);
+                const auto maybe_duration = get_int_or_warn(
+                    song_widget, note_field,
+                    QObject::tr("Note duration error"),
+                    QObject::tr("Note duration is out of range"));
+                if (!maybe_duration.has_value()) {
+                  return; // endpoint
+                }
+                note_duration = maybe_duration.value();
               } else if (name == "unpitched") {
                 is_pitched = false;
               } else if (name == "tie") {
@@ -1722,21 +1792,15 @@ static inline void import_musicxml(SongWidget &song_widget,
               }
             }
           } else if (measure_element_name == "backup") {
-            const auto duration = get_duration(measure_element);
+            const auto duration = get_duration(song_widget, measure_element);
             if (!duration.has_value()) {
-              QMessageBox::warning(
-                  &song_widget, QObject::tr("Duration error"),
-                  QObject::tr("Fractional durations are not supported"));
               return; // endpoint
             }
             current_time -= duration.value();
             chord_start_time = current_time;
           } else if (measure_element_name == "forward") {
-            const auto duration = get_duration(measure_element);
+            const auto duration = get_duration(song_widget, measure_element);
             if (!duration.has_value()) {
-              QMessageBox::warning(
-                  &song_widget, QObject::tr("Duration error"),
-                  QObject::tr("Fractional durations are not supported"));
               return; // endpoint
             }
             current_time += duration.value();
@@ -1761,9 +1825,17 @@ static inline void import_musicxml(SongWidget &song_widget,
                       times_property == nullptr
                           ? std::string()
                           : xml_string_to_string(times_property);
-                  measure_info.repeat_times = times_text.empty()
-                                                   ? DEFAULT_REPEAT_TIMES
-                                                   : string_to_int(times_text);
+                  if (times_text.empty()) {
+                    measure_info.repeat_times = DEFAULT_REPEAT_TIMES;
+                  } else {
+                    const auto maybe_times = get_int_or_warn(
+                        song_widget, times_text, QObject::tr("Repeat error"),
+                        QObject::tr("Repeat times is out of range"));
+                    if (!maybe_times.has_value()) {
+                      return; // endpoint
+                    }
+                    measure_info.repeat_times = maybe_times.value();
+                  }
                 }
               } else if (node_is(child, "ending")) {
                 if (get_property(child, "type") == "start") {

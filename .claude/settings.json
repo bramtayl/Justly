@@ -102,7 +102,10 @@
       "Bash(git fetch *)",
       "Bash(/tmp/claude-1000/-home-brandon-Justly/f01af3d8-c64d-4405-998e-e0ca6b499e3e/scratchpad/watch_run.sh 31637048184)",
       "Bash(git merge *)",
-      "Bash(xvfb-run -a ./bin/JustlyTests test_get_share_file_existing)"
+      "Bash(xvfb-run -a ./bin/JustlyTests test_get_share_file_existing)",
+      "Bash(clang-format -i library/widgets/SongWidget.hpp library/other/helpers.hpp)",
+      "Bash(xvfb-run -a ./bin/JustlyTests test_string_to_maybe_int test_musicxml_error)",
+      "Bash(xvfb-run -a ./bin/JustlyTests)"
     ]
   }
 }

@@ -59,7 +59,6 @@
 #include <fluidsynth/types.h>
 #include <limits>
 #include <memory>
-#include <stdexcept>
 #include <string>
 #include <utility>
 #include <zip.h>
@@ -1686,6 +1685,12 @@ private slots:
     QTest::newRow("fractional divisions")
         << "fractional_divisions.musicxml"
         << "Fractional divisions are not supported";
+    // regression test: divisions is unbounded xs:decimal with no
+    // schema-enforced range, so a magnitude that doesn't fit in a 32-bit int
+    // must be rejected with a warning instead of overflowing std::stoi
+    QTest::newRow("overflowing divisions")
+        << "overflowing_divisions.musicxml"
+        << "Divisions value is out of range";
   };
 
   void test_musicxml_error() {
@@ -1872,30 +1877,28 @@ private slots:
     QCOMPARE(xml_bytes_size_is_safe(size), is_safe);
   };
 
-  // regression test: some musicxml fields (e.g. fifths, octave-change) are
-  // unbounded xs:integer with no schema-enforced range, so std::stoi can
-  // throw std::out_of_range on a magnitude that doesn't fit in int; xml_to_int
-  // must clamp instead of letting that exception propagate uncaught and
-  // crash the app
-  static void test_xml_to_int_clamps_out_of_range_data() {
-    QTest::addColumn<QByteArray>("xml");
-    QTest::addColumn<int>("expected");
+  // regression test: some musicxml fields (e.g. fifths, octave-change,
+  // divisions) are unbounded xs:integer/xs:decimal with no schema-enforced
+  // range, so std::stoi can throw std::out_of_range on a magnitude that
+  // doesn't fit in int; string_to_maybe_int must report that as nullopt
+  // instead of letting the exception propagate uncaught and crash the app
+  static void test_string_to_maybe_int_data() {
+    QTest::addColumn<QString>("content");
+    QTest::addColumn<bool>("expect_value");
 
-    QTest::newRow("ordinary value") << QByteArray("<n>42</n>") << 42;
+    QTest::newRow("ordinary value") << "42" << true;
     QTest::newRow("overflow positive")
-        << QByteArray("<n>99999999999999999999</n>")
-        << std::numeric_limits<int>::max();
+        << "99999999999999999999" << false;
     QTest::newRow("overflow negative")
-        << QByteArray("<n>-99999999999999999999</n>")
-        << std::numeric_limits<int>::min();
+        << "-99999999999999999999" << false;
   };
 
-  static void test_xml_to_int_clamps_out_of_range() {
-    QFETCH(const QByteArray, xml);
-    QFETCH(const int, expected);
+  static void test_string_to_maybe_int() {
+    QFETCH(const QString, content);
+    QFETCH(const bool, expect_value);
 
-    const auto document = read_xml_document(xml);
-    QCOMPARE(xml_to_int(get_root(document)), expected);
+    QCOMPARE(string_to_maybe_int(content.toStdString()).has_value(),
+             expect_value);
   };
 
   // get_share_file's missing-file path (Q_ASSERT compiles out in release

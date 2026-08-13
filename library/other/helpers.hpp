@@ -4,6 +4,7 @@
 #include <QtCore/QDir>
 #include <QtCore/QFile>
 #include <QtCore/QList>
+#include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtCore/QVariant>
 #include <QtCore/QtAssert>
@@ -16,7 +17,8 @@
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/xmlstring.h>
-#include <limits>
+#include <optional>
+#include <stdexcept>
 #include <string>
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
@@ -97,19 +99,29 @@ template <typename SubType>
   return xml_string_to_string(content.internal_pointer);
 }
 
-[[nodiscard]] static inline auto string_to_int(const std::string &content) {
+// some musicxml fields (e.g. fifths, octave-change, repeat times) are
+// unbounded xs:integer with no schema-enforced range, so a malformed or
+// hostile file can contain a magnitude that overflows int; callers that
+// read those fields must use this instead of string_to_int and reject the
+// file on nullopt rather than letting std::stoi throw
+[[nodiscard]] static inline auto
+string_to_maybe_int(const std::string &content) -> std::optional<int> {
   try {
     return std::stoi(content);
   } catch (const std::out_of_range &) {
-    // some musicxml fields (e.g. fifths, octave-change, repeat times) are
-    // unbounded xs:integer with no schema-enforced range, so a malformed or
-    // hostile file can contain a magnitude that overflows int; clamp instead
-    // of letting std::stoi's exception propagate uncaught and crash the app
-    // -- whatever consumes the clamped value then fails through its own
-    // existing bounds checks (e.g. the frequency-range warning) instead
-    return content.starts_with('-') ? std::numeric_limits<int>::min()
-                                    : std::numeric_limits<int>::max();
+    return std::nullopt;
   }
+}
+
+[[nodiscard]] static inline auto string_to_int(const std::string &content) {
+  const auto maybe_int = string_to_maybe_int(content);
+  // song.xsd and the clipboard xsds bound every int field they define to
+  // fit in a 32-bit int, so schema-validated callers can't reach this;
+  // genuinely unbounded musicxml fields must call string_to_maybe_int
+  // directly and reject the file instead of ever calling this on an
+  // out-of-range value
+  Q_ASSERT(maybe_int.has_value());
+  return maybe_int.value_or(0);
 }
 
 [[nodiscard]] static inline auto xml_content_is_integer(const xmlNode &element)
