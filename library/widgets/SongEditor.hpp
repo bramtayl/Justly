@@ -20,6 +20,7 @@
 #include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QDockWidget>
+#include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QStatusBar>
 #include <functional>
@@ -31,6 +32,7 @@
 #include "cell_types/Interval.hpp"
 #include "cell_types/Rational.hpp"
 #include "column_numbers/ChordColumn.hpp"
+#include "menus/FileMenu.hpp"
 #include "menus/InsertMenu.hpp"
 #include "menus/PlayMenu.hpp"
 #include "menus/SongMenuBar.hpp"
@@ -102,6 +104,36 @@ static void rebuild_piano_roll_scene(PianoRollWidget &widget) {
                widget.selection_first_row_number,
                widget.selection_number_of_rows,
                widget.selecting_chord_from_playhead);
+}
+
+// open_file/import_musicxml replace the song wholesale, bypassing the undo
+// stack, so the usual indexChanged-driven refresh never fires for them --
+// call this afterward. They also always land back on the chords view (see
+// reset_switch_table_to_chords), so reuse replace_table to redo the same
+// label/view-menu/selection reset it applies when switching there manually;
+// unlike ordinary navigation it doesn't know the song's contents changed
+// under it, so the piano roll scene still needs an explicit rebuild on top
+static void song_reloaded(SongMenuBar &song_menu_bar, SongWidget &song_widget,
+                          PianoRollWidget &piano_roll_widget) {
+  replace_table(song_menu_bar, song_widget, RowType::chord_type, -1,
+               piano_roll_widget);
+  rebuild_piano_roll_scene(piano_roll_widget);
+}
+
+static void open_file_and_reload(SongMenuBar &song_menu_bar,
+                                 SongWidget &song_widget,
+                                 PianoRollWidget &piano_roll_widget,
+                                 const QString &filename) {
+  open_file(song_widget, filename);
+  song_reloaded(song_menu_bar, song_widget, piano_roll_widget);
+}
+
+static void import_musicxml_and_reload(SongMenuBar &song_menu_bar,
+                                       SongWidget &song_widget,
+                                       PianoRollWidget &piano_roll_widget,
+                                       const QString &filename) {
+  import_musicxml(song_widget, filename);
+  song_reloaded(song_menu_bar, song_widget, piano_roll_widget);
 }
 
 static void zoom_in_piano_roll(PianoRollWidget &widget) {
@@ -244,11 +276,37 @@ public:
 
     connect_recovery_timer(song_widget);
 
-    // open/import replace the song wholesale, bypassing the undo stack, so
-    // indexChanged above won't fire for them -- refresh explicitly instead
-    song_widget.song_reloaded = [&piano_roll_widget_ref]() -> void {
-      rebuild_piano_roll_scene(piano_roll_widget_ref);
-    };
+    QObject::connect(
+        &song_menu_bar.file_menu.open_action, &QAction::triggered, this,
+        [&song_menu_bar_ref, &song_widget_ref, &piano_roll_widget_ref]() -> auto {
+          if (can_discard_changes(song_widget_ref)) {
+            auto &dialog = make_file_dialog(
+                song_widget_ref, "Open — Justly", "XML file (*.xml)",
+                QFileDialog::AcceptOpen, ".xml", QFileDialog::ExistingFile);
+            if (dialog.exec() != 0) {
+              open_file_and_reload(song_menu_bar_ref, song_widget_ref,
+                                   piano_roll_widget_ref,
+                                   get_selected_file(song_widget_ref, dialog));
+            }
+            dialog.deleteLater();
+          }
+        });
+    QObject::connect(
+        &song_menu_bar.file_menu.import_action, &QAction::triggered, this,
+        [&song_menu_bar_ref, &song_widget_ref, &piano_roll_widget_ref]() -> auto {
+          if (can_discard_changes(song_widget_ref)) {
+            auto &dialog = make_file_dialog(
+                song_widget_ref, "Import MusicXML — Justly",
+                "MusicXML file (*.musicxml *.mxl)", QFileDialog::AcceptOpen,
+                ".musicxml", QFileDialog::ExistingFile);
+            if (dialog.exec() != 0) {
+              import_musicxml_and_reload(
+                  song_menu_bar_ref, song_widget_ref, piano_roll_widget_ref,
+                  get_selected_file(song_widget_ref, dialog));
+            }
+            dialog.deleteLater();
+          }
+        });
 
     // double-clicking a note in the piano roll opens the pitched/unpitched
     // notes table for its chord, scrolled to and highlighting that note --

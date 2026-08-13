@@ -105,7 +105,8 @@
       "Bash(xvfb-run -a ./bin/JustlyTests test_get_share_file_existing)",
       "Bash(clang-format -i library/widgets/SongWidget.hpp library/other/helpers.hpp)",
       "Bash(xvfb-run -a ./bin/JustlyTests test_string_to_maybe_int test_musicxml_error)",
-      "Bash(xvfb-run -a ./bin/JustlyTests)"
+      "Bash(xvfb-run -a ./bin/JustlyTests)",
+      "Bash(grep -iE \"Justly$|Justly:\")"
     ]
   }
 }

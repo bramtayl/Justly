@@ -63,32 +63,10 @@ struct FileMenu : public QMenu {
                            !song_widget.current_file.isEmpty());
                      });
 
-    QObject::connect(&open_action, &QAction::triggered, this, [&song_widget]() -> auto {
-      if (can_discard_changes(song_widget)) {
-        auto &dialog = make_file_dialog(
-            song_widget, "Open — Justly", "XML file (*.xml)",
-            QFileDialog::AcceptOpen, ".xml", QFileDialog::ExistingFile);
-        if (dialog.exec() != 0) {
-          open_file(song_widget, get_selected_file(song_widget, dialog));
-        }
-        dialog.deleteLater();
-      }
-    });
-
-    QObject::connect(
-        &import_action, &QAction::triggered, this, [&song_widget]() -> auto {
-          if (can_discard_changes(song_widget)) {
-            auto &dialog = make_file_dialog(
-                song_widget, "Import MusicXML — Justly",
-                "MusicXML file (*.musicxml *.mxl)", QFileDialog::AcceptOpen,
-                ".musicxml", QFileDialog::ExistingFile);
-            if (dialog.exec() != 0) {
-              import_musicxml(song_widget,
-                              get_selected_file(song_widget, dialog));
-            }
-            dialog.deleteLater();
-          }
-        });
+    // open_action/import_action are wired externally in SongEditor.hpp,
+    // which is the first header up the include chain with access to both
+    // SongMenuBar and this widget's PianoRollWidget, needed to refresh the
+    // view menu and piano roll after replacing the song wholesale
 
     QObject::connect(&save_action, &QAction::triggered, this, [&song_widget]() -> auto {
       save_as_file(song_widget, song_widget.current_file);

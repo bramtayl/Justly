@@ -192,12 +192,13 @@ static void maybe_switch_back_to_chords(QUndoStack &undo_stack,
   }
 }
 
-static void open_text(SongWidget &song_widget, const QString &song_text) {
+static void open_text(SongEditor &song_editor, const QString &song_text) {
   QTemporaryFile temp_file;
   QVERIFY(temp_file.open());
   temp_file.write(song_text.toStdString().c_str());
   temp_file.close();
-  open_file(song_widget, temp_file.fileName());
+  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                       song_editor.piano_roll_widget, temp_file.fileName());
 }
 
 [[nodiscard]] static auto find_top_level_message_box() -> QMessageBox * {
@@ -493,7 +494,8 @@ public:
     // fail fast here instead of letting open_file's "Invalid XML file"
     // QMessageBox block forever with no user around to dismiss it
     Q_ASSERT(QFile::exists(fixture_file));
-    open_file(song_editor.song_widget, fixture_file);
+    open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                         song_editor.piano_roll_widget, fixture_file);
 
     QObject::connect(&unexpected_message_timer, &QTimer::timeout, this,
                      [this]() -> auto {
@@ -1232,7 +1234,7 @@ private slots:
     QVERIFY(old_chord_count > 0);
 
     close_message_later(song_editor, waiting_for_message, error_message);
-    open_text(song_widget, text);
+    open_text(song_editor, text);
 
     // a file that fails voice validation must leave the previously open
     // song untouched rather than clearing it out from under the user (open_file
@@ -1352,7 +1354,7 @@ private slots:
     const auto voice_row_type = is_pitched ? RowType::pitched_voice_type
                                            : RowType::unpitched_voice_type;
 
-    open_text(song_widget, text);
+    open_text(song_editor, text);
 
     switch_to(song_editor, voice_row_type, -1);
     QCOMPARE(get_model(switch_table).rowCount(), 3);
@@ -1394,7 +1396,8 @@ private slots:
     maybe_switch_back_to_chords(undo_stack, voice_row_type);
 
     // restore the shared fixture
-    open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
+    open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                         song_editor.piano_roll_widget, test_dir.filePath("test_song.xml"));
   };
 
   // regression test: RemoveVoiceRows::redo() used to shift note voice_numbers
@@ -1412,7 +1415,7 @@ private slots:
     auto &song = song_widget.song;
 
     open_text(
-        song_widget,
+        song_editor,
         "<song><gain>1</gain><starting_key>220</starting_key>"
         "<starting_tempo>100</starting_tempo><starting_velocity>10</"
         "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
@@ -1466,7 +1469,8 @@ private slots:
     maybe_switch_back_to_chords(undo_stack, RowType::pitched_voice_type);
 
     // restore the shared fixture
-    open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
+    open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                         song_editor.piano_roll_widget, test_dir.filePath("test_song.xml"));
   }
 
   static void test_remove_last_voice_error_data() {
@@ -1504,7 +1508,7 @@ private slots:
     const auto voice_row_type = is_pitched ? RowType::pitched_voice_type
                                            : RowType::unpitched_voice_type;
 
-    open_text(song_widget, text);
+    open_text(song_editor, text);
 
     switch_to(song_editor, voice_row_type, -1);
     auto &model = get_model(switch_table);
@@ -1521,7 +1525,8 @@ private slots:
     maybe_switch_back_to_chords(undo_stack, voice_row_type);
 
     // restore the shared fixture
-    open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
+    open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                         song_editor.piano_roll_widget, test_dir.filePath("test_song.xml"));
   };
 
   static void test_unreduced_ratio_from_xml_data() {
@@ -1575,7 +1580,7 @@ private slots:
     auto &switch_table = song_widget.switch_column.switch_table;
     auto &undo_stack = song_widget.undo_stack;
 
-    open_text(song_widget, text);
+    open_text(song_editor, text);
 
     auto &model = get_model(switch_table);
     const auto test_index = model.index(0, column_number);
@@ -1593,7 +1598,8 @@ private slots:
     QCOMPARE(undo_stack.count(), old_undo_count);
 
     // restore the shared fixture
-    open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
+    open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                         song_editor.piano_roll_widget, test_dir.filePath("test_song.xml"));
   };
 
   // regression test: Interval's folding constructor used to halve the
@@ -1658,11 +1664,13 @@ private slots:
 
     auto &song_widget = song_editor.song_widget;
 
-    import_musicxml(song_widget, test_dir.filePath(file_name));
+    import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                               song_editor.piano_roll_widget, test_dir.filePath(file_name));
     QCOMPARE(get_model(song_widget.switch_column.switch_table)
                  .rowCount(QModelIndex()),
              number_of_chords);
-    open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
+    open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                         song_editor.piano_roll_widget, test_dir.filePath("test_song.xml"));
   };
 
   static void test_musicxml_error_data() {
@@ -1698,7 +1706,8 @@ private slots:
     QFETCH(const QString, file_name);
 
     close_message_later(song_editor, waiting_for_message, error_message);
-    import_musicxml(song_editor.song_widget, test_dir.filePath(file_name));
+    import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                               song_editor.piano_roll_widget, test_dir.filePath(file_name));
   };
 
   // regression test: a backward repeat with no forward repeat since the
@@ -1761,7 +1770,8 @@ private slots:
   void test_import_musicxml_ties_do_not_cross_voices() {
     auto &song_widget = song_editor.song_widget;
 
-    import_musicxml(song_widget, test_dir.filePath("tied_voices.musicxml"));
+    import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                               song_editor.piano_roll_widget, test_dir.filePath("tied_voices.musicxml"));
 
     auto &song = song_widget.song;
     QCOMPARE(song.chords.size(), 2);
@@ -1780,7 +1790,8 @@ private slots:
     QCOMPARE(right_hand_notes.at(0).beats.numerator, 8);
     QCOMPARE(right_hand_notes.at(0).beats.denominator, 1);
 
-    open_file(song_widget, test_dir.filePath("test_song.xml"));
+    open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                         song_editor.piano_roll_widget, test_dir.filePath("test_song.xml"));
   };
 
   // regression test: a <tie type="stop"/> with no matching earlier
@@ -1791,7 +1802,8 @@ private slots:
   void test_import_musicxml_orphan_tie_stop() {
     auto &song_widget = song_editor.song_widget;
 
-    import_musicxml(song_widget, test_dir.filePath("orphan_tie.musicxml"));
+    import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                               song_editor.piano_roll_widget, test_dir.filePath("orphan_tie.musicxml"));
 
     auto &song = song_widget.song;
     QCOMPARE(song.chords.size(), 1);
@@ -1801,7 +1813,8 @@ private slots:
     QCOMPARE(notes.at(0).beats.numerator, 4);
     QCOMPARE(notes.at(0).beats.denominator, 1);
 
-    open_file(song_widget, test_dir.filePath("test_song.xml"));
+    open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                         song_editor.piano_roll_widget, test_dir.filePath("test_song.xml"));
   };
 
   // regression test: read_zip_entry casts a zip entry's reported size down
@@ -1926,10 +1939,12 @@ private slots:
     switch_to(song_editor, RowType::pitched_note_type, 1);
     insert_menu.insert_into_start_action.trigger();
 
-    import_musicxml(song_widget, test_dir.filePath("prelude.musicxml"));
+    import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                               song_editor.piano_roll_widget, test_dir.filePath("prelude.musicxml"));
     QCOMPARE(get_model(switch_table).rowCount(QModelIndex()), MUSIC_XML_ROWS);
 
-    open_file(song_widget, test_dir.filePath("test_song.xml"));
+    open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                         song_editor.piano_roll_widget, test_dir.filePath("test_song.xml"));
   };
 
   static void test_next_previous_data() {
@@ -2033,9 +2048,8 @@ private slots:
     QFETCH(const QString, text);
     QFETCH(const QString, error_message);
 
-    auto &song_widget = song_editor.song_widget;
     close_message_later(song_editor, waiting_for_message, error_message);
-    open_text(song_widget, text);
+    open_text(song_editor, text);
   };
 
   static void test_paste_after_data() { add_cells(); };
@@ -2236,7 +2250,7 @@ private slots:
                              "Reassigning 1 clipboard unpitched note voice "
                              "to the first voice \"D\""};
 
-    open_text(song_widget, text);
+    open_text(song_editor, text);
 
     // copy the second note's voice cell, which references the last (soon to
     // be removed) voice
@@ -2265,7 +2279,8 @@ private slots:
     back_to_chords_action.trigger();
 
     // restore the shared fixture
-    open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
+    open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                         song_editor.piano_roll_widget, test_dir.filePath("test_song.xml"));
   };
 
   static void test_paste_voice_renumbered_on_insert_data() {
@@ -2328,7 +2343,7 @@ private slots:
             : static_cast<int>(
                   UnpitchedNoteColumn::unpitched_note_voice_number_column);
 
-    open_text(song_widget, text);
+    open_text(song_editor, text);
 
     // copy the second note's voice cell, which references the second voice
     switch_to(song_editor, note_row_type, 0);
@@ -2354,7 +2369,8 @@ private slots:
     back_to_chords_action.trigger();
 
     // restore the shared fixture
-    open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
+    open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                         song_editor.piano_roll_widget, test_dir.filePath("test_song.xml"));
   };
 
   static void test_paste_chord_voice_renumbered_on_insert_data() {
@@ -2412,7 +2428,7 @@ private slots:
                                            : RowType::unpitched_voice_type;
     const auto last_column = Chord::get_number_of_columns() - 1;
 
-    open_text(song_widget, text);
+    open_text(song_editor, text);
 
     // copy the whole chord row, including its pitched_notes/unpitched_notes
     // column, which nests both notes' voice_number fields in the clipboard
@@ -2445,7 +2461,8 @@ private slots:
              2);
 
     // restore the shared fixture
-    open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
+    open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                         song_editor.piano_roll_widget, test_dir.filePath("test_song.xml"));
   };
 
   static void test_play_data() {
@@ -2763,7 +2780,8 @@ private slots:
     QVERIFY(QFile::exists(get_recovery_file_path()));
 
     // reloading also restores current_file/song state for later tests
-    open_file(song_widget, fixture_file);
+    open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                         song_editor.piano_roll_widget, fixture_file);
     QVERIFY(!QFile::exists(get_recovery_file_path()));
   };
 
@@ -2805,7 +2823,8 @@ private slots:
     auto &song_widget = song_editor.song_widget;
     auto fixture_file = test_dir.filePath("test_song.xml");
 
-    open_file(song_widget, fixture_file);
+    open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                         song_editor.piano_roll_widget, fixture_file);
     const auto old_gain = get_gain(song_widget);
     QCOMPARE_NE(old_gain, NEW_GAIN_1);
 
@@ -2827,14 +2846,16 @@ private slots:
     QVERIFY(!QFile::exists(get_recovery_file_path()));
     QVERIFY(!QSettings().contains("recovery/original_file"));
 
-    open_file(song_widget, fixture_file);
+    open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                         song_editor.piano_roll_widget, fixture_file);
   };
 
   void test_recovery_restore_declined() {
     auto &song_widget = song_editor.song_widget;
     auto fixture_file = test_dir.filePath("test_song.xml");
 
-    open_file(song_widget, fixture_file);
+    open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                         song_editor.piano_roll_widget, fixture_file);
     const auto old_gain = get_gain(song_widget);
     QCOMPARE_NE(old_gain, NEW_GAIN_1);
 
@@ -2977,7 +2998,7 @@ private slots:
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
 
-    open_text(song_widget, text);
+    open_text(song_editor, text);
 
     switch_to(song_editor, row_type, 0);
     QCOMPARE(get_model(switch_table).index(0, 0).data(Qt::StatusTipRole),
@@ -2996,7 +3017,8 @@ private slots:
     QFile(temp_save_file.fileName()).remove();
 
     // restore the shared fixture
-    open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
+    open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                         song_editor.piano_roll_widget, test_dir.filePath("test_song.xml"));
   };
 
   static void test_set_value_data() {
@@ -3420,7 +3442,7 @@ private slots:
         "</pitched_note></pitched_notes></chord>"
         "<chord><pitched_notes><pitched_note><voice_number>0</voice_number>"
         "</pitched_note></pitched_notes></chord></chords></song>";
-    open_text(song_widget, text);
+    open_text(song_editor, text);
 
     QCOMPARE(get_piano_roll_events(song_widget.song).size(), 2);
 
@@ -3440,7 +3462,8 @@ private slots:
     QCOMPARE(piano_roll_widget.piano_roll_scene.events.size(), 2);
 
     // restore the fixture used by the other tests
-    open_file(song_widget, test_dir.filePath("test_song.xml"));
+    open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                         song_editor.piano_roll_widget, test_dir.filePath("test_song.xml"));
   };
 
   void test_piano_roll_notes_mode_axis_starts_at_chord_start() {

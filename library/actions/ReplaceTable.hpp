@@ -29,7 +29,6 @@
 #include "column_numbers/UnpitchedNoteColumn.hpp"
 #include "column_numbers/UnpitchedVoiceColumn.hpp"
 #include "menus/EditMenu.hpp"
-#include "menus/FileMenu.hpp"
 #include "menus/InsertMenu.hpp"
 #include "menus/PasteMenu.hpp"
 #include "menus/PlayMenu.hpp"
@@ -100,13 +99,15 @@ static void update_piano_roll_widget_selection(PianoRollWidget &widget,
 static void update_piano_roll_selection(PianoRollWidget &piano_roll_widget,
                                         const SongWidget &song_widget) {
   const auto &switch_table = song_widget.switch_column.switch_table;
+  const auto row_type = switch_table.delegate.current_row_type;
+  const auto chord_number = get_parent_chord_number(switch_table);
   if (get_selection_model(switch_table).selection().empty()) {
-    update_piano_roll_widget_selection(piano_roll_widget, RowType::chord_type, -1, -1, 0);
+    update_piano_roll_widget_selection(piano_roll_widget, row_type,
+                                       chord_number, -1, 0);
     return;
   }
   const auto &range = get_only_range(switch_table);
-  update_piano_roll_widget_selection(piano_roll_widget, switch_table.delegate.current_row_type,
-                                     get_parent_chord_number(switch_table),
+  update_piano_roll_widget_selection(piano_roll_widget, row_type, chord_number,
                                      range.top(), get_number_of_rows(range));
 }
 
@@ -343,7 +344,6 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
       new_row_type != RowType::pitched_voice_type);
   song_menu_bar.view_menu.edit_unpitched_voices_action.setEnabled(
       new_row_type != RowType::unpitched_voice_type);
-  song_menu_bar.file_menu.open_action.setEnabled(to_chords);
 
   switch_table.delegate.current_row_type = new_row_type;
   auto &selection_model = get_selection_model(switch_table);

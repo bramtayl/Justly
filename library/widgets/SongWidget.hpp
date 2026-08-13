@@ -1,7 +1,5 @@
 #pragma once
 
-#include <functional>
-
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QChar>
 #include <QtCore/QDir>
@@ -114,11 +112,6 @@ struct SongWidget : public QWidget {
   // change and wired up by connect_recovery_timer once save_as_file and
   // friends are defined later in this header (see comment there)
   QTimer &recovery_timer = *(new QTimer(this));
-
-  // fired after the song is replaced wholesale (open/import), which bypasses
-  // the undo stack and so doesn't trigger the usual indexChanged-driven
-  // refresh -- lets outside views (e.g. the piano roll) know to reload
-  std::function<void()> song_reloaded;
 
   SwitchColumn &switch_column = *(new SwitchColumn(undo_stack, song));
   ControlsColumn &controls_column = *(new ControlsColumn(
@@ -898,11 +891,13 @@ static void clear_rows(RowsModel<SubRow> &rows_model) {
 // members if the switch table was drilled into a chord's notes (mirrors the
 // reset that replace_table performs when the user navigates back to chords
 // manually)
-static void reset_switch_table_to_chords(SwitchTable &switch_table) {
+static void reset_switch_table_to_chords(SwitchColumn &switch_column) {
+  auto &switch_table = switch_column.switch_table;
   switch_table.pitched_notes_model.set_rows_pointer();
   switch_table.unpitched_notes_model.set_rows_pointer();
   switch_table.delegate.current_row_type = RowType::chord_type;
   set_model(switch_table, switch_table.chords_model);
+  switch_column.editing_text.setText(SwitchColumn::tr("Chords"));
 }
 
 [[nodiscard]] static auto xml_to_double(const xmlNode &element) {
@@ -1038,7 +1033,7 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
     return;
   }
 
-  reset_switch_table_to_chords(switch_table);
+  reset_switch_table_to_chords(song_widget.switch_column);
   clear_rows(chords_model);
   clear_rows(pitched_voices_model);
   clear_rows(unpitched_voices_model);
@@ -1071,9 +1066,6 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
 
   clear_and_clean(undo_stack);
   remove_recovery_file();
-  if (song_widget.song_reloaded) {
-    song_widget.song_reloaded();
-  }
 }
 
 // call after SongEditor is constructed and shown: recovery.xml only exists
@@ -1947,7 +1939,7 @@ static inline void import_musicxml(SongWidget &song_widget,
     unpitched_voice_names.push_back(QObject::tr("unpitched voice 1"));
   }
 
-  reset_switch_table_to_chords(switch_table);
+  reset_switch_table_to_chords(song_widget.switch_column);
   clear_rows(chords_model);
   clear_rows(pitched_voices_model);
   clear_rows(unpitched_voices_model);
@@ -1992,9 +1984,6 @@ static inline void import_musicxml(SongWidget &song_widget,
 
   clear_and_clean(undo_stack);
   remove_recovery_file();
-  if (song_widget.song_reloaded) {
-    song_widget.song_reloaded();
-  }
 }
 
 static inline void add_menu_action(
