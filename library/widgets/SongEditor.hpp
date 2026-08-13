@@ -96,8 +96,8 @@ static void connect_navigate_chord_action(QAction &action, QObject &context,
 // PianoRollWidget.hpp) since both are visible here once PianoRollWidget.hpp
 // is included
 static void rebuild_piano_roll_scene(PianoRollWidget &widget) {
-  rebuild_scene(widget, widget.song_widget, widget.piano_roll_view,
-               widget.axis_view, widget.legend_view, widget.row_layout,
+  rebuild_scene(widget, widget.song_widget, widget.piano_roll_scene,
+               widget.axis_scene, widget.legend_scene, widget.row_layout,
                widget.selection_row_type, widget.selection_chord_number,
                widget.selection_first_row_number,
                widget.selection_number_of_rows,
@@ -105,15 +105,15 @@ static void rebuild_piano_roll_scene(PianoRollWidget &widget) {
 }
 
 static void zoom_in_piano_roll(PianoRollWidget &widget) {
-  zoom_in(widget.piano_roll_view);
+  zoom_in(widget.piano_roll_scene);
 }
 
 static void zoom_out_piano_roll(PianoRollWidget &widget) {
-  zoom_out(widget.piano_roll_view);
+  zoom_out(widget.piano_roll_scene);
 }
 
 static void stop_piano_roll_playhead(PianoRollWidget &widget) {
-  stop_playhead(widget.piano_roll_view, widget.axis_view,
+  stop_playhead(widget.piano_roll_scene, widget.axis_scene,
                widget.song_widget.song, widget.selection_row_type,
                widget.selection_chord_number, widget.selection_first_row_number,
                widget.selection_number_of_rows,
@@ -123,32 +123,32 @@ static void stop_piano_roll_playhead(PianoRollWidget &widget) {
 static void start_piano_roll_playhead(PianoRollWidget &widget,
                                       const double baseline_ms,
                                       const double end_ms) {
-  set_manual_scrolling_enabled(widget.piano_roll_view, widget.axis_view,
+  set_manual_scrolling_enabled(widget.piano_roll_scene, widget.axis_scene,
                                false);
 
-  auto &piano_roll_view = widget.piano_roll_view;
-  piano_roll_view.playhead_baseline_ms = baseline_ms;
-  piano_roll_view.playhead_end_ms = end_ms;
-  piano_roll_view.playhead_elapsed_timer.restart();
-  piano_roll_view.playhead_active = true;
-  piano_roll_view.playhead_item.show();
+  auto &piano_roll_scene = widget.piano_roll_scene;
+  piano_roll_scene.playhead_baseline_ms = baseline_ms;
+  piano_roll_scene.playhead_end_ms = end_ms;
+  piano_roll_scene.playhead_elapsed_timer.restart();
+  piano_roll_scene.playhead_active = true;
+  piano_roll_scene.playhead_item.show();
 
   // decides which transition position_playhead() should run, based on
   // where the playhead is starting relative to the view's current
   // (not-yet-moved) center -- see PlayheadTransition
-  auto &view = piano_roll_view.view;
+  auto &view = piano_roll_scene.view;
   const auto initial_center_x =
       view.mapToScene(get_reference(view.viewport()).rect()).boundingRect().center().x();
-  const auto playhead_x = to_scene_x(piano_roll_view, baseline_ms);
+  const auto playhead_x = to_scene_x(piano_roll_scene, baseline_ms);
   if (playhead_x <= initial_center_x) {
-    piano_roll_view.playhead_transition = PlayheadTransition::waiting_to_reach_center;
+    piano_roll_scene.playhead_transition = PlayheadTransition::waiting_to_reach_center;
   } else {
-    piano_roll_view.playhead_transition = PlayheadTransition::catching_up;
-    piano_roll_view.playhead_catchup_start_center_x = initial_center_x;
+    piano_roll_scene.playhead_transition = PlayheadTransition::catching_up;
+    piano_roll_scene.playhead_catchup_start_center_x = initial_center_x;
   }
 
-  position_playhead(piano_roll_view, baseline_ms);
-  piano_roll_view.playhead_timer.start(PIANO_ROLL_TIMER_INTERVAL_MS);
+  position_playhead(piano_roll_scene, baseline_ms);
+  piano_roll_scene.playhead_timer.start(PIANO_ROLL_TIMER_INTERVAL_MS);
 }
 
 struct SongEditor : public QMainWindow {

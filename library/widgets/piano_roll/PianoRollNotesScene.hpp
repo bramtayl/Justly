@@ -24,7 +24,7 @@ static const auto PIANO_ROLL_AXIS_TICK_LENGTH = 5.0;
 static const auto PIANO_ROLL_AXIS_X = 0.0;
 static const auto PIANO_ROLL_DEFAULT_AXIS_Y = 0.0;
 // ticks are re-spaced on every zoom change (see
-// PianoRollNotesView::redraw_time_axis_ticks()) to keep roughly this many screen
+// PianoRollNotesScene::redraw_time_axis_ticks()) to keep roughly this many screen
 // pixels between them, rather than a fixed time interval -- otherwise
 // zooming in would crowd ticks together and zooming out would spread them so
 // far apart that most of the timeline carries no labels at all
@@ -38,7 +38,7 @@ static const auto PIANO_ROLL_MIN_TIME_ZOOM = 0.25;
 static const auto PIANO_ROLL_MAX_TIME_ZOOM = 8.0;
 // how long the view takes to catch up to the playhead when playback starts
 // with the playhead already right of center (see
-// PianoRollNotesView::position_playhead()) -- long enough to read as a
+// PianoRollNotesScene::position_playhead()) -- long enough to read as a
 // deliberate scroll, short enough not to lag behind what's actually playing
 static const auto PIANO_ROLL_PLAYHEAD_CATCHUP_MS = 400.0;
 static const auto PIANO_ROLL_SELECTION_RECT_PEN_WIDTH = 1.0;
@@ -53,8 +53,10 @@ static const auto PIANO_ROLL_SELECTION_RECT_Z_VALUE = -1.0;
 
 // the main scrollable graphics view: the note bars, the pitch/time axes,
 // and the playhead cursor + its playback animation all live here
-struct PianoRollNotesView {
-  QGraphicsScene &scene;
+//
+// is-a QGraphicsScene (see PianoRollAxisScene's comment for why) so it can be
+// heap-allocated and parented to parent_widget directly
+struct PianoRollNotesScene : public QGraphicsScene {
   QGraphicsView &view;
   QGraphicsLineItem &playhead_item = *(new QGraphicsLineItem);
   // the shaded box drawn behind the notes over the current selection's
@@ -84,7 +86,7 @@ struct PianoRollNotesView {
 
   // scales only this view's x axis (time), never its y axis (pitch) -- so
   // the pitch axis stays visually fixed (and stays in lockstep with
-  // PianoRollAxisView, which is never zoomed) while the time axis
+  // PianoRollAxisScene, which is never zoomed) while the time axis
   // expands/contracts
   double time_zoom_factor = 1.0;
 
@@ -117,9 +119,9 @@ struct PianoRollNotesView {
   // song on every playback tick
   QList<double> chord_start_times;
 
-  explicit PianoRollNotesView(QWidget &parent_widget)
-      : scene(*(new QGraphicsScene(&parent_widget))),
-        view(*(new QGraphicsView(&scene, &parent_widget))),
+  explicit PianoRollNotesScene(QWidget &parent_widget)
+      : QGraphicsScene(&parent_widget),
+        view(*(new QGraphicsView(this, &parent_widget))),
         playhead_timer(*(new QTimer(&parent_widget))) {
     // keeps the scene point under the cursor fixed on screen while
     // ctrl+wheel zooms the time axis (see PianoRollWidget::zoom_in()/
@@ -136,7 +138,7 @@ struct PianoRollNotesView {
     // content is narrower than the viewport itself -- e.g. a song with only
     // one short note. That padding isn't clipped, so it reveals whatever
     // the shared scene actually has to the left of PIANO_ROLL_AXIS_X: the
-    // pitch axis' own ticks/labels, duplicating PianoRollAxisView's. Pinning
+    // pitch axis' own ticks/labels, duplicating PianoRollAxisScene's. Pinning
     // to the top-left keeps any leftover space on the right/bottom instead,
     // where the scene has nothing to leak through.
     view.setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -149,7 +151,7 @@ struct PianoRollNotesView {
     playhead_item.setPen(playhead_pen);
     playhead_item.setZValue(1);
     playhead_item.hide();
-    scene.addItem(&playhead_item);
+    addItem(&playhead_item);
 
     static const auto selection_rect_color = QColor(60, 140, 255);
     auto selection_rect_pen =
@@ -162,10 +164,10 @@ struct PianoRollNotesView {
               PIANO_ROLL_SELECTION_RECT_FILL_ALPHA)));
     selection_rect_item.setZValue(PIANO_ROLL_SELECTION_RECT_Z_VALUE);
     selection_rect_item.hide();
-    scene.addItem(&selection_rect_item);
+    addItem(&selection_rect_item);
   }
 
-  ~PianoRollNotesView() = default;
+  ~PianoRollNotesScene() override = default;
 
-  NO_MOVE_COPY(PianoRollNotesView)
+  NO_MOVE_COPY(PianoRollNotesScene)
 };

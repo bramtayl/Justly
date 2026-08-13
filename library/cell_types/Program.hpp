@@ -14,8 +14,8 @@
 #include <fluidsynth.h>
 #include <fluidsynth/gen.h>
 #include <fluidsynth/misc.h>
-#include <fluidsynth/sfont.h>
 #include <fluidsynth/settings.h>
+#include <fluidsynth/sfont.h>
 #include <fluidsynth/synth.h>
 #include <fluidsynth/types.h>
 #include <fluidsynth/voice.h>

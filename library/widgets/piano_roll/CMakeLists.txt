@@ -1,7 +1,7 @@
 target_sources(JustlyLibrary INTERFACE FILE_SET justly_headers FILES
-    "PianoRollAxisView.hpp"
-    "PianoRollLegendView.hpp"
-    "PianoRollNotesView.hpp"
+    "PianoRollAxisScene.hpp"
+    "PianoRollLegendScene.hpp"
+    "PianoRollNotesScene.hpp"
     "PianoRollWidget.hpp"
     "PlayheadTransition.hpp"
 )

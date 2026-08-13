@@ -86,7 +86,7 @@ static void update_piano_roll_widget_selection(PianoRollWidget &widget,
   widget.selection_chord_number = chord_number;
   widget.selection_first_row_number = first_row_number;
   widget.selection_number_of_rows = number_of_rows;
-  apply_selection_highlight(widget.song_widget.song, widget.piano_roll_view,
+  apply_selection_highlight(widget.song_widget.song, widget.piano_roll_scene,
                             widget.selection_row_type,
                             widget.selection_chord_number,
                             widget.selection_first_row_number,
