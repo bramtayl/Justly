@@ -170,14 +170,11 @@ static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
   if (is_voice) {
     // voices can only be appended after the last row, not inserted in the
     // middle
-    auto is_last_selected = false;
     const auto row_count = get_reference(switch_table.model()).rowCount();
-    for (const auto& range : selection) {
-      if (range.bottom() == row_count - 1) {
-        is_last_selected = true;
-        break;
-      }
-    }
+    const auto is_last_selected = std::ranges::any_of(
+        selection, [row_count](const auto &range) -> auto {
+          return range.bottom() == row_count - 1;
+        });
     insert_after_action.setEnabled(is_last_selected);
   } else {
     insert_after_action.setEnabled(anything_selected);

@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
+#include <iterator>
 #include <limits>
 #include <optional>
 #include <utility>
@@ -118,11 +119,11 @@ static void redraw_time_axis_ticks(PianoRollNotesView &notes_view) {
     pen.setCosmetic(true);
     return pen;
   }();
-  for (const auto multiplier : nice_step_multipliers) {
-    if (fraction <= multiplier) {
-      nice_fraction = multiplier;
-      break;
-    }
+  const auto nice_multiplier_iterator = std::ranges::find_if(
+      nice_step_multipliers,
+      [fraction](const double multiplier) -> auto { return fraction <= multiplier; });
+  if (nice_multiplier_iterator != nice_step_multipliers.end()) {
+    nice_fraction = *nice_multiplier_iterator;
   }
   const auto step_ms = nice_fraction * magnitude;
   const auto time_axis_y = notes_view.time_axis_y;
@@ -741,11 +742,11 @@ static void rebuild_scene(QWidget &widget, const SongWidget &song_widget,
         get_parent_chord_number(song_widget.switch_column.switch_table);
     if (notes_mode_chord_number != -1) {
       QList<PianoRollNoteEvent> chord_events;
-      for (const auto &event : events) {
-        if (event.chord_number == notes_mode_chord_number) {
-          chord_events.push_back(event);
-        }
-      }
+      std::ranges::copy_if(
+          events, std::back_inserter(chord_events),
+          [notes_mode_chord_number](const PianoRollNoteEvent &event) -> auto {
+            return event.chord_number == notes_mode_chord_number;
+          });
       events = std::move(chord_events);
     }
     // each chord's start time, in chord order -- chords are laid out back-
@@ -803,12 +804,13 @@ static void rebuild_scene(QWidget &widget, const SongWidget &song_widget,
         continue;
       }
       auto assigned_lane = -1;
-      for (auto lane_index = 0; lane_index < lane_end_times.size();
-          lane_index = lane_index + 1) {
-        if (lane_end_times.at(lane_index) <= event.start_time_ms) {
-          assigned_lane = lane_index;
-          break;
-        }
+      const auto lane_iterator = std::ranges::find_if(
+          lane_end_times,
+          [start_time_ms = event.start_time_ms](const double end_time) -> auto {
+            return end_time <= start_time_ms;
+          });
+      if (lane_iterator != lane_end_times.end()) {
+        assigned_lane = static_cast<int>(lane_iterator - lane_end_times.begin());
       }
       if (assigned_lane == -1) {
         assigned_lane = static_cast<int>(lane_end_times.size());

@@ -10,6 +10,8 @@
 #include <QtGui/QAction>
 #include <QtGui/QKeySequence>
 #include <QtWidgets/QMenu>
+#include <algorithm>
+#include <ranges>
 
 #include "models/RowsModel.hpp"
 #include "other/Song.hpp"
@@ -28,10 +30,9 @@ static void modulate_before_chord(const Song &song, PlayState &play_state,
                                   const int next_chord_number) {
   const auto &chords = song.chords;
   if (next_chord_number > 0) {
-    for (auto chord_number = 0; chord_number < next_chord_number;
-         chord_number = chord_number + 1) {
-      modulate(play_state, chords.at(chord_number));
-    }
+    std::ranges::for_each(
+        chords | std::views::take(next_chord_number),
+        [&play_state](const auto &chord) -> void { modulate(play_state, chord); });
   }
 }
 

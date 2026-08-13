@@ -10,6 +10,8 @@
 #include <QtWidgets/QStyleOption>
 #include <QtWidgets/QStyledItemDelegate>
 #include <QtWidgets/QWidget>
+#include <algorithm>
+#include <iterator>
 
 #include "cell_editors/IntervalEditor.hpp"
 #include "cell_editors/MidiNumberEditor.hpp"
@@ -42,9 +44,8 @@ static auto create_voice_number_picker(QWidget *parent_pointer,
     -> auto & {
   QList<QString> voice_names;
   voice_names.reserve(voices.size());
-  for (const auto &voice : voices) {
-    voice_names.push_back(voice.name);
-  }
+  std::ranges::transform(voices, std::back_inserter(voice_names),
+                         &SubVoice::name);
   auto &specific_result = get_reference(
       new VoiceNumberPicker( // NOLINT(cppcoreguidelines-owning-memory)
           parent_pointer, voice_names));

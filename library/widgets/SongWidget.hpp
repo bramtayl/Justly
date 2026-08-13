@@ -45,6 +45,7 @@
 #include <limits>
 #include <numeric>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -147,10 +148,8 @@ static void initialize_play(SongWidget &song_widget) {
       fluid_sequencer_get_tick(player.sequencer.internal_pointer));
 
   auto &channel_schedules = player.channel_schedules;
-  for (auto index = 0; index < NUMBER_OF_MIDI_CHANNELS; index = index + 1) {
-    Q_ASSERT(index < channel_schedules.size());
-    channel_schedules[index] = 0;
-  }
+  Q_ASSERT(channel_schedules.size() == NUMBER_OF_MIDI_CHANNELS);
+  std::ranges::fill(channel_schedules, 0);
   player.percussion_channels.clear();
 }
 
@@ -496,13 +495,12 @@ static const auto NUMBER_OF_STANDARD_MIDI_CHANNELS = 16;
 [[nodiscard]] static inline auto get_pitched_midi_channels() -> const QList<int> & {
   static const auto channels = []() -> QList<int> {
     QList<int> result;
-    for (auto channel_number = 0;
-         channel_number < NUMBER_OF_STANDARD_MIDI_CHANNELS;
-         channel_number = channel_number + 1) {
-      if (channel_number != MIDI_PERCUSSION_CHANNEL) {
-        result.push_back(channel_number);
-      }
-    }
+    std::ranges::copy_if(
+        std::views::iota(0, NUMBER_OF_STANDARD_MIDI_CHANNELS),
+        std::back_inserter(result),
+        [](const int channel_number) -> auto {
+          return channel_number != MIDI_PERCUSSION_CHANNEL;
+        });
     return result;
   }();
   return channels;
@@ -927,12 +925,12 @@ template <VoiceInterface SubVoice>
 [[nodiscard]] static auto
 check_duplicate_or_empty_voice_names(QWidget &parent,
                                      const QList<SubVoice> &voices) -> bool {
-  for (const auto &voice : voices) {
-    if (voice.name.isEmpty()) {
-      QMessageBox::warning(&parent, QObject::tr("Voice name error"),
-                           QObject::tr("Voice name is empty!"));
-      return false;
-    }
+  if (std::ranges::any_of(voices, [](const SubVoice &voice) -> auto {
+        return voice.name.isEmpty();
+      })) {
+    QMessageBox::warning(&parent, QObject::tr("Voice name error"),
+                         QObject::tr("Voice name is empty!"));
+    return false;
   }
   QSet<QString> seen_names;
   for (const auto &voice : voices) {
