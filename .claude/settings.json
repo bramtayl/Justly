@@ -338,7 +338,18 @@
       "Bash(sed -i 's|#include <qtemporarydir.h>|#include <QtCore/QTemporaryDir>|' export_tests.cpp)",
       "Bash(sed -i 's|#include <qsettings.h>|#include <QtCore/QSettings>|' save_recovery_tests.cpp)",
       "Bash(python3 -c \"import yaml; yaml.safe_load\\(open\\('.github/workflows/workflow.yaml'\\)\\)\")",
-      "Bash(python3 -c \"import yaml; yaml.safe_load\\(open\\('/home/brandon/Justly/.github/workflows/workflow.yaml'\\)\\)\")"
+      "Bash(python3 -c \"import yaml; yaml.safe_load\\(open\\('/home/brandon/Justly/.github/workflows/workflow.yaml'\\)\\)\")",
+      "Bash(QT_QPA_PLATFORM=offscreen /home/brandon/Justly/test_install/bin/JustlyTests)",
+      "Bash(gcovr --xml \"coverage.xml\" --filter \"/home/brandon/Justly/library/\" --exclude-throw-branches --gcov-executable \"llvm-cov gcov\")",
+      "Bash(clang --version)",
+      "Bash(gh auth *)",
+      "Bash(grep -v \"^--$\")",
+      "Bash(llvm-cov --version)",
+      "Bash(python3 -c \"import gcovr; print\\(gcovr.__file__\\)\")",
+      "Bash(pip show *)",
+      "Bash(xargs -I{} sh -c 'echo {}')",
+      "Bash(llvm-cov gcov *)",
+      "Bash(cmake -S . -B /tmp/cov_check2 -DBUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release -DNO_REALTIME_AUDIO=ON -DTRACK_COVERAGE=ON -G Ninja)"
     ],
     "additionalDirectories": [
       "/home/brandon/Justly"

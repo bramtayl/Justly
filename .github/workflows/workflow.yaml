@@ -30,9 +30,6 @@ jobs:
     - name: Download
       uses: actions/checkout@v7
 
-    # clang's source-based instrumentation handles the coverage build more
-    # accurately than gcc/gcov (fewer inlining/macro artifacts), and llvm-cov
-    # can still emit gcov-compatible output for gcovr below
     - name: Install dependencies on Ubuntu
       if: matrix.family == 'ubuntu'
       run: >
@@ -56,8 +53,6 @@ jobs:
         libwayland-client0
         libx11-6
         libxcb1
-        clang
-        llvm
 
     - name: Install gcovr on Ubuntu
       if: matrix.family == 'ubuntu'
@@ -208,10 +203,6 @@ jobs:
 
     # coverage is measured from a separate Release build rather than the
     # Debug build tested above -- see the comment on "Run gcovr" for why.
-    # built with clang instead of gcc -- clang's coverage instrumentation
-    # maps more precisely back to source (fewer macro/inlining artifacts
-    # than gcov), and still emits gcov-compatible .gcda/.gcno files that
-    # gcovr can read via llvm-cov's gcov-compatibility mode below
     - name: Configure release build with tests for coverage on Ubuntu
       if: matrix.family == 'ubuntu'
       run: >
@@ -220,8 +211,6 @@ jobs:
         -DCMAKE_BUILD_TYPE=Release
         -DNO_REALTIME_AUDIO=ON
         -DTRACK_COVERAGE=ON
-        -DCMAKE_C_COMPILER=clang
-        -DCMAKE_CXX_COMPILER=clang++
 
     - name: Build release build with tests for coverage on Ubuntu
       if: matrix.family == 'ubuntu'
@@ -239,34 +228,31 @@ jobs:
       # silently broke this filter -- gcovr matched 0 files and uploaded an
       # empty report for the past year).
       #
-      # coverage.xml is generated from with_tests_release (a clang-built
-      # Release build), not with_tests (the gcc Debug build tested above).
-      # library/ has no `default: Q_ASSERT(false);` arms -- switches over
-      # closed enums (RowType, Qt::Orientation, the per-row Column enums)
-      # are exhaustive, and the genuinely unreachable branches
-      # (schema-validated XML parsing, UI states disabled via setEnabled)
-      # call `Q_UNREACHABLE();`. In a Debug build that lowers to a real,
-      # always-skipped assert call, which shows up as an uncovered line. In
-      # Release, NDEBUG makes it lower to a bare __builtin_unreachable(), so
-      # with optimizations on the compiler proves the arm dead and emits no
-      # code for it at all -- it never shows up as a line in the report, so
-      # no --exclude-lines-by-pattern workaround is needed here.
-      #
-      # --gcov-executable tells gcovr to read the .gcda/.gcno files with
-      # llvm-cov's gcov-compatibility mode instead of GNU gcov, since
-      # clang's coverage instrumentation must be paired with llvm-cov to
-      # parse correctly.
+      # coverage.xml is generated from with_tests_release (a Release build),
+      # not with_tests (the Debug build tested above). library/ has no
+      # `default: Q_ASSERT(false);` arms -- switches over closed enums
+      # (RowType, Qt::Orientation, the per-row Column enums) are exhaustive,
+      # and the genuinely unreachable branches (schema-validated XML
+      # parsing, UI states disabled via setEnabled) call `Q_UNREACHABLE();`.
+      # In a Debug build that lowers to a real, always-skipped assert call,
+      # which shows up as an uncovered line. In Release, NDEBUG makes it
+      # lower to a bare __builtin_unreachable(), so with optimizations on
+      # the compiler proves the arm dead and emits no code for it at all --
+      # it never shows up as a line in the report, so no
+      # --exclude-lines-by-pattern workaround is needed here.
       #
       # There are no `throw` statements anywhere in library/ --
       # --exclude-throw-branches drops the compiler-generated
-      # exception-unwind edges added to every call to a non-noexcept
+      # exception-unwind edges GCC adds to every call to a non-noexcept
       # function, which otherwise dominate the branch count and can't be
       # exercised without deliberately forcing failures like std::bad_alloc.
+      # (this relies on GCC/gcov's "(throw)" branch annotation -- clang's
+      # llvm-cov gcov emulation doesn't emit it, so don't switch this build
+      # to clang without re-checking that the exclusion still works)
       run: >
         gcovr --xml "coverage.xml"
         --filter "$(pwd)/library/"
         --exclude-throw-branches
-        --gcov-executable "llvm-cov gcov"
 
     - name: Upload code coverage
       uses: codecov/codecov-action@v7

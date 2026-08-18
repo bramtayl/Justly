@@ -530,7 +530,8 @@ inline void add_cell_pairs() {
 
 inline auto get_file_text(const QString &filename) {
   QFile file(filename);
-  Q_ASSERT(file.open(QIODevice::ReadOnly));
+  auto opened = file.open(QIODevice::ReadOnly);
+  Q_ASSERT(opened);
   QString file_text(file.readAll());
   file.close();
   // normalize line endings

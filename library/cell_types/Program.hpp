@@ -181,8 +181,10 @@ get_actual_release_milliseconds(FluidSynth &synth,
     // rendered here) and overflows partway through the hundreds of
     // start/stop calls below, logging "Ringbuffer full" for the rest
     static const auto INTROSPECTION_POLYPHONY = 8192;
-    Q_ASSERT(fluid_settings_setint(settings.internal_pointer, "synth.polyphony",
-                                   INTROSPECTION_POLYPHONY) == FLUID_OK);
+    auto polyphony_was_set = fluid_settings_setint(
+        settings.internal_pointer, "synth.polyphony",
+        INTROSPECTION_POLYPHONY) == FLUID_OK;
+    Q_ASSERT(polyphony_was_set);
     FluidSynth synth(settings);
 
     fluid_sfont_t *const soundfont_pointer = fluid_synth_get_sfont_by_id(
