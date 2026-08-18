@@ -30,13 +30,13 @@ jobs:
     - name: Download
       uses: actions/checkout@v7
 
-    - name: Update Ubuntu
-      if: matrix.family == 'ubuntu'
-      run: sudo apt-get update
-
+    # clang's source-based instrumentation handles the coverage build more
+    # accurately than gcc/gcov (fewer inlining/macro artifacts), and llvm-cov
+    # can still emit gcov-compatible output for gcovr below
     - name: Install dependencies on Ubuntu
       if: matrix.family == 'ubuntu'
       run: >
+        sudo apt-get update &&
         sudo apt-get install
         binutils
         cmake
@@ -47,11 +47,6 @@ jobs:
         libzip-dev
         qt6-base-dev
         qt6-gtk-platformtheme
-
-    - name: Install baseline runtime libraries on Ubuntu
-      if: matrix.family == 'ubuntu'
-      run: >
-        sudo apt-get install
         libapparmor1
         libasound2t64
         libdbus-1-3
@@ -61,6 +56,8 @@ jobs:
         libwayland-client0
         libx11-6
         libxcb1
+        clang
+        llvm
 
     - name: Install gcovr on Ubuntu
       if: matrix.family == 'ubuntu'
@@ -127,7 +124,7 @@ jobs:
         -DBUILD_TESTS=ON
         -DCMAKE_BUILD_TYPE=Debug
         -DNO_REALTIME_AUDIO=ON
-        ${{ matrix.family == 'windows' && format('-DCMAKE_TOOLCHAIN_FILE={0}/scripts/buildsystems/vcpkg.cmake', env.VCPKG_ROOT) || '-DTRACK_COVERAGE=ON' }}
+        ${{ matrix.family == 'windows' && format('-DCMAKE_TOOLCHAIN_FILE={0}/scripts/buildsystems/vcpkg.cmake', env.VCPKG_ROOT) || '' }}
 
     - name: Build with tests
       run: cmake --build with_tests --config Debug
@@ -209,29 +206,67 @@ jobs:
       shell: pwsh
       run: Get-Content with_tests/test_output.txt
 
+    # coverage is measured from a separate Release build rather than the
+    # Debug build tested above -- see the comment on "Run gcovr" for why.
+    # built with clang instead of gcc -- clang's coverage instrumentation
+    # maps more precisely back to source (fewer macro/inlining artifacts
+    # than gcov), and still emits gcov-compatible .gcda/.gcno files that
+    # gcovr can read via llvm-cov's gcov-compatibility mode below
+    - name: Configure release build with tests for coverage on Ubuntu
+      if: matrix.family == 'ubuntu'
+      run: >
+        cmake -S . -B with_tests_release
+        -DBUILD_TESTS=ON
+        -DCMAKE_BUILD_TYPE=Release
+        -DNO_REALTIME_AUDIO=ON
+        -DTRACK_COVERAGE=ON
+        -DCMAKE_C_COMPILER=clang
+        -DCMAKE_CXX_COMPILER=clang++
+
+    - name: Build release build with tests for coverage on Ubuntu
+      if: matrix.family == 'ubuntu'
+      run: cmake --build with_tests_release --config Release
+
+    - name: Test release build for coverage on Ubuntu
+      if: matrix.family == 'ubuntu'
+      run: |
+        cd with_tests_release
+        QT_QPA_PLATFORM=offscreen ../test_install/bin/JustlyTests
+
     - name: Run gcovr
       if: matrix.family == 'ubuntu'
       # --filter targets library/ (renamed from src/ in 704b1074, which
       # silently broke this filter -- gcovr matched 0 files and uploaded an
-      # empty report for the past year). library/ no longer has any
-      # `default: Q_ASSERT(false);` arms -- switches over closed enums
-      # (RowType, Qt::Orientation, the per-row Column enums) are now
-      # exhaustive so the compiler proves the missing arms dead via
-      # -Wswitch, and the genuinely unreachable branches (schema-validated
-      # XML parsing, UI states disabled via setEnabled) call
-      # `Q_UNREACHABLE();` directly instead of falling into a default.
-      # --exclude-lines-by-pattern drops those lines, since by definition
-      # they can never execute and would otherwise show as uncovered.
+      # empty report for the past year).
+      #
+      # coverage.xml is generated from with_tests_release (a clang-built
+      # Release build), not with_tests (the gcc Debug build tested above).
+      # library/ has no `default: Q_ASSERT(false);` arms -- switches over
+      # closed enums (RowType, Qt::Orientation, the per-row Column enums)
+      # are exhaustive, and the genuinely unreachable branches
+      # (schema-validated XML parsing, UI states disabled via setEnabled)
+      # call `Q_UNREACHABLE();`. In a Debug build that lowers to a real,
+      # always-skipped assert call, which shows up as an uncovered line. In
+      # Release, NDEBUG makes it lower to a bare __builtin_unreachable(), so
+      # with optimizations on the compiler proves the arm dead and emits no
+      # code for it at all -- it never shows up as a line in the report, so
+      # no --exclude-lines-by-pattern workaround is needed here.
+      #
+      # --gcov-executable tells gcovr to read the .gcda/.gcno files with
+      # llvm-cov's gcov-compatibility mode instead of GNU gcov, since
+      # clang's coverage instrumentation must be paired with llvm-cov to
+      # parse correctly.
+      #
       # There are no `throw` statements anywhere in library/ --
       # --exclude-throw-branches drops the compiler-generated
-      # exception-unwind edges GCC adds to every call to a non-noexcept
+      # exception-unwind edges added to every call to a non-noexcept
       # function, which otherwise dominate the branch count and can't be
       # exercised without deliberately forcing failures like std::bad_alloc.
       run: >
         gcovr --xml "coverage.xml"
         --filter "$(pwd)/library/"
-        --exclude-lines-by-pattern "Q_UNREACHABLE\(\);"
         --exclude-throw-branches
+        --gcov-executable "llvm-cov gcov"
 
     - name: Upload code coverage
       uses: codecov/codecov-action@v7

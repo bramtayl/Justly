@@ -336,7 +336,9 @@
       "Bash(sed -i 's|#include <qtypes.h>|#include <QtCore/QtTypes>|' io_tests.cpp)",
       "Bash(sed -i 's|#include <qpointer.h>|#include <QtCore/QPointer>|' export_tests.cpp)",
       "Bash(sed -i 's|#include <qtemporarydir.h>|#include <QtCore/QTemporaryDir>|' export_tests.cpp)",
-      "Bash(sed -i 's|#include <qsettings.h>|#include <QtCore/QSettings>|' save_recovery_tests.cpp)"
+      "Bash(sed -i 's|#include <qsettings.h>|#include <QtCore/QSettings>|' save_recovery_tests.cpp)",
+      "Bash(python3 -c \"import yaml; yaml.safe_load\\(open\\('.github/workflows/workflow.yaml'\\)\\)\")",
+      "Bash(python3 -c \"import yaml; yaml.safe_load\\(open\\('/home/brandon/Justly/.github/workflows/workflow.yaml'\\)\\)\")"
     ],
     "additionalDirectories": [
       "/home/brandon/Justly"
