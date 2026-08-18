@@ -1738,28 +1738,22 @@ private slots:
                          song_editor.piano_roll_widget, test_dir.filePath("test_song.xml"));
   }
 
-  static void test_remove_last_voice_error_data() {
+  static void test_remove_last_voice_disables_action_data() {
     QTest::addColumn<QString>("text");
     QTest::addColumn<bool>("is_pitched");
-    QTest::addColumn<QString>("warning_message");
 
     static const QString song_with_one_of_each_voice =
         make_voice_song_xml({"A"}, {"B"});
 
-    QTest::newRow("pitched voice")
-        << song_with_one_of_each_voice << true
-        << "Cannot remove every pitched voice; at least one must remain";
-    QTest::newRow("unpitched voice")
-        << song_with_one_of_each_voice << false
-        << "Cannot remove every unpitched voice; at least one must remain";
+    QTest::newRow("pitched voice") << song_with_one_of_each_voice << true;
+    QTest::newRow("unpitched voice") << song_with_one_of_each_voice << false;
   };
 
-  void test_remove_last_voice_error() {
-    // removing the only remaining voice of a type should warn and leave the
-    // voice (and undo stack) untouched, rather than removing it
+  void test_remove_last_voice_disables_action() {
+    // selecting the only remaining voice of a type should disable
+    // remove_rows_action, since at least one voice must always remain
     QFETCH(const QString, text);
     QFETCH(const bool, is_pitched);
-    QFETCH(const QString, warning_message);
 
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
@@ -1772,14 +1766,9 @@ private slots:
     switch_to(song_editor, voice_row_type, -1);
     auto &model = get_model(switch_table);
     QCOMPARE(model.rowCount(), 1);
-    const auto old_undo_count = undo_stack.count();
 
     select_cell(switch_table, 0, 0);
-    close_message_later(song_editor, waiting_for_message, warning_message);
-    song_editor.song_menu_bar.edit_menu.remove_rows_action.trigger();
-
-    QCOMPARE(model.rowCount(), 1);
-    QCOMPARE(undo_stack.count(), old_undo_count);
+    QVERIFY(!song_editor.song_menu_bar.edit_menu.remove_rows_action.isEnabled());
 
     maybe_switch_back_to_chords(undo_stack, voice_row_type);
 

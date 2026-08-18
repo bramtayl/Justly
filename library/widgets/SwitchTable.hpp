@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QtCore/QSize>
+#include <QtCore/QtAssert>
 #include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QScrollBar>
@@ -17,6 +18,7 @@
 #include "other/Song.hpp"
 #include "other/helpers.hpp"
 #include "rows/Row.hpp"
+#include "rows/RowType.hpp"
 #include "widgets/SwitchDelegate.hpp"
 
 class QUndoStack;
@@ -94,3 +96,22 @@ struct SwitchTable : public QTableView {
     return {0, 0};
   }
 };
+
+// dispatches on the current row type, calling visitor with a reference to
+// the matching model member; Table may be SwitchTable or const SwitchTable
+template <typename Table, typename Visitor>
+static auto dispatch_row_type(Table &switch_table, Visitor visitor) {
+  switch (switch_table.delegate.current_row_type) {
+  case RowType::chord_type:
+    return visitor(switch_table.chords_model);
+  case RowType::pitched_note_type:
+    return visitor(switch_table.pitched_notes_model);
+  case RowType::unpitched_note_type:
+    return visitor(switch_table.unpitched_notes_model);
+  case RowType::pitched_voice_type:
+    return visitor(switch_table.pitched_voices_model);
+  case RowType::unpitched_voice_type:
+    return visitor(switch_table.unpitched_voices_model);
+  }
+  Q_UNREACHABLE();
+}

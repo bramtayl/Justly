@@ -165,7 +165,19 @@ static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
   paste_menu.paste_after_action.setEnabled(can_copy_paste && !is_voice);
   paste_menu.paste_into_start_action.setEnabled(!is_voice);
   edit_menu.delete_cells_action.setEnabled(anything_selected);
-  edit_menu.remove_rows_action.setEnabled(anything_selected);
+  // removing every remaining voice row would leave no voice for a note to
+  // reference, so disable rather than let RemoveVoiceRows warn and cancel;
+  // selection.size() can transiently be 0 or >1 while a model change (e.g.
+  // undoing a row removal) is still adjusting the selection, so require
+  // exactly one range rather than asserting via get_only_range
+  const auto removing_every_voice_row =
+      is_voice && selection.size() == 1 &&
+      get_number_of_rows(selection.at(0)) >=
+          (current_row_type == RowType::pitched_voice_type
+               ? switch_table.pitched_voices_model.get_rows().size()
+               : switch_table.unpitched_voices_model.get_rows().size());
+  edit_menu.remove_rows_action.setEnabled(anything_selected &&
+                                          !removing_every_voice_row);
 
   edit_menu.insert_menu.insert_after_action.setEnabled(anything_selected);
 }

@@ -37,11 +37,9 @@
 #include "rows/Note.hpp"
 #include "rows/PitchedNote.hpp"
 #include "rows/Row.hpp"
-#include "rows/RowType.hpp"
 #include "rows/UnpitchedNote.hpp"
 #include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"
-#include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
 #include "xml/XMLDocument.hpp"
 #include "xml/XMLValidator.hpp"
@@ -158,29 +156,11 @@ static void add_paste_insert(SongWidget &song_widget, const int row_number) {
   auto &switch_column = song_widget.switch_column;
   auto &switch_table = switch_column.switch_table;
 
-  QUndoCommand *undo_command = nullptr;
-  switch (switch_table.delegate.current_row_type) {
-  case RowType::chord_type:
-    undo_command = make_paste_insert_command(
-        switch_table, switch_table.chords_model, row_number);
-    break;
-  case RowType::pitched_note_type:
-    undo_command = make_paste_insert_command(
-        switch_table, switch_table.pitched_notes_model, row_number);
-    break;
-  case RowType::unpitched_note_type:
-    undo_command = make_paste_insert_command(
-        switch_table, switch_table.unpitched_notes_model, row_number);
-    break;
-  case RowType::pitched_voice_type:
-    undo_command = make_paste_insert_command(
-        switch_table, switch_table.pitched_voices_model, row_number);
-    break;
-  case RowType::unpitched_voice_type:
-    undo_command = make_paste_insert_command(
-        switch_table, switch_table.unpitched_voices_model, row_number);
-    break;
-  }
+  auto *undo_command = dispatch_row_type(
+      switch_table, [&switch_table, row_number](
+                        auto &rows_model) -> QUndoCommand * {
+        return make_paste_insert_command(switch_table, rows_model, row_number);
+      });
   if (undo_command == nullptr) {
     return;
   }
@@ -232,33 +212,12 @@ struct PasteMenu : public QMenu {
 
           const auto first_row_number = get_only_range(switch_table).top();
 
-          QUndoCommand *undo_command = nullptr;
-          switch (switch_table.delegate.current_row_type) {
-          case RowType::chord_type:
-            undo_command = make_paste_cells_command(
-                switch_table, first_row_number, switch_table.chords_model);
-            break;
-          case RowType::pitched_note_type:
-            undo_command =
-                make_paste_cells_command(switch_table, first_row_number,
-                                         switch_table.pitched_notes_model);
-            break;
-          case RowType::unpitched_note_type:
-            undo_command =
-                make_paste_cells_command(switch_table, first_row_number,
-                                         switch_table.unpitched_notes_model);
-            break;
-          case RowType::pitched_voice_type:
-            undo_command =
-                make_paste_cells_command(switch_table, first_row_number,
-                                         switch_table.pitched_voices_model);
-            break;
-          case RowType::unpitched_voice_type:
-            undo_command =
-                make_paste_cells_command(switch_table, first_row_number,
-                                         switch_table.unpitched_voices_model);
-            break;
-          }
+          auto *undo_command = dispatch_row_type(
+              switch_table, [&switch_table, first_row_number](
+                                auto &rows_model) -> QUndoCommand * {
+                return make_paste_cells_command(switch_table, first_row_number,
+                                                rows_model);
+              });
           if (undo_command == nullptr) {
             return;
           }

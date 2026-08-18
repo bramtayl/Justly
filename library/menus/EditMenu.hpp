@@ -13,7 +13,6 @@
 #include <QtGui/QKeySequence>
 #include <QtGui/QUndoStack>
 #include <QtWidgets/QMenu>
-#include <QtWidgets/QMessageBox>
 
 #include "actions/DeleteCells.hpp"
 #include "actions/InsertRemoveRows.hpp"
@@ -45,30 +44,11 @@ static void add_delete_cells(SongWidget &song_widget) {
 
   const auto &range = get_only_range(switch_table);
 
-  QUndoCommand *undo_command = nullptr;
-  switch (switch_table.delegate.current_row_type) {
-  case RowType::chord_type:
-    undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_table.chords_model, range);
-    break;
-  case RowType::pitched_note_type:
-    undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_table.pitched_notes_model, range);
-    break;
-  case RowType::unpitched_note_type:
-    undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_table.unpitched_notes_model, range);
-    break;
-  case RowType::pitched_voice_type:
-    undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_table.pitched_voices_model, range);
-    break;
-  case RowType::unpitched_voice_type:
-    undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_table.unpitched_voices_model, range);
-    break;
-  }
-  undo_stack.push(undo_command);
+  undo_stack.push(
+      dispatch_row_type(switch_table, [&range](auto &rows_model) -> QUndoCommand * {
+        return new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
+            rows_model, range);
+      }));
 }
 
 template <RowInterface SubRow>
@@ -114,23 +94,10 @@ static void copy_selection(const SwitchTable &switch_table) {
   auto &mime_data = // NOLINT(cppcoreguidelines-owning-memory)
       *(new QMimeData);
 
-  switch (switch_table.delegate.current_row_type) {
-  case RowType::chord_type:
-    copy_from_model(mime_data, switch_table.chords_model, range);
-    break;
-  case RowType::pitched_note_type:
-    copy_from_model(mime_data, switch_table.pitched_notes_model, range);
-    break;
-  case RowType::unpitched_note_type:
-    copy_from_model(mime_data, switch_table.unpitched_notes_model, range);
-    break;
-  case RowType::pitched_voice_type:
-    copy_from_model(mime_data, switch_table.pitched_voices_model, range);
-    break;
-  case RowType::unpitched_voice_type:
-    copy_from_model(mime_data, switch_table.unpitched_voices_model, range);
-    break;
-  }
+  dispatch_row_type(switch_table,
+                    [&mime_data, &range](const auto &rows_model) -> void {
+                      copy_from_model(mime_data, rows_model, range);
+                    });
   get_clipboard().setMimeData(&mime_data);
 }
 
@@ -189,6 +156,9 @@ struct EditMenu : public QMenu {
           const auto first_row_number = range.top();
           const auto number_of_rows = get_number_of_rows(range);
 
+          // remove_rows_action is disabled (see update_actions) whenever the
+          // selection covers every remaining voice row, so the voice cases
+          // below never need to guard against removing the last one
           QUndoCommand *undo_command = nullptr;
           switch (switch_table.delegate.current_row_type) {
           case RowType::chord_type:
@@ -206,27 +176,11 @@ struct EditMenu : public QMenu {
                                     first_row_number, number_of_rows);
             break;
           case RowType::pitched_voice_type:
-            if (number_of_rows >=
-                switch_table.pitched_voices_model.get_rows().size()) {
-              QMessageBox::warning(
-                  &song_widget, QObject::tr("Remove voice error"),
-                  QObject::tr("Cannot remove every pitched voice; "
-                              "at least one must remain"));
-              return;
-            }
             undo_command = new RemoveVoiceRows< // NOLINT(cppcoreguidelines-owning-memory)
                 PitchedVoice, PitchedNote>(switch_table.pitched_voices_model,
                                            first_row_number, number_of_rows);
             break;
           case RowType::unpitched_voice_type:
-            if (number_of_rows >=
-                switch_table.unpitched_voices_model.get_rows().size()) {
-              QMessageBox::warning(
-                  &song_widget, QObject::tr("Remove voice error"),
-                  QObject::tr("Cannot remove every unpitched voice; "
-                              "at least one must remain"));
-              return;
-            }
             undo_command = new RemoveVoiceRows< // NOLINT(cppcoreguidelines-owning-memory)
                 UnpitchedVoice, UnpitchedNote>(
                 switch_table.unpitched_voices_model, first_row_number,

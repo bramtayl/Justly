@@ -289,7 +289,9 @@
       "Bash(ninja -j4 Justly JustlyTests)",
       "Bash(grep -n -B3 \"define QT_NO_DEBUG$\" /usr/include/x86_64-linux-gnu/qt6/QtCore/qtconfigmacros.h)",
       "Bash(ninja library *)",
-      "Bash(QT_QPA_PLATFORM=offscreen ./bin/JustlyTests test_export_unwritable_path)"
+      "Bash(QT_QPA_PLATFORM=offscreen ./bin/JustlyTests test_export_unwritable_path)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(echo \"CTEST_EXIT:$?\")"
     ],
     "additionalDirectories": [
       "/home/brandon/Justly"
