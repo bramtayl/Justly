@@ -32,7 +32,9 @@
 #include <algorithm>
 #include <cmath>
 #include <fluidsynth.h>
+#include <fluidsynth/audio.h>
 #include <fluidsynth/event.h>
+#include <fluidsynth/misc.h>
 #include <fluidsynth/seq.h>
 #include <fluidsynth/synth.h>
 #include <fluidsynth/types.h>
@@ -442,12 +444,22 @@ static inline void export_to_file(SongWidget &song_widget,
   fluid_event_timer(event.internal_pointer, nullptr);
   send_event_at(sequencer, event, player.final_time + START_END_MILLISECONDS);
 
-  auto &renderer =
-      get_reference(new_fluid_file_renderer(player.synth.internal_pointer));
-  while (!finished) {
-    check_fluid_ok(fluid_file_renderer_process_block(&renderer));
+  auto *const renderer_pointer =
+      new_fluid_file_renderer(player.synth.internal_pointer);
+  if (renderer_pointer == nullptr) {
+    QMessageBox::warning(&player.parent, QObject::tr("Export error"),
+                         QObject::tr("Cannot write to file"));
+  } else {
+    auto &renderer = get_reference(renderer_pointer);
+    while (!finished) {
+      if (fluid_file_renderer_process_block(&renderer) != FLUID_OK) {
+        QMessageBox::warning(&player.parent, QObject::tr("Export error"),
+                             QObject::tr("Error writing file"));
+        break;
+      }
+    }
+    delete_fluid_file_renderer(&renderer);
   }
-  delete_fluid_file_renderer(&renderer);
 
   set_destination(event, player.sequencer.sequencer_id);
   set_fluid_int(settings, "synth.lock-memory", 1);

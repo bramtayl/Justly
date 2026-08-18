@@ -976,6 +976,33 @@ private slots:
     song_menu_bar.file_menu.export_midi_action.trigger();
   };
 
+  // regression test: an export path whose parent directory doesn't exist
+  // makes new_fluid_file_renderer fail to open the file -- export_to_file
+  // should warn instead of dereferencing the null renderer pointer, and
+  // should still restore playback state (synth.lock-memory, audio driver)
+  // afterward rather than leaving the app stuck with realtime audio off
+  void test_export_unwritable_path() {
+    auto &song_widget = song_editor.song_widget;
+
+    QTemporaryDir temp_export_dir;
+    QVERIFY(temp_export_dir.isValid());
+    auto unwritable_path =
+        temp_export_dir.filePath("nonexistent_subdir/export.wav");
+
+    close_message_later(song_editor, waiting_for_message,
+                        "Cannot write to file");
+    export_to_file(song_widget, unwritable_path);
+
+    QVERIFY(!QFile::exists(unwritable_path));
+
+    // a subsequent export to a valid path should still work, confirming
+    // export_to_file restored playback state rather than leaving it broken
+    QTemporaryFile temp_export_file;
+    QVERIFY(temp_export_file.open());
+    temp_export_file.close();
+    export_to_file(song_widget, temp_export_file.fileName());
+  };
+
   // regression test: FileMenu's dialogs (make_file_dialog) must not leak --
   // Open/Import/Save As/Export/Export MIDI used to create a new QFileDialog
   // with no matching deleteLater(), so every use of a file dialog left a
