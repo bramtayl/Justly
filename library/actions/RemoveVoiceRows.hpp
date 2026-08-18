@@ -46,24 +46,20 @@ struct RemoveVoiceRows : public QUndoCommand {
     // range, just shifts down to follow it) or reassigned_notes (voice
     // within the removed range, needs reassigning to the first remaining
     // voice)
-    auto &chords = voices_model.song.chords;
-    for (auto chord_number = 0; chord_number < chords.size();
-        chord_number = chord_number + 1) {
-      auto &notes = get_voice_notes<SubVoice, SubNote>(chords[chord_number]);
-      for (auto note_number = 0; note_number < notes.size();
-          note_number = note_number + 1) {
-        const auto voice_number = notes.at(note_number).voice_number;
-        if (voice_number < first_row_number) {
-          continue;
-        }
-        if (voice_number > last_removed_row) {
-          renumbered_notes.push_back({chord_number, note_number});
-        } else {
-          reassigned_notes.push_back(
-              {chord_number, note_number, voice_number});
-        }
-      }
-    }
+    for_each_voice_note<SubVoice, SubNote>(
+        voices_model.song.chords,
+        [&](const int chord_number, const int note_number,
+            const int voice_number) -> void {
+          if (voice_number < first_row_number) {
+            return;
+          }
+          if (voice_number > last_removed_row) {
+            renumbered_notes.push_back({chord_number, note_number});
+          } else {
+            reassigned_notes.push_back(
+                {chord_number, note_number, voice_number});
+          }
+        });
   }
 
   void undo() override {

@@ -204,6 +204,66 @@ static void open_text(SongEditor &song_editor, const QString &song_text) {
                        song_editor.piano_roll_widget, temp_file.fileName());
 }
 
+// builds a minimal <song> fixture with one pitched/unpitched voice per given
+// name and, optionally, one <chord> per entry in chord_voice_numbers whose
+// pitched/unpitched notes reference voices by number (first/second of the
+// pair respectively; an empty list omits that note type from the chord).
+// Instrument/percussion_set/midi_number are arbitrary, since no voice test
+// asserts on them -- only on voice names, counts, and voice_numbers.
+static auto make_voice_song_xml(
+    const QList<QString> &pitched_voice_names,
+    const QList<QString> &unpitched_voice_names,
+    const QList<std::pair<QList<int>, QList<int>>> &chord_voice_numbers = {})
+    -> QString {
+  QString xml = "<song><gain>1</gain><starting_key>220</starting_key>"
+               "<starting_tempo>100</starting_tempo><starting_velocity>10</"
+               "starting_velocity><pitched_voices>";
+  for (const auto &name : pitched_voice_names) {
+    xml += "<pitched_voice><name>" + name +
+          "</name><instrument>Marimba</instrument></pitched_voice>";
+  }
+  xml += "</pitched_voices><unpitched_voices>";
+  auto midi_number = 36;
+  for (const auto &name : unpitched_voice_names) {
+    xml += "<unpitched_voice><name>" + name +
+          "</name><percussion_set_pointer>Room</percussion_set_pointer>"
+          "<midi_number>" +
+          QString::number(midi_number) +
+          "</midi_number></unpitched_voice>";
+    midi_number += 1;
+  }
+  xml += "</unpitched_voices>";
+  if (!chord_voice_numbers.isEmpty()) {
+    xml += "<chords>";
+    for (const auto &[pitched_numbers, unpitched_numbers] :
+        chord_voice_numbers) {
+      xml += "<chord>";
+      if (!pitched_numbers.isEmpty()) {
+        xml += "<pitched_notes>";
+        for (const auto voice_number : pitched_numbers) {
+          xml += "<pitched_note><voice_number>" +
+                QString::number(voice_number) +
+                "</voice_number></pitched_note>";
+        }
+        xml += "</pitched_notes>";
+      }
+      if (!unpitched_numbers.isEmpty()) {
+        xml += "<unpitched_notes>";
+        for (const auto voice_number : unpitched_numbers) {
+          xml += "<unpitched_note><voice_number>" +
+                QString::number(voice_number) +
+                "</voice_number></unpitched_note>";
+        }
+        xml += "</unpitched_notes>";
+      }
+      xml += "</chord>";
+    }
+    xml += "</chords>";
+  }
+  xml += "</song>";
+  return xml;
+}
+
 [[nodiscard]] static auto find_top_level_message_box() -> QMessageBox * {
   for (auto *const widget_pointer : QApplication::topLevelWidgets()) {
     auto *const box_pointer = dynamic_cast<QMessageBox *>(widget_pointer);
@@ -1518,38 +1578,10 @@ private slots:
     QTest::addColumn<bool>("is_pitched");
     QTest::addColumn<QString>("warning_message");
 
-    static const QString pitched_song =
-        "<song><gain>1</gain><starting_key>220</starting_key>"
-        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
-        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
-        "<instrument>Marimba</instrument></pitched_voice><pitched_voice>"
-        "<name>B</name><instrument>Grand Piano</instrument></pitched_voice>"
-        "<pitched_voice><name>C</name><instrument>Harp</instrument></"
-        "pitched_voice></pitched_voices><unpitched_voices><unpitched_voice>"
-        "<name>D</name><percussion_set_pointer>Room</percussion_set_pointer>"
-        "<midi_number>36</midi_number></unpitched_voice></unpitched_voices>"
-        "<chords><chord><pitched_notes><pitched_note><voice_number>0</"
-        "voice_number></pitched_note><pitched_note><voice_number>1</"
-        "voice_number></pitched_note><pitched_note><voice_number>2</"
-        "voice_number></pitched_note></pitched_notes></chord></chords></"
-        "song>";
-    static const QString unpitched_song =
-        "<song><gain>1</gain><starting_key>220</starting_key>"
-        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
-        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
-        "<instrument>Marimba</instrument></pitched_voice></pitched_voices>"
-        "<unpitched_voices><unpitched_voice><name>D</name>"
-        "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
-        "midi_number></unpitched_voice><unpitched_voice><name>E</name>"
-        "<percussion_set_pointer>Power</percussion_set_pointer><midi_number>37</"
-        "midi_number></unpitched_voice><unpitched_voice><name>F</name>"
-        "<percussion_set_pointer>Electronic</percussion_set_pointer>"
-        "<midi_number>38</midi_number></unpitched_voice></unpitched_voices>"
-        "<chords><chord><unpitched_notes><unpitched_note><voice_number>0</"
-        "voice_number></unpitched_note><unpitched_note><voice_number>1</"
-        "voice_number></unpitched_note><unpitched_note><voice_number>2</"
-        "voice_number></unpitched_note></unpitched_notes></chord></chords></"
-        "song>";
+    static const QString pitched_song = make_voice_song_xml(
+        {"A", "B", "C"}, {"D"}, {{{0, 1, 2}, {}}});
+    static const QString unpitched_song = make_voice_song_xml(
+        {"A"}, {"D", "E", "F"}, {{{}, {0, 1, 2}}});
 
     QTest::newRow("pitched voice")
         << pitched_song << true
@@ -1634,22 +1666,8 @@ private slots:
     auto &undo_stack = song_widget.undo_stack;
     auto &song = song_widget.song;
 
-    open_text(
-        song_editor,
-        "<song><gain>1</gain><starting_key>220</starting_key>"
-        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
-        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
-        "<instrument>Marimba</instrument></pitched_voice><pitched_voice>"
-        "<name>B</name><instrument>Grand Piano</instrument></pitched_voice>"
-        "<pitched_voice><name>C</name><instrument>Harp</instrument></"
-        "pitched_voice></pitched_voices><unpitched_voices><unpitched_voice>"
-        "<name>D</name><percussion_set_pointer>Room</percussion_set_pointer>"
-        "<midi_number>36</midi_number></unpitched_voice></unpitched_voices>"
-        "<chords><chord><pitched_notes><pitched_note><voice_number>0</"
-        "voice_number></pitched_note><pitched_note><voice_number>1</"
-        "voice_number></pitched_note><pitched_note><voice_number>2</"
-        "voice_number></pitched_note></pitched_notes></chord></chords></"
-        "song>");
+    open_text(song_editor, make_voice_song_xml({"A", "B", "C"}, {"D"},
+                                              {{{0, 1, 2}, {}}}));
 
     switch_to(song_editor, RowType::pitched_voice_type, -1);
     select_cell(switch_table, 1, 0);
@@ -1699,13 +1717,7 @@ private slots:
     QTest::addColumn<QString>("warning_message");
 
     static const QString song_with_one_of_each_voice =
-        "<song><gain>1</gain><starting_key>220</starting_key>"
-        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
-        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
-        "<instrument>Marimba</instrument></pitched_voice></pitched_voices>"
-        "<unpitched_voices><unpitched_voice><name>B</name>"
-        "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
-        "midi_number></unpitched_voice></unpitched_voices></song>";
+        make_voice_song_xml({"A"}, {"B"});
 
     QTest::newRow("pitched voice")
         << song_with_one_of_each_voice << true
@@ -2473,31 +2485,10 @@ private slots:
     QTest::addColumn<QString>("text");
     QTest::addColumn<bool>("is_pitched");
 
-    static const QString pitched_song =
-        "<song><gain>1</gain><starting_key>220</starting_key>"
-        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
-        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
-        "<instrument>Marimba</instrument></pitched_voice><pitched_voice>"
-        "<name>B</name><instrument>Grand Piano</instrument></pitched_voice>"
-        "</pitched_voices><unpitched_voices><unpitched_voice><name>D</name>"
-        "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
-        "midi_number></unpitched_voice></unpitched_voices><chords><chord>"
-        "<pitched_notes><pitched_note><voice_number>0</voice_number>"
-        "</pitched_note><pitched_note><voice_number>1</voice_number>"
-        "</pitched_note></pitched_notes></chord></chords></song>";
-    static const QString unpitched_song =
-        "<song><gain>1</gain><starting_key>220</starting_key>"
-        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
-        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
-        "<instrument>Marimba</instrument></pitched_voice></pitched_voices>"
-        "<unpitched_voices><unpitched_voice><name>D</name>"
-        "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
-        "midi_number></unpitched_voice><unpitched_voice><name>E</name>"
-        "<percussion_set_pointer>Power</percussion_set_pointer><midi_number>37</"
-        "midi_number></unpitched_voice></unpitched_voices><chords><chord>"
-        "<unpitched_notes><unpitched_note><voice_number>0</voice_number>"
-        "</unpitched_note><unpitched_note><voice_number>1</voice_number>"
-        "</unpitched_note></unpitched_notes></chord></chords></song>";
+    static const QString pitched_song = make_voice_song_xml(
+        {"A", "B"}, {"D"}, {{{0, 1}, {}}});
+    static const QString unpitched_song = make_voice_song_xml(
+        {"A"}, {"D", "E"}, {{{}, {0, 1}}});
 
     QTest::newRow("pitched voice") << pitched_song << true;
     QTest::newRow("unpitched voice") << unpitched_song << false;
@@ -2577,31 +2568,10 @@ private slots:
     QTest::addColumn<QString>("text");
     QTest::addColumn<bool>("is_pitched");
 
-    static const QString pitched_song =
-        "<song><gain>1</gain><starting_key>220</starting_key>"
-        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
-        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
-        "<instrument>Marimba</instrument></pitched_voice><pitched_voice>"
-        "<name>B</name><instrument>Grand Piano</instrument></pitched_voice>"
-        "</pitched_voices><unpitched_voices><unpitched_voice><name>D</name>"
-        "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
-        "midi_number></unpitched_voice></unpitched_voices><chords><chord>"
-        "<pitched_notes><pitched_note><voice_number>0</voice_number>"
-        "</pitched_note><pitched_note><voice_number>1</voice_number>"
-        "</pitched_note></pitched_notes></chord></chords></song>";
-    static const QString unpitched_song =
-        "<song><gain>1</gain><starting_key>220</starting_key>"
-        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
-        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
-        "<instrument>Marimba</instrument></pitched_voice></pitched_voices>"
-        "<unpitched_voices><unpitched_voice><name>D</name>"
-        "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
-        "midi_number></unpitched_voice><unpitched_voice><name>E</name>"
-        "<percussion_set_pointer>Power</percussion_set_pointer><midi_number>37</"
-        "midi_number></unpitched_voice></unpitched_voices><chords><chord>"
-        "<unpitched_notes><unpitched_note><voice_number>0</voice_number>"
-        "</unpitched_note><unpitched_note><voice_number>1</voice_number>"
-        "</unpitched_note></unpitched_notes></chord></chords></song>";
+    static const QString pitched_song = make_voice_song_xml(
+        {"A", "B"}, {"D"}, {{{0, 1}, {}}});
+    static const QString unpitched_song = make_voice_song_xml(
+        {"A"}, {"D", "E"}, {{{}, {0, 1}}});
 
     QTest::newRow("pitched voice") << pitched_song << true;
     QTest::newRow("unpitched voice") << unpitched_song << false;
@@ -2667,31 +2637,10 @@ private slots:
     QTest::addColumn<QString>("text");
     QTest::addColumn<bool>("is_pitched");
 
-    static const QString pitched_song =
-        "<song><gain>1</gain><starting_key>220</starting_key>"
-        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
-        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
-        "<instrument>Marimba</instrument></pitched_voice><pitched_voice>"
-        "<name>B</name><instrument>Grand Piano</instrument></pitched_voice>"
-        "</pitched_voices><unpitched_voices><unpitched_voice><name>D</name>"
-        "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
-        "midi_number></unpitched_voice></unpitched_voices><chords><chord>"
-        "<pitched_notes><pitched_note><voice_number>0</voice_number>"
-        "</pitched_note><pitched_note><voice_number>1</voice_number>"
-        "</pitched_note></pitched_notes></chord></chords></song>";
-    static const QString unpitched_song =
-        "<song><gain>1</gain><starting_key>220</starting_key>"
-        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
-        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
-        "<instrument>Marimba</instrument></pitched_voice></pitched_voices>"
-        "<unpitched_voices><unpitched_voice><name>D</name>"
-        "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
-        "midi_number></unpitched_voice><unpitched_voice><name>E</name>"
-        "<percussion_set_pointer>Power</percussion_set_pointer><midi_number>37</"
-        "midi_number></unpitched_voice></unpitched_voices><chords><chord>"
-        "<unpitched_notes><unpitched_note><voice_number>0</voice_number>"
-        "</unpitched_note><unpitched_note><voice_number>1</voice_number>"
-        "</unpitched_note></unpitched_notes></chord></chords></song>";
+    static const QString pitched_song = make_voice_song_xml(
+        {"A", "B"}, {"D"}, {{{0, 1}, {}}});
+    static const QString unpitched_song = make_voice_song_xml(
+        {"A"}, {"D", "E"}, {{{}, {0, 1}}});
 
     QTest::newRow("pitched voice") << pitched_song << true;
     QTest::newRow("unpitched voice") << unpitched_song << false;
@@ -3766,18 +3715,8 @@ private slots:
     // two chords, each with a single note of its own, so entering notes
     // mode for one chord can be checked to hide the other chord's note
     // rather than keep showing every chord's notes on the timeline
-    static const QString text =
-        "<song><gain>1</gain><starting_key>220</starting_key>"
-        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
-        "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
-        "<instrument>Marimba</instrument></pitched_voice></pitched_voices>"
-        "<unpitched_voices><unpitched_voice><name>D</name>"
-        "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
-        "midi_number></unpitched_voice></unpitched_voices><chords>"
-        "<chord><pitched_notes><pitched_note><voice_number>0</voice_number>"
-        "</pitched_note></pitched_notes></chord>"
-        "<chord><pitched_notes><pitched_note><voice_number>0</voice_number>"
-        "</pitched_note></pitched_notes></chord></chords></song>";
+    static const QString text = make_voice_song_xml(
+        {"A"}, {"D"}, {{{0}, {}}, {{0}, {}}});
     open_text(song_editor, text);
 
     QCOMPARE(get_piano_roll_events(song_widget.song).size(), 2);

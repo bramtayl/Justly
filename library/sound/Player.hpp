@@ -98,18 +98,15 @@ struct Player {
 
   double final_time = 0;
 
-  FluidSettings settings = []() -> auto {
-    FluidSettings result;
-    const auto cores = std::thread::hardware_concurrency();
-    set_fluid_int(result, "synth.midi-channels", NUMBER_OF_MIDI_CHANNELS);
-    if (cores > 0) {
-      set_fluid_int(result, "synth.cpu-cores", static_cast<int>(cores));
-    }
+  FluidSettings settings = FluidSettings(
+      NUMBER_OF_MIDI_CHANNELS,
+      static_cast<int>(std::thread::hardware_concurrency()),
 #ifdef __linux__
-    set_fluid_string(result, "audio.driver", "pulseaudio");
+      "pulseaudio"
+#else
+      nullptr
 #endif
-    return result;
-  }();
+  );
 
   FluidSynth synth = FluidSynth(settings);
   FluidEvent event;

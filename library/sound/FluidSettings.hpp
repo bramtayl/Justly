@@ -2,29 +2,39 @@
 
 #include <QtCore/QtAssert>
 #include <fluidsynth.h>
+#include <fluidsynth/misc.h>
 #include <fluidsynth/settings.h>
 #include <fluidsynth/types.h>
 
 #include "other/helpers.hpp"
 
 struct FluidSettings {
-  fluid_settings_t *internal_pointer;
+  fluid_settings_t *const internal_pointer;
 
-  FluidSettings() : internal_pointer(new_fluid_settings()) {
+  // midi_channels/cpu_cores/audio_driver must be set (when wanted) before
+  // the settings are handed to new_fluid_synth() -- left at their defaults,
+  // no playback config is applied, matching plain fluidsynth defaults;
+  // audio_driver is null on non-Linux platforms, where fluidsynth picks a
+  // default driver instead
+  explicit FluidSettings(const int midi_channels = 0, const int cpu_cores = 0,
+                         const char *const audio_driver = nullptr)
+      : internal_pointer(new_fluid_settings()) {
     Q_ASSERT(internal_pointer != nullptr);
-  }
-
-  NO_COPY(FluidSettings)
-  auto operator=(FluidSettings &&other) noexcept -> FluidSettings & = delete;
-
-  FluidSettings(FluidSettings &&other) noexcept
-      : internal_pointer(other.internal_pointer) {
-    other.internal_pointer = nullptr;
-  }
-
-  ~FluidSettings() {
-    if (internal_pointer != nullptr) {
-      delete_fluid_settings(internal_pointer);
+    if (midi_channels > 0) {
+      Q_ASSERT(fluid_settings_setint(internal_pointer, "synth.midi-channels",
+                                     midi_channels) == FLUID_OK);
+    }
+    if (cpu_cores > 0) {
+      Q_ASSERT(fluid_settings_setint(internal_pointer, "synth.cpu-cores",
+                                     cpu_cores) == FLUID_OK);
+    }
+    if (audio_driver != nullptr) {
+      Q_ASSERT(fluid_settings_setstr(internal_pointer, "audio.driver",
+                                     audio_driver) == FLUID_OK);
     }
   }
+
+  NO_MOVE_COPY(FluidSettings)
+
+  ~FluidSettings() { delete_fluid_settings(internal_pointer); }
 };

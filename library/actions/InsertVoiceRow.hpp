@@ -29,18 +29,14 @@ struct InsertVoiceRow : public QUndoCommand {
         // undo/redo can shift its voice_number by a known delta
         affected_notes([&]() -> QList<RenumberedVoiceNote<SubVoice>> {
           QList<RenumberedVoiceNote<SubVoice>> notes;
-          auto &chords = voices_model.song.chords;
-          for (auto chord_number = 0; chord_number < chords.size();
-              chord_number = chord_number + 1) {
-            auto &chord_notes =
-                get_voice_notes<SubVoice, SubNote>(chords[chord_number]);
-            for (auto note_number = 0; note_number < chord_notes.size();
-                note_number = note_number + 1) {
-              if (chord_notes.at(note_number).voice_number >= row_number) {
-                notes.push_back({chord_number, note_number});
-              }
-            }
-          }
+          for_each_voice_note<SubVoice, SubNote>(
+              voices_model.song.chords,
+              [&](const int chord_number, const int note_number,
+                  const int voice_number) -> void {
+                if (voice_number >= row_number) {
+                  notes.push_back({chord_number, note_number});
+                }
+              });
           return notes;
         }()) {}
 

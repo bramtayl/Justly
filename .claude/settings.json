@@ -272,7 +272,21 @@
       "Bash(cd /home/brandon/Justly *)",
       "Bash(grep -v -E \"\\\\.musicxml$|\\\\.mxl$|test_song\\\\.xml$\")",
       "Bash(cmake --build build --config Debug -j 12)",
-      "Bash(timeout 90 env QT_QPA_PLATFORM=offscreen ./bin/JustlyTests)"
+      "Bash(timeout 90 env QT_QPA_PLATFORM=offscreen ./bin/JustlyTests)",
+      "Bash(grep -E '\\\\.\\(cpp|h|hpp|cc\\)$')",
+      "Bash(awk '/^\\\\/\\\\// {c++} END {print c}' /home/brandon/Justly/tests/Tester.hpp)",
+      "Bash(awk ' *)",
+      "Bash(cmake --build . --target Justly_lib -j4)",
+      "Bash(grep -v ':.*\\\\.o$')",
+      "Bash(ninja JustlyTests -j4)",
+      "Bash(QT_QPA_PLATFORM=offscreen ./bin/JustlyTests -functions)",
+      "Bash(QT_QPA_PLATFORM=offscreen ./bin/JustlyTests test_remove_voice_reassigns_notes test_remove_voice_row_consistent_during_warning test_remove_last_voice_error test_paste_stale_voice test_paste_voice_renumbered_on_insert test_paste_chord_voice_renumbered_on_insert)",
+      "Bash(xvfb-run -a ./bin/JustlyTests \"test_remove_voice_reassigns_notes\" \"test_remove_voice_row_consistent_during_warning\" \"test_remove_last_voice_error\" \"test_paste_stale_voice\" \"test_paste_voice_renumbered_on_insert\" \"test_paste_chord_voice_renumbered_on_insert\" \"test_piano_roll_notes_mode_shows_only_chord_notes\")",
+      "Bash(xvfb-run -a ./bin/JustlyTests test_remove_voice_reassigns_notes test_remove_voice_row_consistent_during_warning test_remove_last_voice_error test_paste_stale_voice test_paste_voice_renumbered_on_insert test_paste_chord_voice_renumbered_on_insert test_piano_roll_notes_mode_shows_only_chord_notes)",
+      "Bash(ninja -j4)",
+      "Bash(tee /tmp/build.log)",
+      "Bash(grep -iE \"executable|/Justly$|Justly\\\\.bin\")",
+      "Bash(ninja -j4 Justly JustlyTests)"
     ],
     "additionalDirectories": [
       "/home/brandon/Justly"

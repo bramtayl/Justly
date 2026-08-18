@@ -32,7 +32,6 @@
 #include <algorithm>
 #include <cmath>
 #include <fluidsynth.h>
-#include <fluidsynth/audio.h>
 #include <fluidsynth/event.h>
 #include <fluidsynth/seq.h>
 #include <fluidsynth/synth.h>
@@ -418,10 +417,7 @@ static inline void export_to_file(SongWidget &song_widget,
 
   stop_playing(sequencer, event);
 
-  if (driver.internal_pointer != nullptr) {
-    delete_fluid_audio_driver(driver.internal_pointer);
-  }
-  driver.internal_pointer = nullptr;
+  driver.reset();
 
   set_fluid_string(settings, "audio.file.name",
                    output_file.toStdString().c_str());
@@ -497,6 +493,25 @@ static const auto NUMBER_OF_STANDARD_MIDI_CHANNELS = 16;
     return result;
   }();
   return channels;
+}
+
+static inline void emit_note_events(QList<MidiTrackEvent> &track,
+                                    unsigned int channel_number,
+                                    unsigned int midi_number,
+                                    unsigned int velocity, double start_tick,
+                                    double end_tick) {
+  track.push_back(MidiTrackEvent{
+      .tick = start_tick,
+      .tie_break = MIDI_EXPORT_NOTE_ON_TIE_BREAK,
+      .info = NoteOnEventInfo{.channel_number = channel_number,
+                              .midi_number = midi_number,
+                              .velocity = velocity}});
+
+  track.push_back(MidiTrackEvent{
+      .tick = end_tick,
+      .tie_break = MIDI_EXPORT_NOTE_OFF_TIE_BREAK,
+      .info = NoteOffEventInfo{.channel_number = channel_number,
+                               .midi_number = midi_number}});
 }
 
 static inline void export_midi_to_file(SongWidget &song_widget,
@@ -641,20 +656,10 @@ static inline void export_midi_to_file(SongWidget &song_widget,
               .controller = BREATH_ID,
               .value = static_cast<unsigned int>(velocity)}});
 
-      track.push_back(MidiTrackEvent{
-          .tick = start_tick,
-          .tie_break = MIDI_EXPORT_NOTE_ON_TIE_BREAK,
-          .info = NoteOnEventInfo{
-              .channel_number = static_cast<unsigned int>(channel_number),
-              .midi_number = static_cast<unsigned int>(closest_midi),
-              .velocity = static_cast<unsigned int>(velocity)}});
-
-      track.push_back(MidiTrackEvent{
-          .tick = end_tick,
-          .tie_break = MIDI_EXPORT_NOTE_OFF_TIE_BREAK,
-          .info = NoteOffEventInfo{
-              .channel_number = static_cast<unsigned int>(channel_number),
-              .midi_number = static_cast<unsigned int>(closest_midi)}});
+      emit_note_events(track, static_cast<unsigned int>(channel_number),
+                       static_cast<unsigned int>(closest_midi),
+                       static_cast<unsigned int>(velocity), start_tick,
+                       end_tick);
     } else {
       const auto &voice = unpitched_voices.at(event.voice_number);
       const auto &program = get_voice_program(get_some_programs(false),
@@ -699,22 +704,11 @@ static inline void export_midi_to_file(SongWidget &song_widget,
               .program_number =
                   static_cast<unsigned int>(program.preset_number)}});
 
-      track.push_back(MidiTrackEvent{
-          .tick = start_tick,
-          .tie_break = MIDI_EXPORT_NOTE_ON_TIE_BREAK,
-          .info = NoteOnEventInfo{
-              .channel_number =
-                  static_cast<unsigned int>(MIDI_PERCUSSION_CHANNEL),
-              .midi_number = static_cast<unsigned int>(voice.midi_number),
-              .velocity = static_cast<unsigned int>(velocity)}});
-
-      track.push_back(MidiTrackEvent{
-          .tick = end_tick,
-          .tie_break = MIDI_EXPORT_NOTE_OFF_TIE_BREAK,
-          .info = NoteOffEventInfo{
-              .channel_number =
-                  static_cast<unsigned int>(MIDI_PERCUSSION_CHANNEL),
-              .midi_number = static_cast<unsigned int>(voice.midi_number)}});
+      emit_note_events(track,
+                       static_cast<unsigned int>(MIDI_PERCUSSION_CHANNEL),
+                       static_cast<unsigned int>(voice.midi_number),
+                       static_cast<unsigned int>(velocity), start_tick,
+                       end_tick);
     }
   }
 

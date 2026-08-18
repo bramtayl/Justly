@@ -14,11 +14,16 @@ struct FluidDriver {
 
   NO_COPY(FluidDriver)
 
+  void reset() {
+    if (internal_pointer != nullptr) {
+      delete_fluid_audio_driver(internal_pointer);
+    }
+    internal_pointer = nullptr;
+  }
+
   auto operator=(FluidDriver &&other) noexcept -> FluidDriver & {
     if (this != &other) {
-      if (internal_pointer != nullptr) {
-        delete_fluid_audio_driver(internal_pointer);
-      }
+      reset();
       internal_pointer = other.internal_pointer;
       other.internal_pointer = nullptr;
     }
@@ -30,9 +35,5 @@ struct FluidDriver {
     other.internal_pointer = nullptr;
   }
 
-  ~FluidDriver() {
-    if (internal_pointer != nullptr) {
-      delete_fluid_audio_driver(internal_pointer);
-    }
-  }
+  ~FluidDriver() { reset(); }
 };

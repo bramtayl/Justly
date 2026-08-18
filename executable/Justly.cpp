@@ -6,7 +6,6 @@
 #include "widgets/SongWidget.hpp"
 
 auto main(int number_of_arguments, char *arguments[]) -> int {
-  // SDL_Init(SDL_INIT_AUDIO);
   QApplication const app(number_of_arguments, arguments);
   // some Linux platform theme plugins (e.g. GTK3) call setlocale(LC_ALL, "")
   // during QApplication construction, which can switch LC_NUMERIC to a

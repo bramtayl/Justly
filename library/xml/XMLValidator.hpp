@@ -12,6 +12,6 @@ struct XMLValidator {
   XMLValidationContext context;
   explicit XMLValidator(const char *filename)
       : xml_schema(
-            XMLSchema(XMLParserContext(get_share_file(filename).c_str()))),
+            XMLParserContext(get_share_file(filename).c_str())),
         context(XMLValidationContext(xml_schema)) {}
 };
