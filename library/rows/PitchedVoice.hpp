@@ -39,7 +39,7 @@ struct PitchedVoice : Voice {
       } else if (field_name == "velocity_ratio") {
         set_rational_from_xml(velocity_ratio, field_node);
       } else {
-        Q_ASSERT(false);
+        Q_UNREACHABLE();
       }
       field_pointer = xmlNextElementSibling(field_pointer);
     }
@@ -58,17 +58,17 @@ struct PitchedVoice : Voice {
   };
 
   [[nodiscard]] static auto get_column_name(int column_number) {
-    switch (column_number) {
-    case static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column):
+    switch (static_cast<PitchedVoiceColumn>(column_number)) {
+    case PitchedVoiceColumn::number_of_pitched_voice_columns:
+      Q_UNREACHABLE();
+    case PitchedVoiceColumn::pitched_voice_name_column:
       return "Name";
-    case static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column):
+    case PitchedVoiceColumn::pitched_voice_instrument_column:
       return "Instrument";
-    case static_cast<int>(PitchedVoiceColumn::pitched_voice_velocity_ratio_column):
+    case PitchedVoiceColumn::pitched_voice_velocity_ratio_column:
       return "Velocity ratio";
-    default:
-      Q_ASSERT(false);
-      return "";
-    };
+    }
+    Q_UNREACHABLE();
   }
 
   [[nodiscard]] static auto get_cells_mime() {
@@ -81,65 +81,65 @@ struct PitchedVoice : Voice {
 
   [[nodiscard]] auto
   get_data(const int column_number) const -> QVariant override {
-    switch (column_number) {
-    case static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column):
+    switch (static_cast<PitchedVoiceColumn>(column_number)) {
+    case PitchedVoiceColumn::number_of_pitched_voice_columns:
+      Q_UNREACHABLE();
+    case PitchedVoiceColumn::pitched_voice_name_column:
       return name;
-    case static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column):
+    case PitchedVoiceColumn::pitched_voice_instrument_column:
       return program;
-    case static_cast<int>(PitchedVoiceColumn::pitched_voice_velocity_ratio_column):
+    case PitchedVoiceColumn::pitched_voice_velocity_ratio_column:
       return QVariant::fromValue(velocity_ratio);
-    default:
-      Q_ASSERT(false);
-      return {};
     }
+    Q_UNREACHABLE();
   }
 
   void set_data(const int column_number, const QVariant &new_value) override {
-    switch (column_number) {
-    case static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column):
+    switch (static_cast<PitchedVoiceColumn>(column_number)) {
+    case PitchedVoiceColumn::number_of_pitched_voice_columns:
+      Q_UNREACHABLE();
+    case PitchedVoiceColumn::pitched_voice_name_column:
       name = variant_to<QString>(new_value);
       break;
-    case static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column):
+    case PitchedVoiceColumn::pitched_voice_instrument_column:
       program = variant_to<QString>(new_value);
       break;
-    case static_cast<int>(PitchedVoiceColumn::pitched_voice_velocity_ratio_column):
+    case PitchedVoiceColumn::pitched_voice_velocity_ratio_column:
       velocity_ratio = variant_to<Rational>(new_value);
       break;
-    default:
-      Q_ASSERT(false);
     }
   }
 
   void copy_column_from(const PitchedVoice &template_row,
                         const int column_number) {
-    switch (column_number) {
-    case static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column):
+    switch (static_cast<PitchedVoiceColumn>(column_number)) {
+    case PitchedVoiceColumn::number_of_pitched_voice_columns:
+      Q_UNREACHABLE();
+    case PitchedVoiceColumn::pitched_voice_name_column:
       name = template_row.name;
       break;
-    case static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column):
+    case PitchedVoiceColumn::pitched_voice_instrument_column:
       program = template_row.program;
       break;
-    case static_cast<int>(PitchedVoiceColumn::pitched_voice_velocity_ratio_column):
+    case PitchedVoiceColumn::pitched_voice_velocity_ratio_column:
       velocity_ratio = template_row.velocity_ratio;
       break;
-    default:
-      Q_ASSERT(false);
     }
   }
 
   void column_to_xml(xmlNode &node, const int column_number) const override {
-    switch (column_number) {
-    case static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column):
+    switch (static_cast<PitchedVoiceColumn>(column_number)) {
+    case PitchedVoiceColumn::number_of_pitched_voice_columns:
+      Q_UNREACHABLE();
+    case PitchedVoiceColumn::pitched_voice_name_column:
       maybe_add_qstring_to_xml(node, "name", name);
       break;
-    case static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column):
+    case PitchedVoiceColumn::pitched_voice_instrument_column:
       maybe_add_qstring_to_xml(node, "instrument", program);
       break;
-    case static_cast<int>(PitchedVoiceColumn::pitched_voice_velocity_ratio_column):
+    case PitchedVoiceColumn::pitched_voice_velocity_ratio_column:
       maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
       break;
-    default:
-      Q_ASSERT(false);
     }
   }
 

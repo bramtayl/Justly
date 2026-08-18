@@ -79,7 +79,8 @@ static void update_interval(QUndoStack &undo_stack, SwitchTable &switch_table,
 
   const auto current_row_type = switch_table.delegate.current_row_type;
   QUndoCommand *undo_command = nullptr;
-  if (current_row_type == RowType::chord_type) {
+  switch (current_row_type) {
+  case RowType::chord_type: {
     auto &chords_model = switch_table.chords_model;
     auto new_chords =
         copy_items(chords_model.get_rows(), first_row_number, number_of_rows);
@@ -93,7 +94,9 @@ static void update_interval(QUndoStack &undo_stack, SwitchTable &switch_table,
     undo_command = new SetCells( // NOLINT(cppcoreguidelines-owning-memory)
         chords_model, first_row_number, number_of_rows, static_cast<int>(ChordColumn::chord_interval_column),
         static_cast<int>(ChordColumn::chord_interval_column), std::move(new_chords));
-  } else if (current_row_type == RowType::pitched_note_type) {
+    break;
+  }
+  case RowType::pitched_note_type: {
     auto &pitched_notes_model = switch_table.pitched_notes_model;
     auto new_pitched_notes = copy_items(pitched_notes_model.get_rows(),
                                         first_row_number, number_of_rows);
@@ -108,8 +111,14 @@ static void update_interval(QUndoStack &undo_stack, SwitchTable &switch_table,
         pitched_notes_model, first_row_number, number_of_rows,
         static_cast<int>(PitchedNoteColumn::pitched_note_interval_column), static_cast<int>(PitchedNoteColumn::pitched_note_interval_column),
         std::move(new_pitched_notes));
-  } else {
-    Q_ASSERT(false);
+    break;
+  }
+  case RowType::unpitched_note_type:
+  case RowType::pitched_voice_type:
+  case RowType::unpitched_voice_type:
+    // interval rows are disabled for these row types; see
+    // ReplaceTable.hpp's update_actions/set_interval_rows_is_enabled
+    Q_UNREACHABLE();
   }
   undo_stack.push(undo_command);
 }

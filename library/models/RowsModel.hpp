@@ -73,10 +73,8 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
       return SubRow::get_column_name(section);
     case Qt::Vertical:
       return section + 1;
-    default:
-      Q_ASSERT(false);
-      return {};
     }
+    Q_UNREACHABLE();
   }
 
   [[nodiscard]] auto flags(const QModelIndex &index) const

@@ -1064,7 +1064,7 @@ check_note_voices(QWidget &parent, const QList<SubNote> &notes,
     } else if (name == "unpitched_voices") {
       unpitched_voices_model.insert_xml_rows(0, field_node);
     } else {
-      Q_ASSERT(false);
+      Q_UNREACHABLE();
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }

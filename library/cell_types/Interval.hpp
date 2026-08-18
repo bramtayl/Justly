@@ -65,7 +65,7 @@ static inline void set_interval_from_xml(Interval &interval, xmlNode &node) {
     } else if (name == "octave") {
       interval.octave = xml_to_int(field_node);
     } else {
-      Q_ASSERT(false);
+      Q_UNREACHABLE();
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }

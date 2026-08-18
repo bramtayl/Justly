@@ -41,10 +41,8 @@ get_parent_chord_number(const SwitchTable &switch_table) -> int {
     return switch_table.pitched_notes_model.parent_chord_number;
   case RowType::unpitched_note_type:
     return switch_table.unpitched_notes_model.parent_chord_number;
-  default:
-    Q_ASSERT(false);
-    return -1;
   }
+  Q_UNREACHABLE();
 }
 
 template <typename Iterable>

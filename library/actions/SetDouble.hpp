@@ -27,9 +27,9 @@ static void set_double(Song &song, FluidSynth &synth, const ChangeId control_id,
   case ChangeId::starting_tempo_id:
     song.starting_tempo = set_value;
     break;
-  default:
-    Q_ASSERT(false);
-    break;
+  case ChangeId::replace_table_id:
+    // not a spin-box control; see ReplaceTable
+    Q_UNREACHABLE();
   }
   const QSignalBlocker blocker(spin_box);
   spin_box.setValue(set_value);

@@ -65,7 +65,7 @@ static inline void set_rational_from_xml(Rational &rational, xmlNode &node) {
     } else if (name == "denominator") {
       denominator = xml_to_int(field_node);
     } else {
-      Q_ASSERT(false);
+      Q_UNREACHABLE();
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }

@@ -121,7 +121,7 @@ parse_clipboard(QWidget &parent,
         counter++;
       }
     } else {
-      Q_ASSERT(false);
+      Q_UNREACHABLE();
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }

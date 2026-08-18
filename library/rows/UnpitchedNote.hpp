@@ -32,7 +32,7 @@ struct UnpitchedNote : Note {
       } else if (name == "voice_number") {
         voice_number = xml_to_int(field_node);
       } else {
-        Q_ASSERT(false);
+        Q_UNREACHABLE();
       }
       field_pointer = xmlNextElementSibling(field_pointer);
     }
@@ -51,19 +51,19 @@ struct UnpitchedNote : Note {
   };
 
   [[nodiscard]] static auto get_column_name(int column_number) {
-    switch (column_number) {
-    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_voice_number_column):
+    switch (static_cast<UnpitchedNoteColumn>(column_number)) {
+    case UnpitchedNoteColumn::number_of_unpitched_note_columns:
+      Q_UNREACHABLE();
+    case UnpitchedNoteColumn::unpitched_note_voice_number_column:
       return "Voice";
-    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_beats_column):
+    case UnpitchedNoteColumn::unpitched_note_beats_column:
       return "Beats";
-    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_velocity_ratio_column):
+    case UnpitchedNoteColumn::unpitched_note_velocity_ratio_column:
       return "Velocity ratio";
-    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_words_column):
+    case UnpitchedNoteColumn::unpitched_note_words_column:
       return "Words";
-    default:
-      Q_ASSERT(false);
-      return "";
-    };
+    }
+    Q_UNREACHABLE();
   }
 
   [[nodiscard]] static auto get_cells_mime() {
@@ -102,76 +102,76 @@ struct UnpitchedNote : Note {
 
   [[nodiscard]] auto
   get_data(const int column_number) const -> QVariant override {
-    switch (column_number) {
-    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_voice_number_column):
+    switch (static_cast<UnpitchedNoteColumn>(column_number)) {
+    case UnpitchedNoteColumn::number_of_unpitched_note_columns:
+      Q_UNREACHABLE();
+    case UnpitchedNoteColumn::unpitched_note_voice_number_column:
       return voice_number;
-    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_beats_column):
+    case UnpitchedNoteColumn::unpitched_note_beats_column:
       return QVariant::fromValue(beats);
-    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_velocity_ratio_column):
+    case UnpitchedNoteColumn::unpitched_note_velocity_ratio_column:
       return QVariant::fromValue(velocity_ratio);
-    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_words_column):
+    case UnpitchedNoteColumn::unpitched_note_words_column:
       return words;
-    default:
-      Q_ASSERT(false);
-      return {};
     }
+    Q_UNREACHABLE();
   }
 
   void set_data(const int column_number, const QVariant &new_value) override {
-    switch (column_number) {
-    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_voice_number_column):
+    switch (static_cast<UnpitchedNoteColumn>(column_number)) {
+    case UnpitchedNoteColumn::number_of_unpitched_note_columns:
+      Q_UNREACHABLE();
+    case UnpitchedNoteColumn::unpitched_note_voice_number_column:
       voice_number = variant_to<int>(new_value);
       break;
-    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_beats_column):
+    case UnpitchedNoteColumn::unpitched_note_beats_column:
       beats = variant_to<Rational>(new_value);
       break;
-    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_velocity_ratio_column):
+    case UnpitchedNoteColumn::unpitched_note_velocity_ratio_column:
       velocity_ratio = variant_to<Rational>(new_value);
       break;
-    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_words_column):
+    case UnpitchedNoteColumn::unpitched_note_words_column:
       words = variant_to<QString>(new_value);
       break;
-    default:
-      Q_ASSERT(false);
     }
   }
 
   void copy_column_from(const UnpitchedNote &template_row,
                         const int column_number) {
-    switch (column_number) {
-    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_voice_number_column):
+    switch (static_cast<UnpitchedNoteColumn>(column_number)) {
+    case UnpitchedNoteColumn::number_of_unpitched_note_columns:
+      Q_UNREACHABLE();
+    case UnpitchedNoteColumn::unpitched_note_voice_number_column:
       voice_number = template_row.voice_number;
       break;
-    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_beats_column):
+    case UnpitchedNoteColumn::unpitched_note_beats_column:
       beats = template_row.beats;
       break;
-    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_velocity_ratio_column):
+    case UnpitchedNoteColumn::unpitched_note_velocity_ratio_column:
       velocity_ratio = template_row.velocity_ratio;
       break;
-    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_words_column):
+    case UnpitchedNoteColumn::unpitched_note_words_column:
       words = template_row.words;
       break;
-    default:
-      Q_ASSERT(false);
     }
   }
 
   void column_to_xml(xmlNode &node, const int column_number) const override {
-    switch (column_number) {
-    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_voice_number_column):
+    switch (static_cast<UnpitchedNoteColumn>(column_number)) {
+    case UnpitchedNoteColumn::number_of_unpitched_note_columns:
+      Q_UNREACHABLE();
+    case UnpitchedNoteColumn::unpitched_note_voice_number_column:
       set_xml_int(node, "voice_number", voice_number);
       break;
-    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_beats_column):
+    case UnpitchedNoteColumn::unpitched_note_beats_column:
       maybe_add_rational_to_xml(node, "beats", beats);
       break;
-    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_velocity_ratio_column):
+    case UnpitchedNoteColumn::unpitched_note_velocity_ratio_column:
       maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
       break;
-    case static_cast<int>(UnpitchedNoteColumn::unpitched_note_words_column):
+    case UnpitchedNoteColumn::unpitched_note_words_column:
       maybe_add_qstring_to_xml(node, "words", words);
       break;
-    default:
-      Q_ASSERT(false);
     }
   }
 

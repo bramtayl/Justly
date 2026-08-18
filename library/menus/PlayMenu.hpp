@@ -81,10 +81,13 @@ struct PlayMenu : public QMenu {
       stop_playing(player.sequencer, player.event);
       initialize_play(song_widget);
 
-      if (current_row_type == RowType::chord_type) {
+      switch (current_row_type) {
+      case RowType::chord_type:
         modulate_before_chord(song, play_state, first_row_number);
         play_chords(song_widget, first_row_number, number_of_rows);
-      } else if (current_row_type == RowType::pitched_note_type || current_row_type == RowType::unpitched_note_type) {
+        break;
+      case RowType::pitched_note_type:
+      case RowType::unpitched_note_type: {
         const auto chord_number = selection.chord_number;
         modulate_before_chord(song, play_state, chord_number);
         const auto &chord = song.chords.at(chord_number);
@@ -104,18 +107,20 @@ struct PlayMenu : public QMenu {
             return;
           }
         }
-      } else if (current_row_type == RowType::pitched_voice_type) {
+        break;
+      }
+      case RowType::pitched_voice_type:
         if (!play_voices(player, pitched_voices, first_row_number,
                          number_of_rows)) {
           return;
         }
-      } else if (current_row_type == RowType::unpitched_voice_type) {
+        break;
+      case RowType::unpitched_voice_type:
         if (!play_voices(player, unpitched_voices, first_row_number,
                          number_of_rows)) {
           return;
         }
-      } else {
-        Q_ASSERT(false);
+        break;
       }
     });
 
@@ -134,11 +139,14 @@ struct PlayMenu : public QMenu {
       stop_playing(player.sequencer, player.event);
       initialize_play(song_widget);
 
-      if (current_row_type == RowType::chord_type) {
+      switch (current_row_type) {
+      case RowType::chord_type:
         modulate_before_chord(song, play_state, first_row_number);
         play_chords(song_widget, first_row_number,
                    number_of_chords - first_row_number);
-      } else if (current_row_type == RowType::pitched_note_type || current_row_type == RowType::unpitched_note_type) {
+        break;
+      case RowType::pitched_note_type:
+      case RowType::unpitched_note_type: {
         const auto chord_number = selection.chord_number;
         modulate_before_chord(song, play_state, chord_number);
         const auto &chord = song.chords.at(chord_number);
@@ -164,8 +172,13 @@ struct PlayMenu : public QMenu {
         update_final_time(player, play_state.current_time);
         play_chords(song_widget, chord_number + 1,
                    number_of_chords - chord_number - 1);
-      } else {
-        Q_ASSERT(false);
+        break;
+      }
+      case RowType::pitched_voice_type:
+      case RowType::unpitched_voice_type:
+        // play_to_end_action is disabled for voice rows; see
+        // ReplaceTable.hpp's update_actions/get_is_voice
+        Q_UNREACHABLE();
       }
     });
 

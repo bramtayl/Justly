@@ -291,7 +291,8 @@
       "Bash(ninja library *)",
       "Bash(QT_QPA_PLATFORM=offscreen ./bin/JustlyTests test_export_unwritable_path)",
       "Bash(echo \"exit:$?\")",
-      "Bash(echo \"CTEST_EXIT:$?\")"
+      "Bash(echo \"CTEST_EXIT:$?\")",
+      "Bash(grep -E \"^library|^executable|^JustlyTests$|^Justly$\")"
     ],
     "additionalDirectories": [
       "/home/brandon/Justly"

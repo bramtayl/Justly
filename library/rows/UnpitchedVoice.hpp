@@ -43,7 +43,7 @@ struct UnpitchedVoice : Voice {
       } else if (field_name == "velocity_ratio") {
         set_rational_from_xml(velocity_ratio, field_node);
       } else {
-        Q_ASSERT(false);
+        Q_UNREACHABLE();
       }
       field_pointer = xmlNextElementSibling(field_pointer);
     }
@@ -62,19 +62,19 @@ struct UnpitchedVoice : Voice {
   };
 
   [[nodiscard]] static auto get_column_name(int column_number) {
-    switch (column_number) {
-    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column):
+    switch (static_cast<UnpitchedVoiceColumn>(column_number)) {
+    case UnpitchedVoiceColumn::number_of_unpitched_voice_columns:
+      Q_UNREACHABLE();
+    case UnpitchedVoiceColumn::unpitched_voice_name_column:
       return "Name";
-    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_percussion_set_column):
+    case UnpitchedVoiceColumn::unpitched_voice_percussion_set_column:
       return "Percussion set";
-    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_midi_number_column):
+    case UnpitchedVoiceColumn::unpitched_voice_midi_number_column:
       return "MIDI number";
-    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column):
+    case UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column:
       return "Velocity ratio";
-    default:
-      Q_ASSERT(false);
-      return "";
-    };
+    }
+    Q_UNREACHABLE();
   }
 
   [[nodiscard]] static auto get_cells_mime() {
@@ -87,76 +87,76 @@ struct UnpitchedVoice : Voice {
 
   [[nodiscard]] auto
   get_data(const int column_number) const -> QVariant override {
-    switch (column_number) {
-    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column):
+    switch (static_cast<UnpitchedVoiceColumn>(column_number)) {
+    case UnpitchedVoiceColumn::number_of_unpitched_voice_columns:
+      Q_UNREACHABLE();
+    case UnpitchedVoiceColumn::unpitched_voice_name_column:
       return name;
-    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_percussion_set_column):
+    case UnpitchedVoiceColumn::unpitched_voice_percussion_set_column:
       return program;
-    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_midi_number_column):
+    case UnpitchedVoiceColumn::unpitched_voice_midi_number_column:
       return QVariant::fromValue(midi_number);
-    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column):
+    case UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column:
       return QVariant::fromValue(velocity_ratio);
-    default:
-      Q_ASSERT(false);
-      return {};
     }
+    Q_UNREACHABLE();
   }
 
   void set_data(const int column_number, const QVariant &new_value) override {
-    switch (column_number) {
-    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column):
+    switch (static_cast<UnpitchedVoiceColumn>(column_number)) {
+    case UnpitchedVoiceColumn::number_of_unpitched_voice_columns:
+      Q_UNREACHABLE();
+    case UnpitchedVoiceColumn::unpitched_voice_name_column:
       name = variant_to<QString>(new_value);
       break;
-    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_percussion_set_column):
+    case UnpitchedVoiceColumn::unpitched_voice_percussion_set_column:
       program = variant_to<QString>(new_value);
       break;
-    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_midi_number_column):
+    case UnpitchedVoiceColumn::unpitched_voice_midi_number_column:
       midi_number = variant_to<short>(new_value);
       break;
-    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column):
+    case UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column:
       velocity_ratio = variant_to<Rational>(new_value);
       break;
-    default:
-      Q_ASSERT(false);
     }
   }
 
   void copy_column_from(const UnpitchedVoice &template_row,
                         const int column_number) {
-    switch (column_number) {
-    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column):
+    switch (static_cast<UnpitchedVoiceColumn>(column_number)) {
+    case UnpitchedVoiceColumn::number_of_unpitched_voice_columns:
+      Q_UNREACHABLE();
+    case UnpitchedVoiceColumn::unpitched_voice_name_column:
       name = template_row.name;
       break;
-    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_percussion_set_column):
+    case UnpitchedVoiceColumn::unpitched_voice_percussion_set_column:
       program = template_row.program;
       break;
-    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_midi_number_column):
+    case UnpitchedVoiceColumn::unpitched_voice_midi_number_column:
       midi_number = template_row.midi_number;
       break;
-    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column):
+    case UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column:
       velocity_ratio = template_row.velocity_ratio;
       break;
-    default:
-      Q_ASSERT(false);
     }
   }
 
   void column_to_xml(xmlNode &node, const int column_number) const override {
-    switch (column_number) {
-    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column):
+    switch (static_cast<UnpitchedVoiceColumn>(column_number)) {
+    case UnpitchedVoiceColumn::number_of_unpitched_voice_columns:
+      Q_UNREACHABLE();
+    case UnpitchedVoiceColumn::unpitched_voice_name_column:
       maybe_add_qstring_to_xml(node, "name", name);
       break;
-    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_percussion_set_column):
+    case UnpitchedVoiceColumn::unpitched_voice_percussion_set_column:
       maybe_add_qstring_to_xml(node, "percussion_set_pointer", program);
       break;
-    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_midi_number_column):
+    case UnpitchedVoiceColumn::unpitched_voice_midi_number_column:
       set_xml_int(node, "midi_number", midi_number);
       break;
-    case static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column):
+    case UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column:
       maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
       break;
-    default:
-      Q_ASSERT(false);
     }
   }
 
