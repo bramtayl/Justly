@@ -14,7 +14,7 @@ auto get_mime_description(const QString &mime_type) -> QString {
   return mime_type;
 }
 
-void add_paste_insert(SongWidget &song_widget, const int row_number) {
+static void add_paste_insert(SongWidget &song_widget, const int row_number) {
   auto &switch_column = song_widget.switch_column;
   auto &switch_table = switch_column.switch_table;
 

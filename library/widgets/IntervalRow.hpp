@@ -37,14 +37,6 @@
 #include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
 
-[[nodiscard]] auto check_interval(QWidget &parent_widget,
-                                  const Interval &interval) -> bool;
-
-void update_interval(QUndoStack &undo_stack, SwitchTable &switch_table,
-                     const Interval &interval);
-
-void make_square(QPushButton &button);
-
 struct IntervalRow : public QWidget {
   QUndoStack &undo_stack;
   SwitchTable &switch_table;
@@ -57,9 +49,6 @@ struct IntervalRow : public QWidget {
   IntervalRow(QUndoStack &undo_stack_input, SwitchTable &switch_table_input,
               const char *const interval_name, Interval interval_input);
 };
-
-void set_interval_row_is_enabled(IntervalRow &interval_row,
-                                 bool is_enabled);
 
 void set_interval_rows_is_enabled(IntervalRow &third_row,
                                   IntervalRow &fifth_row,

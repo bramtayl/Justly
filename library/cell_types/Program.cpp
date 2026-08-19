@@ -28,7 +28,7 @@ auto is_pitched_bank_number(const short bank_number) -> bool {
          bank_number != TEMPLE_BLOCKS_BANK_NUMBER;
 }
 
-auto filter_programs(const QList<Program> &all_programs,
+static auto filter_programs(const QList<Program> &all_programs,
                      const bool is_pitched) -> QList<Program> {
   QList<Program> result;
   std::ranges::copy_if(all_programs, std::back_inserter(result),
@@ -39,7 +39,12 @@ auto filter_programs(const QList<Program> &all_programs,
   return result;
 }
 
-auto get_actual_release_milliseconds(FluidSynth &synth,
+// triggers the program on a scratch synth and reads back its actual volume
+// envelope release time (GEN_VOLENVRELEASE, in timecents) from the resulting
+// voice(s), rather than assuming the conservative MAX_RELEASE_TIME constant.
+// Middle C is used as the reference key because it's the SF2 spec's reference
+// key for key-scaled generators, so this reads the unscaled nominal release.
+static auto get_actual_release_milliseconds(FluidSynth &synth,
                                      fluid_preset_t *const preset_pointer)
     -> double {
   static const auto PREVIEW_KEY = 60;

@@ -99,10 +99,6 @@ string_to_maybe_int(const std::string &content) -> std::optional<int>;
 
 [[nodiscard]] auto xml_to_int(const xmlNode &element) -> int;
 
-[[nodiscard]] auto
-get_new_child_pointer(xmlNode &node, const char *const field_name,
-                      const xmlChar *contents = nullptr) -> xmlNode *;
-
 [[nodiscard]] auto get_new_child(
     xmlNode &node, const char *const field_name) -> xmlNode &;
 

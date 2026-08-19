@@ -1,6 +1,6 @@
 #include "widgets/SpinBoxes.hpp"
 
-void add_set_double(QUndoStack &undo_stack, Song &song,
+static void add_set_double(QUndoStack &undo_stack, Song &song,
                     FluidSynth &synth, QDoubleSpinBox &spin_box,
                     const ChangeId control_id, const double old_value,
                     const double new_value) {
@@ -8,10 +8,10 @@ void add_set_double(QUndoStack &undo_stack, Song &song,
       song, synth, spin_box, control_id, old_value, new_value));
 }
 
-void add_control(QFormLayout &spin_boxes_form, const QString &label,
+static void add_control(QFormLayout &spin_boxes_form, const QString &label,
                  QDoubleSpinBox &spin_box, const int minimum,
                  const int maximum, const QString &suffix,
-                 const double single_step, const int decimals) {
+                 const double single_step = 1, const int decimals = 0) {
   Q_ASSERT(suffix.isValidUtf16());
   Q_ASSERT(label.isValidUtf16());
   spin_box.setMinimum(minimum);

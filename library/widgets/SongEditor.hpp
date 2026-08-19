@@ -47,36 +47,6 @@
 #include "widgets/piano_roll/PianoRollWidget.hpp"
 #include "widgets/piano_roll/PlayheadTransition.hpp"
 
-void add_replace_table(SongMenuBar &song_menu_bar,
-                       SongWidget &song_widget,
-                       const RowType new_row_type,
-                       const int new_chord_number,
-                       PianoRollWidget &piano_roll_widget,
-                       const int new_note_number = -1);
-
-// wires an action that just switches to a fixed table (voices/chords)
-void connect_switch_to_table(QAction &action, QObject &context,
-                             SongMenuBar &song_menu_bar,
-                             SongWidget &song_widget,
-                             PianoRollWidget &piano_roll_widget,
-                             const RowType row_type);
-
-// wires the previous/next chord actions, which stay on the current table
-// type but step the chord number by delta
-void connect_navigate_chord_action(QAction &action, QObject &context,
-                                   SongMenuBar &song_menu_bar,
-                                   SongWidget &song_widget,
-                                   PianoRollWidget &piano_roll_widget,
-                                   const int delta);
-
-// convenience wrappers around PianoRollWidget's own field-based functions,
-// for this file's callers (event-loop connections, Play menu handlers) that
-// only have the whole PianoRollWidget on hand -- named distinctly from their
-// destructured counterparts (rebuild_scene/zoom_in/zoom_out/stop_playhead in
-// PianoRollWidget.hpp) since both are visible here once PianoRollWidget.hpp
-// is included
-void rebuild_piano_roll_scene(PianoRollWidget &widget);
-
 // open_file/import_musicxml replace the song wholesale, bypassing the undo
 // stack, so the usual indexChanged-driven refresh never fires for them --
 // call this afterward. They also always land back on the chords view (see
@@ -119,7 +89,5 @@ public:
 
   void closeEvent(QCloseEvent *close_event_pointer) override;
 };
-
-void write_rational(QTextStream &stream, const Rational &rational);
 
 void set_up();

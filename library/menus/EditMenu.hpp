@@ -38,8 +38,6 @@
 #include "widgets/SwitchTable.hpp"
 #include "xml/XMLDocument.hpp"
 
-void add_delete_cells(SongWidget &song_widget);
-
 template <RowInterface SubRow>
 [[nodiscard]] static auto
 make_remove_command(RowsModel<SubRow> &rows_model, const int first_row_number,
@@ -77,8 +75,6 @@ static void copy_from_model(QMimeData &mime_data,
 
   mime_data.setData(SubRow::get_cells_mime(), document_to_byte_array(document));
 }
-
-void copy_selection(const SwitchTable &switch_table);
 
 struct EditMenu : public QMenu {
   QAction cut_action = QAction(EditMenu::tr("&Cut"));

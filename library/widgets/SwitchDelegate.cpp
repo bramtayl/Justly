@@ -1,6 +1,6 @@
 #include "widgets/SwitchDelegate.hpp"
 
-auto create_string_picker(QWidget *parent_pointer,
+static auto create_string_picker(QWidget *parent_pointer,
                           const QList<QString> &names) -> StringPicker & {
   auto &specific_result =
       get_reference(new StringPicker( // NOLINT(cppcoreguidelines-owning-memory)

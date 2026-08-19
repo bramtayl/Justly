@@ -140,8 +140,6 @@ make_paste_insert_command(QWidget &parent, RowsModel<SubRow> &rows_model,
       cells.right_column, false);
 }
 
-void add_paste_insert(SongWidget &song_widget, const int row_number);
-
 template <RowInterface SubRow>
 [[nodiscard]] static auto
 make_paste_cells_command(QWidget &parent, const int first_row_number,

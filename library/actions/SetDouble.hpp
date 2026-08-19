@@ -12,9 +12,6 @@
 #include "other/helpers.hpp"
 #include "sound/FluidSynth.hpp"
 
-void set_double(Song &song, FluidSynth &synth, const ChangeId control_id,
-                QDoubleSpinBox &spin_box, const double set_value);
-
 struct SetDouble : public QUndoCommand {
   Song &song;
   FluidSynth &synth;

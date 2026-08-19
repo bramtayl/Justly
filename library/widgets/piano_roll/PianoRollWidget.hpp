@@ -78,14 +78,6 @@ static const auto PIANO_ROLL_TIME_ZOOM_STEP = 1.25;
 [[nodiscard]] auto to_scene_x(const PianoRollNotesScene &notes_scene,
                               const double time_ms) -> double;
 
-// (re)draws the time axis' ticks and labels, spaced (in ms) so they land
-// roughly PIANO_ROLL_TARGET_TICK_PIXEL_SPACING apart on screen at the
-// current time_zoom_factor -- called from PianoRollWidget::rebuild_scene()
-// for the initial build and from set_time_zoom() whenever the zoom changes,
-// since a spacing that looked right before a zoom change would otherwise
-// crowd together (zooming in) or spread too far apart (zooming out)
-void redraw_time_axis_ticks(PianoRollNotesScene &notes_scene);
-
 // sets notes_scene's horizontal scale directly (rather than accumulating
 // via QGraphicsView::scale()) so repeated zoom_in()/zoom_out() calls can't
 // drift and clamping is just one std::clamp on the absolute factor; the
@@ -95,27 +87,6 @@ void redraw_time_axis_ticks(PianoRollNotesScene &notes_scene);
 void set_notes_view_time_zoom(PianoRollNotesScene &notes_scene,
                               const double new_zoom_factor);
 
-// moves the playhead line to the time under the given viewport position,
-// without recentering the view on it the way position_playhead() does for
-// playback -- while the user is actively dragging, the view should hold
-// still under the mouse rather than fight the drag by scrolling; returns
-// the playhead's new x position (in scene coordinates) so the caller can
-// translate it back to a time and sync the switch table's selection
-[[nodiscard]] auto drag_playhead_to(PianoRollNotesScene &notes_scene,
-                                    const QPoint &viewport_pos)
-    -> double;
-
-// resizes/shows the shaded selection box to span from start_x to end_x (in
-// either order), full scene height -- called from
-// PianoRollWidget::apply_selection_highlight() to mirror whatever chord/note
-// range is currently selected, so it stays put (rather than needing a
-// mouse-driven show/hide of its own) whether that range came from a piano
-// roll drag, a table click, or playback
-void show_selection_rect(PianoRollNotesScene &notes_scene,
-                         const double start_x, const double end_x);
-
-void hide_selection_rect(PianoRollNotesScene &notes_scene);
-
 // follow_view lets a caller move the playhead line without recentering the
 // view on it -- used when playback has already stopped (see
 // PianoRollWidget::apply_selection_highlight()), where forcibly
@@ -124,12 +95,6 @@ void hide_selection_rect(PianoRollNotesScene &notes_scene);
 void position_playhead(PianoRollNotesScene &notes_scene,
                        const double time_ms,
                        const bool follow_view = true);
-
-[[nodiscard]] auto get_voice_color(const int global_voice_index)
-    -> QColor;
-
-void draw_legend_row(QGraphicsScene &legend_scene, const QString &name,
-                     const int global_voice_index, const double row_y);
 
 // number_of_notes == -1 (default) means "every note in every chord in
 // [first_chord_number, first_chord_number + number_of_chords)". A concrete
@@ -143,77 +108,9 @@ void draw_legend_row(QGraphicsScene &legend_scene, const QString &name,
     const std::optional<bool> pitched_filter = std::nullopt)
     -> std::pair<double, double>;
 
-// the functions below take the specific PianoRollWidget fields they act on
-// rather than the whole widget -- that's what lets them be fully defined up
-// here, ahead of PianoRollWidget itself, so its own inline constructor/
-// eventFilter bodies (further down) can call them without a forward
-// declaration. PianoRollWidget-taking overloads of the ones also needed by
-// outside callers (SongEditor, tests) follow after the struct.
-
-// which chord's time range (as laid out in chord_start_times) contains
-// time_ms -- the last chord whose start is at or before time_ms, or -1 if
-// there are no chords yet or time_ms falls before the first one
-[[nodiscard]] auto get_chord_number_at_time(
-    const QList<double> &chord_start_times, const double time_ms) -> int;
-
-// prefers whichever note bar is actually drawn under viewport_pos (the same
-// itemAt() lookup the double-click handler uses) over pure time-based lookup
-// -- a note's duration can run longer than its own chord (i.e. past the next
-// chord's start_time), so its bar visually extends into the next chord's
-// time range; without this, clicking that overhang would fall through to
-// get_chord_number_at_time() and select the next chord instead of the one
-// the visible bar actually belongs to. Falls back to get_chord_number_at_time()
-// when the click doesn't land on any note bar (e.g. empty space), matching
-// drag_playhead_to()'s own clamp of negative x to the axis
-[[nodiscard]] auto get_chord_number_at_viewport_pos(
-    const PianoRollNotesScene &piano_roll_scene, const QPoint &viewport_pos)
-    -> int;
-
-// called whenever the playhead moves on its own -- from a manual drag
-// (PianoRollWidget::eventFilter) or a running playback timer tick
-// (update_playhead_position() below) -- so the switch table's own
-// selection follows the cursor back. Deliberately NOT called from
-// position_playhead() itself, since that's also invoked reactively by
-// apply_selection_highlight() after any table selection change (including
-// a multi-row range); calling this from there would collapse that
-// selection down to a single row the instant it was made. Only applies
-// while the table is showing chords: a note or voice row has no single
-// "current chord" to reselect into, and reselecting a chord there would
-// kick the user out of whichever chord's notes/voices they're editing.
-void select_chord_at_playhead(SwitchTable &switch_table,
-                              const QList<double> &chord_start_times,
-                              bool &selecting_chord_from_playhead,
-                              const double time_ms);
-
-// selects the note row (in whichever of pitched_notes_model /
-// unpitched_notes_model matches the clicked bar's own kind) corresponding to
-// a note bar clicked directly in the piano roll -- the notes-mode
-// counterpart to select_chord_at_playhead/select_chord_range_at_playhead,
-// which only act while the table is in chord mode. A no-op unless the
-// switch table is already showing that exact chord's notes of that exact
-// kind (e.g. clicking a pitched note's bar while the table shows unpitched
-// notes, or another chord's notes, has no row to select).
-void select_note_at_bar(SwitchTable &switch_table,
-                        const PianoRollNoteEvent &event);
-
-// selects every chord between anchor_chord_number and current_chord_number
-// (inclusive, in either order) as one contiguous range -- the drag-select
-// counterpart to select_chord_at_playhead's single-chord reselect, used
-// while a playhead drag is in progress so notes dragged over in between the
-// press and the current mouse position stay selected instead of being
-// dropped in favor of whichever chord is under the cursor right now
-void select_chord_range_at_playhead(SwitchTable &switch_table,
-                                    const int number_of_chords,
-                                    bool &selecting_chord_from_playhead,
-                                    const int anchor_chord_number,
-                                    const int current_chord_number);
-
 void zoom_in(PianoRollNotesScene &piano_roll_scene);
 
 void zoom_out(PianoRollNotesScene &piano_roll_scene);
-
-void set_vertical_scrolling_enabled(QGraphicsView &view,
-                                    const bool enabled);
 
 // position_playhead() recenters the view every tick while playing, fighting
 // any manual scroll (drag on the scrollbar, or wheel) the user does at the

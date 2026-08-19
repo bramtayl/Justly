@@ -366,7 +366,19 @@
       "Bash(git -c credential.helper='!gh auth git-credential' push origin v1.1.4)",
       "Bash(cmake --build .)",
       "Bash(ar t *)",
-      "Bash(ninja -n JustlyTests)"
+      "Bash(ninja -n JustlyTests)",
+      "Bash(cmake -S . -B build-iwyu -G Ninja -DINCLUDE_WHAT_YOU_USE=ON -DBUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Debug)",
+      "Bash(ninja -C build-iwyu -k 0)",
+      "Bash(ctags --version)",
+      "Bash(grep -rnE '^[A-Za-z_][A-Za-z0-9_:<>, \\\\*&]*[ \\\\*&][A-Za-z_][A-Za-z0-9_]*\\\\\\([^;]*$' --include='*.cpp' library executable tests)",
+      "Bash(grep -rnE '^\\\\\\)|^[A-Za-z_][A-Za-z0-9_:<>, ]*$' --include='*.cpp' library executable tests)",
+      "Bash(grep -rnE '^\\(static \\)?[A-Za-z_][A-Za-z0-9_:<>, \\\\*&]*[ \\\\*&][A-Za-z_][A-Za-z0-9_]*\\\\\\([^;]*$' --include='*.cpp' library executable tests)",
+      "Bash(grep -rcE '^\\\\S.*\\\\\\)\\\\s*\\(const\\)?\\\\s*\\\\{$|^\\\\S.*\\\\\\)\\\\s*->\\\\s*\\\\S.*\\\\{$' --include='*.cpp' library executable tests)",
+      "Bash(awk -F: '{s+=$2} END{print s}')",
+      "Bash(grep -rlE '^\\\\S.*\\\\\\)\\\\s*\\(const\\)?\\\\s*\\\\{$|^\\\\S.*\\\\\\)\\\\s*->\\\\s*\\\\S.*\\\\{$' --include='*.hpp' --include='*.h' library executable tests)",
+      "Bash(grep -rnE '^\\\\S.*\\\\\\)\\\\s*\\(const\\)?\\\\s*\\\\{$|^\\\\S.*\\\\\\)\\\\s*->\\\\s*\\\\S.*\\\\{$' --include='*.cpp' library executable tests)",
+      "Bash(clang++ --version)",
+      "Bash(python3)"
     ],
     "additionalDirectories": [
       "/home/brandon/Justly"

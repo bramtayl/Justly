@@ -24,11 +24,6 @@
 #include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
 
-struct PlayState;
-
-void modulate_before_chord(const Song &song, PlayState &play_state,
-                           const int next_chord_number);
-
 struct PlaySelection {
   RowType row_type;
   int chord_number; // -1 unless row_type is a note type

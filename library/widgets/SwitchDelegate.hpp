@@ -29,9 +29,6 @@
 #include "rows/RowType.hpp"
 #include "rows/Voice.hpp"
 
-[[nodiscard]] auto create_string_picker(QWidget *parent_pointer,
-                                        const QList<QString> &names) -> StringPicker &;
-
 template <VoiceInterface SubVoice>
 static auto create_voice_number_picker(QWidget *parent_pointer,
                                        const QList<SubVoice> &voices)

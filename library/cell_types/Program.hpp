@@ -80,19 +80,6 @@ Q_DECLARE_METATYPE(const Program *);
 [[nodiscard]] auto
 is_pitched_bank_number(const short bank_number) -> bool;
 
-[[nodiscard]] auto filter_programs(const QList<Program> &all_programs,
-                                   const bool is_pitched) -> QList<Program>;
-
-// triggers the program on a scratch synth and reads back its actual volume
-// envelope release time (GEN_VOLENVRELEASE, in timecents) from the resulting
-// voice(s), rather than assuming the conservative MAX_RELEASE_TIME constant.
-// Middle C is used as the reference key because it's the SF2 spec's reference
-// key for key-scaled generators, so this reads the unscaled nominal release.
-[[nodiscard]] auto
-get_actual_release_milliseconds(FluidSynth &synth,
-                                fluid_preset_t *const preset_pointer)
-    -> double;
-
 [[nodiscard]] auto get_some_programs(const bool is_pitched)
     -> const QList<Program> &;
 

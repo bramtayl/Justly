@@ -1,6 +1,6 @@
 #include "menus/PlayMenu.hpp"
 
-void modulate_before_chord(const Song &song, PlayState &play_state,
+static void modulate_before_chord(const Song &song, PlayState &play_state,
                            const int next_chord_number) {
   const auto &chords = song.chords;
   if (next_chord_number > 0) {

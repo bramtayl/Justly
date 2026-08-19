@@ -1,6 +1,6 @@
 #include "actions/SetDouble.hpp"
 
-void set_double(Song &song, FluidSynth &synth, const ChangeId control_id,
+static void set_double(Song &song, FluidSynth &synth, const ChangeId control_id,
                 QDoubleSpinBox &spin_box, const double set_value) {
   switch (control_id) {
   case ChangeId::gain_id:

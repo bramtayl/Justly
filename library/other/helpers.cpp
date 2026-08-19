@@ -61,8 +61,8 @@ auto xml_to_int(const xmlNode &element) -> int {
   return string_to_int(get_content(element));
 }
 
-auto get_new_child_pointer(xmlNode &node, const char *const field_name,
-                           const xmlChar *contents) -> xmlNode * {
+static auto get_new_child_pointer(xmlNode &node, const char *const field_name,
+                           const xmlChar *contents = nullptr) -> xmlNode * {
   return xmlNewChild(&node, nullptr, c_string_to_xml_string(field_name),
                      contents);
 }

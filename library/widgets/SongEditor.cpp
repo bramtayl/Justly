@@ -1,17 +1,17 @@
 #include "widgets/SongEditor.hpp"
 
-void add_replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
+static void add_replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                        const RowType new_row_type,
                        const int new_chord_number,
                        PianoRollWidget &piano_roll_widget,
-                       const int new_note_number) {
+                       const int new_note_number = -1) {
   song_widget.undo_stack.push(
       new ReplaceTable( // NOLINT(cppcoreguidelines-owning-memory)
           song_menu_bar, song_widget, piano_roll_widget, new_row_type,
           new_chord_number, new_note_number));
 }
 
-void connect_switch_to_table(QAction &action, QObject &context,
+static void connect_switch_to_table(QAction &action, QObject &context,
                              SongMenuBar &song_menu_bar,
                              SongWidget &song_widget,
                              PianoRollWidget &piano_roll_widget,
@@ -24,7 +24,7 @@ void connect_switch_to_table(QAction &action, QObject &context,
       });
 }
 
-void connect_navigate_chord_action(QAction &action, QObject &context,
+static void connect_navigate_chord_action(QAction &action, QObject &context,
                                    SongMenuBar &song_menu_bar,
                                    SongWidget &song_widget,
                                    PianoRollWidget &piano_roll_widget,
@@ -40,7 +40,7 @@ void connect_navigate_chord_action(QAction &action, QObject &context,
       });
 }
 
-void rebuild_piano_roll_scene(PianoRollWidget &widget) {
+static void rebuild_piano_roll_scene(PianoRollWidget &widget) {
   rebuild_scene(widget, widget.song_widget, widget.piano_roll_scene,
                widget.axis_scene, widget.legend_scene, widget.row_layout,
                widget.selection_row_type, widget.selection_chord_number,
@@ -337,7 +337,7 @@ void SongEditor::closeEvent(QCloseEvent *close_event_pointer) {
   QMainWindow::closeEvent(close_event_pointer);
 }
 
-void write_rational(QTextStream &stream, const Rational &rational) {
+static void write_rational(QTextStream &stream, const Rational &rational) {
   const auto numerator = rational.numerator;
   const auto denominator = rational.denominator;
   if (numerator != 1) {

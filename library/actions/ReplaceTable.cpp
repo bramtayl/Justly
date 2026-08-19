@@ -1,23 +1,30 @@
 #include "actions/ReplaceTable.hpp"
 
-auto get_string_picker_width(const QList<QString> &names) -> int {
+static auto get_string_picker_width(const QList<QString> &names) -> int {
   StringPicker editor(nullptr, names);
   editor.setFrame(false);
   return editor.sizeHint().width();
 }
 
-void set_minimum_column_size(QTableView &view, const int column_number,
+static void set_minimum_column_size(QTableView &view, const int column_number,
                              const int minimum_size) {
   view.resizeColumnToContents(column_number);
   view.setColumnWidth(
       column_number, std::max({minimum_size, view.columnWidth(column_number)}));
 }
 
-auto get_is_voice(const RowType row_type) -> bool {
+static auto get_is_voice(const RowType row_type) -> bool {
   return row_type == RowType::pitched_voice_type || row_type == RowType::unpitched_voice_type;
 }
 
-void update_piano_roll_widget_selection(PianoRollWidget &widget,
+// applies a selection directly to piano_roll_widget's own fields: highlight
+// the corresponding note bar(s), jump the cursor to the selection's start,
+// and scroll to keep both in view. number_of_rows == 0 clears the highlight
+// and hides the cursor (used both for "nothing selected" and for voice-row
+// selections, which have no timeline position). Only called from
+// update_piano_roll_selection() below, which derives these arguments from
+// the switch table's own current selection.
+static void update_piano_roll_widget_selection(PianoRollWidget &widget,
                                         const RowType row_type,
                                         const int chord_number,
                                         const int first_row_number,
@@ -34,7 +41,10 @@ void update_piano_roll_widget_selection(PianoRollWidget &widget,
                             widget.selecting_chord_from_playhead);
 }
 
-void update_piano_roll_selection(PianoRollWidget &piano_roll_widget,
+// mirrors the switch table's current selection onto the piano roll (which
+// note bar(s) get highlighted, where the cursor jumps to); an empty
+// selection clears both, since get_only_range() asserts on an empty range
+static void update_piano_roll_selection(PianoRollWidget &piano_roll_widget,
                                  const SongWidget &song_widget) {
   const auto &switch_table = song_widget.switch_column.switch_table;
   const auto row_type = switch_table.delegate.current_row_type;
@@ -49,7 +59,7 @@ void update_piano_roll_selection(PianoRollWidget &piano_roll_widget,
                                      range.top(), get_number_of_rows(range));
 }
 
-void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
+static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                     const QItemSelectionModel &selector) {
   auto &edit_menu = song_menu_bar.edit_menu;
   auto &controls_column = song_widget.controls_column;

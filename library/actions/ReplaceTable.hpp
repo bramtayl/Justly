@@ -52,35 +52,6 @@
 #include "widgets/SwitchTable.hpp"
 #include "widgets/piano_roll/PianoRollWidget.hpp"
 
-[[nodiscard]] auto get_string_picker_width(const QList<QString> &names) -> int;
-
-void set_minimum_column_size(QTableView &view, const int column_number,
-                             const int minimum_size);
-
-[[nodiscard]] auto get_is_voice(const RowType row_type) -> bool;
-
-// applies a selection directly to piano_roll_widget's own fields: highlight
-// the corresponding note bar(s), jump the cursor to the selection's start,
-// and scroll to keep both in view. number_of_rows == 0 clears the highlight
-// and hides the cursor (used both for "nothing selected" and for voice-row
-// selections, which have no timeline position). Only called from
-// update_piano_roll_selection() below, which derives these arguments from
-// the switch table's own current selection.
-void update_piano_roll_widget_selection(PianoRollWidget &widget,
-                                        const RowType row_type,
-                                        const int chord_number,
-                                        const int first_row_number,
-                                        const int number_of_rows);
-
-// mirrors the switch table's current selection onto the piano roll (which
-// note bar(s) get highlighted, where the cursor jumps to); an empty
-// selection clears both, since get_only_range() asserts on an empty range
-void update_piano_roll_selection(PianoRollWidget &piano_roll_widget,
-                                 const SongWidget &song_widget);
-
-void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
-                    const QItemSelectionModel &selector);
-
 void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                    const RowType new_row_type,
                    const int new_chord_number,

@@ -128,19 +128,6 @@ struct SongWidget : public QWidget {
 
 void initialize_play(SongWidget &song_widget);
 
-// picks whichever channel has been free the longest -- not necessarily
-// actually free yet, see channel_is_free below
-[[nodiscard]] auto
-pick_channel_index(const QList<double> &channel_end_times) -> int;
-
-// false means every channel is still sounding a still-releasing note at
-// start_time -- there are more notes sounding at once than available MIDI
-// channels, so the caller should warn and abort rather than steal a channel
-// out from under a note that hasn't finished yet
-[[nodiscard]] auto
-channel_is_free(QWidget &parent, const QList<double> &channel_end_times,
-                const int channel_index, const double start_time) -> bool;
-
 // pitched notes always pick from the shared least-recently-free pool, since
 // each one may need its own pitch bend and must wait out the previous
 // occupant's release before reusing its channel. Percussion programs instead
@@ -309,22 +296,8 @@ static const auto MIDI_EXPORT_NOTE_ON_TIE_BREAK = 5;
 // which is an internal extension used only for live playback/WAV rendering
 static const auto NUMBER_OF_STANDARD_MIDI_CHANNELS = 16;
 
-[[nodiscard]] auto get_pitched_midi_channels() -> const QList<int> &;
-
-void emit_note_events(QList<MidiTrackEvent> &track,
-                      unsigned int channel_number,
-                      unsigned int midi_number,
-                      unsigned int velocity, double start_tick,
-                      double end_tick);
-
 void export_midi_to_file(SongWidget &song_widget,
                          const QString &output_file);
-
-void set_xml_double(xmlNode &node, const char *const field_name,
-                    double value);
-
-void populate_song_document(SongWidget &song_widget,
-                            XMLDocument &document);
 
 // recovery.xml's presence means the app didn't reach a clean shutdown last
 // time (see connect_recovery_timer and SongEditor::closeEvent); its content
@@ -337,28 +310,11 @@ void write_recovery_file(SongWidget &song_widget);
 
 void save_as_file(SongWidget &song_widget, const QString &filename);
 
-[[nodiscard]] auto check_xml_document(QWidget &parent,
-                                      XMLDocument &document) -> bool;
-
-[[nodiscard]] auto maybe_read_xml_file(const QString &filename) -> XMLDocument;
-
 // some musicxml fields (e.g. fifths, octave-change, repeat times) are
 // unbounded xs:integer with no schema-enforced range, so a malformed or
 // hostile file can contain a magnitude that overflows int; used by
 // import_musicxml to reject such a file with a warning instead of letting
 // string_to_int assert
-[[nodiscard]] auto get_int_or_warn(QWidget &parent,
-                                   const std::string &content,
-                                   const QString &title,
-                                   const QString &message)
-    -> std::optional<int>;
-
-[[nodiscard]] auto get_int_or_warn(QWidget &parent,
-                                   const xmlNode &element,
-                                   const QString &title,
-                                   const QString &message)
-    -> std::optional<int>;
-
 template <RowInterface SubRow>
 static void clear_rows(RowsModel<SubRow> &rows_model) {
   const auto number_of_rows = rows_model.rowCount(QModelIndex());
@@ -366,15 +322,6 @@ static void clear_rows(RowsModel<SubRow> &rows_model) {
     rows_model.remove_rows(0, number_of_rows);
   }
 }
-
-// loading a file replaces song.chords wholesale, which would leave
-// pitched_notes_model/unpitched_notes_model pointing at destroyed Chord
-// members if the switch table was drilled into a chord's notes (mirrors the
-// reset that replace_table performs when the user navigates back to chords
-// manually)
-void reset_switch_table_to_chords(SwitchColumn &switch_column);
-
-[[nodiscard]] auto xml_to_double(const xmlNode &element) -> double;
 
 [[nodiscard]] auto
 validate_against_schema(XMLValidator &validator, XMLDocument &document) -> int;
@@ -437,35 +384,6 @@ maybe_restore_recovery(SongWidget &song_widget) -> bool;
 
 void connect_recovery_timer(SongWidget &song_widget);
 
-[[nodiscard]] auto node_is(const xmlNode &node, const char *name) -> bool;
-
-[[nodiscard]] auto maybe_get_xml_child(xmlNode &node, const char *name)
-    -> xmlNode *;
-
-[[nodiscard]] auto get_xml_child(xmlNode &node, const char *name) -> xmlNode &;
-
-[[nodiscard]] auto get_duration(QWidget &parent,
-                                xmlNode &measure_element)
-    -> std::optional<int>;
-
-[[nodiscard]] auto get_interval(const int midi_interval) -> Interval;
-
-[[nodiscard]] auto get_max_duration(const QList<MusicXMLNote> &notes) -> int;
-
-void add_chord(ChordsModel &chords_model,
-               const MusicXMLChord &parse_chord,
-               const int measure_number, const int key,
-               const int last_midi_key, const int song_divisions,
-               const int time_delta);
-
-void add_note(MusicXMLChord &chord, MusicXMLNote note, bool is_pitched);
-
-void add_note_and_maybe_chord(QMap<int, MusicXMLChord> &chords_dict,
-                              MusicXMLNote note, bool is_pitched);
-
-[[nodiscard]] auto get_most_recent(MostRecentIterator &iterator,
-                                   const int time) -> int;
-
 void reset(TimeIterator &iterator);
 
 // turns a linear list of measures (each optionally tagged with a
@@ -497,14 +415,6 @@ remap_by_expansion(const QMap<int, Value> &raw_dict,
   return expanded_dict;
 }
 
-[[nodiscard]] auto
-get_time_and_time_per_division(TimeIterator &iterator,
-                               const int check_divisions_time)
-    -> std::tuple<int, int>;
-
-[[nodiscard]] auto deduplicate_voice_names(QList<QString> voice_names)
-    -> QList<QString>;
-
 template <VoiceInterface SubVoice>
 static void add_imported_voices(RowsModel<SubVoice> &voices_model,
                                 const QList<QString> &voice_names) {
@@ -520,17 +430,6 @@ static void add_imported_voices(RowsModel<SubVoice> &voices_model,
                             std::move(new_voice));
   }
 }
-
-// a .mxl file is a zip archive; META-INF/container.xml names the entry that
-// actually holds the MusicXML score (MusicXML spec, "Compressed MusicXML
-// Files"). Returns an empty QByteArray on any failure, leaving the
-// resulting document null so the caller's existing "Invalid XML file"
-// check reports it -- avoids popping up two message boxes for one failure
-[[nodiscard]] auto
-maybe_read_compressed_musicxml_bytes(const QString &filename) -> QByteArray;
-
-[[nodiscard]] auto
-maybe_read_musicxml_document(const QString &filename) -> XMLDocument;
 
 [[nodiscard]] auto import_musicxml(SongWidget &song_widget,
                                    const QString &filename) -> bool;

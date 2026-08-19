@@ -24,16 +24,6 @@ static const auto MAX_GAIN = 10;
 static const auto MAX_KEY = 999;
 static const auto MAX_TEMPO = 999;
 
-void add_set_double(QUndoStack &undo_stack, Song &song,
-                    FluidSynth &synth, QDoubleSpinBox &spin_box,
-                    const ChangeId control_id, const double old_value,
-                    const double new_value);
-
-void add_control(QFormLayout &spin_boxes_form, const QString &label,
-                 QDoubleSpinBox &spin_box, const int minimum,
-                 const int maximum, const QString &suffix,
-                 const double single_step = 1, const int decimals = 0);
-
 void clear_and_clean(QUndoStack &undo_stack);
 
 struct SpinBoxes : public QWidget {

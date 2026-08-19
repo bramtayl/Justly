@@ -1,6 +1,6 @@
 #include "widgets/IntervalRow.hpp"
 
-auto check_interval(QWidget &parent_widget, const Interval &interval) -> bool {
+static auto check_interval(QWidget &parent_widget, const Interval &interval) -> bool {
   const auto numerator = interval.ratio.numerator;
   const auto denominator = interval.ratio.denominator;
   const auto octave = interval.octave;
@@ -33,7 +33,7 @@ auto check_interval(QWidget &parent_widget, const Interval &interval) -> bool {
   return true;
 }
 
-void update_interval(QUndoStack &undo_stack, SwitchTable &switch_table,
+static void update_interval(QUndoStack &undo_stack, SwitchTable &switch_table,
                      const Interval &interval) {
   const auto &range = get_only_range(switch_table);
   const auto first_row_number = range.top();
@@ -85,7 +85,7 @@ void update_interval(QUndoStack &undo_stack, SwitchTable &switch_table,
   undo_stack.push(undo_command);
 }
 
-void make_square(QPushButton &button) {
+static void make_square(QPushButton &button) {
   button.setFixedWidth(button.sizeHint().height());
 }
 
@@ -116,7 +116,7 @@ IntervalRow::IntervalRow(QUndoStack &undo_stack_input, SwitchTable &switch_table
                    });
 }
 
-void set_interval_row_is_enabled(IntervalRow &interval_row, bool is_enabled) {
+static void set_interval_row_is_enabled(IntervalRow &interval_row, bool is_enabled) {
   interval_row.minus_button.setEnabled(is_enabled);
   interval_row.plus_button.setEnabled(is_enabled);
 }

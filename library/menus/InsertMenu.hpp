@@ -65,9 +65,6 @@ make_insert_voice(VoicesModel<SubVoice> &voices_model,
 void add_insert_row(SongWidget &song_widget, const int row_number,
                     const RowType new_row_type);
 
-void add_insert_row_default(SongWidget &song_widget,
-                            const int row_number);
-
 struct InsertMenu : public QMenu {
   QAction insert_after_action = QAction(InsertMenu::tr("&After"));
   QAction insert_into_start_action = QAction(InsertMenu::tr("&Into start"));

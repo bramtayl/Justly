@@ -29,13 +29,13 @@ void initialize_play(SongWidget &song_widget) {
   player.percussion_channels.clear();
 }
 
-auto pick_channel_index(const QList<double> &channel_end_times) -> int {
+static auto pick_channel_index(const QList<double> &channel_end_times) -> int {
   return static_cast<int>(
       std::distance(std::begin(channel_end_times),
                     std::ranges::min_element(channel_end_times)));
 }
 
-auto channel_is_free(QWidget &parent, const QList<double> &channel_end_times,
+static auto channel_is_free(QWidget &parent, const QList<double> &channel_end_times,
                      const int channel_index, const double start_time) -> bool {
   if (channel_end_times.at(channel_index) <= start_time) {
     return true;
@@ -217,7 +217,7 @@ void export_to_file(SongWidget &song_widget, const QString &output_file) {
       make_audio_driver(player.parent, player.settings, player.synth);
 }
 
-auto get_pitched_midi_channels() -> const QList<int> & {
+static auto get_pitched_midi_channels() -> const QList<int> & {
   static const auto channels = []() -> QList<int> {
     QList<int> result;
     std::ranges::copy_if(
@@ -231,7 +231,7 @@ auto get_pitched_midi_channels() -> const QList<int> & {
   return channels;
 }
 
-void emit_note_events(QList<MidiTrackEvent> &track,
+static void emit_note_events(QList<MidiTrackEvent> &track,
                       unsigned int channel_number,
                       unsigned int midi_number,
                       unsigned int velocity, double start_tick,
@@ -487,7 +487,7 @@ void export_midi_to_file(SongWidget &song_widget, const QString &output_file) {
   file.write(output);
 }
 
-void set_xml_double(xmlNode &node, const char *const field_name,
+static void set_xml_double(xmlNode &node, const char *const field_name,
                     double value) {
   // std::to_string uses the current C locale, which can use a comma for the
   // decimal separator; QString::number is always locale-independent,
@@ -501,7 +501,7 @@ void set_xml_double(xmlNode &node, const char *const field_name,
       QString::number(value, 'g', double_digits).toStdString());
 }
 
-void populate_song_document(SongWidget &song_widget, XMLDocument &document) {
+static void populate_song_document(SongWidget &song_widget, XMLDocument &document) {
   const auto &song = song_widget.song;
 
   auto &song_node = make_root(document, "song");
@@ -563,7 +563,7 @@ void save_as_file(SongWidget &song_widget, const QString &filename) {
   remove_recovery_file();
 }
 
-auto check_xml_document(QWidget &parent, XMLDocument &document) -> bool {
+static auto check_xml_document(QWidget &parent, XMLDocument &document) -> bool {
   if (document.internal_pointer == nullptr) {
     QMessageBox::warning(&parent, QObject::tr("XML error"),
                          QObject::tr("Invalid XML file"));
@@ -572,11 +572,11 @@ auto check_xml_document(QWidget &parent, XMLDocument &document) -> bool {
   return true;
 }
 
-auto maybe_read_xml_file(const QString &filename) -> XMLDocument {
+static auto maybe_read_xml_file(const QString &filename) -> XMLDocument {
   return XMLDocument(xmlReadFile(filename.toStdString().c_str(), nullptr, 0));
 }
 
-auto get_int_or_warn(QWidget &parent, const std::string &content,
+static auto get_int_or_warn(QWidget &parent, const std::string &content,
                      const QString &title, const QString &message)
     -> std::optional<int> {
   auto maybe_int = string_to_maybe_int(content);
@@ -586,13 +586,18 @@ auto get_int_or_warn(QWidget &parent, const std::string &content,
   return maybe_int;
 }
 
-auto get_int_or_warn(QWidget &parent, const xmlNode &element,
+static auto get_int_or_warn(QWidget &parent, const xmlNode &element,
                      const QString &title, const QString &message)
     -> std::optional<int> {
   return get_int_or_warn(parent, get_content(element), title, message);
 }
 
-void reset_switch_table_to_chords(SwitchColumn &switch_column) {
+// loading a file replaces song.chords wholesale, which would leave
+// pitched_notes_model/unpitched_notes_model pointing at destroyed Chord
+// members if the switch table was drilled into a chord's notes (mirrors the
+// reset that replace_table performs when the user navigates back to chords
+// manually)
+static void reset_switch_table_to_chords(SwitchColumn &switch_column) {
   auto &switch_table = switch_column.switch_table;
   switch_table.pitched_notes_model.set_rows_pointer();
   switch_table.unpitched_notes_model.set_rows_pointer();
@@ -601,7 +606,7 @@ void reset_switch_table_to_chords(SwitchColumn &switch_column) {
   switch_column.editing_text.setText(SwitchColumn::tr("Chords"));
 }
 
-auto xml_to_double(const xmlNode &element) -> double {
+static auto xml_to_double(const xmlNode &element) -> double {
   // std::stod uses the current C locale; QString::toDouble is always
   // locale-independent, so this matches set_xml_double above
   bool was_ok = false;
@@ -774,11 +779,11 @@ void connect_recovery_timer(SongWidget &song_widget) {
                    });
 }
 
-auto node_is(const xmlNode &node, const char *name) -> bool {
+static auto node_is(const xmlNode &node, const char *name) -> bool {
   return get_xml_name(node) == name;
 }
 
-auto maybe_get_xml_child(xmlNode &node, const char *name) -> xmlNode * {
+static auto maybe_get_xml_child(xmlNode &node, const char *name) -> xmlNode * {
   auto *child_pointer = xmlFirstElementChild(&node);
   while (child_pointer != nullptr) {
     if (node_is(get_reference(child_pointer), name)) {
@@ -789,11 +794,11 @@ auto maybe_get_xml_child(xmlNode &node, const char *name) -> xmlNode * {
   return nullptr;
 }
 
-auto get_xml_child(xmlNode &node, const char *name) -> xmlNode & {
+static auto get_xml_child(xmlNode &node, const char *name) -> xmlNode & {
   return get_reference(maybe_get_xml_child(node, name));
 }
 
-auto get_duration(QWidget &parent, xmlNode &measure_element)
+static auto get_duration(QWidget &parent, xmlNode &measure_element)
     -> std::optional<int> {
   auto &duration_element = get_xml_child(measure_element, "duration");
   if (!xml_content_is_integer(duration_element)) {
@@ -807,7 +812,7 @@ auto get_duration(QWidget &parent, xmlNode &measure_element)
                          QObject::tr("Duration is out of range"));
 }
 
-auto get_interval(const int midi_interval) -> Interval {
+static auto get_interval(const int midi_interval) -> Interval {
   const auto [octave, degree] = get_octave_degree(midi_interval);
   static const QList<Rational> scale = {
       Rational(1, 1), Rational(16, 15), Rational(9, 8),   Rational(6, 5),
@@ -816,7 +821,7 @@ auto get_interval(const int midi_interval) -> Interval {
   return Interval(scale[degree], octave);
 }
 
-auto get_max_duration(const QList<MusicXMLNote> &notes) -> int {
+static auto get_max_duration(const QList<MusicXMLNote> &notes) -> int {
   if (notes.empty()) {
     return 0;
   }
@@ -829,7 +834,7 @@ auto get_max_duration(const QList<MusicXMLNote> &notes) -> int {
       ->duration;
 }
 
-void add_chord(ChordsModel &chords_model, const MusicXMLChord &parse_chord,
+static void add_chord(ChordsModel &chords_model, const MusicXMLChord &parse_chord,
                const int measure_number, const int key,
                const int last_midi_key, const int song_divisions,
                const int time_delta) {
@@ -858,12 +863,12 @@ void add_chord(ChordsModel &chords_model, const MusicXMLChord &parse_chord,
                           std::move(new_chord));
 }
 
-void add_note(MusicXMLChord &chord, MusicXMLNote note, bool is_pitched) {
+static void add_note(MusicXMLChord &chord, MusicXMLNote note, bool is_pitched) {
   (is_pitched ? chord.pitched_notes : chord.unpitched_notes)
       .push_back(std::move(note));
 }
 
-void add_note_and_maybe_chord(QMap<int, MusicXMLChord> &chords_dict,
+static void add_note_and_maybe_chord(QMap<int, MusicXMLChord> &chords_dict,
                               MusicXMLNote note, bool is_pitched) {
   const auto start_time = note.start_time;
   if (chords_dict.contains(start_time)) {
@@ -875,7 +880,7 @@ void add_note_and_maybe_chord(QMap<int, MusicXMLChord> &chords_dict,
   }
 }
 
-auto get_most_recent(MostRecentIterator &iterator, const int time) -> int {
+static auto get_most_recent(MostRecentIterator &iterator, const int time) -> int {
   auto &iterator_state = iterator.state;
   auto &iterator_value = iterator.value;
   const auto &iterator_end = iterator.end;
@@ -948,7 +953,7 @@ auto compute_measure_expansion(const QList<MeasureRepeatInfo> &measure_infos)
   return expansion;
 }
 
-auto get_time_and_time_per_division(TimeIterator &iterator,
+static auto get_time_and_time_per_division(TimeIterator &iterator,
                                     const int check_divisions_time)
     -> std::tuple<int, int> {
   auto &iterator_state = iterator.state;
@@ -979,7 +984,7 @@ auto get_time_and_time_per_division(TimeIterator &iterator,
       time_per_division);
 }
 
-auto deduplicate_voice_names(QList<QString> voice_names) -> QList<QString> {
+static auto deduplicate_voice_names(QList<QString> voice_names) -> QList<QString> {
   QSet<QString> used_names;
   for (auto &voice_name : voice_names) {
     if (voice_name.isEmpty()) {
@@ -996,7 +1001,7 @@ auto deduplicate_voice_names(QList<QString> voice_names) -> QList<QString> {
   return voice_names;
 }
 
-auto maybe_read_compressed_musicxml_bytes(const QString &filename) -> QByteArray {
+static auto maybe_read_compressed_musicxml_bytes(const QString &filename) -> QByteArray {
   const ZipArchive archive(filename);
   if (archive.internal_pointer == nullptr) {
     return {};
@@ -1029,7 +1034,7 @@ auto maybe_read_compressed_musicxml_bytes(const QString &filename) -> QByteArray
   return read_zip_entry(archive, root_path);
 }
 
-auto maybe_read_musicxml_document(const QString &filename) -> XMLDocument {
+static auto maybe_read_musicxml_document(const QString &filename) -> XMLDocument {
   if (filename.endsWith(".mxl", Qt::CaseInsensitive)) {
     return read_xml_document(maybe_read_compressed_musicxml_bytes(filename));
   }
