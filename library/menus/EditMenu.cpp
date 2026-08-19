@@ -32,7 +32,9 @@
 #include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
 
-static void add_delete_cells(SongWidget &song_widget) {
+namespace {
+
+void add_delete_cells(SongWidget &song_widget) {
   auto &undo_stack = song_widget.undo_stack;
   auto &switch_table = song_widget.switch_column.switch_table;
 
@@ -45,7 +47,7 @@ static void add_delete_cells(SongWidget &song_widget) {
       }));
 }
 
-static void copy_selection(const SwitchTable &switch_table) {
+void copy_selection(const SwitchTable &switch_table) {
   const auto &range = get_only_range(switch_table);
   auto &mime_data = // NOLINT(cppcoreguidelines-owning-memory)
       *(new QMimeData);
@@ -56,6 +58,8 @@ static void copy_selection(const SwitchTable &switch_table) {
                     });
   get_clipboard().setMimeData(&mime_data);
 }
+
+}  // namespace
 
 EditMenu::EditMenu(SongWidget &song_widget)
     : QMenu(EditMenu::tr("&Edit")), paste_menu(PasteMenu(song_widget)),

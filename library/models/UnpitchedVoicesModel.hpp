@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QtCore/QTypeInfo>
+#include <QtCore/QVariant>
 #include <QtCore/QtMinMax>
 #include <QtCore/QtSwap>
 
@@ -16,7 +17,7 @@ struct UnpitchedVoicesModel : public VoicesModel<UnpitchedVoice> {
                                 Song &song_input)
       : VoicesModel<UnpitchedVoice>(parent, undo_stack, song_input) {}
 
-  [[nodiscard]] auto check_cell(const int column_number,
+  [[nodiscard]] auto check_cell( int column_number,
                                 const QVariant &new_value) const
       -> bool override;
 };

@@ -31,7 +31,9 @@ auto get_mime_description(const QString &mime_type) -> QString {
   return mime_type;
 }
 
-static void add_paste_insert(SongWidget &song_widget, const int row_number) {
+namespace {
+
+void add_paste_insert(SongWidget &song_widget, const int row_number) {
   auto &switch_column = song_widget.switch_column;
   auto &switch_table = switch_column.switch_table;
 
@@ -45,6 +47,8 @@ static void add_paste_insert(SongWidget &song_widget, const int row_number) {
   }
   song_widget.undo_stack.push(undo_command);
 }
+
+}  // namespace
 
 PasteMenu::PasteMenu(SongWidget &song_widget) : QMenu(PasteMenu::tr("&Paste")) {
   add_menu_action(*this, paste_over_action, QKeySequence::Paste, false);

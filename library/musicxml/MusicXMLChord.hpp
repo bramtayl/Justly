@@ -2,7 +2,6 @@
 
 #include <QtCore/QList>
 #include <QtCore/QtSwap>
-#include <utility>
 
 #include "musicxml/MusicXMLNote.hpp"
 

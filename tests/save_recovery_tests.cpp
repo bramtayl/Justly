@@ -1,16 +1,15 @@
-#include <QtTest/qtestcase.h>
-#include <qstringalgorithms.h>
 #include <QtCore/QDir>
 #include <QtCore/QFile>
 #include <QtCore/QSettings>
 #include <QtCore/QString>
 #include <QtCore/QTimer>
+#include <QtCore/qstringalgorithms.h>
 #include <QtGui/QAction>
 #include <QtGui/QUndoStack>
 #include <QtTest/QSignalSpy>
+#include <QtTest/qtestcase.h>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QSpinBox>
-#include <iterator>
 
 #include "Tester.hpp"
 #include "menus/FileMenu.hpp"

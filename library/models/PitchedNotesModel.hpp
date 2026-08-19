@@ -4,11 +4,11 @@
 #include <QtCore/QVariant>
 #include <QtCore/QtMinMax>
 #include <QtCore/QtSwap>
-#include <QtCore/qdebug.h>
 
 #include "models/UndoRowsModel.hpp"
 #include "rows/PitchedNote.hpp"
 
+class QTextStream;
 class QUndoStack;
 struct Song;
 

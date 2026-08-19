@@ -1,4 +1,3 @@
-#include <QtTest/qtestcase.h>
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QDir>
 #include <QtCore/QFlags>
@@ -10,12 +9,12 @@
 #include <QtGui/QAction>
 #include <QtGui/QUndoStack>
 #include <QtTest/QTestData>
+#include <QtTest/qtestcase.h>
 #include <QtWidgets/QAbstractItemDelegate>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QStyleOption>
 #include <optional>
-#include <string>
 
 #include "Tester.hpp"
 #include "cell_types/Interval.hpp"

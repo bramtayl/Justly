@@ -3,12 +3,12 @@
 #include <QtCore/QTypeInfo>
 #include <QtCore/QtMinMax>
 #include <QtCore/QtSwap>
-#include <QtCore/qdebug.h>
 
 #include "models/UndoRowsModel.hpp"
 #include "rows/Chord.hpp"
 
 class QUndoStack;
+class QTextStream;
 struct Chord;
 struct Song;
 

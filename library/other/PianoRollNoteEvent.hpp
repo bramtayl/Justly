@@ -1,9 +1,6 @@
 #pragma once
 
 #include <QtCore/QList>
-#include <QtCore/QTypeInfo>
-#include <QtCore/QtMinMax>
-#include <QtCore/QtSwap>
 #include <type_traits>
 
 #include "cell_types/Interval.hpp"
@@ -14,7 +11,6 @@
 
 struct PitchedNote;
 struct PitchedVoice;
-struct UnpitchedNote;
 struct UnpitchedVoice;
 struct Song;
 

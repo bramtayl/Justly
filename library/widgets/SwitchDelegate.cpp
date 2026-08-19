@@ -22,7 +22,9 @@
 #include "other/helpers.hpp"
 #include "rows/RowType.hpp"
 
-static auto create_string_picker(QWidget *parent_pointer,
+namespace {
+
+auto create_string_picker(QWidget *parent_pointer,
                           const QList<QString> &names) -> StringPicker & {
   auto &specific_result =
       get_reference(new StringPicker( // NOLINT(cppcoreguidelines-owning-memory)
@@ -30,6 +32,8 @@ static auto create_string_picker(QWidget *parent_pointer,
   specific_result.setFrame(false);
   return specific_result;
 }
+
+}  // namespace
 
 auto SwitchDelegate::createEditor(QWidget *parent_pointer, const QStyleOptionViewItem &option,
                                   const QModelIndex &index) const -> QWidget * {

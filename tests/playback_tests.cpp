@@ -1,10 +1,10 @@
-#include <QtTest/qtestcase.h>
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QItemSelectionModel>
 #include <QtCore/QThread>
 #include <QtCore/QTypeInfo>
 #include <QtGui/QAction>
 #include <QtTest/QTestData>
+#include <QtTest/qtestcase.h>
 
 #include "Tester.hpp"
 #include "column_numbers/ChordColumn.hpp"
@@ -21,7 +21,6 @@
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/piano_roll/PianoRollNotesScene.hpp"
 #include "widgets/piano_roll/PianoRollWidget.hpp"
-#include "widgets/SwitchTable.hpp"
 
 void Tester::test_play_data() {
 

@@ -11,8 +11,6 @@
 #include "sound/PlayState.hpp"
 
 class QTextStream;
-struct Chord;
-struct UnpitchedVoice;
 
 static const auto C_0_MIDI = 12;
 static const auto CENTS_PER_HALFSTEP = 100;

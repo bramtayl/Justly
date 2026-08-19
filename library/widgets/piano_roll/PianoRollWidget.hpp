@@ -12,6 +12,7 @@
 #include "widgets/piano_roll/PianoRollLegendScene.hpp"
 #include "widgets/piano_roll/PianoRollNotesScene.hpp"
 
+class QEvent;
 struct Song;
 struct SongWidget;
 struct SwitchTable;

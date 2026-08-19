@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QtCore/QByteArray>
-#include <QtCore/qtypes.h>
+#include <QtCore/QtTypes>
 #include <libxml/parser.h>
 
 #include "other/helpers.hpp"

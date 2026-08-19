@@ -1,4 +1,3 @@
-#include <QtTest/qtestcase.h>
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QDir>
 #include <QtCore/QList>
@@ -9,9 +8,9 @@
 #include <QtGui/QAction>
 #include <QtTest/QTest>
 #include <QtTest/QTestData>
+#include <QtTest/qtestcase.h>
 #include <QtWidgets/QLabel>
 #include <utility>
-#include <iterator>
 
 #include "Tester.hpp"
 #include "cell_types/Rational.hpp"

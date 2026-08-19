@@ -1,5 +1,3 @@
-#include <QtTest/qtestcase.h>
-#include <QtCore/qobjectdefs.h>
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QDebug>
 #include <QtCore/QItemSelectionModel>
@@ -9,9 +7,11 @@
 #include <QtCore/QTypeInfo>
 #include <QtCore/QVariant>
 #include <QtCore/Qt>
+#include <QtCore/qobjectdefs.h>
 #include <QtGui/QAction>
 #include <QtGui/QUndoStack>
 #include <QtTest/QTestData>
+#include <QtTest/qtestcase.h>
 #include <QtWidgets/QAbstractItemDelegate>
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QStyleOption>

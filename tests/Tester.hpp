@@ -1,16 +1,16 @@
 #pragma once
 
-#include <QtTest/qtestcase.h>
-#include <QtCore/qobjectdefs.h>
-#include <QtCore/qtmetamacros.h>
 #include <QtCore/QDir>
+#include <QtCore/QFile>
 #include <QtCore/QObject>
 #include <QtCore/QStandardPaths>
-#include <QtCore/QTimer>
-#include <QtCore/QFile>
 #include <QtCore/QString>
+#include <QtCore/QTimer>
 #include <QtCore/QtAssert>
+#include <QtCore/qobjectdefs.h>
+#include <QtCore/qtmetamacros.h>
 #include <QtGui/QClipboard>
+#include <QtTest/qtestcase.h>
 #include <QtWidgets/QMessageBox>
 
 #include "other/helpers.hpp"

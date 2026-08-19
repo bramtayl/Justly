@@ -55,11 +55,15 @@ void add_insert_row(SongWidget &song_widget, const int row_number,
   song_widget.undo_stack.push(undo_command);
 }
 
-static void add_insert_row_default(SongWidget &song_widget, const int row_number) {
+namespace {
+
+void add_insert_row_default(SongWidget &song_widget, const int row_number) {
   add_insert_row(
       song_widget, row_number,
       song_widget.switch_column.switch_table.delegate.current_row_type);
 }
+
+}  // namespace
 
 InsertMenu::InsertMenu(SongWidget &song_widget)
     : QMenu(InsertMenu::tr("&Insert row")) {

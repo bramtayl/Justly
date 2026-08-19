@@ -1,13 +1,19 @@
 #include "other/helpers.hpp"
 
-#include <libxml/xmlmemory.h>
 #include <QtCore/QCoreApplication>
+#include <QtCore/QDir>
 #include <QtCore/QFile>
 #include <QtCore/QObject>
+#include <QtCore/qassert.h>
 #include <QtGui/QGuiApplication>
 #include <QtWidgets/QMessageBox>
 #include <cstdlib>
+#include <libxml/parser.h>
+#include <libxml/xmlmemory.h>
+#include <libxml/xmlstring.h>
+#include <optional>
 #include <stdexcept>
+#include <string>
 
 class QClipboard;
 
@@ -72,11 +78,15 @@ auto xml_to_int(const xmlNode &element) -> int {
   return string_to_int(get_content(element));
 }
 
-static auto get_new_child_pointer(xmlNode &node, const char *const field_name,
+namespace {
+
+auto get_new_child_pointer(xmlNode &node, const char *const field_name,
                            const xmlChar *contents = nullptr) -> xmlNode * {
   return xmlNewChild(&node, nullptr, c_string_to_xml_string(field_name),
                      contents);
 }
+
+}  // namespace
 
 auto get_new_child(xmlNode &node, const char *const field_name) -> xmlNode & {
   return get_reference(get_new_child_pointer(node, field_name));

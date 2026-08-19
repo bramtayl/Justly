@@ -1,9 +1,5 @@
 #pragma once
 
-#include <QtTest/qtestcase.h>
-#include <QtTest/qtestkeyboard.h>
-#include <QtCore/qobjectdefs.h>
-#include <qabstractbutton.h>
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QByteArray>
 #include <QtCore/QFile>
@@ -17,9 +13,12 @@
 #include <QtCore/QTypeInfo>
 #include <QtCore/Qt>
 #include <QtCore/QtAssert>
+#include <QtCore/qobjectdefs.h>
 #include <QtGui/QAction>
 #include <QtGui/QUndoStack>
 #include <QtTest/QTestData>
+#include <QtTest/qtestcase.h>
+#include <QtTest/qtestkeyboard.h>
 #include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QFileDialog>
@@ -30,7 +29,6 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <iterator>
 
 #include "column_numbers/ChordColumn.hpp"
 #include "column_numbers/PitchedNoteColumn.hpp"

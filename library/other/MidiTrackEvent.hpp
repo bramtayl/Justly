@@ -59,7 +59,7 @@ void append_pitch_bend(QByteArray &bytes, unsigned int channel_number,
 
 void append_be16(QByteArray &bytes, unsigned int value);
 
-void append_chunk(QByteArray &output, const char *const chunk_id,
+void append_chunk(QByteArray &output, const char * chunk_id,
                   const QByteArray &chunk_data);
 
 // base of the per-event-kind payload hierarchy; each subclass knows how to

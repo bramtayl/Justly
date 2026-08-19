@@ -1,9 +1,10 @@
 #include "other/PianoRollNoteEvent.hpp"
 
-#include <utility>
+#include <QtCore/QList>
 
 #include "other/Song.hpp"
 #include "rows/Chord.hpp"
+
 
 auto get_piano_roll_events(const Song &song) -> QList<PianoRollNoteEvent> {
   QList<PianoRollNoteEvent> events;

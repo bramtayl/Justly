@@ -3,10 +3,10 @@
 #include <QtCore/QString>
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QMainWindow>
-#include <QtWidgets/QWidget>
 
 #include "widgets/piano_roll/PianoRollWidget.hpp"
 
+class QCloseEvent;
 struct SongMenuBar;
 struct SongWidget;
 

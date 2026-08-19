@@ -5,6 +5,7 @@
 #include <QtCore/QTypeInfo>
 #include <QtCore/QtMinMax>
 #include <QtCore/QtSwap>
+#include <variant>
 
 void append_variable_length(QByteArray &bytes, unsigned int value) {
   QList<unsigned int> septets;

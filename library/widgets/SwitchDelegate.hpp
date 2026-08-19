@@ -2,8 +2,6 @@
 
 #include <QtCore/QList>
 #include <QtCore/QString>
-#include <QtCore/QtMinMax>
-#include <QtCore/QtSwap>
 #include <QtWidgets/QStyledItemDelegate>
 #include <QtWidgets/QWidget>
 #include <algorithm>
@@ -15,6 +13,8 @@
 #include "rows/Voice.hpp"
 
 struct Song;
+class QModelIndex;
+class QStyleOptionViewItem;
 
 template <VoiceInterface SubVoice>
 static auto create_voice_number_picker(QWidget *parent_pointer,

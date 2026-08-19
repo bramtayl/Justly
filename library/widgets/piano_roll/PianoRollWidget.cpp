@@ -1,14 +1,9 @@
 #include "widgets/piano_roll/PianoRollWidget.hpp"
 
-#include <QtCore/qcoreevent.h>
-#include <QtCore/qnamespace.h>
-#include <QtCore/qobjectdefs.h>
-#include <QtGui/QBrush>
-#include <QtGui/QColor>
-#include <QtCore/QEasingCurve>
-#include <QtCore/QElapsedTimer>
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QChar>
+#include <QtCore/QEasingCurve>
+#include <QtCore/QElapsedTimer>
 #include <QtCore/QEvent>
 #include <QtCore/QFlags>
 #include <QtCore/QItemSelectionModel>
@@ -24,6 +19,11 @@
 #include <QtCore/QVariant>
 #include <QtCore/QtMinMax>
 #include <QtCore/QtSwap>
+#include <QtCore/qcoreevent.h>
+#include <QtCore/qnamespace.h>
+#include <QtCore/qobjectdefs.h>
+#include <QtGui/QBrush>
+#include <QtGui/QColor>
 #include <QtGui/QPen>
 #include <QtGui/QPolygon>
 #include <QtGui/QTransform>
@@ -72,7 +72,9 @@ auto to_scene_x(const PianoRollNotesScene &notes_scene,
 // for the initial build and from set_time_zoom() whenever the zoom changes,
 // since a spacing that looked right before a zoom change would otherwise
 // crowd together (zooming in) or spread too far apart (zooming out)
-static void redraw_time_axis_ticks(PianoRollNotesScene &notes_scene) {
+namespace {
+
+void redraw_time_axis_ticks(PianoRollNotesScene &notes_scene) {
   auto &scene = notes_scene;
   auto &time_axis_items = notes_scene.time_axis_items;
 
@@ -175,6 +177,8 @@ static void redraw_time_axis_ticks(PianoRollNotesScene &notes_scene) {
   }
 }
 
+}  // namespace
+
 void set_notes_view_time_zoom(PianoRollNotesScene &notes_scene,
                               const double new_zoom_factor) {
   notes_scene.time_zoom_factor = std::clamp(
@@ -188,7 +192,9 @@ void set_notes_view_time_zoom(PianoRollNotesScene &notes_scene,
   redraw_time_axis_ticks(notes_scene);
 }
 
-static auto drag_playhead_to(PianoRollNotesScene &notes_scene,
+namespace {
+
+auto drag_playhead_to(PianoRollNotesScene &notes_scene,
                       const QPoint &viewport_pos) -> double {
   const auto playhead_x =
       std::max(0.0, notes_scene.view.mapToScene(viewport_pos).x());
@@ -200,7 +206,7 @@ static auto drag_playhead_to(PianoRollNotesScene &notes_scene,
   return playhead_x;
 }
 
-static void show_selection_rect(PianoRollNotesScene &notes_scene,
+void show_selection_rect(PianoRollNotesScene &notes_scene,
                          const double start_x, const double end_x) {
   const auto &scene_rect = notes_scene.sceneRect();
   const auto left_x = std::min(start_x, end_x);
@@ -211,9 +217,11 @@ static void show_selection_rect(PianoRollNotesScene &notes_scene,
   selection_rect_item.show();
 }
 
-static void hide_selection_rect(PianoRollNotesScene &notes_scene) {
+void hide_selection_rect(PianoRollNotesScene &notes_scene) {
   notes_scene.selection_rect_item.hide();
 }
+
+}  // namespace
 
 void position_playhead(PianoRollNotesScene &notes_scene,
                        const double time_ms,
@@ -280,7 +288,9 @@ void position_playhead(PianoRollNotesScene &notes_scene,
   view.centerOn(playhead_x, vertical_center);
 }
 
-static auto get_voice_color(const int global_voice_index) -> QColor {
+namespace {
+
+auto get_voice_color(const int global_voice_index) -> QColor {
   // fixed categorical order (never cycled) -- a voice beyond the 8th falls
   // back to a shared "other" color rather than reusing an earlier hue
   static const QList<QColor> voice_colors{
@@ -294,7 +304,7 @@ static auto get_voice_color(const int global_voice_index) -> QColor {
   return other_voice_color;
 }
 
-static void draw_legend_row(QGraphicsScene &legend_scene, const QString &name,
+void draw_legend_row(QGraphicsScene &legend_scene, const QString &name,
                      const int global_voice_index, const double row_y) {
   legend_scene.addRect(0, row_y, PIANO_ROLL_LEGEND_SWATCH_SIZE,
                PIANO_ROLL_LEGEND_SWATCH_SIZE, QPen(Qt::NoPen),
@@ -305,6 +315,8 @@ static void draw_legend_row(QGraphicsScene &legend_scene, const QString &name,
                        PIANO_ROLL_LEGEND_SWATCH_SIZE) /
                       2));
 }
+
+}  // namespace
 
 auto get_piano_roll_time_bounds(
     const Song &song, const int first_chord_number,
@@ -336,7 +348,9 @@ auto get_piano_roll_time_bounds(
   return {baseline_ms, end_ms};
 }
 
-static auto get_chord_number_at_time(
+namespace {
+
+auto get_chord_number_at_time(
     const QList<double> &chord_start_times, const double time_ms) -> int {
   const auto first_later_iterator =
       std::ranges::upper_bound(chord_start_times, time_ms);
@@ -344,7 +358,7 @@ static auto get_chord_number_at_time(
          1;
 }
 
-static auto get_chord_number_at_viewport_pos(
+auto get_chord_number_at_viewport_pos(
     const PianoRollNotesScene &piano_roll_scene, const QPoint &viewport_pos)
     -> int {
   const auto scene_pos = piano_roll_scene.view.mapToScene(viewport_pos);
@@ -361,6 +375,8 @@ static auto get_chord_number_at_viewport_pos(
                                       PIANO_ROLL_PIXELS_PER_MS);
 }
 
+}  // namespace
+
 // called whenever the playhead moves on its own -- from a manual drag
 // (PianoRollWidget::eventFilter) or a running playback timer tick
 // (update_playhead_position() below) -- so the switch table's own
@@ -372,7 +388,9 @@ static auto get_chord_number_at_viewport_pos(
 // while the table is showing chords: a note or voice row has no single
 // "current chord" to reselect into, and reselecting a chord there would
 // kick the user out of whichever chord's notes/voices they're editing.
-static void select_chord_at_playhead(SwitchTable &switch_table,
+namespace {
+
+void select_chord_at_playhead(SwitchTable &switch_table,
                               const QList<double> &chord_start_times,
                               bool &selecting_chord_from_playhead,
                               const double time_ms) {
@@ -406,7 +424,7 @@ static void select_chord_at_playhead(SwitchTable &switch_table,
 // switch table is already showing that exact chord's notes of that exact
 // kind (e.g. clicking a pitched note's bar while the table shows unpitched
 // notes, or another chord's notes, has no row to select).
-static void select_note_at_bar(SwitchTable &switch_table,
+void select_note_at_bar(SwitchTable &switch_table,
                         const PianoRollNoteEvent &event) {
   const auto current_row_type = switch_table.delegate.current_row_type;
   const auto is_pitched = event.is_pitched;
@@ -435,7 +453,7 @@ static void select_note_at_bar(SwitchTable &switch_table,
   switch_table.scrollTo(note_index);
 }
 
-static void select_chord_range_at_playhead(SwitchTable &switch_table,
+void select_chord_range_at_playhead(SwitchTable &switch_table,
                                     const int number_of_chords,
                                     bool &selecting_chord_from_playhead,
                                     const int anchor_chord_number,
@@ -475,6 +493,8 @@ static void select_chord_range_at_playhead(SwitchTable &switch_table,
       std::clamp(current_chord_number, 0, number_of_chords - 1), 0));
 }
 
+}  // namespace
+
 void zoom_in(PianoRollNotesScene &piano_roll_scene) {
   set_notes_view_time_zoom(
       piano_roll_scene, piano_roll_scene.time_zoom_factor * PIANO_ROLL_TIME_ZOOM_STEP);
@@ -485,10 +505,14 @@ void zoom_out(PianoRollNotesScene &piano_roll_scene) {
       piano_roll_scene, piano_roll_scene.time_zoom_factor / PIANO_ROLL_TIME_ZOOM_STEP);
 }
 
-static void set_vertical_scrolling_enabled(QGraphicsView &view,
+namespace {
+
+void set_vertical_scrolling_enabled(QGraphicsView &view,
                                     const bool enabled) {
   get_reference(view.verticalScrollBar()).setEnabled(enabled);
 }
+
+}  // namespace
 
 void set_manual_scrolling_enabled(PianoRollNotesScene &piano_roll_scene,
                                   PianoRollAxisScene &axis_scene,

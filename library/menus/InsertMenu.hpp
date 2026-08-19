@@ -20,7 +20,6 @@ template <RowInterface SubRow> struct RowsModel;
 template <VoiceInterface SubVoice> struct VoicesModel;
 class QUndoCommand;
 enum class RowType : std::uint8_t;
-struct Chord;
 struct SongWidget;
 
 template <VoiceInterface SubVoice, NoteInterface SubNote>

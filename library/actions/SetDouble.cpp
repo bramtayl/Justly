@@ -12,7 +12,8 @@
 #include "other/helpers.hpp"
 #include "sound/FluidSynth.hpp"
 
-static void set_double(Song &song, FluidSynth &synth, const ChangeId control_id,
+namespace {
+void set_double(Song &song, FluidSynth &synth, const ChangeId control_id,
                 QDoubleSpinBox &spin_box, const double set_value) {
   switch (control_id) {
   case ChangeId::gain_id:
@@ -34,6 +35,7 @@ static void set_double(Song &song, FluidSynth &synth, const ChangeId control_id,
   const QSignalBlocker blocker(spin_box);
   spin_box.setValue(set_value);
 }
+} // namespace
 
 auto SetDouble::id() const -> int {
   return static_cast<int>(control_id);

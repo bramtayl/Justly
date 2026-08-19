@@ -1,6 +1,3 @@
-#include <QtTest/qtestcase.h>
-#include <QtCore/qobjectdefs.h>
-#include <QtTest/qtestkeyboard.h>
 #include <QtCore/QByteArray>
 #include <QtCore/QFile>
 #include <QtCore/QIODevice>
@@ -12,11 +9,13 @@
 #include <QtCore/QTimer>
 #include <QtCore/Qt>
 #include <QtCore/QtSwap>
+#include <QtCore/qobjectdefs.h>
 #include <QtGui/QAction>
 #include <QtTest/QTestData>
+#include <QtTest/qtestcase.h>
+#include <QtTest/qtestkeyboard.h>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QLineEdit>
-#include <type_traits>
 
 #include "Tester.hpp"
 #include "menus/FileMenu.hpp"

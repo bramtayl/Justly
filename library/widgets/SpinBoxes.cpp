@@ -16,7 +16,9 @@
 #include "rows/Note.hpp"
 #include "sound/FluidSynth.hpp"
 
-static void add_set_double(QUndoStack &undo_stack, Song &song,
+namespace {
+
+void add_set_double(QUndoStack &undo_stack, Song &song,
                     FluidSynth &synth, QDoubleSpinBox &spin_box,
                     const ChangeId control_id, const double old_value,
                     const double new_value) {
@@ -24,7 +26,7 @@ static void add_set_double(QUndoStack &undo_stack, Song &song,
       song, synth, spin_box, control_id, old_value, new_value));
 }
 
-static void add_control(QFormLayout &spin_boxes_form, const QString &label,
+void add_control(QFormLayout &spin_boxes_form, const QString &label,
                  QDoubleSpinBox &spin_box, const int minimum,
                  const int maximum, const QString &suffix,
                  const double single_step = 1, const int decimals = 0) {
@@ -37,6 +39,8 @@ static void add_control(QFormLayout &spin_boxes_form, const QString &label,
   spin_box.setDecimals(decimals);
   spin_boxes_form.addRow(label, &spin_box);
 }
+
+}  // namespace
 
 void clear_and_clean(QUndoStack &undo_stack) {
   undo_stack.clear();

@@ -23,7 +23,9 @@
 #include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
 
-static void modulate_before_chord(const Song &song, PlayState &play_state,
+namespace {
+
+void modulate_before_chord(const Song &song, PlayState &play_state,
                            const int next_chord_number) {
   const auto &chords = song.chords;
   if (next_chord_number > 0) {
@@ -32,6 +34,8 @@ static void modulate_before_chord(const Song &song, PlayState &play_state,
         [&play_state](const auto &chord) -> void { modulate(play_state, chord); });
   }
 }
+
+}  // namespace
 
 auto get_play_selection(const SongWidget &song_widget) -> PlaySelection {
   const auto &switch_table = song_widget.switch_column.switch_table;

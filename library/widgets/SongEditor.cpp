@@ -1,6 +1,7 @@
 #include "widgets/SongEditor.hpp"
 
 #include <QtCore/QAbstractItemModel>
+#include <QtCore/QElapsedTimer>
 #include <QtCore/QEvent>
 #include <QtCore/QList>
 #include <QtCore/QMetaType>
@@ -23,17 +24,16 @@
 #include <QtGui/QUndoStack>
 #include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QApplication>
+#include <QtWidgets/QDockWidget>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QGraphicsItem>
 #include <QtWidgets/QGraphicsView>
+#include <QtWidgets/QMainWindow>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QWidget>
 #include <functional>
 #include <libxml/xmlversion.h>
 #include <optional>
-#include <qdockwidget.h>
-#include <qelapsedtimer.h>
-#include <qmainwindow.h>
 #include <string>
 #include <utility>
 
@@ -58,7 +58,9 @@
 #include "widgets/piano_roll/PianoRollWidget.hpp"
 #include "widgets/piano_roll/PlayheadTransition.hpp"
 
-static void add_replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
+namespace {
+
+void add_replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                        const RowType new_row_type,
                        const int new_chord_number,
                        PianoRollWidget &piano_roll_widget,
@@ -69,7 +71,7 @@ static void add_replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widge
           new_chord_number, new_note_number));
 }
 
-static void connect_switch_to_table(QAction &action, QObject &context,
+void connect_switch_to_table(QAction &action, QObject &context,
                              SongMenuBar &song_menu_bar,
                              SongWidget &song_widget,
                              PianoRollWidget &piano_roll_widget,
@@ -82,7 +84,7 @@ static void connect_switch_to_table(QAction &action, QObject &context,
       });
 }
 
-static void connect_navigate_chord_action(QAction &action, QObject &context,
+void connect_navigate_chord_action(QAction &action, QObject &context,
                                    SongMenuBar &song_menu_bar,
                                    SongWidget &song_widget,
                                    PianoRollWidget &piano_roll_widget,
@@ -98,7 +100,7 @@ static void connect_navigate_chord_action(QAction &action, QObject &context,
       });
 }
 
-static void rebuild_piano_roll_scene(PianoRollWidget &widget) {
+void rebuild_piano_roll_scene(PianoRollWidget &widget) {
   rebuild_scene(widget, widget.song_widget, widget.piano_roll_scene,
                widget.axis_scene, widget.legend_scene, widget.row_layout,
                widget.selection_row_type, widget.selection_chord_number,
@@ -106,6 +108,8 @@ static void rebuild_piano_roll_scene(PianoRollWidget &widget) {
                widget.selection_number_of_rows,
                widget.selecting_chord_from_playhead);
 }
+
+}  // namespace
 
 void song_reloaded(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                    PianoRollWidget &piano_roll_widget) {
@@ -395,7 +399,9 @@ void SongEditor::closeEvent(QCloseEvent *close_event_pointer) {
   QMainWindow::closeEvent(close_event_pointer);
 }
 
-static void write_rational(QTextStream &stream, const Rational &rational) {
+namespace {
+
+void write_rational(QTextStream &stream, const Rational &rational) {
   const auto numerator = rational.numerator;
   const auto denominator = rational.denominator;
   if (numerator != 1) {
@@ -405,6 +411,8 @@ static void write_rational(QTextStream &stream, const Rational &rational) {
     stream << "/" << denominator;
   }
 }
+
+}  // namespace
 
 void set_up() {
   LIBXML_TEST_VERSION

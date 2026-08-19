@@ -2,6 +2,7 @@
 
 #include <QtCore/QList>
 #include <QtCore/QString>
+#include <QtCore/QVariant>
 
 #include "column_numbers/UnpitchedVoiceColumn.hpp"
 #include "rows/Voice.hpp"

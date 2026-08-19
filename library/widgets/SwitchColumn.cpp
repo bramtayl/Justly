@@ -1,5 +1,7 @@
 #include "widgets/SwitchColumn.hpp"
 
+#include <QtCore/QItemSelectionModel>
+#include <QtCore/qassert.h>
 #include <QtWidgets/QAbstractItemView>
 
 #include "models/PitchedNotesModel.hpp"

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <libxml/parser.h>
-#include <libxml/xmlstring.h>
 #include <QtCore/QDir>
 #include <QtCore/QList>
 #include <QtCore/QString>
@@ -9,6 +7,8 @@
 #include <QtCore/QtAssert>
 #include <algorithm>
 #include <iterator>
+#include <libxml/parser.h>
+#include <libxml/xmlstring.h>
 #include <optional>
 #include <string>
 
@@ -93,12 +93,12 @@ string_to_maybe_int(const std::string &content) -> std::optional<int>;
 [[nodiscard]] auto xml_to_int(const xmlNode &element) -> int;
 
 [[nodiscard]] auto get_new_child(
-    xmlNode &node, const char *const field_name) -> xmlNode &;
+    xmlNode &node, const char * field_name) -> xmlNode &;
 
-void set_xml_string(xmlNode &node, const char *const field_name,
+void set_xml_string(xmlNode &node, const char * field_name,
                      const std::string &contents);
 
-void set_xml_int(xmlNode &node, const char *const field_name,
+void set_xml_int(xmlNode &node, const char * field_name,
                   int value);
 
 // installed layout is <prefix>/share next to the binary's folder, except

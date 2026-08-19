@@ -1,14 +1,11 @@
 #pragma once
 
-#include <QtCore/QTypeInfo>
 #include <QtCore/QVariant>
-#include <QtCore/QtMinMax>
-#include <QtCore/QtSwap>
-#include <QtCore/qdebug.h>
 
 #include "models/UndoRowsModel.hpp"
 #include "rows/UnpitchedNote.hpp"
 
+class QTextStream;
 class QUndoStack;
 struct Song;
 

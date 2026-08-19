@@ -1,4 +1,3 @@
-#include <QtTest/qtestcase.h>
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QDir>
 #include <QtCore/QEvent>
@@ -17,12 +16,12 @@
 #include <QtGui/QUndoStack>
 #include <QtTest/QTest>
 #include <QtTest/QTestData>
+#include <QtTest/qtestcase.h>
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QGraphicsLineItem>
 #include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QWidget>
-#include <ranges>
-#include <utility>
+#include <algorithm>
 
 #include "Tester.hpp"
 #include "menus/EditMenu.hpp"
