@@ -1,38 +1,7 @@
-#include <QtCore/QAbstractItemModel>
-#include <QtCore/QDir>
-#include <QtCore/QFlags>
-#include <QtCore/QItemSelectionModel>
-#include <QtCore/QString>
-#include <QtCore/QTypeInfo>
-#include <QtCore/QVariant>
-#include <QtCore/Qt>
-#include <QtGui/QAction>
-#include <QtGui/QUndoStack>
-#include <QtTest/QTestData>
-#include <QtTest/qtestcase.h>
-#include <QtWidgets/QAbstractItemDelegate>
-#include <QtWidgets/QPushButton>
-#include <QtWidgets/QSpinBox>
-#include <QtWidgets/QStyleOption>
-#include <optional>
-
 #include "Tester.hpp"
-#include "cell_types/Interval.hpp"
-#include "cell_types/Rational.hpp"
-#include "column_numbers/ChordColumn.hpp"
-#include "column_numbers/PitchedNoteColumn.hpp"
-#include "menus/PlayMenu.hpp"
-#include "menus/SongMenuBar.hpp"
-#include "other/helpers.hpp"
-#include "rows/RowType.hpp"
-#include "test_helpers.hpp"
 #include "widgets/ControlsColumn.hpp"
 #include "widgets/IntervalRow.hpp"
-#include "widgets/SongEditor.hpp"
-#include "widgets/SongWidget.hpp"
 #include "widgets/SpinBoxes.hpp"
-#include "widgets/SwitchColumn.hpp"
-#include "widgets/SwitchTable.hpp"
 
 void Tester::test_flag_data() {
   add_table_columns();
@@ -40,17 +9,21 @@ void Tester::test_flag_data() {
   QTest::addColumn<bool>("is_editable");
 
   QTest::newRow("chord interval")
-      << RowType::chord_type << -1 << static_cast<int>(ChordColumn::chord_interval_column) << true;
+      << RowType::chord_type << -1
+      << static_cast<int>(ChordColumn::chord_interval_column) << true;
   QTest::newRow("chord pitched notes")
-      << RowType::chord_type << -1 << static_cast<int>(ChordColumn::chord_pitched_notes_column)
-      << false;
+      << RowType::chord_type << -1
+      << static_cast<int>(ChordColumn::chord_pitched_notes_column) << false;
   QTest::newRow("chord unpitched notes")
-      << RowType::chord_type << -1 << static_cast<int>(ChordColumn::chord_unpitched_notes_column)
-      << false;
+      << RowType::chord_type << -1
+      << static_cast<int>(ChordColumn::chord_unpitched_notes_column) << false;
   QTest::newRow("pitched note") << RowType::pitched_note_type << 1 << 0 << true;
-  QTest::newRow("unpitched note") << RowType::unpitched_note_type << 1 << 0 << true;
-  QTest::newRow("pitched voice") << RowType::pitched_voice_type << -1 << 0 << true;
-  QTest::newRow("unpitched voice") << RowType::unpitched_voice_type << -1 << 0 << true;
+  QTest::newRow("unpitched note")
+      << RowType::unpitched_note_type << 1 << 0 << true;
+  QTest::newRow("pitched voice")
+      << RowType::pitched_voice_type << -1 << 0 << true;
+  QTest::newRow("unpitched voice")
+      << RowType::unpitched_voice_type << -1 << 0 << true;
 }
 
 void Tester::test_flag() {
@@ -61,21 +34,21 @@ void Tester::test_flag() {
 
   const auto uneditable_flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 
-  auto &song_widget = song_editor.song_widget;
-  auto &switch_table = song_widget.switch_column.switch_table;
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_table = song_widget.switch_column.switch_table;
 
   switch_to(song_editor, row_type, chord_number);
-  QCOMPARE(get_model(switch_table).index(0, column_number).flags(),
-           is_editable ? uneditable_flags | Qt::ItemIsEditable
-                       : uneditable_flags);
+  QCOMPARE(
+      get_model(switch_table).index(0, column_number).flags(),
+      is_editable ? uneditable_flags | Qt::ItemIsEditable : uneditable_flags);
   maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
 }
 
 void Tester::test_frequency_bound_data() {
-  QTest::addColumn<QPushButton *>("button_pointer");
+  QTest::addColumn<QPushButton*>("button_pointer");
   QTest::addColumn<QString>("error_message");
 
-  auto &octave_row = song_editor.song_widget.controls_column.octave_row;
+  auto& octave_row = song_editor.song_widget.controls_column.octave_row;
 
   QTest::newRow("too high")
       << &octave_row.plus_button
@@ -87,20 +60,20 @@ void Tester::test_frequency_bound_data() {
 }
 
 void Tester::test_frequency_bound() {
-  QFETCH(QPushButton *, button_pointer);
+  QFETCH(QPushButton*, button_pointer);
   QFETCH(const QString, error_message);
-  auto &button = get_reference(button_pointer);
+  auto& button = get_reference(button_pointer);
 
-  auto &song_widget = song_editor.song_widget;
-  auto &switch_table = song_widget.switch_column.switch_table;
-  auto &undo_stack = song_widget.undo_stack;
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& undo_stack = song_widget.undo_stack;
 
   switch_to(song_editor, RowType::pitched_note_type, 1);
   select_cell(switch_table, 0, 0);
   close_message_later(song_editor, waiting_for_message, error_message);
   press_times(button, OCTAVE_SHIFT_TIMES);
   song_editor.song_menu_bar.play_menu.play_action.trigger();
-  undo_times(song_widget.undo_stack, OCTAVE_SHIFT_TIMES); // undo shift octave
+  undo_times(song_widget.undo_stack, OCTAVE_SHIFT_TIMES);  // undo shift octave
   maybe_switch_back_to_chords(undo_stack, RowType::pitched_note_type);
 }
 
@@ -162,7 +135,7 @@ void Tester::test_frequency_in_status() {
   QFETCH(const int, frequency);
   QFETCH(const QString, text);
 
-  auto &song_widget = song_editor.song_widget;
+  auto& song_widget = song_editor.song_widget;
 
   song_widget.controls_column.spin_boxes.starting_key_editor.setValue(
       frequency);
@@ -174,8 +147,8 @@ void Tester::test_frequency_in_status() {
 }
 
 void Tester::test_gain() {
-  auto &song_widget = song_editor.song_widget;
-  auto &gain_editor = song_widget.controls_column.spin_boxes.gain_editor;
+  auto& song_widget = song_editor.song_widget;
+  auto& gain_editor = song_widget.controls_column.spin_boxes.gain_editor;
 
   const auto old_gain = get_gain(song_widget);
   QCOMPARE_NE(old_gain, NEW_GAIN_1);
@@ -191,33 +164,39 @@ void Tester::test_gain() {
 }
 
 void Tester::test_interval_button_data() {
-  auto &controls_column = song_editor.song_widget.controls_column;
-  auto &third_row = controls_column.third_row;
-  auto &fifth_row = controls_column.fifth_row;
-  auto &seventh_row = controls_column.seventh_row;
-  auto &octave_row = controls_column.octave_row;
-  auto &third_minus_button = third_row.minus_button;
-  auto &third_plus_button = third_row.plus_button;
-  auto &fifth_minus_button = fifth_row.minus_button;
-  auto &fifth_plus_button = fifth_row.plus_button;
-  auto &seventh_minus_button = seventh_row.minus_button;
-  auto &seventh_plus_button = seventh_row.plus_button;
-  auto &octave_minus_button = octave_row.minus_button;
-  auto &octave_plus_button = octave_row.plus_button;
+  auto& controls_column = song_editor.song_widget.controls_column;
+  auto& third_row = controls_column.third_row;
+  auto& fifth_row = controls_column.fifth_row;
+  auto& seventh_row = controls_column.seventh_row;
+  auto& octave_row = controls_column.octave_row;
+  auto& third_minus_button = third_row.minus_button;
+  auto& third_plus_button = third_row.plus_button;
+  auto& fifth_minus_button = fifth_row.minus_button;
+  auto& fifth_plus_button = fifth_row.plus_button;
+  auto& seventh_minus_button = seventh_row.minus_button;
+  auto& seventh_plus_button = seventh_row.plus_button;
+  auto& octave_minus_button = octave_row.minus_button;
+  auto& octave_plus_button = octave_row.plus_button;
 
-  QTest::addColumn<QPushButton *>("button_pointer");
+  QTest::addColumn<QPushButton*>("button_pointer");
   add_table_columns();
 
-  QTest::newRow("chord third -") << &third_minus_button << RowType::chord_type << -1;
-  QTest::newRow("chord third +") << &third_plus_button << RowType::chord_type << -1;
-  QTest::newRow("chord fifth -") << &fifth_minus_button << RowType::chord_type << -1;
-  QTest::newRow("chord fifth +") << &fifth_plus_button << RowType::chord_type << -1;
+  QTest::newRow("chord third -")
+      << &third_minus_button << RowType::chord_type << -1;
+  QTest::newRow("chord third +")
+      << &third_plus_button << RowType::chord_type << -1;
+  QTest::newRow("chord fifth -")
+      << &fifth_minus_button << RowType::chord_type << -1;
+  QTest::newRow("chord fifth +")
+      << &fifth_plus_button << RowType::chord_type << -1;
   QTest::newRow("chord seventh -")
       << &seventh_minus_button << RowType::chord_type << -1;
   QTest::newRow("chord seventh +")
       << &seventh_plus_button << RowType::chord_type << -1;
-  QTest::newRow("chord octave -") << &octave_minus_button << RowType::chord_type << -1;
-  QTest::newRow("chord octave +") << &octave_plus_button << RowType::chord_type << -1;
+  QTest::newRow("chord octave -")
+      << &octave_minus_button << RowType::chord_type << -1;
+  QTest::newRow("chord octave +")
+      << &octave_plus_button << RowType::chord_type << -1;
   QTest::newRow("pitched note third -")
       << &third_minus_button << RowType::pitched_note_type << 1;
   QTest::newRow("pitched note third +")
@@ -237,20 +216,21 @@ void Tester::test_interval_button_data() {
 }
 
 void Tester::test_interval_button() {
-  QFETCH(QPushButton *, button_pointer);
+  QFETCH(QPushButton*, button_pointer);
   QFETCH(const RowType, row_type);
   QFETCH(const int, chord_number);
 
-  auto &song_widget = song_editor.song_widget;
-  auto &switch_table = song_widget.switch_column.switch_table;
-  auto &undo_stack = song_widget.undo_stack;
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& undo_stack = song_widget.undo_stack;
 
   switch_to(song_editor, row_type, chord_number);
   const auto test_index =
       get_model(switch_table)
           .index(0, row_type == RowType::chord_type
                         ? static_cast<int>(ChordColumn::chord_interval_column)
-                        : static_cast<int>(PitchedNoteColumn::pitched_note_interval_column));
+                        : static_cast<int>(
+                              PitchedNoteColumn::pitched_note_interval_column));
   const auto original_data = test_index.data();
   get_selection_model(switch_table).select(test_index, SELECT_AND_CLEAR);
 
@@ -308,20 +288,20 @@ void Tester::test_unreduced_ratio_from_xml() {
   QFETCH(const int, column_number);
   QFETCH(const QString, expected_text);
 
-  auto &song_widget = song_editor.song_widget;
-  auto &switch_table = song_widget.switch_column.switch_table;
-  auto &undo_stack = song_widget.undo_stack;
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& undo_stack = song_widget.undo_stack;
 
   open_text(song_editor, text);
 
-  auto &model = get_model(switch_table);
+  auto& model = get_model(switch_table);
   const auto test_index = model.index(0, column_number);
 
   QCOMPARE(test_index.data().toString(), expected_text);
 
   const auto old_undo_count = undo_stack.count();
-  auto &delegate = get_reference(switch_table.itemDelegate());
-  auto &cell_editor = get_reference(
+  auto& delegate = get_reference(switch_table.itemDelegate());
+  auto& cell_editor = get_reference(
       delegate.createEditor(&get_reference(switch_table.viewport()),
                             QStyleOptionViewItem(), test_index));
   delegate.setEditorData(&cell_editor, test_index);
@@ -331,7 +311,8 @@ void Tester::test_unreduced_ratio_from_xml() {
 
   // restore the shared fixture
   open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget, test_dir.filePath("test_song.xml"));
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
 }
 
 // regression test: Interval's folding constructor used to halve the
@@ -361,10 +342,8 @@ void Tester::test_string_to_maybe_int_data() {
   QTest::addColumn<bool>("expect_value");
 
   QTest::newRow("ordinary value") << "42" << true;
-  QTest::newRow("overflow positive")
-      << "99999999999999999999" << false;
-  QTest::newRow("overflow negative")
-      << "-99999999999999999999" << false;
+  QTest::newRow("overflow positive") << "99999999999999999999" << false;
+  QTest::newRow("overflow negative") << "-99999999999999999999" << false;
 }
 
 void Tester::test_string_to_maybe_int() {
@@ -376,9 +355,9 @@ void Tester::test_string_to_maybe_int() {
 }
 
 void Tester::test_octave_bound() {
-  auto &song_widget = song_editor.song_widget;
-  auto &switch_table = song_widget.switch_column.switch_table;
-  auto &undo_stack = song_widget.undo_stack;
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& undo_stack = song_widget.undo_stack;
 
   switch_to(song_editor, RowType::pitched_note_type, 1);
   select_cell(switch_table, 0, 0);
@@ -386,40 +365,39 @@ void Tester::test_octave_bound() {
                       "Octave 10 (absolutely) greater than maximum 9");
   press_times(song_widget.controls_column.octave_row.plus_button,
               OCTAVE_SHIFT_TIMES + 1);
-  undo_times(undo_stack, OCTAVE_SHIFT_TIMES); // undo shift octave
+  undo_times(undo_stack, OCTAVE_SHIFT_TIMES);  // undo shift octave
 
   maybe_switch_back_to_chords(undo_stack, RowType::pitched_note_type);
 }
 
 void Tester::test_ratio_bound_data() {
-  QTest::addColumn<QPushButton *>("fifth_button_pointer");
-  QTest::addColumn<QPushButton *>("octave_button_pointer");
+  QTest::addColumn<QPushButton*>("fifth_button_pointer");
+  QTest::addColumn<QPushButton*>("octave_button_pointer");
   QTest::addColumn<QString>("error_message");
 
-  auto &controls_column = song_editor.song_widget.controls_column;
-  auto &fifth_row = controls_column.fifth_row;
-  auto &octave_row = controls_column.octave_row;
+  auto& controls_column = song_editor.song_widget.controls_column;
+  auto& fifth_row = controls_column.fifth_row;
+  auto& octave_row = controls_column.octave_row;
 
-  QTest::newRow("too high")
-      << &fifth_row.plus_button << &octave_row.plus_button
-      << "Numerator 2187 greater than maximum 999";
+  QTest::newRow("too high") << &fifth_row.plus_button << &octave_row.plus_button
+                            << "Numerator 2187 greater than maximum 999";
 
-  QTest::newRow("too low")
-      << &fifth_row.minus_button << &octave_row.minus_button
-      << "Denominator 2187 greater than maximum 999";
+  QTest::newRow("too low") << &fifth_row.minus_button
+                           << &octave_row.minus_button
+                           << "Denominator 2187 greater than maximum 999";
 }
 
 void Tester::test_ratio_bound() {
-  QFETCH(QPushButton *, fifth_button_pointer);
-  QFETCH(QPushButton *, octave_button_pointer);
+  QFETCH(QPushButton*, fifth_button_pointer);
+  QFETCH(QPushButton*, octave_button_pointer);
   QFETCH(const QString, error_message);
 
-  auto &fifth_button = get_reference(fifth_button_pointer);
-  auto &octave_button = get_reference(octave_button_pointer);
+  auto& fifth_button = get_reference(fifth_button_pointer);
+  auto& octave_button = get_reference(octave_button_pointer);
 
-  auto &song_widget = song_editor.song_widget;
-  auto &switch_table = song_widget.switch_column.switch_table;
-  auto &undo_stack = song_widget.undo_stack;
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& undo_stack = song_widget.undo_stack;
 
   switch_to(song_editor, RowType::pitched_note_type, 1);
   select_cell(switch_table, 0, 0);
@@ -430,7 +408,7 @@ void Tester::test_ratio_bound() {
   }
   close_message_later(song_editor, waiting_for_message, error_message);
   fifth_button.click();
-  undo_times(undo_stack, RATIO_SHIFT_TIMES * 2); // undo shift numerator
+  undo_times(undo_stack, RATIO_SHIFT_TIMES * 2);  // undo shift numerator
 
   maybe_switch_back_to_chords(undo_stack, RowType::pitched_note_type);
 }

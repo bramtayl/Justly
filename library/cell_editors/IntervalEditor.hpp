@@ -1,7 +1,8 @@
 #pragma once
 
-#include <QtCore/QString>
 #include <QtCore/qtmetamacros.h>
+
+#include <QtCore/QString>
 #include <QtWidgets/QBoxLayout>
 #include <QtWidgets/QFrame>
 #include <QtWidgets/QLabel>
@@ -18,16 +19,16 @@ struct IntervalEditor : QFrame {
   Q_OBJECT
   Q_PROPERTY(Interval interval READ value WRITE setValue USER true)
 
-public:
-  RationalEditor &rational_editor;
+ public:
+  RationalEditor& rational_editor;
 
-  QWidget &o_text = *(new QLabel("o"));
-  QSpinBox &octave_box = *(new QSpinBox);
-  QBoxLayout &row_layout = *(new QHBoxLayout(this));
+  QWidget& o_text = *(new QLabel("o"));
+  QSpinBox& octave_box = *(new QSpinBox);
+  QBoxLayout& row_layout = *(new QHBoxLayout(this));
 
-  explicit IntervalEditor(QWidget * parent_pointer);
+  explicit IntervalEditor(QWidget* parent_pointer);
 
   [[nodiscard]] auto value() const -> Interval;
 
-  void setValue(const Interval &new_value) const;
+  void setValue(const Interval& new_value) const;
 };

@@ -1,5 +1,9 @@
 #include "cell_types/Program.hpp"
 
+#include <fluidsynth.h>
+#include <fluidsynth/gen.h>
+#include <fluidsynth/types.h>
+
 #include <QtCore/QTypeInfo>
 #include <QtCore/QtAssert>
 #include <QtCore/QtMinMax>
@@ -7,20 +11,13 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <fluidsynth.h>
-#include <fluidsynth/gen.h>
-#include <fluidsynth/misc.h>
-#include <fluidsynth/settings.h>
-#include <fluidsynth/sfont.h>
-#include <fluidsynth/synth.h>
-#include <fluidsynth/types.h>
-#include <fluidsynth/voice.h>
+#include <compare>
 #include <iterator>
 #include <set>
 #include <string>
+#include <utility>
 
 #include "other/helpers.hpp"
-#include "rows/Note.hpp"
 #include "sound/FluidSettings.hpp"
 #include "sound/FluidSynth.hpp"
 
@@ -29,15 +26,14 @@ const auto UNPITCHED_BANK_NUMBER = 128;
 const auto MAX_RELEASE_TIME = 6000;
 }  // namespace
 
-auto get_soundfont_id(FluidSynth &synth) -> int {
-  const auto soundfont_id =
-      fluid_synth_sfload(synth.internal_pointer,
-                         get_share_file("MS_Basic.sf3").c_str(), 1);
+auto get_soundfont_id(FluidSynth& synth) -> int {
+  const auto soundfont_id = fluid_synth_sfload(
+      synth.internal_pointer, get_share_file("MS_Basic.sf3").c_str(), 1);
   Q_ASSERT(soundfont_id >= 0);
   return soundfont_id;
 }
 
-Program::Program(const char *const name_input, const short bank_number_input,
+Program::Program(const char* const name_input, const short bank_number_input,
                  const short preset_number_input,
                  const double release_milliseconds_input)
     // sf2 preset names have no guaranteed encoding: modern soundfonts are
@@ -60,11 +56,11 @@ auto is_pitched_bank_number(const short bank_number) -> bool {
 
 namespace {
 
-auto filter_programs(const QList<Program> &all_programs,
-                     const bool is_pitched) -> QList<Program> {
+auto filter_programs(const QList<Program>& all_programs, const bool is_pitched)
+    -> QList<Program> {
   QList<Program> result;
   std::ranges::copy_if(all_programs, std::back_inserter(result),
-                       [is_pitched](const Program &program) -> auto {
+                       [is_pitched](const Program& program) -> auto {
                          return is_pitched_bank_number(program.bank_number) ==
                                 is_pitched;
                        });
@@ -80,8 +76,8 @@ auto filter_programs(const QList<Program> &all_programs,
 // key for key-scaled generators, so this reads the unscaled nominal release.
 namespace {
 
-auto get_actual_release_milliseconds(FluidSynth &synth,
-                                     fluid_preset_t *const preset_pointer)
+auto get_actual_release_milliseconds(FluidSynth& synth,
+                                     fluid_preset_t* const preset_pointer)
     -> double {
   static const auto PREVIEW_KEY = 60;
   static const auto PREVIEW_VELOCITY = 100;
@@ -100,17 +96,17 @@ auto get_actual_release_milliseconds(FluidSynth &synth,
   static auto next_voice_id = 0U;
   const auto voice_id = next_voice_id++;
 
-  if (fluid_synth_start(synth.internal_pointer, voice_id, preset_pointer, 0,
-                        0, PREVIEW_KEY, PREVIEW_VELOCITY) != FLUID_OK) {
+  if (fluid_synth_start(synth.internal_pointer, voice_id, preset_pointer, 0, 0,
+                        PREVIEW_KEY, PREVIEW_VELOCITY) != FLUID_OK) {
     return MAX_RELEASE_TIME;
   }
 
-  std::array<fluid_voice_t *, MAX_MATCHING_VOICES> voices{};
+  std::array<fluid_voice_t*, MAX_MATCHING_VOICES> voices{};
   fluid_synth_get_voicelist(synth.internal_pointer, voices.data(),
                             MAX_MATCHING_VOICES, static_cast<int>(voice_id));
 
   auto release_milliseconds = 0.0;
-  for (auto *const voice : voices) {
+  for (auto* const voice : voices) {
     if (voice == nullptr) {
       break;
     }
@@ -130,15 +126,15 @@ auto get_actual_release_milliseconds(FluidSynth &synth,
 
 }  // namespace
 
-auto get_some_programs(const bool is_pitched) -> const QList<Program> & {
+auto get_some_programs(const bool is_pitched) -> const QList<Program>& {
   static const auto all_programs = []() -> QList<Program> {
     static const auto GENERAL_BANK_NUMBER = 0;
     static const auto GENERAL_EXPRESSIVE_BANK_NUMBER = 17;
     static const auto EXTRA_BANK_NUMBER = 8;
     static const auto EXTRA_EXPRESSIVE_BANK_NUMBER = 18;
     static const auto MAX_PITCHED_BANK_NUMBER =
-        18; // banks numbers above 18 are duplicates except for detuned saw,
-            // special cased below
+        18;  // banks numbers above 18 are duplicates except for detuned saw,
+             // special cased below
 
     FluidSettings settings;
     // fluid_synth_stop() releases a voice but doesn't reclaim its slot until
@@ -153,24 +149,24 @@ auto get_some_programs(const bool is_pitched) -> const QList<Program> & {
     // rendered here) and overflows partway through the hundreds of
     // start/stop calls below, logging "Ringbuffer full" for the rest
     static const auto INTROSPECTION_POLYPHONY = 8192;
-    auto polyphony_was_set = fluid_settings_setint(
-        settings.internal_pointer, "synth.polyphony",
-        INTROSPECTION_POLYPHONY) == FLUID_OK;
+    auto polyphony_was_set =
+        fluid_settings_setint(settings.internal_pointer, "synth.polyphony",
+                              INTROSPECTION_POLYPHONY) == FLUID_OK;
     Q_ASSERT(polyphony_was_set);
     FluidSynth synth(settings);
 
-    fluid_sfont_t *const soundfont_pointer = fluid_synth_get_sfont_by_id(
+    fluid_sfont_t* const soundfont_pointer = fluid_synth_get_sfont_by_id(
         synth.internal_pointer, get_soundfont_id(synth));
     Q_ASSERT(soundfont_pointer != nullptr);
 
     fluid_sfont_iteration_start(soundfont_pointer);
-    auto *preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
+    auto* preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
 
     QList<Program> programs;
     std::set<int> expressive_preset_numbers;
     std::set<int> extra_expressive_preset_numbers;
     while (preset_pointer != nullptr) {
-      const auto *const name = fluid_preset_get_name(preset_pointer);
+      const auto* const name = fluid_preset_get_name(preset_pointer);
       const auto bank_number =
           static_cast<short>(fluid_preset_get_banknum(preset_pointer));
       const auto preset_number =
@@ -197,8 +193,9 @@ auto get_some_programs(const bool is_pitched) -> const QList<Program> & {
     }
 
     const auto non_expressive_indices = std::ranges::remove_if(
-        programs, [&expressive_preset_numbers,
-                   &extra_expressive_preset_numbers](const auto &program) -> auto {
+        programs,
+        [&expressive_preset_numbers,
+         &extra_expressive_preset_numbers](const auto& program) -> auto {
           const auto bank_number = program.bank_number;
           const auto preset_number = program.preset_number;
           return (bank_number == GENERAL_BANK_NUMBER &&
@@ -212,7 +209,8 @@ auto get_some_programs(const bool is_pitched) -> const QList<Program> & {
                    non_expressive_indices.end());
 
     std::ranges::sort(
-        programs, [](const Program &instrument_1, const Program &instrument_2) -> auto {
+        programs,
+        [](const Program& instrument_1, const Program& instrument_2) -> auto {
           return instrument_1.name < instrument_2.name;
         });
     return programs;
@@ -222,7 +220,7 @@ auto get_some_programs(const bool is_pitched) -> const QList<Program> & {
   return is_pitched ? pitched_programs : unpitched_programs;
 }
 
-auto get_some_program_names(const bool is_pitched) -> const QList<QString> & {
+auto get_some_program_names(const bool is_pitched) -> const QList<QString>& {
   static const auto pitched_names = get_names(get_some_programs(true));
   static const auto unpitched_names = get_names(get_some_programs(false));
   return is_pitched ? pitched_names : unpitched_names;

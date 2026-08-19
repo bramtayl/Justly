@@ -1,14 +1,15 @@
 #include "menus/PasteMenu.hpp"
 
+#include <QtCore/qnamespace.h>
+#include <QtCore/qobjectdefs.h>
+
 #include <QtCore/QFlags>
 #include <QtCore/QTypeInfo>
 #include <QtCore/QtMinMax>
 #include <QtCore/QtSwap>
-#include <QtCore/qassert.h>
-#include <QtCore/qnamespace.h>
-#include <QtCore/qobjectdefs.h>
 #include <QtGui/QKeySequence>
 #include <QtGui/QUndoStack>
+#include <string>
 
 #include "rows/Chord.hpp"
 #include "rows/PitchedNote.hpp"
@@ -17,7 +18,7 @@
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchTable.hpp"
 
-auto get_mime_description(const QString &mime_type) -> QString {
+auto get_mime_description(const QString& mime_type) -> QString {
   Q_ASSERT(mime_type.isValidUtf16());
   if (mime_type == Chord::get_cells_mime()) {
     return QObject::tr("chords cells");
@@ -33,13 +34,13 @@ auto get_mime_description(const QString &mime_type) -> QString {
 
 namespace {
 
-void add_paste_insert(SongWidget &song_widget, const int row_number) {
-  auto &switch_column = song_widget.switch_column;
-  auto &switch_table = switch_column.switch_table;
+void add_paste_insert(SongWidget& song_widget, const int row_number) {
+  auto& switch_column = song_widget.switch_column;
+  auto& switch_table = switch_column.switch_table;
 
-  auto *undo_command = dispatch_row_type(
-      switch_table, [&switch_table, row_number](
-                        auto &rows_model) -> QUndoCommand * {
+  auto* undo_command = dispatch_row_type(
+      switch_table,
+      [&switch_table, row_number](auto& rows_model) -> QUndoCommand* {
         return make_paste_insert_command(switch_table, rows_model, row_number);
       });
   if (undo_command == nullptr) {
@@ -50,7 +51,7 @@ void add_paste_insert(SongWidget &song_widget, const int row_number) {
 
 }  // namespace
 
-PasteMenu::PasteMenu(SongWidget &song_widget)
+PasteMenu::PasteMenu(SongWidget& song_widget)
     : QMenu(PasteMenu::tr("&Paste")),
       paste_over_action(PasteMenu::tr("&Over")),
       paste_into_start_action(PasteMenu::tr("&Into start")),
@@ -63,24 +64,26 @@ PasteMenu::PasteMenu(SongWidget &song_widget)
 
   QObject::connect(
       &paste_over_action, &QAction::triggered, this, [&song_widget]() -> auto {
-        auto &switch_table = song_widget.switch_column.switch_table;
+        auto& switch_table = song_widget.switch_column.switch_table;
 
         const auto first_row_number = get_only_range(switch_table).top();
 
-        auto *undo_command = dispatch_row_type(
-            switch_table, [&switch_table, first_row_number](
-                              auto &rows_model) -> QUndoCommand * {
-              return make_paste_cells_command(switch_table, first_row_number,
-                                              rows_model);
-            });
+        auto* undo_command =
+            dispatch_row_type(switch_table,
+                              [&switch_table, first_row_number](
+                                  auto& rows_model) -> QUndoCommand* {
+                                return make_paste_cells_command(
+                                    switch_table, first_row_number, rows_model);
+                              });
         if (undo_command == nullptr) {
           return;
         }
         song_widget.undo_stack.push(undo_command);
       });
 
-  QObject::connect(&paste_into_start_action, &QAction::triggered, this,
-                   [&song_widget]() -> auto { add_paste_insert(song_widget, 0); });
+  QObject::connect(
+      &paste_into_start_action, &QAction::triggered, this,
+      [&song_widget]() -> auto { add_paste_insert(song_widget, 0); });
 
   QObject::connect(&paste_after_action, &QAction::triggered, this,
                    [&song_widget]() -> auto {

@@ -1,5 +1,9 @@
 #pragma once
 
+#include <QtCore/qobjectdefs.h>
+#include <QtCore/qtmetamacros.h>
+#include <QtTest/qtestcase.h>
+
 #include <QtCore/QDir>
 #include <QtCore/QFile>
 #include <QtCore/QObject>
@@ -7,10 +11,7 @@
 #include <QtCore/QString>
 #include <QtCore/QTimer>
 #include <QtCore/QtAssert>
-#include <QtCore/qobjectdefs.h>
-#include <QtCore/qtmetamacros.h>
 #include <QtGui/QClipboard>
-#include <QtTest/qtestcase.h>
 #include <QtWidgets/QMessageBox>
 
 #include "other/helpers.hpp"
@@ -19,7 +20,7 @@
 
 struct Tester : public QObject {
   Q_OBJECT
-public:
+ public:
   SongEditor song_editor;
   QDir test_dir = get_share_folder();
   bool waiting_for_message = false;
@@ -43,25 +44,24 @@ public:
     open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
                          song_editor.piano_roll_widget, fixture_file);
 
-    QObject::connect(&unexpected_message_timer, &QTimer::timeout, this,
-                     [this]() -> auto {
-                       if (waiting_for_message) {
-                         return;
-                       }
-                       auto *const box_pointer = find_top_level_message_box();
-                       if (box_pointer == nullptr) {
-                         return;
-                       }
-                       const auto actual_text = box_pointer->text();
-                       box_pointer->close();
-                       QFAIL(qUtf8Printable(
-                           QString("Unexpected message box: %1")
-                               .arg(actual_text)));
-                     });
+    QObject::connect(
+        &unexpected_message_timer, &QTimer::timeout, this, [this]() -> auto {
+          if (waiting_for_message) {
+            return;
+          }
+          auto* const box_pointer = find_top_level_message_box();
+          if (box_pointer == nullptr) {
+            return;
+          }
+          const auto actual_text = box_pointer->text();
+          box_pointer->close();
+          QFAIL(qUtf8Printable(
+              QString("Unexpected message box: %1").arg(actual_text)));
+        });
     unexpected_message_timer.start(WAIT_TIME);
   }
 
-private slots:
+ private slots:
   // the OS clipboard is a process-global singleton that outlives any single
   // test, so a stale copy left over from an earlier test (e.g. a copied
   // voice_number cell) must not bleed into a later test's voice removal and

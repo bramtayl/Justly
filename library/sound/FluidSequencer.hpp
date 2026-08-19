@@ -12,15 +12,14 @@ struct FluidSynth;
 // never gets passed into fluid_sequencer_register_fluidsynth -- a member
 // initializer can't be preceded by a constructor-body assert, since member
 // initializers all run before the body does
-[[nodiscard]] auto
-register_fluidsynth_client(fluid_sequencer_t * sequencer_pointer,
-                           FluidSynth &synth) -> fluid_seq_id_t;
+[[nodiscard]] auto register_fluidsynth_client(
+    fluid_sequencer_t* sequencer_pointer, FluidSynth& synth) -> fluid_seq_id_t;
 
 struct FluidSequencer {
-  fluid_sequencer_t *const internal_pointer;
+  fluid_sequencer_t* const internal_pointer;
   const fluid_seq_id_t sequencer_id;
 
-  explicit FluidSequencer(FluidSynth &synth)
+  explicit FluidSequencer(FluidSynth& synth)
       : internal_pointer(new_fluid_sequencer2(0)),
         sequencer_id(register_fluidsynth_client(internal_pointer, synth)) {}
 

@@ -17,40 +17,38 @@ struct SongWidget;
 // label/view-menu/selection reset it applies when switching there manually;
 // unlike ordinary navigation it doesn't know the song's contents changed
 // under it, so the piano roll scene still needs an explicit rebuild on top
-void song_reloaded(SongMenuBar &song_menu_bar, SongWidget &song_widget,
-                   PianoRollWidget &piano_roll_widget);
+void song_reloaded(SongMenuBar& song_menu_bar, SongWidget& song_widget,
+                   PianoRollWidget& piano_roll_widget);
 
-void open_file_and_reload(SongMenuBar &song_menu_bar,
-                          SongWidget &song_widget,
-                          PianoRollWidget &piano_roll_widget,
-                          const QString &filename);
+void open_file_and_reload(SongMenuBar& song_menu_bar, SongWidget& song_widget,
+                          PianoRollWidget& piano_roll_widget,
+                          const QString& filename);
 
-void import_musicxml_and_reload(SongMenuBar &song_menu_bar,
-                                SongWidget &song_widget,
-                                PianoRollWidget &piano_roll_widget,
-                                const QString &filename);
+void import_musicxml_and_reload(SongMenuBar& song_menu_bar,
+                                SongWidget& song_widget,
+                                PianoRollWidget& piano_roll_widget,
+                                const QString& filename);
 
-void zoom_in_piano_roll(PianoRollWidget &widget);
+void zoom_in_piano_roll(PianoRollWidget& widget);
 
-void zoom_out_piano_roll(PianoRollWidget &widget);
+void zoom_out_piano_roll(PianoRollWidget& widget);
 
-void stop_piano_roll_playhead(PianoRollWidget &widget);
+void stop_piano_roll_playhead(PianoRollWidget& widget);
 
-void start_piano_roll_playhead(PianoRollWidget &widget,
-                                double baseline_ms,
-                                double end_ms);
+void start_piano_roll_playhead(PianoRollWidget& widget, double baseline_ms,
+                               double end_ms);
 
 struct SongEditor : public QMainWindow {
-public:
-  SongWidget &song_widget;
-  SongMenuBar &song_menu_bar;
-  PianoRollWidget &piano_roll_widget = *(new PianoRollWidget(song_widget));
-  QDockWidget &piano_roll_dock =
+ public:
+  SongWidget& song_widget;
+  SongMenuBar& song_menu_bar;
+  PianoRollWidget& piano_roll_widget = *(new PianoRollWidget(song_widget));
+  QDockWidget& piano_roll_dock =
       *(new QDockWidget(SongEditor::tr("Piano Roll"), this));
 
   explicit SongEditor();
 
-  void closeEvent(QCloseEvent *close_event_pointer) override;
+  void closeEvent(QCloseEvent* close_event_pointer) override;
 };
 
 void set_up();

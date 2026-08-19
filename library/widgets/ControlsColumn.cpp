@@ -5,15 +5,15 @@
 #include "widgets/IntervalRow.hpp"
 #include "widgets/SpinBoxes.hpp"
 
-ControlsColumn::ControlsColumn(Song &song, FluidSynth &synth, QUndoStack &undo_stack,
-                               SwitchTable &switch_table)
+ControlsColumn::ControlsColumn(Song& song, FluidSynth& synth,
+                               QUndoStack& undo_stack,
+                               SwitchTable& switch_table)
     : spin_boxes(*new SpinBoxes(song, synth, undo_stack)),
       third_row(*new IntervalRow(undo_stack, switch_table, "Major third",
                                  Interval(Rational(FIVE, 4), 0))),
       fifth_row(*new IntervalRow(undo_stack, switch_table, "Perfect fifth",
                                  Interval(Rational(3, 2), 0))),
-      seventh_row(*new IntervalRow(undo_stack, switch_table,
-                                   "Harmonic seventh",
+      seventh_row(*new IntervalRow(undo_stack, switch_table, "Harmonic seventh",
                                    Interval(Rational(SEVEN, 4), 0))),
       octave_row(*new IntervalRow(undo_stack, switch_table, "Octave",
                                   Interval(Rational(), 1))) {

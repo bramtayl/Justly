@@ -21,9 +21,9 @@ class QWidget;
 // a QGraphicsScene isn't a widget, so unlike view below it can't pick up
 // ownership by being added to a layout; it has to be parented explicitly
 struct PianoRollAxisScene : public QGraphicsScene {
-  QGraphicsView &view;
+  QGraphicsView& view;
 
-  explicit PianoRollAxisScene(QWidget &parent_widget);
+  explicit PianoRollAxisScene(QWidget& parent_widget);
 
   ~PianoRollAxisScene() override = default;
 

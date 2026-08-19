@@ -10,7 +10,7 @@ void FluidDriver::reset() {
   internal_pointer = nullptr;
 }
 
-auto FluidDriver::operator=(FluidDriver &&other) noexcept -> FluidDriver & {
+auto FluidDriver::operator=(FluidDriver&& other) noexcept -> FluidDriver& {
   if (this != &other) {
     reset();
     internal_pointer = other.internal_pointer;
@@ -19,7 +19,7 @@ auto FluidDriver::operator=(FluidDriver &&other) noexcept -> FluidDriver & {
   return *this;
 }
 
-FluidDriver::FluidDriver(FluidDriver &&other) noexcept
+FluidDriver::FluidDriver(FluidDriver&& other) noexcept
     : internal_pointer(other.internal_pointer) {
   other.internal_pointer = nullptr;
 }

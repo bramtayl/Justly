@@ -22,16 +22,16 @@ struct Voice : Row {
   Rational velocity_ratio;
 };
 
-template <typename SubVoice> // type properties
+template <typename SubVoice>  // type properties
 concept VoiceInterface = std::derived_from<SubVoice, Voice> && requires() {
-  { SubVoice::get_pitched() } -> std::same_as<const char *>;
+  { SubVoice::get_pitched() } -> std::same_as<const char*>;
   { SubVoice::is_pitched() } -> std::same_as<bool>;
 };
 
 template <VoiceInterface SubVoice>
-[[nodiscard]] auto get_voice_program(const QList<Program> &programs,
-                                     const QList<SubVoice> &voices,
-                                     int voice_number) -> const auto & {
+[[nodiscard]] auto get_voice_program(const QList<Program>& programs,
+                                     const QList<SubVoice>& voices,
+                                     int voice_number) -> const auto& {
   const auto result_index =
       get_named_index(programs, voices.at(voice_number).program);
   Q_ASSERT(result_index != programs.cend());
@@ -39,10 +39,11 @@ template <VoiceInterface SubVoice>
 }
 
 template <VoiceInterface SubVoice>
-[[nodiscard]] auto
-check_voice_name(QWidget &parent, const QList<SubVoice> &voices,
-                 const int name_column_number, const int cell_column_number,
-                 const QVariant &new_value) -> bool {
+[[nodiscard]] auto check_voice_name(QWidget& parent,
+                                    const QList<SubVoice>& voices,
+                                    const int name_column_number,
+                                    const int cell_column_number,
+                                    const QVariant& new_value) -> bool {
   const auto new_string = variant_to<QString>(new_value);
   if (new_string.isEmpty()) {
     QString message;
@@ -56,8 +57,7 @@ check_voice_name(QWidget &parent, const QList<SubVoice> &voices,
     if (result_index != voices.cend()) {
       QString message;
       QTextStream stream(&message);
-      stream << "Voice \"" << new_string
-             << QObject::tr("\" already exists!");
+      stream << "Voice \"" << new_string << QObject::tr("\" already exists!");
       QMessageBox::warning(&parent, QObject::tr("Voice name error"), message);
       return false;
     }

@@ -1,22 +1,23 @@
 #pragma once
 
+#include <QtCore/qtmetamacros.h>
+
 #include <QtCore/QList>
 #include <QtCore/QString>
 #include <QtCore/QStringListModel>
-#include <QtCore/qtmetamacros.h>
 #include <QtWidgets/QComboBox>
 
 class QWidget;
 
 struct StringPicker : public QComboBox {
   Q_OBJECT
-  Q_PROPERTY(const QString &value READ currentText WRITE setValue USER true)
+  Q_PROPERTY(const QString& value READ currentText WRITE setValue USER true)
 
-public:
+ public:
   const QList<QString> strings;
   QStringListModel voice_model;
-  explicit StringPicker(QWidget * parent_pointer,
+  explicit StringPicker(QWidget* parent_pointer,
                         QList<QString> input_voice_names);
 
-  void setValue(const QString &new_value);
+  void setValue(const QString& new_value);
 };

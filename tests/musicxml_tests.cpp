@@ -1,34 +1,5 @@
-#include <QtCore/QAbstractItemModel>
-#include <QtCore/QDir>
-#include <QtCore/QList>
-#include <QtCore/QString>
-#include <QtCore/QTypeInfo>
-#include <QtCore/QtMinMax>
-#include <QtCore/QtSwap>
-#include <QtGui/QAction>
-#include <QtTest/QTest>
-#include <QtTest/QTestData>
-#include <QtTest/qtestcase.h>
-#include <QtWidgets/QLabel>
-#include <utility>
-
 #include "Tester.hpp"
-#include "cell_types/Rational.hpp"
-#include "menus/EditMenu.hpp"
-#include "menus/FileMenu.hpp"
-#include "menus/InsertMenu.hpp"
-#include "menus/SongMenuBar.hpp"
-#include "menus/ViewMenu.hpp"
 #include "musicxml/MeasureRepeatInfo.hpp"
-#include "other/Song.hpp"
-#include "rows/Chord.hpp"
-#include "rows/PitchedNote.hpp"
-#include "rows/RowType.hpp"
-#include "test_helpers.hpp"
-#include "widgets/SongEditor.hpp"
-#include "widgets/SongWidget.hpp"
-#include "widgets/SwitchColumn.hpp"
-#include "widgets/SwitchTable.hpp"
 
 void Tester::test_musicxml_data() {
   QTest::addColumn<QString>("file_name");
@@ -46,15 +17,17 @@ void Tester::test_musicxml() {
   QFETCH(const QString, file_name);
   QFETCH(const int, number_of_chords);
 
-  auto &song_widget = song_editor.song_widget;
+  auto& song_widget = song_editor.song_widget;
 
   import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                             song_editor.piano_roll_widget, test_dir.filePath(file_name));
-  QCOMPARE(get_model(song_widget.switch_column.switch_table)
-               .rowCount(QModelIndex()),
-           number_of_chords);
+                             song_editor.piano_roll_widget,
+                             test_dir.filePath(file_name));
+  QCOMPARE(
+      get_model(song_widget.switch_column.switch_table).rowCount(QModelIndex()),
+      number_of_chords);
   open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget, test_dir.filePath("test_song.xml"));
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
 }
 
 void Tester::test_musicxml_error_data() {
@@ -67,9 +40,8 @@ void Tester::test_musicxml_error_data() {
   QTest::newRow("empty") << "empty.musicxml" << "No chords";
   QTest::newRow("grace notes") << "MozartPianoSonata.musicxml"
                                << "Notes without durations not supported";
-  QTest::newRow("timewise")
-      << "timewise.musicxml"
-      << "Justly only supports partwise musicxml scores";
+  QTest::newRow("timewise") << "timewise.musicxml"
+                            << "Justly only supports partwise musicxml scores";
   // regression test: divisions is xs:decimal in the musicxml schema (to
   // allow fractional divisions), but xml_to_int used to silently truncate
   // fractional content via std::stoi instead of rejecting it, corrupting
@@ -80,9 +52,8 @@ void Tester::test_musicxml_error_data() {
   // regression test: divisions is unbounded xs:decimal with no
   // schema-enforced range, so a magnitude that doesn't fit in a 32-bit int
   // must be rejected with a warning instead of overflowing std::stoi
-  QTest::newRow("overflowing divisions")
-      << "overflowing_divisions.musicxml"
-      << "Divisions value is out of range";
+  QTest::newRow("overflowing divisions") << "overflowing_divisions.musicxml"
+                                         << "Divisions value is out of range";
 }
 
 void Tester::test_musicxml_error() {
@@ -91,7 +62,8 @@ void Tester::test_musicxml_error() {
 
   close_message_later(song_editor, waiting_for_message, error_message);
   import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                             song_editor.piano_roll_widget, test_dir.filePath(file_name));
+                             song_editor.piano_roll_widget,
+                             test_dir.filePath(file_name));
 }
 
 // regression test: a backward repeat with no forward repeat since the
@@ -134,9 +106,9 @@ void Tester::test_compute_measure_expansion_lone_backward_repeat() {
   measure_infos.push_back(measure_4);
 
   const QList<std::pair<int, int>> expected_expansion = {
-      {0, 10}, {10, 20}, {0, 10}, {10, 20},  // measures 0-1, twice
-      {20, 30}, {30, 40}, {40, 50},          // measures 2-4, ...
-      {20, 30}, {30, 40}, {40, 50},          // ...twice
+      {0, 10},  {10, 20}, {0, 10},  {10, 20},  // measures 0-1, twice
+      {20, 30}, {30, 40}, {40, 50},            // measures 2-4, ...
+      {20, 30}, {30, 40}, {40, 50},            // ...twice
   };
 
   QCOMPARE(compute_measure_expansion(measure_infos), expected_expansion);
@@ -152,22 +124,23 @@ void Tester::test_compute_measure_expansion_lone_backward_repeat() {
 // entry at all. Keying the lookup by voice as well as pitch keeps
 // overlapping ties on the same pitch independent.
 void Tester::test_import_musicxml_ties_do_not_cross_voices() {
-  auto &song_widget = song_editor.song_widget;
+  auto& song_widget = song_editor.song_widget;
 
   import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                             song_editor.piano_roll_widget, test_dir.filePath("tied_voices.musicxml"));
+                             song_editor.piano_roll_widget,
+                             test_dir.filePath("tied_voices.musicxml"));
 
-  auto &song = song_widget.song;
+  auto& song = song_widget.song;
   QCOMPARE(song.chords.size(), 2);
 
-  const auto &left_hand_notes = song.chords.at(0).pitched_notes;
+  const auto& left_hand_notes = song.chords.at(0).pitched_notes;
   QCOMPARE(left_hand_notes.size(), 1);
   QCOMPARE(left_hand_notes.at(0).voice_number, 0);
   QVERIFY(left_hand_notes.at(0).words.contains("Left Hand"));
   QCOMPARE(left_hand_notes.at(0).beats.numerator, 8);
   QCOMPARE(left_hand_notes.at(0).beats.denominator, 1);
 
-  const auto &right_hand_notes = song.chords.at(1).pitched_notes;
+  const auto& right_hand_notes = song.chords.at(1).pitched_notes;
   QCOMPARE(right_hand_notes.size(), 1);
   QCOMPARE(right_hand_notes.at(0).voice_number, 1);
   QVERIFY(right_hand_notes.at(0).words.contains("Right Hand"));
@@ -175,7 +148,8 @@ void Tester::test_import_musicxml_ties_do_not_cross_voices() {
   QCOMPARE(right_hand_notes.at(0).beats.denominator, 1);
 
   open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget, test_dir.filePath("test_song.xml"));
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
 }
 
 // regression test: a <tie type="stop"/> with no matching earlier
@@ -184,21 +158,23 @@ void Tester::test_import_musicxml_ties_do_not_cross_voices() {
 // malformed or hand-edited musicxml file could trigger undefined behavior.
 // It must now import as an ordinary, unstarted note instead.
 void Tester::test_import_musicxml_orphan_tie_stop() {
-  auto &song_widget = song_editor.song_widget;
+  auto& song_widget = song_editor.song_widget;
 
   import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                             song_editor.piano_roll_widget, test_dir.filePath("orphan_tie.musicxml"));
+                             song_editor.piano_roll_widget,
+                             test_dir.filePath("orphan_tie.musicxml"));
 
-  auto &song = song_widget.song;
+  auto& song = song_widget.song;
   QCOMPARE(song.chords.size(), 1);
 
-  const auto &notes = song.chords.at(0).pitched_notes;
+  const auto& notes = song.chords.at(0).pitched_notes;
   QCOMPARE(notes.size(), 1);
   QCOMPARE(notes.at(0).beats.numerator, 4);
   QCOMPARE(notes.at(0).beats.denominator, 1);
 
   open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget, test_dir.filePath("test_song.xml"));
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
 }
 
 // regression test: inserting a chord, then drilling into and inserting one
@@ -206,9 +182,9 @@ void Tester::test_import_musicxml_orphan_tie_stop() {
 // that Chord's notes QList; import_musicxml/open_file must not crash even
 // though they replace song.chords wholesale while that pointer is live
 void Tester::test_import_musicxml_after_editing_chord_notes() {
-  auto &song_widget = song_editor.song_widget;
-  auto &switch_table = song_widget.switch_column.switch_table;
-  auto &insert_menu = song_editor.song_menu_bar.edit_menu.insert_menu;
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& insert_menu = song_editor.song_menu_bar.edit_menu.insert_menu;
 
   select_cell(switch_table, 0, 0);
   insert_menu.insert_after_action.trigger();
@@ -216,11 +192,13 @@ void Tester::test_import_musicxml_after_editing_chord_notes() {
   insert_menu.insert_into_start_action.trigger();
 
   import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                             song_editor.piano_roll_widget, test_dir.filePath("prelude.musicxml"));
+                             song_editor.piano_roll_widget,
+                             test_dir.filePath("prelude.musicxml"));
   QCOMPARE(get_model(switch_table).rowCount(QModelIndex()), MUSIC_XML_ROWS);
 
   open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget, test_dir.filePath("test_song.xml"));
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
 }
 
 // regression test: opening/importing a file bypasses the undo stack, so
@@ -230,9 +208,9 @@ void Tester::test_import_musicxml_after_editing_chord_notes() {
 // must reapply that same reset explicitly (via song_reloaded) instead of
 // leaving the label/actions stuck showing whatever was being edited before
 void Tester::test_open_after_editing_chord_notes_resets_menu() {
-  auto &song_widget = song_editor.song_widget;
-  auto &switch_column = song_widget.switch_column;
-  auto &view_menu = song_editor.song_menu_bar.view_menu;
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_column = song_widget.switch_column;
+  auto& view_menu = song_editor.song_menu_bar.view_menu;
 
   switch_to(song_editor, RowType::pitched_note_type, 0);
   QCOMPARE(switch_column.editing_text.text(), "Pitched notes for chord 1");
@@ -255,8 +233,8 @@ void Tester::test_open_after_editing_chord_notes_resets_menu() {
 // there's no reason opening a different file requires navigating back to
 // the chords view first
 void Tester::test_open_action_enabled_outside_chords_view() {
-  auto &undo_stack = song_editor.song_widget.undo_stack;
-  auto &open_action = song_editor.song_menu_bar.file_menu.open_action;
+  auto& undo_stack = song_editor.song_widget.undo_stack;
+  auto& open_action = song_editor.song_menu_bar.file_menu.open_action;
 
   QVERIFY(open_action.isEnabled());
 
@@ -275,8 +253,8 @@ void Tester::test_open_action_enabled_outside_chords_view() {
 // view the user was on (including mid-note-editing) completely alone
 // rather than silently bouncing them back to the chords view
 void Tester::test_failed_import_does_not_reset_notes_view() {
-  auto &song_widget = song_editor.song_widget;
-  auto &switch_column = song_widget.switch_column;
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_column = song_widget.switch_column;
 
   switch_to(song_editor, RowType::pitched_note_type, 0);
   QCOMPARE(switch_column.editing_text.text(), "Pitched notes for chord 1");
@@ -290,5 +268,5 @@ void Tester::test_failed_import_does_not_reset_notes_view() {
   QCOMPARE(switch_column.editing_text.text(), "Pitched notes for chord 1");
 
   maybe_switch_back_to_chords(song_widget.undo_stack,
-                             RowType::pitched_note_type);
+                              RowType::pitched_note_type);
 }

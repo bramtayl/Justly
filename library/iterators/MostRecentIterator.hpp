@@ -1,14 +1,15 @@
 #pragma once
 
+#include <QtCore/qcompare.h>
+
 #include <QtCore/QMap>
 #include <QtCore/QtSwap>
-#include <QtCore/qcompare.h>
 
 struct MostRecentIterator {
   QMap<int, int>::iterator state;
   const QMap<int, int>::iterator end;
   int value;
 
-  MostRecentIterator(QMap<int, int> &dict, const int value_input)
+  MostRecentIterator(QMap<int, int>& dict, const int value_input)
       : state(dict.begin()), end(dict.end()), value(value_input) {}
 };

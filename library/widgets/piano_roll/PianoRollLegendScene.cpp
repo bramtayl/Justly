@@ -1,11 +1,12 @@
 #include "widgets/piano_roll/PianoRollLegendScene.hpp"
 
 #include <QtCore/qnamespace.h>
+
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QWidget>
 
-PianoRollLegendScene::PianoRollLegendScene(QWidget &parent_widget)
+PianoRollLegendScene::PianoRollLegendScene(QWidget& parent_widget)
     : QGraphicsScene(&parent_widget),
       view(*(new QGraphicsView(this, &parent_widget))) {
   // this view never scrolls horizontally (it's a fixed-width column) and

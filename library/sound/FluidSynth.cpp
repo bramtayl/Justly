@@ -1,12 +1,13 @@
 #include "sound/FluidSynth.hpp"
 
-#include <QtCore/QtAssert>
 #include <fluidsynth.h>
 #include <fluidsynth/synth.h>
 
+#include <QtCore/QtAssert>
+
 #include "sound/FluidSettings.hpp"
 
-FluidSynth::FluidSynth(FluidSettings &settings)
+FluidSynth::FluidSynth(FluidSettings& settings)
     : internal_pointer(new_fluid_synth(settings.internal_pointer)) {
   Q_ASSERT(internal_pointer != nullptr);
 }

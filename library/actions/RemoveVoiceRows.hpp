@@ -10,7 +10,8 @@
 #include "rows/Note.hpp"
 #include "rows/Voice.hpp"
 
-template <VoiceInterface SubVoice> struct VoicesModel;
+template <VoiceInterface SubVoice>
+struct VoicesModel;
 
 // removes a range of voice rows, warning about (and reassigning to the first
 // remaining voice) any notes that referenced a removed voice, and shifting
@@ -19,7 +20,7 @@ template <VoiceInterface SubVoice> struct VoicesModel;
 // the wrong voice
 template <VoiceInterface SubVoice, NoteInterface SubNote>
 struct RemoveVoiceRows : public QUndoCommand {
-  VoicesModel<SubVoice> &voices_model;
+  VoicesModel<SubVoice>& voices_model;
   const int first_row_number;
   const QList<SubVoice> old_voice_rows;
   const int last_removed_row;
@@ -27,21 +28,21 @@ struct RemoveVoiceRows : public QUndoCommand {
   QList<AffectedVoiceNote<SubVoice>> reassigned_notes;
   const QString first_voice_name;
 
-  RemoveVoiceRows(VoicesModel<SubVoice> &voices_model_input,
+  RemoveVoiceRows(VoicesModel<SubVoice>& voices_model_input,
                   const int first_row_number_input, const int number_of_rows)
       : voices_model(voices_model_input),
         first_row_number(first_row_number_input),
         old_voice_rows(copy_items(voices_model_input.get_rows(),
-                                   first_row_number_input, number_of_rows)),
+                                  first_row_number_input, number_of_rows)),
         last_removed_row(first_row_number +
                          static_cast<int>(old_voice_rows.size()) - 1),
         // the name of the voice reassigned notes will land on; this action
         // never removes every voice row, so a remaining row always exists to
         // name
-        first_voice_name(voices_model.get_rows()
-                             .at(first_row_number == 0 ? last_removed_row + 1
-                                                        : 0)
-                             .name) {
+        first_voice_name(
+            voices_model.get_rows()
+                .at(first_row_number == 0 ? last_removed_row + 1 : 0)
+                .name) {
     // walks every note once, sorting each one referencing a voice at or
     // after first_row_number into renumbered_notes (voice after the removed
     // range, just shifts down to follow it) or reassigned_notes (voice
@@ -66,10 +67,10 @@ struct RemoveVoiceRows : public QUndoCommand {
   void undo() override {
     voices_model.insert_rows(first_row_number, old_voice_rows, 0,
                              SubVoice::get_number_of_columns() - 1);
-    auto &chords = voices_model.song.chords;
+    auto& chords = voices_model.song.chords;
     offset_voice_numbers<SubVoice, SubNote>(
         chords, renumbered_notes, static_cast<int>(old_voice_rows.size()));
-    for (const auto &affected_note : reassigned_notes) {
+    for (const auto& affected_note : reassigned_notes) {
       get_voice_notes<SubVoice, SubNote>(
           chords[affected_note.chord_number])[affected_note.note_number]
           .voice_number = affected_note.old_voice_number;
@@ -78,10 +79,10 @@ struct RemoveVoiceRows : public QUndoCommand {
         first_row_number, static_cast<int>(old_voice_rows.size()),
         /*is_insertion=*/true);
   }
- 
+
   void redo() override {
     const auto number_of_rows = static_cast<int>(old_voice_rows.size());
-    auto &chords = voices_model.song.chords;
+    auto& chords = voices_model.song.chords;
 
     // finish every mutation to song.chords and voices_model before showing
     // the warning dialog below -- use::warning runs a nested event
@@ -90,7 +91,7 @@ struct RemoveVoiceRows : public QUndoCommand {
     // hasn't been shrunk to match yet
     offset_voice_numbers<SubVoice, SubNote>(chords, renumbered_notes,
                                             -number_of_rows);
-    for (const auto &affected_note : reassigned_notes) {
+    for (const auto& affected_note : reassigned_notes) {
       get_voice_notes<SubVoice, SubNote>(
           chords[affected_note.chord_number])[affected_note.note_number]
           .voice_number = 0;
@@ -99,8 +100,8 @@ struct RemoveVoiceRows : public QUndoCommand {
 
     if (!reassigned_notes.empty()) {
       warn_reassigned_voices<SubNote>(voices_model.parent,
-                                     static_cast<int>(reassigned_notes.size()),
-                                     first_voice_name);
+                                      static_cast<int>(reassigned_notes.size()),
+                                      first_voice_name);
     }
 
     renumber_clipboard_voice_numbers<SubNote>(

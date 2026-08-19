@@ -1,7 +1,8 @@
 #include "widgets/piano_roll/PianoRollNotesScene.hpp"
 
-#include <QtCore/QTimer>
 #include <QtCore/qnamespace.h>
+
+#include <QtCore/QTimer>
 #include <QtGui/QBrush>
 #include <QtGui/QColor>
 #include <QtGui/QPen>
@@ -10,7 +11,7 @@
 #include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QWidget>
 
-PianoRollNotesScene::PianoRollNotesScene(QWidget &parent_widget)
+PianoRollNotesScene::PianoRollNotesScene(QWidget& parent_widget)
     : QGraphicsScene(&parent_widget),
       view(*(new QGraphicsView(this, &parent_widget))),
       playhead_timer(*(new QTimer(&parent_widget))) {
@@ -59,10 +60,9 @@ PianoRollNotesScene::PianoRollNotesScene(QWidget &parent_widget)
       QPen(selection_rect_color, PIANO_ROLL_SELECTION_RECT_PEN_WIDTH);
   selection_rect_pen.setCosmetic(true);
   selection_rect_item.setPen(selection_rect_pen);
-  selection_rect_item.setBrush(QBrush(
-      QColor(selection_rect_color.red(), selection_rect_color.green(),
-            selection_rect_color.blue(),
-            PIANO_ROLL_SELECTION_RECT_FILL_ALPHA)));
+  selection_rect_item.setBrush(QBrush(QColor(
+      selection_rect_color.red(), selection_rect_color.green(),
+      selection_rect_color.blue(), PIANO_ROLL_SELECTION_RECT_FILL_ALPHA)));
   selection_rect_item.setZValue(PIANO_ROLL_SELECTION_RECT_Z_VALUE);
   selection_rect_item.hide();
   addItem(&selection_rect_item);

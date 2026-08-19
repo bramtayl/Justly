@@ -2,6 +2,8 @@
 
 #include <QtCore/QList>
 #include <QtCore/QString>
+#include <QtCore/QtMinMax>
+#include <QtCore/QtSwap>
 #include <QtWidgets/QStyledItemDelegate>
 #include <QtWidgets/QWidget>
 #include <algorithm>
@@ -12,32 +14,31 @@
 #include "rows/RowType.hpp"
 #include "rows/Voice.hpp"
 
-struct Song;
 class QModelIndex;
 class QStyleOptionViewItem;
+struct Song;
 
 template <VoiceInterface SubVoice>
-static auto create_voice_number_picker(QWidget *parent_pointer,
-                                       const QList<SubVoice> &voices)
-    -> auto & {
+static auto create_voice_number_picker(QWidget* parent_pointer,
+                                       const QList<SubVoice>& voices) -> auto& {
   QList<QString> voice_names;
   voice_names.reserve(voices.size());
   std::ranges::transform(voices, std::back_inserter(voice_names),
                          &SubVoice::name);
-  auto &specific_result = get_reference(
-      new VoiceNumberPicker( // NOLINT(cppcoreguidelines-owning-memory)
+  auto& specific_result = get_reference(
+      new VoiceNumberPicker(  // NOLINT(cppcoreguidelines-owning-memory)
           parent_pointer, voice_names));
   specific_result.setFrame(false);
   return specific_result;
 }
 
 struct SwitchDelegate : public QStyledItemDelegate {
-  Song &song;
+  Song& song;
   RowType current_row_type = RowType::chord_type;
 
-  explicit SwitchDelegate(Song &song_input, QWidget *parent)
+  explicit SwitchDelegate(Song& song_input, QWidget* parent)
       : QStyledItemDelegate(parent), song(song_input) {}
 
-  auto createEditor(QWidget *parent_pointer, const QStyleOptionViewItem &option,
-                    const QModelIndex &index) const -> QWidget * override;
+  auto createEditor(QWidget* parent_pointer, const QStyleOptionViewItem& option,
+                    const QModelIndex& index) const -> QWidget* override;
 };

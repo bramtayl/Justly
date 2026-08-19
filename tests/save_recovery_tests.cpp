@@ -1,28 +1,12 @@
-#include <QtCore/QDir>
-#include <QtCore/QFile>
 #include <QtCore/QSettings>
-#include <QtCore/QString>
-#include <QtCore/QTimer>
-#include <QtCore/qstringalgorithms.h>
-#include <QtGui/QAction>
-#include <QtGui/QUndoStack>
 #include <QtTest/QSignalSpy>
-#include <QtTest/qtestcase.h>
-#include <QtWidgets/QMessageBox>
-#include <QtWidgets/QSpinBox>
-
 #include "Tester.hpp"
-#include "menus/FileMenu.hpp"
-#include "menus/SongMenuBar.hpp"
-#include "test_helpers.hpp"
 #include "widgets/ControlsColumn.hpp"
-#include "widgets/SongEditor.hpp"
-#include "widgets/SongWidget.hpp"
 #include "widgets/SpinBoxes.hpp"
 
 void Tester::test_save() {
-  auto &song_widget = song_editor.song_widget;
-  auto &song_menu_bar = song_editor.song_menu_bar;
+  auto& song_widget = song_editor.song_widget;
+  auto& song_menu_bar = song_editor.song_menu_bar;
 
   auto original_text = get_file_text(test_dir.filePath("test_song.xml"));
 
@@ -52,8 +36,8 @@ void Tester::test_save() {
 }
 
 void Tester::test_save_error_does_not_lose_work() {
-  auto &song_widget = song_editor.song_widget;
-  auto &undo_stack = song_widget.undo_stack;
+  auto& song_widget = song_editor.song_widget;
+  auto& undo_stack = song_widget.undo_stack;
 
   const auto old_current_file = song_widget.current_file;
 
@@ -70,8 +54,7 @@ void Tester::test_save_error_does_not_lose_work() {
   QDir(unwritable_path).removeRecursively();
   QVERIFY(QDir().mkpath(unwritable_path));
 
-  close_message_later(song_editor, waiting_for_message,
-                      "Failed to save file");
+  close_message_later(song_editor, waiting_for_message, "Failed to save file");
   save_as_file(song_widget, unwritable_path);
 
   // a failed save must not be mistaken for a successful one: the current
@@ -87,7 +70,7 @@ void Tester::test_save_error_does_not_lose_work() {
 }
 
 void Tester::test_recovery_removed_on_save_and_open() {
-  auto &song_widget = song_editor.song_widget;
+  auto& song_widget = song_editor.song_widget;
   auto fixture_file = test_dir.filePath("test_song.xml");
 
   write_recovery_file(song_widget);
@@ -108,9 +91,9 @@ void Tester::test_recovery_removed_on_save_and_open() {
 }
 
 void Tester::test_recovery_timer_debounce() {
-  auto &song_widget = song_editor.song_widget;
-  auto &gain_editor = song_widget.controls_column.spin_boxes.gain_editor;
-  auto &recovery_timer = song_widget.recovery_timer;
+  auto& song_widget = song_editor.song_widget;
+  auto& gain_editor = song_widget.controls_column.spin_boxes.gain_editor;
+  auto& recovery_timer = song_widget.recovery_timer;
 
   remove_recovery_file();
   // other tests' edits may still have the debounce timer counting down
@@ -142,7 +125,7 @@ void Tester::test_recovery_timer_debounce() {
 }
 
 void Tester::test_recovery_restore_accepted() {
-  auto &song_widget = song_editor.song_widget;
+  auto& song_widget = song_editor.song_widget;
   auto fixture_file = test_dir.filePath("test_song.xml");
 
   open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
@@ -158,8 +141,8 @@ void Tester::test_recovery_restore_accepted() {
   song_widget.undo_stack.undo();
   QCOMPARE(get_gain(song_widget), old_gain);
 
-  answer_question_later(song_editor, waiting_for_message,
-                        RECOVERY_PROMPT_TEXT, QMessageBox::Yes);
+  answer_question_later(song_editor, waiting_for_message, RECOVERY_PROMPT_TEXT,
+                        QMessageBox::Yes);
   QVERIFY(maybe_restore_recovery(song_widget));
 
   QCOMPARE(get_gain(song_widget), NEW_GAIN_1);
@@ -173,7 +156,7 @@ void Tester::test_recovery_restore_accepted() {
 }
 
 void Tester::test_recovery_restore_declined() {
-  auto &song_widget = song_editor.song_widget;
+  auto& song_widget = song_editor.song_widget;
   auto fixture_file = test_dir.filePath("test_song.xml");
 
   open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
@@ -185,8 +168,8 @@ void Tester::test_recovery_restore_declined() {
   write_recovery_file(song_widget);
   song_widget.undo_stack.undo();
 
-  answer_question_later(song_editor, waiting_for_message,
-                        RECOVERY_PROMPT_TEXT, QMessageBox::No);
+  answer_question_later(song_editor, waiting_for_message, RECOVERY_PROMPT_TEXT,
+                        QMessageBox::No);
   QVERIFY(!maybe_restore_recovery(song_widget));
 
   QCOMPARE(get_gain(song_widget), old_gain);

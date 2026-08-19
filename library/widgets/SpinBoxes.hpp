@@ -8,14 +8,14 @@ class QUndoStack;
 struct FluidSynth;
 struct Song;
 
-void clear_and_clean(QUndoStack &undo_stack);
+void clear_and_clean(QUndoStack& undo_stack);
 
 struct SpinBoxes : public QWidget {
-  QDoubleSpinBox &gain_editor = *(new QDoubleSpinBox);
-  QDoubleSpinBox &starting_key_editor = *(new QDoubleSpinBox);
-  QDoubleSpinBox &starting_velocity_editor = *(new QDoubleSpinBox);
-  QDoubleSpinBox &starting_tempo_editor = *(new QDoubleSpinBox);
-  QFormLayout &spin_boxes_form = *(new QFormLayout(this));
+  QDoubleSpinBox& gain_editor = *(new QDoubleSpinBox);
+  QDoubleSpinBox& starting_key_editor = *(new QDoubleSpinBox);
+  QDoubleSpinBox& starting_velocity_editor = *(new QDoubleSpinBox);
+  QDoubleSpinBox& starting_tempo_editor = *(new QDoubleSpinBox);
+  QFormLayout& spin_boxes_form = *(new QFormLayout(this));
 
-  explicit SpinBoxes(Song &song, FluidSynth &synth, QUndoStack &undo_stack);
+  explicit SpinBoxes(Song& song, FluidSynth& synth, QUndoStack& undo_stack);
 };

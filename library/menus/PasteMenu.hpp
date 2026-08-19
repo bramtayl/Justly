@@ -1,5 +1,7 @@
 #pragma once
 
+#include <libxml/parser.h>
+
 #include <QtCore/QItemSelectionModel>
 #include <QtCore/QList>
 #include <QtCore/QMimeData>
@@ -13,7 +15,6 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMessageBox>
 #include <algorithm>
-#include <libxml/parser.h>
 #include <limits>
 #include <optional>
 #include <utility>
@@ -29,18 +30,18 @@
 #include "xml/XMLValidator.hpp"
 
 class QWidget;
-template <RowInterface SubRow> struct RowsModel;
+template <RowInterface SubRow>
+struct RowsModel;
 class QUndoCommand;
 
-[[nodiscard]] auto get_mime_description(const QString &mime_type) -> QString;
+[[nodiscard]] auto get_mime_description(const QString& mime_type) -> QString;
 
 template <RowInterface SubRow>
-[[nodiscard]] static auto
-parse_clipboard(QWidget &parent,
-                const int max_rows = std::numeric_limits<int>::max())
+[[nodiscard]] static auto parse_clipboard(
+    QWidget& parent, const int max_rows = std::numeric_limits<int>::max())
     -> std::optional<Cells<SubRow>> {
-  const auto &mime_data = get_reference(get_clipboard().mimeData());
-  const auto *mime_type = SubRow::get_cells_mime();
+  const auto& mime_data = get_reference(get_clipboard().mimeData());
+  const auto* mime_type = SubRow::get_cells_mime();
   if (!mime_data.hasFormat(mime_type)) {
     const auto formats = mime_data.formats();
     if (formats.empty()) {
@@ -75,9 +76,9 @@ parse_clipboard(QWidget &parent,
   auto left_column = 0;
   auto right_column = 0;
 
-  auto *field_pointer = xmlFirstElementChild(&get_root(document));
+  auto* field_pointer = xmlFirstElementChild(&get_root(document));
   while (field_pointer != nullptr) {
-    auto &field_node = get_reference(field_pointer);
+    auto& field_node = get_reference(field_pointer);
     const auto name = get_xml_name(field_node);
     if (name == "left_column") {
       left_column = xml_to_int(field_node);
@@ -85,7 +86,7 @@ parse_clipboard(QWidget &parent,
       right_column = xml_to_int(field_node);
     } else if (name == "rows") {
       auto counter = 1;
-      auto *xml_row_pointer = xmlFirstElementChild(&field_node);
+      auto* xml_row_pointer = xmlFirstElementChild(&field_node);
       while (xml_row_pointer != nullptr && counter <= max_rows) {
         SubRow child_row;
         child_row.from_xml(get_reference(xml_row_pointer));
@@ -102,16 +103,16 @@ parse_clipboard(QWidget &parent,
 }
 
 template <RowInterface SubRow>
-[[nodiscard]] static auto
-make_paste_insert_command(QWidget &parent, RowsModel<SubRow> &rows_model,
-                          const int row_number) -> QUndoCommand * {
+[[nodiscard]] static auto make_paste_insert_command(
+    QWidget& parent, RowsModel<SubRow>& rows_model, const int row_number)
+    -> QUndoCommand* {
   const auto maybe_cells = parse_clipboard<SubRow>(parent);
   if (!maybe_cells.has_value()) {
     return nullptr;
   }
-  auto &cells = maybe_cells.value();
+  auto& cells = maybe_cells.value();
   if constexpr (NoteInterface<SubRow>) {
-    const auto &song = rows_model.song;
+    const auto& song = rows_model.song;
     const auto number_of_voices =
         SubRow::is_pitched() ? static_cast<int>(song.pitched_voices.size())
                              : static_cast<int>(song.unpitched_voices.size());
@@ -120,25 +121,25 @@ make_paste_insert_command(QWidget &parent, RowsModel<SubRow> &rows_model,
       return nullptr;
     }
   }
-  return new InsertRemoveRows( // NOLINT(cppcoreguidelines-owning-memory)
+  return new InsertRemoveRows(  // NOLINT(cppcoreguidelines-owning-memory)
       rows_model, row_number, std::move(cells.rows), cells.left_column,
       cells.right_column, false);
 }
 
 template <RowInterface SubRow>
-[[nodiscard]] static auto
-make_paste_cells_command(QWidget &parent, const int first_row_number,
-                         RowsModel<SubRow> &rows_model) -> QUndoCommand * {
-  auto &rows = rows_model.get_rows();
+[[nodiscard]] static auto make_paste_cells_command(
+    QWidget& parent, const int first_row_number, RowsModel<SubRow>& rows_model)
+    -> QUndoCommand* {
+  auto& rows = rows_model.get_rows();
   auto maybe_cells = parse_clipboard<SubRow>(
       parent, static_cast<int>(rows.size()) - first_row_number);
   if (!maybe_cells.has_value()) {
     return nullptr;
   }
-  auto &cells = maybe_cells.value();
-  auto &copy_rows = cells.rows;
+  auto& cells = maybe_cells.value();
+  auto& copy_rows = cells.rows;
   if constexpr (NoteInterface<SubRow>) {
-    const auto &song = rows_model.song;
+    const auto& song = rows_model.song;
     const auto number_of_voices =
         SubRow::is_pitched() ? static_cast<int>(song.pitched_voices.size())
                              : static_cast<int>(song.unpitched_voices.size());
@@ -147,7 +148,7 @@ make_paste_cells_command(QWidget &parent, const int first_row_number,
       return nullptr;
     }
   }
-  return new SetCells( // NOLINT(cppcoreguidelines-owning-memory)
+  return new SetCells(  // NOLINT(cppcoreguidelines-owning-memory)
       rows_model, first_row_number, static_cast<int>(copy_rows.size()),
       cells.left_column, cells.right_column, std::move(copy_rows));
 }
@@ -157,5 +158,5 @@ struct PasteMenu : public QMenu {
   QAction paste_into_start_action;
   QAction paste_after_action;
 
-  explicit PasteMenu(SongWidget &song_widget);
+  explicit PasteMenu(SongWidget& song_widget);
 };

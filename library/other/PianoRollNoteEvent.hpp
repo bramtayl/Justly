@@ -1,6 +1,9 @@
 #pragma once
 
 #include <QtCore/QList>
+#include <QtCore/QTypeInfo>
+#include <QtCore/QtMinMax>
+#include <QtCore/QtSwap>
 #include <type_traits>
 
 #include "cell_types/Interval.hpp"
@@ -13,30 +16,29 @@ struct PitchedNote;
 struct PitchedVoice;
 struct UnpitchedVoice;
 struct Song;
+struct UnpitchedNote;
 
 struct PianoRollNoteEvent {
   double start_time_ms = 0;
   double duration_ms = 0;
-  double frequency = 0; // only meaningful when is_pitched
+  double frequency = 0;  // only meaningful when is_pitched
   int voice_number = 0;
   double velocity = 0;
   int chord_number = 0;
-  int note_number = 0; // index within chord.pitched_notes / .unpitched_notes
+  int note_number = 0;  // index within chord.pitched_notes / .unpitched_notes
   bool is_pitched = true;
 };
 
 template <NoteInterface SubNote>
-static void
-append_piano_roll_events(QList<PianoRollNoteEvent> &events,
-                         const PlayState &play_state,
-                         const QList<PitchedVoice> &pitched_voices,
-                         const QList<UnpitchedVoice> &unpitched_voices,
-                         const int chord_number,
-                         const QList<SubNote> &sub_notes) {
+static void append_piano_roll_events(
+    QList<PianoRollNoteEvent>& events, const PlayState& play_state,
+    const QList<PitchedVoice>& pitched_voices,
+    const QList<UnpitchedVoice>& unpitched_voices, const int chord_number,
+    const QList<SubNote>& sub_notes) {
   for (auto note_number = 0; note_number < sub_notes.size();
        note_number = note_number + 1) {
-    const auto &sub_note = sub_notes.at(note_number);
-    const auto &voice_velocity_ratio =
+    const auto& sub_note = sub_notes.at(note_number);
+    const auto& voice_velocity_ratio =
         sub_note.get_voice_velocity_ratio(pitched_voices, unpitched_voices);
 
     PianoRollNoteEvent event;
@@ -60,5 +62,5 @@ append_piano_roll_events(QList<PianoRollNoteEvent> &events,
   }
 }
 
-[[nodiscard]] auto get_piano_roll_events(const Song &song)
+[[nodiscard]] auto get_piano_roll_events(const Song& song)
     -> QList<PianoRollNoteEvent>;

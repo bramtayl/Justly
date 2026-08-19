@@ -1,26 +1,4 @@
-#include <QtCore/QByteArray>
-#include <QtCore/QDir>
-#include <QtCore/QString>
-#include <QtCore/QtTypes>
-#include <QtTest/QTestData>
-#include <QtTest/qtestcase.h>
-#include <fluidsynth.h>
-#include <fluidsynth/audio.h>
-#include <fluidsynth/types.h>
-#include <limits>
-#include <string>
-#include <utility>
-#include <zip.h>
-#include <zipconf.h>
-
 #include "Tester.hpp"
-#include "other/helpers.hpp"
-#include "sound/FluidDriver.hpp"
-#include "sound/FluidSettings.hpp"
-#include "sound/FluidSynth.hpp"
-#include "sound/Player.hpp"
-#include "test_helpers.hpp"
-#include "xml/XMLDocument.hpp"
 #include "xml/ZipArchive.hpp"
 
 // regression test: FluidDriver's move-assignment operator must free any
@@ -35,8 +13,8 @@ void Tester::test_fluid_driver_move_assign() {
   set_fluid_string(settings, "audio.driver", "pulseaudio");
 #endif
   FluidSynth synth(settings);
-  auto *const audio_driver_pointer = new_fluid_audio_driver(
-      settings.internal_pointer, synth.internal_pointer);
+  auto* const audio_driver_pointer =
+      new_fluid_audio_driver(settings.internal_pointer, synth.internal_pointer);
   if (audio_driver_pointer == nullptr) {
     QSKIP("no audio driver available in this environment");
   }
@@ -45,16 +23,16 @@ void Tester::test_fluid_driver_move_assign() {
   // an intermediate reference keeps this a genuine self-move at runtime
   // without the literal "driver = std::move(driver)" syntax that trips
   // -Wself-move
-  auto &driver_ref = driver;
+  auto& driver_ref = driver;
   driver = std::move(driver_ref);
   QCOMPARE(driver.internal_pointer, audio_driver_pointer);
 
   FluidDriver empty_driver(nullptr);
   driver = std::move(empty_driver);
   QCOMPARE(driver.internal_pointer,
-           static_cast<fluid_audio_driver_t *>(nullptr));
+           static_cast<fluid_audio_driver_t*>(nullptr));
   QCOMPARE(empty_driver.internal_pointer,
-           static_cast<fluid_audio_driver_t *>(nullptr));
+           static_cast<fluid_audio_driver_t*>(nullptr));
 }
 
 // regression test: read_zip_entry casts a zip entry's reported size down
@@ -68,12 +46,10 @@ void Tester::test_zip_entry_size_is_safe_data() {
   QTest::addColumn<bool>("is_safe");
 
   QTest::newRow("ordinary small entry")
-      << ZIP_STAT_SIZE << zip_uint64_t{13}
-      << true;
+      << ZIP_STAT_SIZE << zip_uint64_t{13} << true;
   QTest::newRow("largest int-sized entry")
       << ZIP_STAT_SIZE
-      << static_cast<zip_uint64_t>(std::numeric_limits<int>::max())
-      << true;
+      << static_cast<zip_uint64_t>(std::numeric_limits<int>::max()) << true;
   QTest::newRow("just over int-sized entry")
       << ZIP_STAT_SIZE
       << static_cast<zip_uint64_t>(std::numeric_limits<int>::max()) + 1
@@ -119,8 +95,7 @@ void Tester::test_xml_bytes_size_is_safe_data() {
   QTest::newRow("largest int-sized buffer")
       << static_cast<qsizetype>(std::numeric_limits<int>::max()) << true;
   QTest::newRow("just over int-sized buffer")
-      << static_cast<qsizetype>(std::numeric_limits<int>::max()) + 1
-      << false;
+      << static_cast<qsizetype>(std::numeric_limits<int>::max()) + 1 << false;
 }
 
 void Tester::test_xml_bytes_size_is_safe() {

@@ -1,36 +1,4 @@
-#include <QtCore/QAbstractItemModel>
-#include <QtCore/QByteArray>
-#include <QtCore/QItemSelectionModel>
-#include <QtCore/QList>
-#include <QtCore/QMimeData>
-#include <QtCore/QString>
-#include <QtCore/QTypeInfo>
-#include <QtGui/QAction>
-#include <QtGui/QClipboard>
-#include <QtGui/QGuiApplication>
-#include <QtGui/QUndoStack>
-#include <QtTest/QTestData>
-#include <QtTest/qtestcase.h>
-#include <string>
-
 #include "Tester.hpp"
-#include "menus/EditMenu.hpp"
-#include "menus/InsertMenu.hpp"
-#include "menus/PasteMenu.hpp"
-#include "menus/SongMenuBar.hpp"
-#include "models/ChordsModel.hpp"
-#include "other/Song.hpp"
-#include "other/helpers.hpp"
-#include "rows/Chord.hpp"
-#include "rows/PitchedNote.hpp"
-#include "rows/RowType.hpp"
-#include "rows/UnpitchedNote.hpp"
-#include "test_helpers.hpp"
-#include "widgets/SongEditor.hpp"
-#include "widgets/SongWidget.hpp"
-#include "widgets/SwitchColumn.hpp"
-#include "widgets/SwitchTable.hpp"
-#include "xml/XMLDocument.hpp"
 
 void Tester::test_insert_after_data() { add_tables(); }
 
@@ -38,19 +6,18 @@ void Tester::test_insert_after() {
   QFETCH(const RowType, row_type);
   QFETCH(const int, chord_number);
 
-  auto &song_widget = song_editor.song_widget;
-  auto &switch_table = song_widget.switch_column.switch_table;
-  auto &undo_stack = song_widget.undo_stack;
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& undo_stack = song_widget.undo_stack;
 
   switch_to(song_editor, row_type, chord_number);
 
-  auto &model = get_model(switch_table);
+  auto& model = get_model(switch_table);
 
   const auto old_row_count = model.rowCount();
 
   select_cell(switch_table, 0, 0);
-  song_editor.song_menu_bar.edit_menu.insert_menu.insert_after_action
-      .trigger();
+  song_editor.song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();
 
   QCOMPARE(model.rowCount(), old_row_count + 1);
   undo_stack.undo();
@@ -65,13 +32,13 @@ void Tester::test_insert_into() {
   QFETCH(const RowType, row_type);
   QFETCH(const int, chord_number);
 
-  auto &song_widget = song_editor.song_widget;
-  auto &switch_table = song_widget.switch_column.switch_table;
-  auto &undo_stack = song_widget.undo_stack;
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& undo_stack = song_widget.undo_stack;
 
   switch_to(song_editor, row_type, chord_number);
 
-  auto &model = get_model(switch_table);
+  auto& model = get_model(switch_table);
 
   const auto old_row_count = model.rowCount();
   select_cell(switch_table, 0, 0);
@@ -103,8 +70,8 @@ void Tester::test_insert_xml_rows_respects_first_row_number() {
       "<chords><chord><words>second</words></chord></chords>");
   chords_model.insert_xml_rows(0, get_root(second_document));
 
-  const auto first_document = read_xml_document(
-      "<chords><chord><words>first</words></chord></chords>");
+  const auto first_document =
+      read_xml_document("<chords><chord><words>first</words></chord></chords>");
   chords_model.insert_xml_rows(0, get_root(first_document));
 
   QCOMPARE(chords_model.rowCount(QModelIndex()), 2);
@@ -120,14 +87,14 @@ void Tester::test_paste_after() {
   QFETCH(const int, row_number);
   QFETCH(const int, column_number);
 
-  auto &song_widget = song_editor.song_widget;
-  auto &switch_table = song_widget.switch_column.switch_table;
-  auto &undo_stack = song_widget.undo_stack;
-  auto &edit_menu = song_editor.song_menu_bar.edit_menu;
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& undo_stack = song_widget.undo_stack;
+  auto& edit_menu = song_editor.song_menu_bar.edit_menu;
 
   switch_to(song_editor, row_type, chord_number);
 
-  auto &model = get_model(switch_table);
+  auto& model = get_model(switch_table);
   select_cell(switch_table, row_number, column_number);
   edit_menu.copy_action.trigger();
 
@@ -151,8 +118,8 @@ void Tester::test_paste_error_data() {
   QTest::newRow("chord pitched notes mime")
       << RowType::chord_type << -1 << "" << PitchedNote::get_cells_mime()
       << "Cannot paste pitched notes cells as chords cells";
-  QTest::newRow("chord not xml")
-      << RowType::chord_type << -1 << "[" << Chord::get_cells_mime() << "Invalid XML";
+  QTest::newRow("chord not xml") << RowType::chord_type << -1 << "["
+                                 << Chord::get_cells_mime() << "Invalid XML";
   QTest::newRow("chord not Justly")
       << RowType::chord_type << -1 << "<song/>" << Chord::get_cells_mime()
       << "Invalid clipboard";
@@ -166,8 +133,8 @@ void Tester::test_paste_error_data() {
       << RowType::pitched_note_type << 1 << "<" << PitchedNote::get_cells_mime()
       << "Invalid XML";
   QTest::newRow("pitched note not Justly")
-      << RowType::pitched_note_type << 1 << "<song/>" << PitchedNote::get_cells_mime()
-      << "Invalid clipboard";
+      << RowType::pitched_note_type << 1 << "<song/>"
+      << PitchedNote::get_cells_mime() << "Invalid clipboard";
   QTest::newRow("unpitched note not a mime")
       << RowType::unpitched_note_type << 1 << "" << "not a mime"
       << "Cannot paste not a mime as unpitched notes cells";
@@ -175,8 +142,8 @@ void Tester::test_paste_error_data() {
       << RowType::unpitched_note_type << 1 << "" << Chord::get_cells_mime()
       << "Cannot paste chords cells as unpitched notes cells";
   QTest::newRow("unpitched note not xml")
-      << RowType::unpitched_note_type << 1 << "<" << UnpitchedNote::get_cells_mime()
-      << "Invalid XML";
+      << RowType::unpitched_note_type << 1 << "<"
+      << UnpitchedNote::get_cells_mime() << "Invalid XML";
   QTest::newRow("unpitched note not Justly")
       << RowType::unpitched_note_type << 1 << "<song/>"
       << UnpitchedNote::get_cells_mime() << "Invalid clipboard";
@@ -189,18 +156,18 @@ void Tester::test_paste_error() {
   QFETCH(const QString, mime_type);
   QFETCH(const QString, error_message);
 
-  auto &song_widget = song_editor.song_widget;
-  auto &switch_table = song_widget.switch_column.switch_table;
-  auto &undo_stack = song_widget.undo_stack;
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& undo_stack = song_widget.undo_stack;
 
   switch_to(song_editor, row_type, chord_number);
 
-  auto &new_data =
-      get_reference(new QMimeData); // NOLINT(cppcoreguidelines-owning-memory)
+  auto& new_data =
+      get_reference(new QMimeData);  // NOLINT(cppcoreguidelines-owning-memory)
 
   new_data.setData(mime_type, copied.toStdString().c_str());
 
-  auto &clipboard = get_reference(QGuiApplication::clipboard());
+  auto& clipboard = get_reference(QGuiApplication::clipboard());
   clipboard.setMimeData(&new_data);
 
   select_cell(switch_table, 0, 0);
@@ -218,14 +185,14 @@ void Tester::test_paste_into() {
   QFETCH(const int, row_number);
   QFETCH(const int, column_number);
 
-  auto &song_widget = song_editor.song_widget;
-  auto &switch_table = song_widget.switch_column.switch_table;
-  auto &undo_stack = song_widget.undo_stack;
-  auto &edit_menu = song_editor.song_menu_bar.edit_menu;
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& undo_stack = song_widget.undo_stack;
+  auto& edit_menu = song_editor.song_menu_bar.edit_menu;
 
   switch_to(song_editor, row_type, chord_number);
 
-  auto &model = get_model(switch_table);
+  auto& model = get_model(switch_table);
 
   select_cell(switch_table, row_number, column_number);
   edit_menu.copy_action.trigger();
@@ -245,13 +212,13 @@ void Tester::test_remove_row() {
   QFETCH(const RowType, row_type);
   QFETCH(const int, chord_number);
 
-  auto &song_widget = song_editor.song_widget;
-  auto &switch_table = song_widget.switch_column.switch_table;
-  auto &undo_stack = song_widget.undo_stack;
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& undo_stack = song_widget.undo_stack;
 
   switch_to(song_editor, row_type, chord_number);
 
-  auto &model = get_model(switch_table);
+  auto& model = get_model(switch_table);
 
   const auto old_row_count = model.rowCount();
 
@@ -276,7 +243,7 @@ void Tester::test_remove_row() {
 
   // undoing a row removal should select the restored row across every
   // column, not leave the selection empty
-  const auto &restored_range = get_only_range(switch_table);
+  const auto& restored_range = get_only_range(switch_table);
   QCOMPARE(restored_range.top(), 0);
   QCOMPARE(restored_range.bottom(), 0);
   QCOMPARE(restored_range.left(), 0);

@@ -1,5 +1,19 @@
 #include "widgets/SongWidget.hpp"
 
+#include <QtCore/qcompare.h>
+#include <QtCore/qnamespace.h>
+#include <QtCore/qobjectdefs.h>
+#include <QtCore/qstringalgorithms.h>
+#include <fluidsynth.h>
+#include <fluidsynth/audio.h>
+#include <fluidsynth/event.h>
+#include <fluidsynth/misc.h>
+#include <fluidsynth/seq.h>
+#include <fluidsynth/synth.h>
+#include <fluidsynth/types.h>
+#include <libxml/parser.h>
+#include <libxml/xmlschemas.h>
+
 #include <QtCore/QByteArray>
 #include <QtCore/QChar>
 #include <QtCore/QDir>
@@ -12,34 +26,22 @@
 #include <QtCore/QSet>
 #include <QtCore/QSettings>
 #include <QtCore/QStandardPaths>
+#include <QtCore/QTimer>
 #include <QtCore/QTypeInfo>
 #include <QtCore/QVariant>
 #include <QtCore/QtAssert>
 #include <QtCore/QtMinMax>
 #include <QtCore/QtSwap>
-#include <QtCore/qcompare.h>
-#include <QtCore/qdebug.h>
-#include <QtCore/qnamespace.h>
-#include <QtCore/qobjectdefs.h>
-#include <QtCore/qstringalgorithms.h>
 #include <QtGui/QAction>
 #include <QtGui/QKeySequence>
+#include <QtWidgets/QBoxLayout>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QSpinBox>
 #include <algorithm>
 #include <cmath>
-#include <fluidsynth.h>
-#include <fluidsynth/audio.h>
-#include <fluidsynth/event.h>
-#include <fluidsynth/misc.h>
-#include <fluidsynth/seq.h>
-#include <fluidsynth/synth.h>
-#include <fluidsynth/types.h>
 #include <iterator>
-#include <libxml/parser.h>
-#include <libxml/xmlschemas.h>
 #include <limits>
 #include <numeric>
 #include <optional>
@@ -80,6 +82,7 @@
 #include "sound/FluidSequencer.hpp"
 #include "sound/FluidSynth.hpp"
 #include "sound/Player.hpp"
+#include "widgets/ControlsColumn.hpp"
 #include "widgets/SpinBoxes.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchDelegate.hpp"
@@ -94,18 +97,19 @@ const auto BREATH_ID = 2;
 const auto MIDI_PERCUSSION_CHANNEL = 9;
 }  // namespace
 
-auto get_property(xmlNode &node, const char *name) -> std::string {
+auto get_property(xmlNode& node, const char* name) -> std::string {
   return xml_string_to_string(xmlGetProp(&node, c_string_to_xml_string(name)));
 }
 
 SongWidget::SongWidget()
-    : player(Player(*this)), undo_stack(QUndoStack(nullptr)),
+    : player(Player(*this)),
+      undo_stack(QUndoStack(nullptr)),
       current_folder(
           QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
       recovery_timer(*(new QTimer(this))),
       switch_column(*(new SwitchColumn(undo_stack, song))),
-      controls_column(*(new ControlsColumn(
-          song, player.synth, undo_stack, switch_column.switch_table))),
+      controls_column(*(new ControlsColumn(song, player.synth, undo_stack,
+                                           switch_column.switch_table))),
       row_layout(*(new QHBoxLayout(this))) {
   row_layout.addWidget(&controls_column, 0, Qt::AlignTop);
   row_layout.addWidget(&switch_column, 0, Qt::AlignTop);
@@ -113,19 +117,19 @@ SongWidget::SongWidget()
 
 SongWidget::~SongWidget() { undo_stack.disconnect(); }
 
-auto get_next_row(const SongWidget &song_widget) -> int {
+auto get_next_row(const SongWidget& song_widget) -> int {
   return get_only_range(song_widget.switch_column.switch_table).bottom() + 1;
 }
 
-void initialize_play(SongWidget &song_widget) {
-  auto &player = song_widget.player;
-  const auto &song = song_widget.song;
+void initialize_play(SongWidget& song_widget) {
+  auto& player = song_widget.player;
+  const auto& song = song_widget.song;
 
   initialize_playstate(
       song, player.play_state,
       fluid_sequencer_get_tick(player.sequencer.internal_pointer));
 
-  auto &channel_schedules = player.channel_schedules;
+  auto& channel_schedules = player.channel_schedules;
   Q_ASSERT(channel_schedules.size() == NUMBER_OF_MIDI_CHANNELS);
   std::ranges::fill(channel_schedules, 0);
   player.percussion_channels.clear();
@@ -133,13 +137,13 @@ void initialize_play(SongWidget &song_widget) {
 
 namespace {
 
-auto pick_channel_index(const QList<double> &channel_end_times) -> int {
+auto pick_channel_index(const QList<double>& channel_end_times) -> int {
   return static_cast<int>(
       std::distance(std::begin(channel_end_times),
                     std::ranges::min_element(channel_end_times)));
 }
 
-auto channel_is_free(QWidget &parent, const QList<double> &channel_end_times,
+auto channel_is_free(QWidget& parent, const QList<double>& channel_end_times,
                      const int channel_index, const double start_time) -> bool {
   if (channel_end_times.at(channel_index) <= start_time) {
     return true;
@@ -153,10 +157,10 @@ auto channel_is_free(QWidget &parent, const QList<double> &channel_end_times,
 
 }  // namespace
 
-auto get_channel_number(QWidget &parent, Player &player, const Program &program,
+auto get_channel_number(QWidget& parent, Player& player, const Program& program,
                         const double current_time) -> std::optional<int> {
   if (!is_pitched_bank_number(program.bank_number)) {
-    auto &percussion_channels = player.percussion_channels;
+    auto& percussion_channels = player.percussion_channels;
     const auto existing = percussion_channels.constFind(&program);
     if (existing != percussion_channels.constEnd()) {
       return existing.value();
@@ -179,12 +183,11 @@ auto get_channel_number(QWidget &parent, Player &player, const Program &program,
   return channel_number;
 }
 
-void play_note(Player &player, const int channel_number,
-              const Program &program, const short midi_number,
-              const short velocity, const double current_time,
-              const double end_time) {
-  auto &sequencer = player.sequencer;
-  auto &event = player.event;
+void play_note(Player& player, const int channel_number, const Program& program,
+               const short midi_number, const short velocity,
+               const double current_time, const double end_time) {
+  auto& sequencer = player.sequencer;
+  auto& event = player.event;
   const auto soundfont_id = player.soundfont_id;
 
   fluid_event_program_select(event.internal_pointer, channel_number,
@@ -192,8 +195,8 @@ void play_note(Player &player, const int channel_number,
                              program.preset_number);
   send_event_at(sequencer, event, current_time);
 
-  fluid_event_control_change(event.internal_pointer, channel_number,
-                             BREATH_ID, velocity);
+  fluid_event_control_change(event.internal_pointer, channel_number, BREATH_ID,
+                             velocity);
   send_event_at(sequencer, event, current_time);
 
   fluid_event_noteon(event.internal_pointer, channel_number, midi_number,
@@ -212,27 +215,27 @@ void play_note(Player &player, const int channel_number,
   }
 }
 
-void update_final_time(Player &player, const double new_final_time) {
+void update_final_time(Player& player, const double new_final_time) {
   player.final_time = std::max(new_final_time, player.final_time);
 }
 
-void play_chords(SongWidget &song_widget, const int first_chord_number,
+void play_chords(SongWidget& song_widget, const int first_chord_number,
                  const int number_of_chords, const int wait_frames) {
-  auto &player = song_widget.player;
-  auto &play_state = player.play_state;
-  const auto &song = song_widget.song;
+  auto& player = song_widget.player;
+  auto& play_state = player.play_state;
+  const auto& song = song_widget.song;
 
-  const auto &pitched_voices = song.pitched_voices;
-  const auto &unpitched_voices = song.unpitched_voices;
+  const auto& pitched_voices = song.pitched_voices;
+  const auto& unpitched_voices = song.unpitched_voices;
 
   const auto start_time = player.play_state.current_time + wait_frames;
   play_state.current_time = start_time;
   update_final_time(player, start_time);
-  const auto &chords = song.chords;
+  const auto& chords = song.chords;
   for (auto chord_number = first_chord_number;
        chord_number < first_chord_number + number_of_chords;
        chord_number = chord_number + 1) {
-    const auto &chord = chords.at(chord_number);
+    const auto& chord = chords.at(chord_number);
 
     modulate(play_state, chord);
     const auto pitched_result =
@@ -252,27 +255,27 @@ void play_chords(SongWidget &song_widget, const int first_chord_number,
   }
 }
 
-auto can_discard_changes(SongWidget &song_widget) -> bool {
+auto can_discard_changes(SongWidget& song_widget) -> bool {
   return song_widget.undo_stack.isClean() ||
          QMessageBox::question(&song_widget, SongWidget::tr("Unsaved changes"),
                                SongWidget::tr("Discard unsaved changes?")) ==
              QMessageBox::Yes;
 }
 
-auto get_gain(const SongWidget &song_widget) -> double {
+auto get_gain(const SongWidget& song_widget) -> double {
   return fluid_synth_get_gain(song_widget.player.synth.internal_pointer);
 }
 
-void export_to_file(SongWidget &song_widget, const QString &output_file) {
+void export_to_file(SongWidget& song_widget, const QString& output_file) {
   static const auto START_END_MILLISECONDS = 500;
   Q_ASSERT(output_file.isValidUtf16());
-  auto &player = song_widget.player;
-  const auto &song = song_widget.song;
+  auto& player = song_widget.player;
+  const auto& song = song_widget.song;
 
-  auto &settings = player.settings;
-  auto &event = player.event;
-  auto &sequencer = player.sequencer;
-  auto &driver = player.driver;
+  auto& settings = player.settings;
+  auto& event = player.event;
+  auto& sequencer = player.sequencer;
+  auto& driver = player.driver;
 
   stop_playing(sequencer, event);
 
@@ -286,9 +289,9 @@ void export_to_file(SongWidget &song_widget, const QString &output_file) {
   auto finished = false;
   const auto finished_timer_id = fluid_sequencer_register_client(
       player.sequencer.internal_pointer, "finished timer",
-      [](unsigned int /*time*/, fluid_event_t * /*event*/,
-         fluid_sequencer_t * /*seq*/, void *data_pointer) -> auto {
-        get_reference(static_cast<bool *>(data_pointer)) = true;
+      [](unsigned int /*time*/, fluid_event_t* /*event*/,
+         fluid_sequencer_t* /*seq*/, void* data_pointer) -> auto {
+        get_reference(static_cast<bool*>(data_pointer)) = true;
       },
       &finished);
   Q_ASSERT(finished_timer_id >= 0);
@@ -301,13 +304,13 @@ void export_to_file(SongWidget &song_widget, const QString &output_file) {
   fluid_event_timer(event.internal_pointer, nullptr);
   send_event_at(sequencer, event, player.final_time + START_END_MILLISECONDS);
 
-  auto *const renderer_pointer =
+  auto* const renderer_pointer =
       new_fluid_file_renderer(player.synth.internal_pointer);
   if (renderer_pointer == nullptr) {
     QMessageBox::warning(&player.parent, QObject::tr("Export error"),
                          QObject::tr("Cannot write to file"));
   } else {
-    auto &renderer = get_reference(renderer_pointer);
+    auto& renderer = get_reference(renderer_pointer);
     while (!finished) {
       if (fluid_file_renderer_process_block(&renderer) != FLUID_OK) {
         QMessageBox::warning(&player.parent, QObject::tr("Export error"),
@@ -326,7 +329,7 @@ void export_to_file(SongWidget &song_widget, const QString &output_file) {
 
 namespace {
 
-auto get_pitched_midi_channels() -> const QList<int> & {
+auto get_pitched_midi_channels() -> const QList<int>& {
   static const auto channels = []() -> QList<int> {
     // the standard MIDI file format has a hard 16-channel limit (a 4-bit
     // channel nibble), unlike FluidSynth's own NUMBER_OF_MIDI_CHANNELS (64),
@@ -334,43 +337,40 @@ auto get_pitched_midi_channels() -> const QList<int> & {
     // rendering
     static const auto NUMBER_OF_STANDARD_MIDI_CHANNELS = 16;
     QList<int> result;
-    std::ranges::copy_if(
-        std::views::iota(0, NUMBER_OF_STANDARD_MIDI_CHANNELS),
-        std::back_inserter(result),
-        [](const int channel_number) -> auto {
-          return channel_number != MIDI_PERCUSSION_CHANNEL;
-        });
+    std::ranges::copy_if(std::views::iota(0, NUMBER_OF_STANDARD_MIDI_CHANNELS),
+                         std::back_inserter(result),
+                         [](const int channel_number) -> auto {
+                           return channel_number != MIDI_PERCUSSION_CHANNEL;
+                         });
     return result;
   }();
   return channels;
 }
 
-void emit_note_events(QList<MidiTrackEvent> &track,
-                      unsigned int channel_number,
-                      unsigned int midi_number,
-                      unsigned int velocity, double start_tick,
-                      double end_tick) {
+void emit_note_events(QList<MidiTrackEvent>& track, unsigned int channel_number,
+                      unsigned int midi_number, unsigned int velocity,
+                      double start_tick, double end_tick) {
   // same-tick ordering: a note-off must land before any note-on, so a
   // still-sounding note doesn't get truncated
   static const auto MIDI_EXPORT_NOTE_OFF_TIE_BREAK = 0;
   static const auto MIDI_EXPORT_NOTE_ON_TIE_BREAK = 5;
-  track.push_back(MidiTrackEvent{
-      .tick = start_tick,
-      .tie_break = MIDI_EXPORT_NOTE_ON_TIE_BREAK,
-      .info = NoteOnEventInfo{.channel_number = channel_number,
-                              .midi_number = midi_number,
-                              .velocity = velocity}});
+  track.push_back(
+      MidiTrackEvent{.tick = start_tick,
+                     .tie_break = MIDI_EXPORT_NOTE_ON_TIE_BREAK,
+                     .info = NoteOnEventInfo{.channel_number = channel_number,
+                                             .midi_number = midi_number,
+                                             .velocity = velocity}});
 
-  track.push_back(MidiTrackEvent{
-      .tick = end_tick,
-      .tie_break = MIDI_EXPORT_NOTE_OFF_TIE_BREAK,
-      .info = NoteOffEventInfo{.channel_number = channel_number,
-                               .midi_number = midi_number}});
+  track.push_back(
+      MidiTrackEvent{.tick = end_tick,
+                     .tie_break = MIDI_EXPORT_NOTE_OFF_TIE_BREAK,
+                     .info = NoteOffEventInfo{.channel_number = channel_number,
+                                              .midi_number = midi_number}});
 }
 
 }  // namespace
 
-void export_midi_to_file(SongWidget &song_widget, const QString &output_file) {
+void export_midi_to_file(SongWidget& song_widget, const QString& output_file) {
   Q_ASSERT(output_file.isValidUtf16());
 
   // 1 tick == 1 millisecond at this fixed tempo (500000 microseconds per
@@ -398,11 +398,10 @@ void export_midi_to_file(SongWidget &song_widget, const QString &output_file) {
   static const auto GM2_PERCUSSION_BANK_SELECT_MSB = 120U;
   static const auto MIDI_END_OF_TRACK_META_TYPE = 0x2FU;
 
-  const auto &song = song_widget.song;
-  const auto &pitched_voices = song.pitched_voices;
-  const auto &unpitched_voices = song.unpitched_voices;
-  const auto number_of_pitched_voices =
-      static_cast<int>(pitched_voices.size());
+  const auto& song = song_widget.song;
+  const auto& pitched_voices = song.pitched_voices;
+  const auto& unpitched_voices = song.unpitched_voices;
+  const auto number_of_pitched_voices = static_cast<int>(pitched_voices.size());
   const auto number_of_unpitched_voices =
       static_cast<int>(unpitched_voices.size());
 
@@ -411,27 +410,26 @@ void export_midi_to_file(SongWidget &song_widget, const QString &output_file) {
   tracks[0].push_back(MidiTrackEvent{
       .tick = 0,
       .tie_break = 0,
-      .info = TempoEventInfo{
-          .microseconds_per_quarter = MIDI_MICROSECONDS_PER_QUARTER}});
+      .info = TempoEventInfo{.microseconds_per_quarter =
+                                 MIDI_MICROSECONDS_PER_QUARTER}});
   for (auto voice_number = 0; voice_number < number_of_pitched_voices;
        voice_number = voice_number + 1) {
     tracks[1 + voice_number].push_back(MidiTrackEvent{
         .tick = 0,
         .tie_break = 0,
-        .info = TrackNameEventInfo{
-            .name = pitched_voices.at(voice_number).name}});
+        .info =
+            TrackNameEventInfo{.name = pitched_voices.at(voice_number).name}});
   }
   for (auto voice_number = 0; voice_number < number_of_unpitched_voices;
        voice_number = voice_number + 1) {
     tracks[1 + number_of_pitched_voices + voice_number].push_back(
-        MidiTrackEvent{
-            .tick = 0,
-            .tie_break = 0,
-            .info = TrackNameEventInfo{
-                .name = unpitched_voices.at(voice_number).name}});
+        MidiTrackEvent{.tick = 0,
+                       .tie_break = 0,
+                       .info = TrackNameEventInfo{
+                           .name = unpitched_voices.at(voice_number).name}});
   }
 
-  const auto &pitched_channels = get_pitched_midi_channels();
+  const auto& pitched_channels = get_pitched_midi_channels();
   QList<double> pitched_channel_end_times(pitched_channels.size(), 0.0);
 
   // General MIDI has exactly one percussion channel, so two unpitched
@@ -442,7 +440,7 @@ void export_midi_to_file(SongWidget &song_widget, const QString &output_file) {
   auto percussion_tick = 0.0;
   short percussion_preset_number = 0;
 
-  for (const auto &event : get_piano_roll_events(song)) {
+  for (const auto& event : get_piano_roll_events(song)) {
     const auto start_tick = event.start_time_ms;
     const auto end_tick = event.start_time_ms + event.duration_ms;
 
@@ -462,7 +460,8 @@ void export_midi_to_file(SongWidget &song_widget, const QString &output_file) {
         add_note_location<UnpitchedNote>(stream, event.chord_number,
                                          event.note_number);
       }
-      QMessageBox::warning(&song_widget, QObject::tr("Velocity error"), message);
+      QMessageBox::warning(&song_widget, QObject::tr("Velocity error"),
+                           message);
       return;
     }
 
@@ -485,9 +484,9 @@ void export_midi_to_file(SongWidget &song_widget, const QString &output_file) {
 
       const auto midi_float = frequency_to_midi_number(frequency);
       const auto closest_midi = to_int(midi_float);
-      const auto bend = to_int((midi_float - closest_midi +
-                                ZERO_BEND_HALFSTEPS) *
-                               BEND_PER_HALFSTEP);
+      const auto bend =
+          to_int((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
+                 BEND_PER_HALFSTEP);
 
       const auto channel_index = pick_channel_index(pitched_channel_end_times);
       if (!channel_is_free(song_widget, pitched_channel_end_times,
@@ -495,13 +494,12 @@ void export_midi_to_file(SongWidget &song_widget, const QString &output_file) {
         return;
       }
       const auto channel_number = pitched_channels.at(channel_index);
-      const auto &program = get_voice_program(get_some_programs(true),
-                                              pitched_voices,
-                                              event.voice_number);
+      const auto& program = get_voice_program(
+          get_some_programs(true), pitched_voices, event.voice_number);
       pitched_channel_end_times[channel_index] =
           end_tick + program.release_milliseconds;
 
-      auto &track = tracks[1 + event.voice_number];
+      auto& track = tracks[1 + event.voice_number];
       // no bank-select here: program.bank_number is this soundfont's own
       // private numbering (e.g. 17 for "Expr." variants), not a portable GM2
       // bank -- an unrecognized bank-select MSB is undefined behavior on
@@ -541,10 +539,9 @@ void export_midi_to_file(SongWidget &song_widget, const QString &output_file) {
                        static_cast<unsigned int>(velocity), start_tick,
                        end_tick);
     } else {
-      const auto &voice = unpitched_voices.at(event.voice_number);
-      const auto &program = get_voice_program(get_some_programs(false),
-                                              unpitched_voices,
-                                              event.voice_number);
+      const auto& voice = unpitched_voices.at(event.voice_number);
+      const auto& program = get_voice_program(
+          get_some_programs(false), unpitched_voices, event.voice_number);
 
       if (has_percussion_program && start_tick == percussion_tick &&
           program.preset_number != percussion_preset_number) {
@@ -556,16 +553,15 @@ void export_midi_to_file(SongWidget &song_widget, const QString &output_file) {
         stream << QObject::tr(
             " starts at the same time as a different percussion instrument "
             "on the shared MIDI percussion channel");
-        QMessageBox::warning(&song_widget, QObject::tr("Percussion channel conflict"),
-                             message);
+        QMessageBox::warning(
+            &song_widget, QObject::tr("Percussion channel conflict"), message);
         return;
       }
       has_percussion_program = true;
       percussion_tick = start_tick;
       percussion_preset_number = program.preset_number;
 
-      auto &track =
-          tracks[1 + number_of_pitched_voices + event.voice_number];
+      auto& track = tracks[1 + number_of_pitched_voices + event.voice_number];
       track.push_back(MidiTrackEvent{
           .tick = start_tick,
           .tie_break = MIDI_EXPORT_BANK_SELECT_TIE_BREAK,
@@ -584,11 +580,10 @@ void export_midi_to_file(SongWidget &song_widget, const QString &output_file) {
               .program_number =
                   static_cast<unsigned int>(program.preset_number)}});
 
-      emit_note_events(track,
-                       static_cast<unsigned int>(MIDI_PERCUSSION_CHANNEL),
-                       static_cast<unsigned int>(voice.midi_number),
-                       static_cast<unsigned int>(velocity), start_tick,
-                       end_tick);
+      emit_note_events(
+          track, static_cast<unsigned int>(MIDI_PERCUSSION_CHANNEL),
+          static_cast<unsigned int>(voice.midi_number),
+          static_cast<unsigned int>(velocity), start_tick, end_tick);
     }
   }
 
@@ -606,11 +601,11 @@ void export_midi_to_file(SongWidget &song_widget, const QString &output_file) {
   append_be16(header, MIDI_TICKS_PER_QUARTER);
   append_chunk(output, "MThd", header);
 
-  for (const auto &track_events : tracks) {
+  for (const auto& track_events : tracks) {
     auto sorted_events = track_events;
     std::ranges::stable_sort(
-        sorted_events, [](const MidiTrackEvent &first,
-                          const MidiTrackEvent &second) -> auto {
+        sorted_events,
+        [](const MidiTrackEvent& first, const MidiTrackEvent& second) -> auto {
           if (first.tick != second.tick) {
             return first.tick < second.tick;
           }
@@ -618,7 +613,7 @@ void export_midi_to_file(SongWidget &song_widget, const QString &output_file) {
         });
     QByteArray track_data;
     auto previous_tick = 0U;
-    for (const auto &event : sorted_events) {
+    for (const auto& event : sorted_events) {
       const auto tick = static_cast<unsigned int>(std::llround(event.tick));
       append_variable_length(track_data, tick - previous_tick);
       event.write(track_data);
@@ -634,8 +629,7 @@ void export_midi_to_file(SongWidget &song_widget, const QString &output_file) {
 
 namespace {
 
-void set_xml_double(xmlNode &node, const char *const field_name,
-                    double value) {
+void set_xml_double(xmlNode& node, const char* const field_name, double value) {
   // std::to_string uses the current C locale, which can use a comma for the
   // decimal separator; QString::number is always locale-independent,
   // matching the xs:decimal lexical form required by song.xsd. (std::to_chars
@@ -643,15 +637,14 @@ void set_xml_double(xmlNode &node, const char *const field_name,
   // overloads when targeting very recent macOS versions, and this project
   // deliberately supports macOS back to 12.0.)
   static const auto double_digits = std::numeric_limits<double>::max_digits10;
-  set_xml_string(
-      node, field_name,
-      QString::number(value, 'g', double_digits).toStdString());
+  set_xml_string(node, field_name,
+                 QString::number(value, 'g', double_digits).toStdString());
 }
 
-void populate_song_document(SongWidget &song_widget, XMLDocument &document) {
-  const auto &song = song_widget.song;
+void populate_song_document(SongWidget& song_widget, XMLDocument& document) {
+  const auto& song = song_widget.song;
 
-  auto &song_node = make_root(document, "song");
+  auto& song_node = make_root(document, "song");
 
   set_xml_double(song_node, "gain", get_gain(song_widget));
   set_xml_double(song_node, "starting_key", song.starting_key);
@@ -677,7 +670,7 @@ void remove_recovery_file() {
   QSettings().remove("recovery/original_file");
 }
 
-void write_recovery_file(SongWidget &song_widget) {
+void write_recovery_file(SongWidget& song_widget) {
   XMLDocument document;
   populate_song_document(song_widget, document);
   if (xmlSaveFile(get_recovery_file_path().toStdString().c_str(),
@@ -693,7 +686,7 @@ void write_recovery_file(SongWidget &song_widget) {
   QSettings().setValue("recovery/original_file", song_widget.current_file);
 }
 
-void save_as_file(SongWidget &song_widget, const QString &filename) {
+void save_as_file(SongWidget& song_widget, const QString& filename) {
   Q_ASSERT(filename.isValidUtf16());
 
   XMLDocument document;
@@ -714,7 +707,7 @@ void save_as_file(SongWidget &song_widget, const QString &filename) {
 
 namespace {
 
-auto check_xml_document(QWidget &parent, XMLDocument &document) -> bool {
+auto check_xml_document(QWidget& parent, XMLDocument& document) -> bool {
   if (document.internal_pointer == nullptr) {
     QMessageBox::warning(&parent, QObject::tr("XML error"),
                          QObject::tr("Invalid XML file"));
@@ -723,12 +716,12 @@ auto check_xml_document(QWidget &parent, XMLDocument &document) -> bool {
   return true;
 }
 
-auto maybe_read_xml_file(const QString &filename) -> XMLDocument {
+auto maybe_read_xml_file(const QString& filename) -> XMLDocument {
   return XMLDocument(xmlReadFile(filename.toStdString().c_str(), nullptr, 0));
 }
 
-auto get_int_or_warn(QWidget &parent, const std::string &content,
-                     const QString &title, const QString &message)
+auto get_int_or_warn(QWidget& parent, const std::string& content,
+                     const QString& title, const QString& message)
     -> std::optional<int> {
   auto maybe_int = string_to_maybe_int(content);
   if (!maybe_int.has_value()) {
@@ -737,8 +730,8 @@ auto get_int_or_warn(QWidget &parent, const std::string &content,
   return maybe_int;
 }
 
-auto get_int_or_warn(QWidget &parent, const xmlNode &element,
-                     const QString &title, const QString &message)
+auto get_int_or_warn(QWidget& parent, const xmlNode& element,
+                     const QString& title, const QString& message)
     -> std::optional<int> {
   return get_int_or_warn(parent, get_content(element), title, message);
 }
@@ -748,8 +741,8 @@ auto get_int_or_warn(QWidget &parent, const xmlNode &element,
 // members if the switch table was drilled into a chord's notes (mirrors the
 // reset that replace_table performs when the user navigates back to chords
 // manually)
-void reset_switch_table_to_chords(SwitchColumn &switch_column) {
-  auto &switch_table = switch_column.switch_table;
+void reset_switch_table_to_chords(SwitchColumn& switch_column) {
+  auto& switch_table = switch_column.switch_table;
   switch_table.pitched_notes_model.set_rows_pointer();
   switch_table.unpitched_notes_model.set_rows_pointer();
   switch_table.delegate.current_row_type = RowType::chord_type;
@@ -757,7 +750,7 @@ void reset_switch_table_to_chords(SwitchColumn &switch_column) {
   switch_column.editing_text.setText(SwitchColumn::tr("Chords"));
 }
 
-auto xml_to_double(const xmlNode &element) -> double {
+auto xml_to_double(const xmlNode& element) -> double {
   // std::stod uses the current C locale; QString::toDouble is always
   // locale-independent, so this matches set_xml_double above
   bool was_ok = false;
@@ -769,20 +762,20 @@ auto xml_to_double(const xmlNode &element) -> double {
 
 }  // namespace
 
-auto validate_against_schema(XMLValidator &validator, XMLDocument &document) -> int {
+auto validate_against_schema(XMLValidator& validator, XMLDocument& document)
+    -> int {
   return xmlSchemaValidateDoc(validator.context.internal_pointer,
                               document.internal_pointer);
 }
 
-auto open_file(SongWidget &song_widget, const QString &filename) -> bool {
-
+auto open_file(SongWidget& song_widget, const QString& filename) -> bool {
   Q_ASSERT(filename.isValidUtf16());
-  auto &undo_stack = song_widget.undo_stack;
-  auto &spin_boxes = song_widget.controls_column.spin_boxes;
-  auto &switch_table = song_widget.switch_column.switch_table;
-  auto &chords_model = switch_table.chords_model;
-  auto &unpitched_voices_model = switch_table.unpitched_voices_model;
-  auto &pitched_voices_model = switch_table.pitched_voices_model;
+  auto& undo_stack = song_widget.undo_stack;
+  auto& spin_boxes = song_widget.controls_column.spin_boxes;
+  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& chords_model = switch_table.chords_model;
+  auto& unpitched_voices_model = switch_table.unpitched_voices_model;
+  auto& pitched_voices_model = switch_table.pitched_voices_model;
 
   auto document = maybe_read_xml_file(filename);
   if (!check_xml_document(song_widget, document)) {
@@ -796,7 +789,7 @@ auto open_file(SongWidget &song_widget, const QString &filename) -> bool {
     return false;
   }
 
-  auto &song_node = get_root(document);
+  auto& song_node = get_root(document);
 
   // parse into scratch lists and validate voice names/references before
   // touching the current song, so a file that fails validation can't wipe
@@ -806,10 +799,10 @@ auto open_file(SongWidget &song_widget, const QString &filename) -> bool {
   QList<Chord> new_chords;
   QList<PitchedVoice> new_pitched_voices;
   QList<UnpitchedVoice> new_unpitched_voices;
-  for (auto *field_pointer = xmlFirstElementChild(&song_node);
+  for (auto* field_pointer = xmlFirstElementChild(&song_node);
        field_pointer != nullptr;
        field_pointer = xmlNextElementSibling(field_pointer)) {
-    auto &field_node = get_reference(field_pointer);
+    auto& field_node = get_reference(field_pointer);
     const auto name = get_xml_name(field_node);
     if (name == "chords") {
       xml_to_rows(new_chords, field_node);
@@ -829,8 +822,8 @@ auto open_file(SongWidget &song_widget, const QString &filename) -> bool {
     const auto number_of_unpitched_voices =
         static_cast<int>(new_unpitched_voices.size());
     for (auto chord_number = 0; chord_number < new_chords.size();
-        chord_number = chord_number + 1) {
-      const auto &chord = new_chords.at(chord_number);
+         chord_number = chord_number + 1) {
+      const auto& chord = new_chords.at(chord_number);
       if (!check_note_voices(song_widget, chord.pitched_notes,
                              number_of_pitched_voices, chord_number) ||
           !check_note_voices(song_widget, chord.unpitched_notes,
@@ -850,9 +843,9 @@ auto open_file(SongWidget &song_widget, const QString &filename) -> bool {
   clear_rows(pitched_voices_model);
   clear_rows(unpitched_voices_model);
 
-  auto *field_pointer = xmlFirstElementChild(&song_node);
+  auto* field_pointer = xmlFirstElementChild(&song_node);
   while (field_pointer != nullptr) {
-    auto &field_node = get_reference(field_pointer);
+    auto& field_node = get_reference(field_pointer);
     const auto name = get_xml_name(field_node);
     if (name == "gain") {
       spin_boxes.gain_editor.setValue(xml_to_double(field_node));
@@ -881,7 +874,7 @@ auto open_file(SongWidget &song_widget, const QString &filename) -> bool {
   return true;
 }
 
-auto maybe_restore_recovery(SongWidget &song_widget) -> bool {
+auto maybe_restore_recovery(SongWidget& song_widget) -> bool {
   const auto recovery_file = get_recovery_file_path();
   if (!QFile::exists(recovery_file)) {
     return false;
@@ -912,11 +905,11 @@ auto maybe_restore_recovery(SongWidget &song_widget) -> bool {
   return true;
 }
 
-void connect_recovery_timer(SongWidget &song_widget) {
+void connect_recovery_timer(SongWidget& song_widget) {
   static const auto RECOVERY_DEBOUNCE_MILLISECONDS = 5000;
 
-  auto &recovery_timer = song_widget.recovery_timer;
-  auto &undo_stack = song_widget.undo_stack;
+  auto& recovery_timer = song_widget.recovery_timer;
+  auto& undo_stack = song_widget.undo_stack;
 
   recovery_timer.setSingleShot(true);
 
@@ -936,12 +929,12 @@ void connect_recovery_timer(SongWidget &song_widget) {
 
 namespace {
 
-auto node_is(const xmlNode &node, const char *name) -> bool {
+auto node_is(const xmlNode& node, const char* name) -> bool {
   return get_xml_name(node) == name;
 }
 
-auto maybe_get_xml_child(xmlNode &node, const char *name) -> xmlNode * {
-  auto *child_pointer = xmlFirstElementChild(&node);
+auto maybe_get_xml_child(xmlNode& node, const char* name) -> xmlNode* {
+  auto* child_pointer = xmlFirstElementChild(&node);
   while (child_pointer != nullptr) {
     if (node_is(get_reference(child_pointer), name)) {
       return child_pointer;
@@ -951,17 +944,16 @@ auto maybe_get_xml_child(xmlNode &node, const char *name) -> xmlNode * {
   return nullptr;
 }
 
-auto get_xml_child(xmlNode &node, const char *name) -> xmlNode & {
+auto get_xml_child(xmlNode& node, const char* name) -> xmlNode& {
   return get_reference(maybe_get_xml_child(node, name));
 }
 
-auto get_duration(QWidget &parent, xmlNode &measure_element)
+auto get_duration(QWidget& parent, xmlNode& measure_element)
     -> std::optional<int> {
-  auto &duration_element = get_xml_child(measure_element, "duration");
+  auto& duration_element = get_xml_child(measure_element, "duration");
   if (!xml_content_is_integer(duration_element)) {
-    QMessageBox::warning(
-        &parent, QObject::tr("Duration error"),
-        QObject::tr("Fractional durations are not supported"));
+    QMessageBox::warning(&parent, QObject::tr("Duration error"),
+                         QObject::tr("Fractional durations are not supported"));
     return std::nullopt;
   }
   return get_int_or_warn(parent, duration_element,
@@ -978,37 +970,36 @@ auto get_interval(const int midi_interval) -> Interval {
   return Interval(scale[degree], octave);
 }
 
-auto get_max_duration(const QList<MusicXMLNote> &notes) -> int {
+auto get_max_duration(const QList<MusicXMLNote>& notes) -> int {
   if (notes.empty()) {
     return 0;
   }
   return std::ranges::max_element(notes,
-                                  [](const MusicXMLNote &first_note,
-                                     const MusicXMLNote &second_note) -> auto {
+                                  [](const MusicXMLNote& first_note,
+                                     const MusicXMLNote& second_note) -> auto {
                                     return first_note.duration <
                                            second_note.duration;
                                   })
       ->duration;
 }
 
-void add_chord(ChordsModel &chords_model, const MusicXMLChord &parse_chord,
-               const int measure_number, const int key,
-               const int last_midi_key, const int song_divisions,
-               const int time_delta) {
+void add_chord(ChordsModel& chords_model, const MusicXMLChord& parse_chord,
+               const int measure_number, const int key, const int last_midi_key,
+               const int song_divisions, const int time_delta) {
   Chord new_chord;
   new_chord.beats = Rational(time_delta, song_divisions);
   new_chord.interval = get_interval(key - last_midi_key);
   new_chord.words = QString::number(measure_number);
-  auto &unpitched_notes = new_chord.unpitched_notes;
-  for (const auto &parse_unpitched_note : parse_chord.unpitched_notes) {
+  auto& unpitched_notes = new_chord.unpitched_notes;
+  for (const auto& parse_unpitched_note : parse_chord.unpitched_notes) {
     UnpitchedNote new_note;
     new_note.beats = Rational(parse_unpitched_note.duration, song_divisions);
     new_note.words = parse_unpitched_note.words;
     new_note.voice_number = parse_unpitched_note.voice_number;
     unpitched_notes.push_back(std::move(new_note));
   }
-  auto &pitched_notes = new_chord.pitched_notes;
-  for (const auto &parse_pitched_note : parse_chord.pitched_notes) {
+  auto& pitched_notes = new_chord.pitched_notes;
+  for (const auto& parse_pitched_note : parse_chord.pitched_notes) {
     PitchedNote new_note;
     new_note.beats = Rational(parse_pitched_note.duration, song_divisions);
     new_note.words = parse_pitched_note.words;
@@ -1020,12 +1011,12 @@ void add_chord(ChordsModel &chords_model, const MusicXMLChord &parse_chord,
                           std::move(new_chord));
 }
 
-void add_note(MusicXMLChord &chord, MusicXMLNote note, bool is_pitched) {
+void add_note(MusicXMLChord& chord, MusicXMLNote note, bool is_pitched) {
   (is_pitched ? chord.pitched_notes : chord.unpitched_notes)
       .push_back(std::move(note));
 }
 
-void add_note_and_maybe_chord(QMap<int, MusicXMLChord> &chords_dict,
+void add_note_and_maybe_chord(QMap<int, MusicXMLChord>& chords_dict,
                               MusicXMLNote note, bool is_pitched) {
   const auto start_time = note.start_time;
   if (chords_dict.contains(start_time)) {
@@ -1037,10 +1028,10 @@ void add_note_and_maybe_chord(QMap<int, MusicXMLChord> &chords_dict,
   }
 }
 
-auto get_most_recent(MostRecentIterator &iterator, const int time) -> int {
-  auto &iterator_state = iterator.state;
-  auto &iterator_value = iterator.value;
-  const auto &iterator_end = iterator.end;
+auto get_most_recent(MostRecentIterator& iterator, const int time) -> int {
+  auto& iterator_state = iterator.state;
+  auto& iterator_value = iterator.value;
+  const auto& iterator_end = iterator.end;
   while (iterator_state != iterator_end && iterator_state.key() <= time) {
     iterator_value = iterator_state.value();
     ++iterator_state;
@@ -1050,14 +1041,14 @@ auto get_most_recent(MostRecentIterator &iterator, const int time) -> int {
 
 }  // namespace
 
-void reset(TimeIterator &iterator) {
+void reset(TimeIterator& iterator) {
   iterator.state = iterator.dict.begin();
   iterator.last_change_time = 0;
   iterator.next_change_divisions_time = 0;
   iterator.time_per_division = 1;
 }
 
-auto compute_measure_expansion(const QList<MeasureRepeatInfo> &measure_infos)
+auto compute_measure_expansion(const QList<MeasureRepeatInfo>& measure_infos)
     -> QList<std::pair<int, int>> {
   QList<std::pair<int, int>> expansion;
   const auto number_of_measures = static_cast<int>(measure_infos.size());
@@ -1066,22 +1057,22 @@ auto compute_measure_expansion(const QList<MeasureRepeatInfo> &measure_infos)
 
   const auto flush = [&](const int first_index, const int last_index) -> auto {
     for (auto index = first_index; index <= last_index; index = index + 1) {
-      const auto &measure_info = measure_infos.at(index);
+      const auto& measure_info = measure_infos.at(index);
       expansion.push_back({measure_info.start_time, measure_info.end_time});
     }
   };
 
   auto measure_index = 0;
   while (measure_index < number_of_measures) {
-    const auto &measure_info = measure_infos.at(measure_index);
+    const auto& measure_info = measure_infos.at(measure_index);
     if (measure_info.has_forward_repeat) {
       flush(block_start_index, measure_index - 1);
       repeat_start_index = measure_index;
       block_start_index = measure_index;
     }
     if (measure_info.has_backward_repeat) {
-      const auto start_index = repeat_start_index == -1 ? block_start_index
-                                                          : repeat_start_index;
+      const auto start_index =
+          repeat_start_index == -1 ? block_start_index : repeat_start_index;
       // a later ending (e.g. the second ending) has no repeat barline of
       // its own; it just continues on directly after the measure with the
       // backward repeat, so absorb any immediately-following ending measures
@@ -1094,7 +1085,7 @@ auto compute_measure_expansion(const QList<MeasureRepeatInfo> &measure_infos)
            pass_number = pass_number + 1) {
         for (auto inner_index = start_index; inner_index <= block_end_index;
              inner_index = inner_index + 1) {
-          const auto &inner_measure = measure_infos.at(inner_index);
+          const auto& inner_measure = measure_infos.at(inner_index);
           if (inner_measure.ending_numbers.isEmpty() ||
               inner_measure.ending_numbers.contains(pass_number)) {
             expansion.push_back(
@@ -1114,12 +1105,12 @@ auto compute_measure_expansion(const QList<MeasureRepeatInfo> &measure_infos)
 
 namespace {
 
-auto get_time_and_time_per_division(TimeIterator &iterator,
+auto get_time_and_time_per_division(TimeIterator& iterator,
                                     const int check_divisions_time)
     -> std::tuple<int, int> {
-  auto &iterator_state = iterator.state;
+  auto& iterator_state = iterator.state;
   const auto song_divisions = iterator.song_divisions;
-  const auto &iterator_end = iterator.end;
+  const auto& iterator_end = iterator.end;
   while (iterator_state != iterator_end) {
     const auto next_change_divisions_time = iterator_state.key();
     if (next_change_divisions_time > check_divisions_time) {
@@ -1147,7 +1138,7 @@ auto get_time_and_time_per_division(TimeIterator &iterator,
 
 auto deduplicate_voice_names(QList<QString> voice_names) -> QList<QString> {
   QSet<QString> used_names;
-  for (auto &voice_name : voice_names) {
+  for (auto& voice_name : voice_names) {
     if (voice_name.isEmpty()) {
       voice_name = QObject::tr("Unnamed instrument");
     }
@@ -1162,7 +1153,8 @@ auto deduplicate_voice_names(QList<QString> voice_names) -> QList<QString> {
   return voice_names;
 }
 
-auto maybe_read_compressed_musicxml_bytes(const QString &filename) -> QByteArray {
+auto maybe_read_compressed_musicxml_bytes(const QString& filename)
+    -> QByteArray {
   const ZipArchive archive(filename);
   if (archive.internal_pointer == nullptr) {
     return {};
@@ -1179,9 +1171,9 @@ auto maybe_read_compressed_musicxml_bytes(const QString &filename) -> QByteArray
     return {};
   }
 
-  auto *rootfiles_pointer =
+  auto* rootfiles_pointer =
       maybe_get_xml_child(get_root(container_document), "rootfiles");
-  auto *rootfile_pointer =
+  auto* rootfile_pointer =
       rootfiles_pointer == nullptr
           ? nullptr
           : maybe_get_xml_child(get_reference(rootfiles_pointer), "rootfile");
@@ -1195,7 +1187,7 @@ auto maybe_read_compressed_musicxml_bytes(const QString &filename) -> QByteArray
   return read_zip_entry(archive, root_path);
 }
 
-auto maybe_read_musicxml_document(const QString &filename) -> XMLDocument {
+auto maybe_read_musicxml_document(const QString& filename) -> XMLDocument {
   if (filename.endsWith(".mxl", Qt::CaseInsensitive)) {
     return read_xml_document(maybe_read_compressed_musicxml_bytes(filename));
   }
@@ -1204,16 +1196,16 @@ auto maybe_read_musicxml_document(const QString &filename) -> XMLDocument {
 
 }  // namespace
 
-auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
+auto import_musicxml(SongWidget& song_widget, const QString& filename) -> bool {
   static const auto DEFAULT_REPEAT_TIMES = 2;
   static const auto FIFTH_HALFSTEPS = 7;
 
-  auto &undo_stack = song_widget.undo_stack;
-  auto &spin_boxes = song_widget.controls_column.spin_boxes;
-  auto &switch_table = song_widget.switch_column.switch_table;
-  auto &chords_model = switch_table.chords_model;
-  auto &pitched_voices_model = switch_table.pitched_voices_model;
-  auto &unpitched_voices_model = switch_table.unpitched_voices_model;
+  auto& undo_stack = song_widget.undo_stack;
+  auto& spin_boxes = song_widget.controls_column.spin_boxes;
+  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& chords_model = switch_table.chords_model;
+  auto& pitched_voices_model = switch_table.pitched_voices_model;
+  auto& unpitched_voices_model = switch_table.unpitched_voices_model;
 
   auto document = maybe_read_musicxml_document(filename);
   if (!check_xml_document(song_widget, document)) {
@@ -1228,12 +1220,12 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
   }
 
   // Get root_pointer element
-  auto &score_partwise = get_root(document);
+  auto& score_partwise = get_root(document);
   if (!node_is(score_partwise, "score-partwise")) {
     QMessageBox::warning(
         &song_widget, QObject::tr("Partwise error"),
         QObject::tr("Justly only supports partwise musicxml scores"));
-    return false; // endpoint
+    return false;  // endpoint
   }
 
   // Get part-list
@@ -1246,20 +1238,20 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
   QMap<QString, int> unpitched_voice_numbers;
   QList<QString> unpitched_voice_names;
 
-  auto *part_node_pointer = xmlFirstElementChild(&score_partwise);
+  auto* part_node_pointer = xmlFirstElementChild(&score_partwise);
   while (part_node_pointer != nullptr) {
-    auto &part_node = get_reference(part_node_pointer);
+    auto& part_node = get_reference(part_node_pointer);
     const auto part_node_name = get_xml_name(part_node);
     if (part_node_name == "part-list") {
-      auto *score_part_pointer = xmlFirstElementChild(&part_node);
+      auto* score_part_pointer = xmlFirstElementChild(&part_node);
       while (score_part_pointer != nullptr) {
-        auto &score_part = get_reference(score_part_pointer);
+        auto& score_part = get_reference(score_part_pointer);
         if (node_is(score_part, "score-part")) {
           PartInfo part_info;
-          auto &instrument_map = part_info.instrument_map;
-          auto *field_pointer = xmlFirstElementChild(score_part_pointer);
+          auto& instrument_map = part_info.instrument_map;
+          auto* field_pointer = xmlFirstElementChild(score_part_pointer);
           while (field_pointer != nullptr) {
-            auto &field_node = get_reference(field_pointer);
+            auto& field_node = get_reference(field_pointer);
             const auto child_name = get_xml_name(field_node);
             if (child_name == "part-name") {
               part_info.part_name = get_qstring_content(field_node);
@@ -1276,12 +1268,12 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
       }
     } else if (part_node_name == "part") {
       const auto part_id = get_property(part_node, "id");
-      auto &part_info = part_info_dict[part_id];
+      auto& part_info = part_info_dict[part_id];
 
-      auto &part_chords_dict = part_info.part_chords_dict;
-      auto &part_divisions_dict = part_info.part_divisions_dict;
-      auto &part_measure_number_dict = part_info.part_measure_number_dict;
-      auto &part_midi_keys_dict = part_info.part_midi_keys_dict;
+      auto& part_chords_dict = part_info.part_chords_dict;
+      auto& part_divisions_dict = part_info.part_divisions_dict;
+      auto& part_measure_number_dict = part_info.part_measure_number_dict;
+      auto& part_midi_keys_dict = part_info.part_midi_keys_dict;
 
       auto current_time = 0;
       auto chord_start_time = current_time;
@@ -1292,22 +1284,22 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
       QList<MeasureRepeatInfo> measure_infos;
       QList<int> active_ending_numbers;
 
-      auto *measure_pointer = xmlFirstElementChild(&part_node);
+      auto* measure_pointer = xmlFirstElementChild(&part_node);
       while (measure_pointer != nullptr) {
-        auto &measure = get_reference(measure_pointer);
+        auto& measure = get_reference(measure_pointer);
         part_measure_number_dict[current_time] = measure_number;
         MeasureRepeatInfo measure_info;
         measure_info.start_time = current_time;
         measure_info.ending_numbers = active_ending_numbers;
-        auto *measure_element_pointer = xmlFirstElementChild(&measure);
+        auto* measure_element_pointer = xmlFirstElementChild(&measure);
         while (measure_element_pointer != nullptr) {
-          auto &measure_element = get_reference(measure_element_pointer);
+          auto& measure_element = get_reference(measure_element_pointer);
           const auto measure_element_name = get_xml_name(measure_element);
           if (measure_element_name == "attributes") {
-            auto *attribute_element_pointer =
+            auto* attribute_element_pointer =
                 xmlFirstElementChild(&measure_element);
             while (attribute_element_pointer != nullptr) {
-              auto &attribute_element =
+              auto& attribute_element =
                   get_reference(attribute_element_pointer);
               const auto attribute_name = get_xml_name(attribute_element);
               if (attribute_name == "key") {
@@ -1316,52 +1308,52 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
                     QObject::tr("Key error"),
                     QObject::tr("Fifths value is out of range"));
                 if (!maybe_fifths.has_value()) {
-                  return false; // endpoint
+                  return false;  // endpoint
                 }
-                const auto [octave, degree] = get_octave_degree(
-                    FIFTH_HALFSTEPS * maybe_fifths.value());
+                const auto [octave, degree] =
+                    get_octave_degree(FIFTH_HALFSTEPS * maybe_fifths.value());
                 part_midi_keys_dict[current_time] = MIDDLE_C_MIDI + degree;
               } else if (attribute_name == "divisions") {
                 if (!xml_content_is_integer(attribute_element)) {
                   QMessageBox::warning(
                       &song_widget, QObject::tr("Divisions error"),
                       QObject::tr("Fractional divisions are not supported"));
-                  return false; // endpoint
+                  return false;  // endpoint
                 }
                 const auto maybe_divisions = get_int_or_warn(
                     song_widget, attribute_element,
                     QObject::tr("Divisions error"),
                     QObject::tr("Divisions value is out of range"));
                 if (!maybe_divisions.has_value()) {
-                  return false; // endpoint
+                  return false;  // endpoint
                 }
                 const auto new_divisions = maybe_divisions.value();
                 Q_ASSERT(new_divisions > 0);
                 song_divisions = std::lcm(song_divisions, new_divisions);
                 part_divisions_dict[current_time] = new_divisions;
               } else if (attribute_name == "transpose") {
-                auto &chromatic_element =
+                auto& chromatic_element =
                     get_xml_child(attribute_element, "chromatic");
                 if (!xml_content_is_integer(chromatic_element)) {
                   QMessageBox::warning(
                       &song_widget, QObject::tr("Transpose error"),
                       QObject::tr(
                           "Microtonal transpositions are not supported"));
-                  return false; // endpoint
+                  return false;  // endpoint
                 }
                 const auto maybe_chromatic = get_int_or_warn(
                     song_widget, chromatic_element,
                     QObject::tr("Transpose error"),
                     QObject::tr("Chromatic value is out of range"));
                 if (!maybe_chromatic.has_value()) {
-                  return false; // endpoint
+                  return false;  // endpoint
                 }
                 const auto chromatic_semitones = maybe_chromatic.value();
                 auto octave_change_octaves = 0;
-                auto *transpose_field_pointer =
+                auto* transpose_field_pointer =
                     xmlFirstElementChild(&attribute_element);
                 while (transpose_field_pointer != nullptr) {
-                  auto &transpose_field =
+                  auto& transpose_field =
                       get_reference(transpose_field_pointer);
                   if (node_is(transpose_field, "octave-change")) {
                     const auto maybe_octave_change = get_int_or_warn(
@@ -1369,7 +1361,7 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
                         QObject::tr("Transpose error"),
                         QObject::tr("Octave change value is out of range"));
                     if (!maybe_octave_change.has_value()) {
-                      return false; // endpoint
+                      return false;  // endpoint
                     }
                     octave_change_octaves = maybe_octave_change.value();
                   }
@@ -1400,20 +1392,20 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
                 {"G", 7},   {"G#", 8}, {"Ab", 8}, {"A", 9},  {"A#", 10},
                 {"Bb", 10}, {"B", 11}};
 
-            auto *note_field_pointer =
+            auto* note_field_pointer =
                 xmlFirstElementChild(measure_element_pointer);
             while ((note_field_pointer != nullptr)) {
-              auto &note_field = get_reference(note_field_pointer);
-              const auto &name = get_xml_name(note_field);
+              auto& note_field = get_reference(note_field_pointer);
+              const auto& name = get_xml_name(note_field);
               if (name == "pitch") {
                 auto midi_degree = 0;
                 auto octave_number = 0;
                 auto alter = 0;
 
-                auto *pitch_field_pointer = xmlFirstElementChild(&note_field);
+                auto* pitch_field_pointer = xmlFirstElementChild(&note_field);
                 while (pitch_field_pointer != nullptr) {
-                  auto &pitch_field = get_reference(pitch_field_pointer);
-                  const auto &pitch_field_name = get_xml_name(pitch_field);
+                  auto& pitch_field = get_reference(pitch_field_pointer);
+                  const auto& pitch_field_name = get_xml_name(pitch_field);
                   if (pitch_field_name == "step") {
                     midi_degree = note_to_midi[get_content(pitch_field)];
                   } else if (pitch_field_name == "octave") {
@@ -1422,15 +1414,14 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
                     if (!xml_content_is_integer(pitch_field)) {
                       QMessageBox::warning(
                           &song_widget, QObject::tr("Pitch error"),
-                          QObject::tr(
-                              "Microtonal pitches are not supported"));
-                      return false; // endpoint
+                          QObject::tr("Microtonal pitches are not supported"));
+                      return false;  // endpoint
                     }
                     const auto maybe_alter = get_int_or_warn(
                         song_widget, pitch_field, QObject::tr("Pitch error"),
                         QObject::tr("Alter value is out of range"));
                     if (!maybe_alter.has_value()) {
-                      return false; // endpoint
+                      return false;  // endpoint
                     }
                     alter = maybe_alter.value();
                   }
@@ -1445,14 +1436,13 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
                       &song_widget, QObject::tr("Note duration error"),
                       QObject::tr(
                           "Fractional note durations are not supported"));
-                  return false; // endpoint
+                  return false;  // endpoint
                 }
                 const auto maybe_duration = get_int_or_warn(
-                    song_widget, note_field,
-                    QObject::tr("Note duration error"),
+                    song_widget, note_field, QObject::tr("Note duration error"),
                     QObject::tr("Note duration is out of range"));
                 if (!maybe_duration.has_value()) {
-                  return false; // endpoint
+                  return false;  // endpoint
                 }
                 note_duration = maybe_duration.value();
               } else if (name == "unpitched") {
@@ -1483,7 +1473,7 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
               QMessageBox::warning(
                   &song_widget, QObject::tr("Note duration error"),
                   QObject::tr("Notes without durations not supported"));
-              return false; // endpoint
+              return false;  // endpoint
             }
             if (new_chord) {
               chord_start_time = current_time;
@@ -1510,9 +1500,8 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
                 tie_end = false;
               }
               if (tie_end) {
-                const auto tied_notes_iterator =
-                    tied_notes.find(tied_note_key);
-                auto &previous_note = tied_notes_iterator.value();
+                const auto tied_notes_iterator = tied_notes.find(tied_note_key);
+                auto& previous_note = tied_notes_iterator.value();
                 previous_note.duration = previous_note.duration + note_duration;
                 if (!tie_start) {
                   add_note_and_maybe_chord(part_chords_dict, previous_note,
@@ -1529,9 +1518,9 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
                 }
                 new_note.midi_number = midi_number;
                 new_note.start_time = chord_start_time;
-                auto &voice_numbers = is_pitched ? pitched_voice_numbers
+                auto& voice_numbers = is_pitched ? pitched_voice_numbers
                                                  : unpitched_voice_numbers;
-                auto &voice_names =
+                auto& voice_names =
                     is_pitched ? pitched_voice_names : unpitched_voice_names;
                 const auto voice_name = instrument_name.isEmpty()
                                             ? part_info.part_name
@@ -1544,9 +1533,9 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
                   voice_numbers[voice_key] = new_note.voice_number;
                   voice_names.push_back(voice_name);
                 }
-                if (tie_start) { // also not tie end
+                if (tie_start) {  // also not tie end
                   tied_notes[tied_note_key] = std::move(new_note);
-                } else { // not tie start or end
+                } else {  // not tie start or end
                   add_note_and_maybe_chord(part_chords_dict,
                                            std::move(new_note), is_pitched);
                 }
@@ -1555,14 +1544,14 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
           } else if (measure_element_name == "backup") {
             const auto duration = get_duration(song_widget, measure_element);
             if (!duration.has_value()) {
-              return false; // endpoint
+              return false;  // endpoint
             }
             current_time -= duration.value();
             chord_start_time = current_time;
           } else if (measure_element_name == "forward") {
             const auto duration = get_duration(song_widget, measure_element);
             if (!duration.has_value()) {
-              return false; // endpoint
+              return false;  // endpoint
             }
             current_time += duration.value();
             chord_start_time = current_time;
@@ -1570,18 +1559,18 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
             // records forward/backward repeats and first/second-ending
             // brackets onto the current measure, so the raw per-part
             // timeline can be unrolled below
-            auto *barline_child_pointer =
+            auto* barline_child_pointer =
                 xmlFirstElementChild(&measure_element);
             while (barline_child_pointer != nullptr) {
-              auto &child = get_reference(barline_child_pointer);
+              auto& child = get_reference(barline_child_pointer);
               if (node_is(child, "repeat")) {
                 const auto direction = get_property(child, "direction");
                 if (direction == "forward") {
                   measure_info.has_forward_repeat = true;
                 } else if (direction == "backward") {
                   measure_info.has_backward_repeat = true;
-                  auto *const times_property = xmlGetProp(
-                      &child, c_string_to_xml_string("times"));
+                  auto* const times_property =
+                      xmlGetProp(&child, c_string_to_xml_string("times"));
                   const auto times_text =
                       times_property == nullptr
                           ? std::string()
@@ -1593,7 +1582,7 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
                         song_widget, times_text, QObject::tr("Repeat error"),
                         QObject::tr("Repeat times is out of range"));
                     if (!maybe_times.has_value()) {
-                      return false; // endpoint
+                      return false;  // endpoint
                     }
                     measure_info.repeat_times = maybe_times.value();
                   }
@@ -1601,9 +1590,9 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
               } else if (node_is(child, "ending")) {
                 if (get_property(child, "type") == "start") {
                   QList<int> ending_numbers;
-                  const auto numbers_text = QString::fromStdString(
-                      get_property(child, "number"));
-                  for (const auto &token :
+                  const auto numbers_text =
+                      QString::fromStdString(get_property(child, "number"));
+                  for (const auto& token :
                        numbers_text.split(',', Qt::SkipEmptyParts)) {
                     bool is_number = false;
                     const auto number = token.trimmed().toInt(&is_number);
@@ -1619,7 +1608,7 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
                       measure_info.ending_numbers.push_back(number);
                     }
                   }
-                } else { // "stop" or "discontinue"
+                } else {  // "stop" or "discontinue"
                   active_ending_numbers.clear();
                 }
               }
@@ -1658,16 +1647,16 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
          part_info.part_chords_dict.asKeyValueRange()) {
       auto [time, time_per_division] =
           get_time_and_time_per_division(time_iterator, divisions_time);
-      auto &new_pitched_notes = chord.pitched_notes;
-      auto &new_unpitched_notes = chord.unpitched_notes;
-      for (auto &pitched_note : new_pitched_notes) {
+      auto& new_pitched_notes = chord.pitched_notes;
+      auto& new_unpitched_notes = chord.unpitched_notes;
+      for (auto& pitched_note : new_pitched_notes) {
         pitched_note.duration = pitched_note.duration * time_per_division;
       }
-      for (auto &unpitched_note : new_unpitched_notes) {
+      for (auto& unpitched_note : new_unpitched_notes) {
         unpitched_note.duration = unpitched_note.duration * time_per_division;
       }
       if (chords_dict.contains(time)) {
-        auto &old_chord = chords_dict[time];
+        auto& old_chord = chords_dict[time];
 
         old_chord.pitched_notes.append(std::move(new_pitched_notes));
         old_chord.unpitched_notes.append(std::move(new_unpitched_notes));
@@ -1699,7 +1688,7 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
   if (chord_state == chord_dict_end) {
     QMessageBox::warning(&song_widget, QObject::tr("Empty MusicXML error"),
                          QObject::tr("No chords"));
-    return false; // endpoint
+    return false;  // endpoint
   }
 
   if (unpitched_voice_names.empty()) {
@@ -1758,7 +1747,7 @@ auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
   return true;
 }
 
-void add_menu_action(QMenu &menu, QAction &action,
+void add_menu_action(QMenu& menu, QAction& action,
                      const QKeySequence::StandardKey key_sequence,
                      const bool enabled) {
   action.setShortcuts(key_sequence);

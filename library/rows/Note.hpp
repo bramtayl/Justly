@@ -14,7 +14,8 @@ struct PitchedVoice;
 struct Player;
 struct Program;
 struct UnpitchedVoice;
-template <typename T> class QList;
+template <typename T>
+class QList;
 
 static const auto MAX_VELOCITY = 127;
 
@@ -27,30 +28,29 @@ struct Note : Row {
   // nullopt means the note is unplayable as-is (e.g. a pitched note whose
   // frequency is out of MIDI range) and the caller should abort rather than
   // play a bogus note
-  [[nodiscard]] virtual auto
-  get_closest_midi(QWidget &parent, Player &player,
-                   const QList<UnpitchedVoice> &unpitched_voices,
-                   int channel_number, int chord_number, int note_number) const
-      -> std::optional<short> = 0;
+  [[nodiscard]] virtual auto get_closest_midi(
+      QWidget& parent, Player& player,
+      const QList<UnpitchedVoice>& unpitched_voices, int channel_number,
+      int chord_number, int note_number) const -> std::optional<short> = 0;
 
-  [[nodiscard]] virtual auto
-  get_program(const QList<PitchedVoice> &pitched_voices,
-              const QList<UnpitchedVoice> &unpitched_voices) const
-      -> const Program & = 0;
+  [[nodiscard]] virtual auto get_program(
+      const QList<PitchedVoice>& pitched_voices,
+      const QList<UnpitchedVoice>& unpitched_voices) const
+      -> const Program& = 0;
 
-  [[nodiscard]] virtual auto
-  get_voice_velocity_ratio(const QList<PitchedVoice> &pitched_voices,
-                         const QList<UnpitchedVoice> &unpitched_voices) const
-      -> const Rational & = 0;
+  [[nodiscard]] virtual auto get_voice_velocity_ratio(
+      const QList<PitchedVoice>& pitched_voices,
+      const QList<UnpitchedVoice>& unpitched_voices) const
+      -> const Rational& = 0;
 };
 
-template <typename SubNote> // type properties
+template <typename SubNote>  // type properties
 concept NoteInterface = std::derived_from<SubNote, Note> && requires() {
-  { SubNote::get_pitched() } -> std::same_as<const char *>;
+  { SubNote::get_pitched() } -> std::same_as<const char*>;
 };
 
 template <NoteInterface SubNote>
-static void add_note_location(QTextStream &stream, const int chord_number,
+static void add_note_location(QTextStream& stream, const int chord_number,
                               const int note_number) {
   stream << QObject::tr(" for chord ") << chord_number + 1 << QObject::tr(", ")
          << QObject::tr(SubNote::get_pitched()) << QObject::tr(" note ")

@@ -8,8 +8,9 @@
 #include "other/helpers.hpp"
 #include "rows/Row.hpp"
 
-template <RowInterface SubRow> struct SetCells : public QUndoCommand {
-  RowsModel<SubRow> &rows_model;
+template <RowInterface SubRow>
+struct SetCells : public QUndoCommand {
+  RowsModel<SubRow>& rows_model;
   const int first_row_number;
   const int number_of_rows;
   const int left_column;
@@ -17,12 +18,14 @@ template <RowInterface SubRow> struct SetCells : public QUndoCommand {
   const QList<SubRow> old_rows;
   const QList<SubRow> new_rows;
 
-  explicit SetCells(RowsModel<SubRow> &rows_model_input,
+  explicit SetCells(RowsModel<SubRow>& rows_model_input,
                     const int first_row_number_input,
                     const int number_of_rows_input, const int left_column_input,
                     const int right_column_input, QList<SubRow> new_rows_input)
-      : rows_model(rows_model_input), first_row_number(first_row_number_input),
-        number_of_rows(number_of_rows_input), left_column(left_column_input),
+      : rows_model(rows_model_input),
+        first_row_number(first_row_number_input),
+        number_of_rows(number_of_rows_input),
+        left_column(left_column_input),
         right_column(right_column_input),
         old_rows(copy_items(rows_model.get_rows(), first_row_number,
                             number_of_rows)),

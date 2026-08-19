@@ -2,4 +2,6 @@
 
 #include <libxml/xmlschemas.h>
 
-XMLValidationContext::~XMLValidationContext() { xmlSchemaFreeValidCtxt(internal_pointer); }
+XMLValidationContext::~XMLValidationContext() {
+  xmlSchemaFreeValidCtxt(internal_pointer);
+}

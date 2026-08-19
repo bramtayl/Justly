@@ -17,9 +17,9 @@ class QWidget;
 // is-a QGraphicsScene (see PianoRollAxisScene's comment for why) so it can be
 // heap-allocated and parented to parent_widget directly
 struct PianoRollLegendScene : public QGraphicsScene {
-  QGraphicsView &view;
+  QGraphicsView& view;
 
-  explicit PianoRollLegendScene(QWidget &parent_widget);
+  explicit PianoRollLegendScene(QWidget& parent_widget);
 
   ~PianoRollLegendScene() override = default;
 

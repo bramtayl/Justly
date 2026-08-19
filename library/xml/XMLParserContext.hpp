@@ -7,10 +7,10 @@
 struct _xmlSchemaParserCtxt;
 
 class XMLParserContext {
-public:
-  _xmlSchemaParserCtxt *const internal_pointer;
+ public:
+  _xmlSchemaParserCtxt* const internal_pointer;
 
-  explicit XMLParserContext(const char *filename)
+  explicit XMLParserContext(const char* filename)
       : internal_pointer(xmlSchemaNewParserCtxt(filename)) {}
 
   ~XMLParserContext();

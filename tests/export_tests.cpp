@@ -1,32 +1,8 @@
-#include <QtCore/QByteArray>
-#include <QtCore/QFile>
-#include <QtCore/QIODevice>
-#include <QtCore/QObject>
-#include <QtCore/QPointer>
-#include <QtCore/QString>
-#include <QtCore/QTemporaryDir>
-#include <QtCore/QTemporaryFile>
-#include <QtCore/QTimer>
-#include <QtCore/Qt>
-#include <QtCore/QtSwap>
-#include <QtCore/qobjectdefs.h>
-#include <QtGui/QAction>
-#include <QtTest/QTestData>
-#include <QtTest/qtestcase.h>
-#include <QtTest/qtestkeyboard.h>
-#include <QtWidgets/QFileDialog>
-#include <QtWidgets/QLineEdit>
-
 #include "Tester.hpp"
-#include "menus/FileMenu.hpp"
-#include "menus/SongMenuBar.hpp"
 #include "other/MidiTrackEvent.hpp"
-#include "test_helpers.hpp"
-#include "widgets/SongEditor.hpp"
-#include "widgets/SongWidget.hpp"
 
 void Tester::test_export() {
-  auto &song_widget = song_editor.song_widget;
+  auto& song_widget = song_editor.song_widget;
 
   QTemporaryFile temp_export_file;
   QVERIFY(temp_export_file.open());
@@ -35,7 +11,7 @@ void Tester::test_export() {
 }
 
 void Tester::test_export_midi() {
-  auto &song_widget = song_editor.song_widget;
+  auto& song_widget = song_editor.song_widget;
 
   QTemporaryFile temp_export_file;
   QVERIFY(temp_export_file.open());
@@ -62,7 +38,7 @@ void Tester::test_export_midi() {
 // get_selected_file, and the call to export_to_file itself) -- drive it
 // through the actual dialog instead
 void Tester::test_export_via_dialog() {
-  auto &song_menu_bar = song_editor.song_menu_bar;
+  auto& song_menu_bar = song_editor.song_menu_bar;
 
   // a path that doesn't exist yet -- unlike QTemporaryFile, which
   // pre-creates the file and would make QFileDialog::accept() pop up an
@@ -87,7 +63,7 @@ void Tester::test_export_via_dialog() {
 // dialog is accepted after a short delay, and the resulting message box
 // is closed by a separately-armed timer that fires later
 void Tester::test_export_midi_via_dialog() {
-  auto &song_menu_bar = song_editor.song_menu_bar;
+  auto& song_menu_bar = song_editor.song_menu_bar;
 
   // see test_export_via_dialog: a path that doesn't exist yet, so
   // accept() doesn't pop up an overwrite-confirmation box on top of the
@@ -102,18 +78,19 @@ void Tester::test_export_midi_via_dialog() {
       "at the same time as a different percussion instrument on the "
       "shared MIDI percussion channel");
 
-  auto &dialog_timer = // NOLINT(cppcoreguidelines-owning-memory)
+  auto& dialog_timer =  // NOLINT(cppcoreguidelines-owning-memory)
       *(new QTimer(&song_editor));
   dialog_timer.setSingleShot(true);
   QObject::connect(&dialog_timer, &QTimer::timeout, &song_editor,
                    [export_filename]() -> auto {
-                     auto *const found_dialog = find_top_level_file_dialog();
+                     auto* const found_dialog = find_top_level_file_dialog();
                      QVERIFY(found_dialog != nullptr);
                      // see accept_file_dialog_later: type into the
                      // filename line edit directly rather than using
                      // selectFile(), which only sets the directory for a
                      // not-yet-existing target
-                     auto *const line_edit = found_dialog->findChild<QLineEdit *>();
+                     auto* const line_edit =
+                         found_dialog->findChild<QLineEdit*>();
                      QVERIFY(line_edit != nullptr);
                      line_edit->setText(export_filename);
                      QTest::keyEvent(QTest::Press, line_edit, Qt::Key_Enter);
@@ -132,15 +109,14 @@ void Tester::test_export_midi_via_dialog() {
 // should still restore playback state (synth.lock-memory, audio driver)
 // afterward rather than leaving the app stuck with realtime audio off
 void Tester::test_export_unwritable_path() {
-  auto &song_widget = song_editor.song_widget;
+  auto& song_widget = song_editor.song_widget;
 
   QTemporaryDir temp_export_dir;
   QVERIFY(temp_export_dir.isValid());
   auto unwritable_path =
       temp_export_dir.filePath("nonexistent_subdir/export.wav");
 
-  close_message_later(song_editor, waiting_for_message,
-                      "Cannot write to file");
+  close_message_later(song_editor, waiting_for_message, "Cannot write to file");
   export_to_file(song_widget, unwritable_path);
 
   QVERIFY(!QFile::exists(unwritable_path));
@@ -158,15 +134,15 @@ void Tester::test_export_unwritable_path() {
 // with no matching deleteLater(), so every use of a file dialog left a
 // live QFileDialog parented to song_widget for the rest of the process
 void Tester::test_file_dialog_cleanup() {
-  auto &file_menu = song_editor.song_menu_bar.file_menu;
+  auto& file_menu = song_editor.song_menu_bar.file_menu;
 
   QPointer<QFileDialog> dialog_pointer;
-  auto &timer = // NOLINT(cppcoreguidelines-owning-memory)
+  auto& timer =  // NOLINT(cppcoreguidelines-owning-memory)
       *(new QTimer(&song_editor));
   timer.setSingleShot(true);
   QObject::connect(&timer, &QTimer::timeout, &song_editor,
                    [&dialog_pointer]() -> auto {
-                     auto *const found_dialog = find_top_level_file_dialog();
+                     auto* const found_dialog = find_top_level_file_dialog();
                      QVERIFY(found_dialog != nullptr);
                      dialog_pointer = found_dialog;
                      found_dialog->reject();
@@ -246,7 +222,8 @@ void Tester::test_midi_byte_encoding() {
 
   bytes.clear();
   append_chunk(bytes, "MThd", QByteArray("XY"));
-  QCOMPARE(bytes, QByteArray("MThd") + QByteArray::fromHex("00000002") + QByteArray("XY"));
+  QCOMPARE(bytes, QByteArray("MThd") + QByteArray::fromHex("00000002") +
+                      QByteArray("XY"));
 }
 
 // exercises MidiTrackEvent::write's std::visit dispatch (and each
@@ -255,52 +232,57 @@ void Tester::test_midi_byte_encoding() {
 void Tester::test_midi_track_event_write_dispatch() {
   QByteArray bytes;
 
-  MidiTrackEvent{
-      .tick = 0, .tie_break = 0,
-      .info = TempoEventInfo{.microseconds_per_quarter = 500000}}
+  MidiTrackEvent{.tick = 0,
+                 .tie_break = 0,
+                 .info = TempoEventInfo{.microseconds_per_quarter = 500000}}
       .write(bytes);
   QCOMPARE(bytes, QByteArray::fromHex("FF510307A120"));
 
   bytes.clear();
-  MidiTrackEvent{.tick = 0, .tie_break = 0,
-                 .info = TrackNameEventInfo{.name = "Hi"}}
+  MidiTrackEvent{
+      .tick = 0, .tie_break = 0, .info = TrackNameEventInfo{.name = "Hi"}}
       .write(bytes);
   QCOMPARE(bytes, QByteArray::fromHex("FF0302") + QByteArray("Hi"));
 
   bytes.clear();
   MidiTrackEvent{
-      .tick = 0, .tie_break = 0,
+      .tick = 0,
+      .tie_break = 0,
       .info = ProgramChangeEventInfo{.channel_number = 2, .program_number = 5}}
       .write(bytes);
   QCOMPARE(bytes, QByteArray::fromHex("C205"));
 
   bytes.clear();
   MidiTrackEvent{
-      .tick = 0, .tie_break = 0,
+      .tick = 0,
+      .tie_break = 0,
       .info = PitchBendEventInfo{.channel_number = 0, .bend_14_bit = 8192}}
       .write(bytes);
   QCOMPARE(bytes, QByteArray::fromHex("E00040"));
 
   bytes.clear();
-  MidiTrackEvent{.tick = 0, .tie_break = 0,
-                 .info = ControlChangeEventInfo{.channel_number = 3,
-                                                .controller = 7,
-                                                .value = 100}}
+  MidiTrackEvent{.tick = 0,
+                 .tie_break = 0,
+                 .info =
+                     ControlChangeEventInfo{
+                         .channel_number = 3, .controller = 7, .value = 100}}
       .write(bytes);
   QCOMPARE(bytes, QByteArray::fromHex("B30764"));
 
   bytes.clear();
-  MidiTrackEvent{
-      .tick = 0, .tie_break = 0,
-      .info = NoteOnEventInfo{
-          .channel_number = 1, .midi_number = 60, .velocity = 100}}
+  MidiTrackEvent{.tick = 0,
+                 .tie_break = 0,
+                 .info = NoteOnEventInfo{.channel_number = 1,
+                                         .midi_number = 60,
+                                         .velocity = 100}}
       .write(bytes);
   QCOMPARE(bytes, QByteArray::fromHex("913C64"));
 
   bytes.clear();
-  MidiTrackEvent{.tick = 0, .tie_break = 0,
-                 .info = NoteOffEventInfo{.channel_number = 1,
-                                          .midi_number = 60}}
+  MidiTrackEvent{
+      .tick = 0,
+      .tie_break = 0,
+      .info = NoteOffEventInfo{.channel_number = 1, .midi_number = 60}}
       .write(bytes);
   QCOMPARE(bytes, QByteArray::fromHex("813C00"));
 }

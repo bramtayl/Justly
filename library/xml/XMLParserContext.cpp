@@ -2,4 +2,6 @@
 
 #include <libxml/xmlschemas.h>
 
-XMLParserContext::~XMLParserContext() { xmlSchemaFreeParserCtxt(internal_pointer); }
+XMLParserContext::~XMLParserContext() {
+  xmlSchemaFreeParserCtxt(internal_pointer);
+}

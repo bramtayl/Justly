@@ -16,6 +16,8 @@ struct TimeIterator {
   int time_per_division = 1;
 
   TimeIterator(QMap<int, int> dict_input, const int song_divisions_input)
-      : dict(std::move(dict_input)), state(dict.begin()), end(dict.end()),
+      : dict(std::move(dict_input)),
+        state(dict.begin()),
+        end(dict.end()),
         song_divisions(song_divisions_input) {}
 };

@@ -7,32 +7,32 @@ class QByteArray;
 
 static const auto MIDI_TEMPO_META_TYPE = 0x51U;
 
-void append_variable_length(QByteArray &bytes, unsigned int value);
+void append_variable_length(QByteArray& bytes, unsigned int value);
 
-void append_meta_event(QByteArray &bytes, unsigned int type,
-                       const QByteArray &payload);
+void append_meta_event(QByteArray& bytes, unsigned int type,
+                       const QByteArray& payload);
 
-void append_track_name_meta(QByteArray &bytes, const QString &name);
+void append_track_name_meta(QByteArray& bytes, const QString& name);
 
-void append_control_change(QByteArray &bytes, unsigned int channel_number,
+void append_control_change(QByteArray& bytes, unsigned int channel_number,
                            unsigned int controller, unsigned int value);
 
-void append_program_change(QByteArray &bytes, unsigned int channel_number,
+void append_program_change(QByteArray& bytes, unsigned int channel_number,
                            unsigned int program_number);
 
-void append_note_on(QByteArray &bytes, unsigned int channel_number,
+void append_note_on(QByteArray& bytes, unsigned int channel_number,
                     unsigned int midi_number, unsigned int velocity);
 
-void append_note_off(QByteArray &bytes, unsigned int channel_number,
+void append_note_off(QByteArray& bytes, unsigned int channel_number,
                      unsigned int midi_number);
 
-void append_pitch_bend(QByteArray &bytes, unsigned int channel_number,
+void append_pitch_bend(QByteArray& bytes, unsigned int channel_number,
                        unsigned int bend_14_bit);
 
-void append_be16(QByteArray &bytes, unsigned int value);
+void append_be16(QByteArray& bytes, unsigned int value);
 
-void append_chunk(QByteArray &output, const char * chunk_id,
-                  const QByteArray &chunk_data);
+void append_chunk(QByteArray& output, const char* chunk_id,
+                  const QByteArray& chunk_data);
 
 // base of the per-event-kind payload hierarchy; each subclass knows how to
 // write only its own bytes, so a MidiTrackEvent never owns a QByteArray of
@@ -45,27 +45,27 @@ struct EventInfo {};
 struct TempoEventInfo : EventInfo {
   unsigned int microseconds_per_quarter = 0;
 
-  void write(QByteArray &track_data) const;
+  void write(QByteArray& track_data) const;
 };
 
 struct TrackNameEventInfo : EventInfo {
   QString name;
 
-  void write(QByteArray &track_data) const;
+  void write(QByteArray& track_data) const;
 };
 
 struct ProgramChangeEventInfo : EventInfo {
   unsigned int channel_number = 0;
   unsigned int program_number = 0;
 
-  void write(QByteArray &track_data) const;
+  void write(QByteArray& track_data) const;
 };
 
 struct PitchBendEventInfo : EventInfo {
   unsigned int channel_number = 0;
   unsigned int bend_14_bit = 0;
 
-  void write(QByteArray &track_data) const;
+  void write(QByteArray& track_data) const;
 };
 
 struct ControlChangeEventInfo : EventInfo {
@@ -73,7 +73,7 @@ struct ControlChangeEventInfo : EventInfo {
   unsigned int controller = 0;
   unsigned int value = 0;
 
-  void write(QByteArray &track_data) const;
+  void write(QByteArray& track_data) const;
 };
 
 struct NoteOnEventInfo : EventInfo {
@@ -81,14 +81,14 @@ struct NoteOnEventInfo : EventInfo {
   unsigned int midi_number = 0;
   unsigned int velocity = 0;
 
-  void write(QByteArray &track_data) const;
+  void write(QByteArray& track_data) const;
 };
 
 struct NoteOffEventInfo : EventInfo {
   unsigned int channel_number = 0;
   unsigned int midi_number = 0;
 
-  void write(QByteArray &track_data) const;
+  void write(QByteArray& track_data) const;
 };
 
 using MidiEventPayload =
@@ -105,5 +105,5 @@ struct MidiTrackEvent {
   int tie_break = 0;
   MidiEventPayload info;
 
-  void write(QByteArray &track_data) const;
+  void write(QByteArray& track_data) const;
 };

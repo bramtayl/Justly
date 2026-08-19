@@ -1,10 +1,12 @@
 #include "menus/SongMenuBar.hpp"
+
 #include "menus/EditMenu.hpp"
 #include "menus/FileMenu.hpp"
 #include "menus/PlayMenu.hpp"
 
-SongMenuBar::SongMenuBar(SongWidget &song_widget)
-    : file_menu(FileMenu(song_widget)), edit_menu(EditMenu(song_widget)),
+SongMenuBar::SongMenuBar(SongWidget& song_widget)
+    : file_menu(FileMenu(song_widget)),
+      edit_menu(EditMenu(song_widget)),
       play_menu(PlayMenu(song_widget)) {
   addMenu(&file_menu);
   addMenu(&edit_menu);

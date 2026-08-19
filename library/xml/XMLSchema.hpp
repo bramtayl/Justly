@@ -8,10 +8,10 @@
 struct _xmlSchema;
 
 class XMLSchema {
-public:
-  _xmlSchema *const internal_pointer;
+ public:
+  _xmlSchema* const internal_pointer;
 
-  explicit XMLSchema(const XMLParserContext &context)
+  explicit XMLSchema(const XMLParserContext& context)
       : internal_pointer(xmlSchemaParse(context.internal_pointer)) {}
 
   ~XMLSchema();

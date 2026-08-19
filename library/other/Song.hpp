@@ -3,14 +3,14 @@
 #include <QtCore/QList>
 #include <QtCore/QString>
 #include <tuple>
+#include <variant>
 
-#include "rows/Chord.hpp"
-#include "rows/PitchedNote.hpp"
 #include "rows/PitchedVoice.hpp"
 #include "rows/UnpitchedVoice.hpp"
 #include "sound/PlayState.hpp"
 
 class QTextStream;
+struct Chord;
 
 static const auto C_0_MIDI = 12;
 static const auto DEFAULT_STARTING_MIDI = MIDDLE_C_MIDI;
@@ -28,22 +28,17 @@ struct Song {
   Song();
 };
 
-[[nodiscard]] auto get_octave_degree(int midi_interval)
-    -> std::tuple<int, int>;
+[[nodiscard]] auto get_octave_degree(int midi_interval) -> std::tuple<int, int>;
 
-void initialize_playstate(const Song &song, PlayState &play_state,
-                           double current_time);
+void initialize_playstate(const Song& song, PlayState& play_state,
+                          double current_time);
 
-[[nodiscard]] auto get_play_state_at_chord(const Song &song,
-                                            int chord_number) -> PlayState;
+[[nodiscard]] auto get_play_state_at_chord(const Song& song, int chord_number)
+    -> PlayState;
 
-[[nodiscard]] auto get_note_name( int closest_midi)
-    -> QString;
+[[nodiscard]] auto get_note_name(int closest_midi) -> QString;
 
-void add_frequency_to_stream(QTextStream &stream,
-                              double frequency);
+void add_frequency_to_stream(QTextStream& stream, double frequency);
 
-void add_timing_to_stream(QTextStream &stream,
-                          const PlayState &play_state,
-                           double velocity,
-                           double beats_double);
+void add_timing_to_stream(QTextStream& stream, const PlayState& play_state,
+                          double velocity, double beats_double);

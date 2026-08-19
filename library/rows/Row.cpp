@@ -1,17 +1,21 @@
-#include <QtCore/qhashfunctions.h>
+#include "rows/Row.hpp"
+
 #include <libxml/parser.h>
 
-#include "rows/Row.hpp"
+#include <string>
+
 #include "other/helpers.hpp"
 
-void maybe_add_qstring_to_xml(xmlNode &node, const char *const field_name,
-                              const QString &words) {
+class QString;
+
+void maybe_add_qstring_to_xml(xmlNode& node, const char* const field_name,
+                              const QString& words) {
   if (!words.isEmpty()) {
     set_xml_string(node, field_name, words.toStdString());
   }
 }
 
-auto get_qstring_content(const xmlNode &node) -> QString {
+auto get_qstring_content(const xmlNode& node) -> QString {
   const XMLString content{xmlNodeGetContent(&node)};
   return {xml_string_to_c_string(content.internal_pointer)};
 }

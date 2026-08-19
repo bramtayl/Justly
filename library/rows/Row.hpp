@@ -1,44 +1,45 @@
 #pragma once
 
+#include <libxml/parser.h>
+
 #include <QtCore/QList>
 #include <QtCore/QString>
 #include <QtCore/QVariant>
 #include <concepts>
-#include <libxml/parser.h>
 #include <utility>
 
 #include "other/helpers.hpp"
 
 struct Row {
   virtual ~Row() = default;
-  virtual void from_xml(xmlNode &node) = 0;
+  virtual void from_xml(xmlNode& node) = 0;
 
   [[nodiscard]] virtual auto get_data(int column_number) const -> QVariant = 0;
 
-  virtual void set_data(int column, const QVariant &new_value) = 0;
-  virtual void column_to_xml(xmlNode &node, int column_number) const = 0;
-  virtual void to_xml(xmlNode &chord_node) const = 0;
+  virtual void set_data(int column, const QVariant& new_value) = 0;
+  virtual void column_to_xml(xmlNode& node, int column_number) const = 0;
+  virtual void to_xml(xmlNode& chord_node) const = 0;
 };
 
 template <typename SubRow>
 concept RowInterface =
     std::derived_from<SubRow, Row> &&
-    requires(SubRow target_row, const SubRow &template_row, xmlNode &node,
+    requires(SubRow target_row, const SubRow& template_row, xmlNode& node,
              int column_number) {
       {
         target_row.copy_column_from(template_row, column_number)
       } -> std::same_as<void>;
       { SubRow::get_number_of_columns() } -> std::same_as<int>;
-      { SubRow::get_column_name(column_number) } -> std::same_as<const char *>;
-      { SubRow::get_clipboard_schema() } -> std::same_as<const char *>;
-      { SubRow::get_xml_field_name() } -> std::same_as<const char *>;
-      { SubRow::get_cells_mime() } -> std::same_as<const char *>;
+      { SubRow::get_column_name(column_number) } -> std::same_as<const char*>;
+      { SubRow::get_clipboard_schema() } -> std::same_as<const char*>;
+      { SubRow::get_xml_field_name() } -> std::same_as<const char*>;
+      { SubRow::get_cells_mime() } -> std::same_as<const char*>;
       { SubRow::is_column_editable(column_number) } -> std::same_as<bool>;
     };
 
 template <RowInterface SubRow>
-static void xml_to_rows(QList<SubRow> &new_rows, xmlNode &node) {
-  auto *xml_row_pointer = xmlFirstElementChild(&node);
+static void xml_to_rows(QList<SubRow>& new_rows, xmlNode& node) {
+  auto* xml_row_pointer = xmlFirstElementChild(&node);
   while (xml_row_pointer != nullptr) {
     SubRow child_row;
     child_row.from_xml(get_reference(xml_row_pointer));
@@ -48,21 +49,20 @@ static void xml_to_rows(QList<SubRow> &new_rows, xmlNode &node) {
 }
 
 template <RowInterface SubRow>
-static void maybe_set_xml_rows(xmlNode &node, const char *const array_name,
-                               const QList<SubRow> &rows) {
+static void maybe_set_xml_rows(xmlNode& node, const char* const array_name,
+                               const QList<SubRow>& rows) {
   if (!rows.empty()) {
-    auto &rows_node = get_new_child(node, array_name);
-    for (const auto &row : rows) {
+    auto& rows_node = get_new_child(node, array_name);
+    for (const auto& row : rows) {
       row.to_xml(get_new_child(rows_node, SubRow::get_xml_field_name()));
     }
   }
 }
 
-void maybe_add_qstring_to_xml(xmlNode &node, const char * field_name,
-                              const QString &words);
+void maybe_add_qstring_to_xml(xmlNode& node, const char* field_name,
+                              const QString& words);
 
-[[nodiscard]] auto get_qstring_content(const xmlNode &node) -> QString;
+[[nodiscard]] auto get_qstring_content(const xmlNode& node) -> QString;
 
-[[nodiscard]] auto
-get_duration_in_milliseconds( double beats_per_minute,
-                              double beats_double) -> double;
+[[nodiscard]] auto get_duration_in_milliseconds(double beats_per_minute,
+                                                double beats_double) -> double;

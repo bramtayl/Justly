@@ -8,10 +8,10 @@
 struct _xmlSchemaValidCtxt;
 
 class XMLValidationContext {
-public:
-  _xmlSchemaValidCtxt *const internal_pointer;
+ public:
+  _xmlSchemaValidCtxt* const internal_pointer;
 
-  explicit XMLValidationContext(XMLSchema &schema)
+  explicit XMLValidationContext(XMLSchema& schema)
       : internal_pointer(xmlSchemaNewValidCtxt(schema.internal_pointer)) {}
 
   ~XMLValidationContext();

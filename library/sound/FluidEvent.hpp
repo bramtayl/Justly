@@ -5,7 +5,7 @@
 #include "other/helpers.hpp"
 
 struct FluidEvent {
-  fluid_event_t *const internal_pointer;
+  fluid_event_t* const internal_pointer;
 
   FluidEvent();
 

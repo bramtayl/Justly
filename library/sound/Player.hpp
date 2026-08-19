@@ -1,10 +1,10 @@
 #pragma once
 
-#include <QtCore/QHash>
-#include <QtCore/QList>
 #include <fluidsynth/types.h>
 
-#include "cell_types/Program.hpp"
+#include <QtCore/QHash>
+#include <QtCore/QList>
+
 #include "other/helpers.hpp"
 #include "sound/FluidDriver.hpp"
 #include "sound/FluidEvent.hpp"
@@ -14,28 +14,27 @@
 #include "sound/PlayState.hpp"
 
 class QWidget;
+struct Program;
 
 static const auto NUMBER_OF_MIDI_CHANNELS = 64;
 
-[[nodiscard]] auto make_audio_driver(
-    QWidget &parent, FluidSettings &settings,
-    FluidSynth &synth) -> FluidDriver;
+[[nodiscard]] auto make_audio_driver(QWidget& parent, FluidSettings& settings,
+                                     FluidSynth& synth) -> FluidDriver;
 
-void stop_playing(const FluidSequencer &sequencer, const FluidEvent &event);
+void stop_playing(const FluidSequencer& sequencer, const FluidEvent& event);
 
-void check_fluid_ok( int fluid_result);
+void check_fluid_ok(int fluid_result);
 
-void set_fluid_int(FluidSettings &settings, const char * field,
-                    int value);
+void set_fluid_int(FluidSettings& settings, const char* field, int value);
 
-void set_fluid_string(FluidSettings &settings, const char * field,
-                      const char * value);
+void set_fluid_string(FluidSettings& settings, const char* field,
+                      const char* value);
 
-void set_destination(FluidEvent &event,  fluid_seq_id_t sequencer_id);
+void set_destination(FluidEvent& event, fluid_seq_id_t sequencer_id);
 
 struct Player {
   // data
-  QWidget &parent;
+  QWidget& parent;
 
   // play state fields
   QList<double> channel_schedules;
@@ -46,7 +45,7 @@ struct Player {
   // channel_schedules make it eligible for reuse by anything else, so
   // switching a channel's program mid-decay (the actual source of glitches)
   // can't happen for percussion at all
-  QHash<const Program *, int> percussion_channels;
+  QHash<const Program*, int> percussion_channels;
   PlayState play_state;
 
   double final_time = 0;
@@ -59,7 +58,7 @@ struct Player {
   const unsigned int soundfont_id;
   FluidDriver driver;
 
-  explicit Player(QWidget &parent_input);
+  explicit Player(QWidget& parent_input);
 
   ~Player();
 

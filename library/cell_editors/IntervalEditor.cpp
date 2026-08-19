@@ -1,14 +1,13 @@
 #include "cell_editors/IntervalEditor.hpp"
+
 #include <QtWidgets/QFrame>
 
 #include "cell_editors/RationalEditor.hpp"
 #include "cell_types/Interval.hpp"
 
-
-IntervalEditor::IntervalEditor(QWidget *const parent_pointer)
+IntervalEditor::IntervalEditor(QWidget* const parent_pointer)
     : QFrame(parent_pointer),
       rational_editor(*(new RationalEditor(parent_pointer))) {
-
   setFrameStyle(QFrame::StyledPanel);
   setAutoFillBackground(true);
 
@@ -27,7 +26,7 @@ auto IntervalEditor::value() const -> Interval {
   return Interval(rational_editor.value(), octave_box.value());
 }
 
-void IntervalEditor::setValue(const Interval &new_value) const {
+void IntervalEditor::setValue(const Interval& new_value) const {
   rational_editor.setValue(new_value.ratio);
   octave_box.setValue(new_value.octave);
 }

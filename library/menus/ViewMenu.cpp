@@ -15,8 +15,10 @@ ViewMenu::ViewMenu()
       zoom_in_action(ViewMenu::tr("Zoom &in")),
       zoom_out_action(ViewMenu::tr("Zoom &out")) {
   add_menu_action(*this, back_to_chords_action, QKeySequence::Back, false);
-  add_menu_action(*this, edit_pitched_voices_action, QKeySequence::UnknownKey, true);
-  add_menu_action(*this, edit_unpitched_voices_action, QKeySequence::UnknownKey, true);
+  add_menu_action(*this, edit_pitched_voices_action, QKeySequence::UnknownKey,
+                  true);
+  add_menu_action(*this, edit_unpitched_voices_action, QKeySequence::UnknownKey,
+                  true);
 
   add_menu_action(*this, previous_chord_action, QKeySequence::PreviousChild,
                   false);

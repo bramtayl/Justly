@@ -5,7 +5,7 @@
 
 #include "cell_types/Rational.hpp"
 
-RationalEditor::RationalEditor(QWidget *const parent_pointer)
+RationalEditor::RationalEditor(QWidget* const parent_pointer)
     : QFrame(parent_pointer) {
   setFrameStyle(QFrame::StyledPanel);
   setAutoFillBackground(true);
@@ -26,7 +26,7 @@ auto RationalEditor::value() const -> Rational {
   return Rational(numerator_box.value(), denominator_box.value());
 }
 
-void RationalEditor::setValue(const Rational &new_value) const {
+void RationalEditor::setValue(const Rational& new_value) const {
   numerator_box.setValue(new_value.numerator);
   denominator_box.setValue(new_value.denominator);
 }

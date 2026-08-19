@@ -1,12 +1,5 @@
 #include "sound/Player.hpp"
-#include "sound/FluidDriver.hpp"
-#include "sound/FluidEvent.hpp"
-#include "sound/FluidSequencer.hpp"
-#include "sound/FluidSynth.hpp"
 
-#include <QtCore/QObject>
-#include <QtCore/QtAssert>
-#include <QtWidgets/QMessageBox>
 #include <fluidsynth.h>
 #include <fluidsynth/audio.h>
 #include <fluidsynth/event.h>
@@ -14,12 +7,25 @@
 #include <fluidsynth/seq.h>
 #include <fluidsynth/settings.h>
 #include <fluidsynth/types.h>
+
+#include <QtCore/QObject>
+#include <QtCore/QtAssert>
+#include <QtWidgets/QMessageBox>
 #include <thread>
 
-auto make_audio_driver(QWidget &parent, FluidSettings &settings,
-                       FluidSynth &synth) -> FluidDriver {
+#include "cell_types/Program.hpp"
+#include "sound/FluidDriver.hpp"
+#include "sound/FluidEvent.hpp"
+#include "sound/FluidSequencer.hpp"
+#include "sound/FluidSynth.hpp"
+
+template <typename T>
+class QList;
+
+auto make_audio_driver(QWidget& parent, FluidSettings& settings,
+                       FluidSynth& synth) -> FluidDriver {
 #ifndef NO_REALTIME_AUDIO
-  auto *const audio_driver_pointer =
+  auto* const audio_driver_pointer =
       new_fluid_audio_driver(settings.internal_pointer, synth.internal_pointer);
   if (audio_driver_pointer == nullptr) {
     QMessageBox::warning(&parent, QObject::tr("Audio driver error"),
@@ -31,7 +37,7 @@ auto make_audio_driver(QWidget &parent, FluidSettings &settings,
 #endif
 }
 
-void stop_playing(const FluidSequencer &sequencer, const FluidEvent &event) {
+void stop_playing(const FluidSequencer& sequencer, const FluidEvent& event) {
   fluid_sequencer_remove_events(sequencer.internal_pointer, -1, -1, -1);
 
   for (auto channel_number = 0; channel_number < NUMBER_OF_MIDI_CHANNELS;
@@ -46,26 +52,26 @@ void check_fluid_ok(const int fluid_result) {
   Q_ASSERT(fluid_result == FLUID_OK);
 }
 
-void set_fluid_int(FluidSettings &settings, const char *const field,
+void set_fluid_int(FluidSettings& settings, const char* const field,
                    const int value) {
   Q_ASSERT(field != nullptr);
   check_fluid_ok(
       fluid_settings_setint(settings.internal_pointer, field, value));
 }
 
-void set_fluid_string(FluidSettings &settings, const char *const field,
-                      const char *const value) {
+void set_fluid_string(FluidSettings& settings, const char* const field,
+                      const char* const value) {
   Q_ASSERT(field != nullptr);
   Q_ASSERT(value != nullptr);
   check_fluid_ok(
       fluid_settings_setstr(settings.internal_pointer, field, value));
 }
 
-void set_destination(FluidEvent &event, const fluid_seq_id_t sequencer_id) {
+void set_destination(FluidEvent& event, const fluid_seq_id_t sequencer_id) {
   fluid_event_set_dest(event.internal_pointer, sequencer_id);
 }
 
-Player::Player(QWidget &parent_input)
+Player::Player(QWidget& parent_input)
     : parent(parent_input),
       channel_schedules(QList<double>(NUMBER_OF_MIDI_CHANNELS, 0)),
       settings(FluidSettings(
@@ -77,7 +83,8 @@ Player::Player(QWidget &parent_input)
           nullptr
 #endif
           )),
-      synth(FluidSynth(settings)), sequencer(FluidSequencer(synth)),
+      synth(FluidSynth(settings)),
+      sequencer(FluidSequencer(synth)),
       soundfont_id(get_soundfont_id(synth)),
       driver(make_audio_driver(parent, settings, synth)) {
   set_destination(event, sequencer.sequencer_id);

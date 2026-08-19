@@ -2,7 +2,7 @@
 
 #include <QtWidgets/QSpinBox>
 
-MidiNumberEditor::MidiNumberEditor(QWidget *const parent_pointer)
+MidiNumberEditor::MidiNumberEditor(QWidget* const parent_pointer)
     : QSpinBox(parent_pointer) {
   static const auto MAX_MIDI_NUMBER = 127;
   setMinimum(0);

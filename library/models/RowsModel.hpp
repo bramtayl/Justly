@@ -1,5 +1,9 @@
 #pragma once
 
+#include <QtCore/qstringconverter_base.h>
+#include <QtGui/qtextoption.h>
+#include <libxml/parser.h>
+
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QArrayData>
 #include <QtCore/QByteArray>
@@ -22,14 +26,12 @@
 #include <QtCore/QVariant>
 #include <QtCore/Qt>
 #include <QtCore/QtAssert>
-#include <QtCore/qstringconverter_base.h>
 #include <QtGui/QInputDevice>
 #include <QtGui/QPainter>
 #include <QtGui/QPointingDevice>
 #include <QtGui/QSurfaceFormat>
 #include <QtGui/QTextDocument>
 #include <QtGui/QTextFormat>
-#include <QtGui/qtextoption.h>
 #include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QAbstractSpinBox>
 #include <QtWidgets/QDialogButtonBox>
@@ -46,7 +48,6 @@
 #include <QtWidgets/QWidget>
 #include <algorithm>
 #include <iterator>
-#include <libxml/parser.h>
 #include <utility>
 
 #include "other/helpers.hpp"
@@ -54,26 +55,26 @@
 
 struct Song;
 
-[[nodiscard]] auto
-get_number_of_rows(const QItemSelectionRange &range) -> int;
+[[nodiscard]] auto get_number_of_rows(const QItemSelectionRange& range) -> int;
 
-template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
-  Song &song;
-  QItemSelectionModel *selection_model_pointer = nullptr;
-  QList<SubRow> *rows_pointer = nullptr;
+template <RowInterface SubRow>
+struct RowsModel : public QAbstractTableModel {
+  Song& song;
+  QItemSelectionModel* selection_model_pointer = nullptr;
+  QList<SubRow>* rows_pointer = nullptr;
   int parent_chord_number = -1;
 
-  explicit RowsModel(Song &song_input) : song(song_input) {}
+  explicit RowsModel(Song& song_input) : song(song_input) {}
 
   [[nodiscard]] auto is_valid() const -> bool {
     return rows_pointer != nullptr;
   };
 
-  [[nodiscard]] auto get_rows() const -> QList<SubRow> & {
+  [[nodiscard]] auto get_rows() const -> QList<SubRow>& {
     return get_reference(rows_pointer);
   };
 
-  void set_rows_pointer(QList<SubRow> *const new_rows_pointer = nullptr,
+  void set_rows_pointer(QList<SubRow>* const new_rows_pointer = nullptr,
                         const int new_parent_chord_number = -1) {
     QAbstractTableModel::beginResetModel();
     rows_pointer = new_rows_pointer;
@@ -81,7 +82,7 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
     QAbstractTableModel::endResetModel();
   }
 
-  [[nodiscard]] auto rowCount(const QModelIndex & /*parent_index*/) const
+  [[nodiscard]] auto rowCount(const QModelIndex& /*parent_index*/) const
       -> int override {
     if (!is_valid()) {
       return 0;
@@ -89,7 +90,7 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
     return static_cast<int>(get_rows().size());
   }
 
-  [[nodiscard]] auto columnCount(const QModelIndex & /*parent_index*/) const
+  [[nodiscard]] auto columnCount(const QModelIndex& /*parent_index*/) const
       -> int override {
     return SubRow::get_number_of_columns();
   }
@@ -101,15 +102,15 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
       return {};
     }
     switch (orientation) {
-    case Qt::Horizontal:
-      return SubRow::get_column_name(section);
-    case Qt::Vertical:
-      return section + 1;
+      case Qt::Horizontal:
+        return SubRow::get_column_name(section);
+      case Qt::Vertical:
+        return section + 1;
     }
     Q_UNREACHABLE();
   }
 
-  [[nodiscard]] auto flags(const QModelIndex &index) const
+  [[nodiscard]] auto flags(const QModelIndex& index) const
       -> Qt::ItemFlags override {
     const auto uneditable = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
     return SubRow::is_column_editable(index.column())
@@ -117,8 +118,8 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
                : uneditable;
   }
 
-  virtual void add_to_status(QTextStream & /*stream*/, const int /*row_number*/,
-                             const SubRow & /*row*/) const {}
+  virtual void add_to_status(QTextStream& /*stream*/, const int /*row_number*/,
+                             const SubRow& /*row*/) const {}
 
   [[nodiscard]] virtual auto get_display_data(const int row_number,
                                               const int column_number) const
@@ -126,7 +127,7 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
     return get_rows().at(row_number).get_data(column_number);
   }
 
-  [[nodiscard]] auto data(const QModelIndex &index, const int role) const
+  [[nodiscard]] auto data(const QModelIndex& index, const int role) const
       -> QVariant override {
     Q_ASSERT(index.isValid());
     const auto row_number = index.row();
@@ -134,7 +135,7 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
     if (role == Qt::StatusTipRole) {
       QString result;
       QTextStream stream(&result);
-      const auto &row = get_rows().at(row_number);
+      const auto& row = get_rows().at(row_number);
       add_to_status(stream, row_number, row);
       return result;
     }
@@ -151,13 +152,13 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
   }
 
   [[nodiscard]] virtual auto check_cell(const int /*column_number*/,
-                                        const QVariant & /*new_value*/) const
+                                        const QVariant& /*new_value*/) const
       -> bool {
     return true;
   }
 
   // don't inline these functions because they use protected methods
-  void set_cell(const QModelIndex &set_index, const QVariant &new_value) {
+  void set_cell(const QModelIndex& set_index, const QVariant& new_value) {
     const auto row_number = set_index.row();
     const auto column_number = set_index.column();
 
@@ -168,15 +169,15 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
                 QItemSelectionModel::Select | QItemSelectionModel::Clear);
   }
 
-  void set_cells(const QItemSelectionRange &range,
-                 const QList<SubRow> &new_rows) {
+  void set_cells(const QItemSelectionRange& range,
+                 const QList<SubRow>& new_rows) {
     Q_ASSERT(range.isValid());
 
-    auto &rows = get_rows();
+    auto& rows = get_rows();
     const auto number_of_new_rows = new_rows.size();
 
-    const auto &top_left_index = range.topLeft();
-    const auto &bottom_right_index = range.bottomRight();
+    const auto& top_left_index = range.topLeft();
+    const auto& bottom_right_index = range.bottomRight();
 
     const auto first_row_number = range.top();
     const auto left_column = range.left();
@@ -184,8 +185,8 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
 
     for (auto replace_number = 0; replace_number < number_of_new_rows;
          replace_number++) {
-      auto &row = rows[first_row_number + replace_number];
-      const auto &new_row = new_rows.at(replace_number);
+      auto& row = rows[first_row_number + replace_number];
+      const auto& new_row = new_rows.at(replace_number);
       for (auto column_number = left_column; column_number <= right_column;
            column_number++) {
         row.copy_column_from(new_row, column_number);
@@ -197,21 +198,21 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
                 QItemSelectionModel::Select | QItemSelectionModel::Clear);
   }
 
-  void delete_cells(const QItemSelectionRange &range) {
+  void delete_cells(const QItemSelectionRange& range) {
     Q_ASSERT(range.isValid());
 
-    const auto &top_left_index = range.topLeft();
-    const auto &bottom_right_index = range.bottomRight();
+    const auto& top_left_index = range.topLeft();
+    const auto& bottom_right_index = range.bottomRight();
 
     const auto first_row_number = range.top();
     const auto left_column = range.left();
     const auto right_column = range.right();
     const auto number_of_rows = get_number_of_rows(range);
 
-    auto &rows = get_rows();
+    auto& rows = get_rows();
     for (auto replace_number = 0; replace_number < number_of_rows;
          replace_number++) {
-      auto &row = rows[first_row_number + replace_number];
+      auto& row = rows[first_row_number + replace_number];
       const SubRow empty_row;
       for (auto column_number = left_column; column_number <= right_column;
            column_number++) {
@@ -224,12 +225,12 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
                 QItemSelectionModel::Select | QItemSelectionModel::Clear);
   }
 
-  void insert_xml_rows(const int first_row_number, xmlNode &rows_node) {
+  void insert_xml_rows(const int first_row_number, xmlNode& rows_node) {
     QList<SubRow> new_rows;
     xml_to_rows(new_rows, rows_node);
     const auto number_of_rows = static_cast<int>(new_rows.size());
 
-    auto &rows = get_rows();
+    auto& rows = get_rows();
     beginInsertRows(QModelIndex(), first_row_number,
                     first_row_number + number_of_rows - 1);
     std::copy(new_rows.cbegin(), new_rows.cend(),
@@ -237,9 +238,9 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
     endInsertRows();
   }
 
-  void insert_rows(const int first_row_number, const QList<SubRow> &new_rows,
+  void insert_rows(const int first_row_number, const QList<SubRow>& new_rows,
                    const int left_column, const int right_column) {
-    auto &rows = get_rows();
+    auto& rows = get_rows();
     const auto number_of_rows = static_cast<int>(new_rows.size());
     beginInsertRows(QModelIndex(), first_row_number,
                     first_row_number + number_of_rows - 1);
@@ -255,7 +256,7 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
 
   void insert_row(const int row_number, SubRow new_row) {
     beginInsertRows(QModelIndex(), row_number, row_number);
-    auto &rows = get_rows();
+    auto& rows = get_rows();
     rows.insert(rows.begin() + row_number, std::move(new_row));
     endInsertRows();
     get_reference(selection_model_pointer)
@@ -265,7 +266,7 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
   }
 
   void remove_rows(const int first_row_number, int number_of_rows) {
-    auto &rows = get_rows();
+    auto& rows = get_rows();
     beginRemoveRows(QModelIndex(), first_row_number,
                     first_row_number + number_of_rows - 1);
     rows.erase(rows.begin() + first_row_number,
@@ -274,8 +275,6 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
   }
 };
 
-[[nodiscard]] auto make_range(QAbstractItemModel &model,
-                               int first_row_number,
-                               int number_of_rows,
-                               int left_column,
-                               int right_column) -> QItemSelectionRange;
+[[nodiscard]] auto make_range(QAbstractItemModel& model, int first_row_number,
+                              int number_of_rows, int left_column,
+                              int right_column) -> QItemSelectionRange;

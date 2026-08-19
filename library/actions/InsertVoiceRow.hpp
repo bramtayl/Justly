@@ -9,22 +9,24 @@
 #include "rows/Note.hpp"
 #include "rows/Voice.hpp"
 
-template <VoiceInterface SubVoice> struct VoicesModel;
+template <VoiceInterface SubVoice>
+struct VoicesModel;
 
 // inserts a voice row, shifting the voice_number of any note that referenced
 // a voice at or after the insertion point, including any note cells sitting
 // on the OS clipboard, so a later paste doesn't land on the wrong voice
 template <VoiceInterface SubVoice, NoteInterface SubNote>
 struct InsertVoiceRow : public QUndoCommand {
-  VoicesModel<SubVoice> &voices_model;
+  VoicesModel<SubVoice>& voices_model;
   const int row_number;
   const SubVoice new_row;
   const QList<RenumberedVoiceNote<SubVoice>> affected_notes;
 
-  InsertVoiceRow(VoicesModel<SubVoice> &voices_model_input,
+  InsertVoiceRow(VoicesModel<SubVoice>& voices_model_input,
                  const int row_number_input,
                  SubVoice new_row_input = SubVoice())
-      : voices_model(voices_model_input), row_number(row_number_input),
+      : voices_model(voices_model_input),
+        row_number(row_number_input),
         new_row(std::move(new_row_input)),
         // finds every note referencing a voice at or after row_number, so
         // undo/redo can shift its voice_number by a known delta

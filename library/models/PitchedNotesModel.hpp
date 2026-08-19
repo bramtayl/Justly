@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QtCore/QTypeInfo>
-#include <QtCore/QVariant>
 #include <QtCore/QtMinMax>
 #include <QtCore/QtSwap>
 
@@ -10,16 +9,16 @@
 
 class QTextStream;
 class QUndoStack;
+class QVariant;
 struct Song;
 
 struct PitchedNotesModel : public UndoRowsModel<PitchedNote> {
-  explicit PitchedNotesModel(QUndoStack &undo_stack, Song &song)
+  explicit PitchedNotesModel(QUndoStack& undo_stack, Song& song)
       : UndoRowsModel<PitchedNote>(undo_stack, song) {}
 
-  [[nodiscard]] auto get_display_data( int row_number,
-                                       int column_number) const
+  [[nodiscard]] auto get_display_data(int row_number, int column_number) const
       -> QVariant override;
 
-  void add_to_status(QTextStream &stream,  int /*row_number*/,
-                     const PitchedNote &pitched_note) const override;
+  void add_to_status(QTextStream& stream, int /*row_number*/,
+                     const PitchedNote& pitched_note) const override;
 };

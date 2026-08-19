@@ -1,13 +1,15 @@
 #include "other/Song.hpp"
 
+#include <QtCore/qcompare.h>
+
 #include <QtCore/QMap>
 #include <QtCore/QObject>
 #include <QtCore/QTextStream>
 #include <QtCore/QtSwap>
-#include <QtCore/qcompare.h>
 #include <cmath>
 #include <cstdlib>
 #include <tuple>
+#include <utility>
 
 #include "rows/Chord.hpp"
 #include "rows/PitchedNote.hpp"
@@ -18,10 +20,11 @@ Song::Song() : starting_key(midi_number_to_frequency(DEFAULT_STARTING_MIDI)) {}
 auto get_octave_degree(int midi_interval) -> std::tuple<int, int> {
   const int octave =
       to_int(std::floor((1.0 * midi_interval) / HALFSTEPS_PER_OCTAVE));
-  return std::make_tuple(octave, midi_interval - (octave * HALFSTEPS_PER_OCTAVE));
+  return std::make_tuple(octave,
+                         midi_interval - (octave * HALFSTEPS_PER_OCTAVE));
 }
 
-void initialize_playstate(const Song &song, PlayState &play_state,
+void initialize_playstate(const Song& song, PlayState& play_state,
                           double current_time) {
   play_state.current_key = song.starting_key;
   play_state.current_velocity = song.starting_velocity;
@@ -29,14 +32,14 @@ void initialize_playstate(const Song &song, PlayState &play_state,
   play_state.current_time = current_time;
 }
 
-auto get_play_state_at_chord(const Song &song,
-                             const int chord_number) -> PlayState {
+auto get_play_state_at_chord(const Song& song, const int chord_number)
+    -> PlayState {
   PlayState play_state;
   initialize_playstate(song, play_state, 0);
-  const auto &chords = song.chords;
+  const auto& chords = song.chords;
   for (auto previous_chord_number = 0; previous_chord_number < chord_number;
        previous_chord_number++) {
-    const auto &chord = chords.at(previous_chord_number);
+    const auto& chord = chords.at(previous_chord_number);
     modulate(play_state, chord);
     move_time(play_state, chord);
   }
@@ -55,7 +58,7 @@ auto get_note_name(const int closest_midi) -> QString {
   return degrees_to_name[degree] + QString::number(octave);
 }
 
-void add_frequency_to_stream(QTextStream &stream, const double frequency) {
+void add_frequency_to_stream(QTextStream& stream, const double frequency) {
   static const auto CENTS_PER_HALFSTEP = 100;
   const auto midi_float = frequency_to_midi_number(frequency);
   const auto closest_midi = to_int(midi_float);
@@ -69,7 +72,7 @@ void add_frequency_to_stream(QTextStream &stream, const double frequency) {
   stream << QObject::tr("; ");
 }
 
-void add_timing_to_stream(QTextStream &stream, const PlayState &play_state,
+void add_timing_to_stream(QTextStream& stream, const PlayState& play_state,
                           const double velocity, const double beats_double) {
   stream << QObject::tr("Velocity ") << to_int(velocity) << QObject::tr("; ")
          << to_int(play_state.current_tempo) << QObject::tr(" bpm; Start at ")
