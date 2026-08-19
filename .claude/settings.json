@@ -363,7 +363,10 @@
       "Bash(xargs -I{} sh -c 'echo ===={}====; cat {}')",
       "Bash(git tag *)",
       "Bash(git -c credential.helper='!gh auth git-credential' push origin master)",
-      "Bash(git -c credential.helper='!gh auth git-credential' push origin v1.1.4)"
+      "Bash(git -c credential.helper='!gh auth git-credential' push origin v1.1.4)",
+      "Bash(cmake --build .)",
+      "Bash(ar t *)",
+      "Bash(ninja -n JustlyTests)"
     ],
     "additionalDirectories": [
       "/home/brandon/Justly"

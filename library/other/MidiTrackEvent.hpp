@@ -35,107 +35,32 @@ static const auto GM2_PERCUSSION_BANK_SELECT_MSB = 120U;
 
 static const auto MIDI_CHUNK_ID_LENGTH = 4;
 
-static inline void append_variable_length(QByteArray &bytes,
-                                          unsigned int value) {
-  QList<unsigned int> septets;
-  septets.push_back(value & MIDI_DATA_BYTE_MASK);
-  value = value >> MIDI_SEPTET_BITS;
-  while (value > 0) {
-    septets.push_back(value & MIDI_DATA_BYTE_MASK);
-    value = value >> MIDI_SEPTET_BITS;
-  }
-  // septets were collected least-significant-first; the MIDI variable-length
-  // encoding is written most-significant-first, with the continuation bit
-  // set on every byte except the last
-  for (auto index = static_cast<int>(septets.size()) - 1; index >= 0;
-       index = index - 1) {
-    auto byte = septets.at(index);
-    if (index != 0) {
-      byte = byte | MIDI_CONTINUATION_BIT;
-    }
-    bytes.append(static_cast<char>(byte));
-  }
-}
+void append_variable_length(QByteArray &bytes, unsigned int value);
 
-static inline void append_meta_event(QByteArray &bytes, unsigned int type,
-                                     const QByteArray &payload) {
-  bytes.append(static_cast<char>(MIDI_META_EVENT_PREFIX));
-  bytes.append(static_cast<char>(type));
-  append_variable_length(bytes, static_cast<unsigned int>(payload.size()));
-  bytes.append(payload);
-}
+void append_meta_event(QByteArray &bytes, unsigned int type,
+                       const QByteArray &payload);
 
-static inline void append_track_name_meta(QByteArray &bytes,
-                                          const QString &name) {
-  append_meta_event(bytes, MIDI_TRACK_NAME_META_TYPE, name.toUtf8());
-}
+void append_track_name_meta(QByteArray &bytes, const QString &name);
 
-static inline void append_control_change(QByteArray &bytes,
-                                         unsigned int channel_number,
-                                         unsigned int controller,
-                                         unsigned int value) {
-  bytes.append(static_cast<char>(MIDI_CONTROL_CHANGE_STATUS |
-                                 (channel_number & MIDI_CHANNEL_MASK)));
-  bytes.append(static_cast<char>(controller & MIDI_DATA_BYTE_MASK));
-  bytes.append(static_cast<char>(value & MIDI_DATA_BYTE_MASK));
-}
+void append_control_change(QByteArray &bytes, unsigned int channel_number,
+                           unsigned int controller, unsigned int value);
 
-static inline void append_program_change(QByteArray &bytes,
-                                         unsigned int channel_number,
-                                         unsigned int program_number) {
-  bytes.append(static_cast<char>(MIDI_PROGRAM_CHANGE_STATUS |
-                                 (channel_number & MIDI_CHANNEL_MASK)));
-  bytes.append(static_cast<char>(program_number & MIDI_DATA_BYTE_MASK));
-}
+void append_program_change(QByteArray &bytes, unsigned int channel_number,
+                           unsigned int program_number);
 
-static inline void append_note_on(QByteArray &bytes,
-                                  unsigned int channel_number,
-                                  unsigned int midi_number,
-                                  unsigned int velocity) {
-  bytes.append(static_cast<char>(MIDI_NOTE_ON_STATUS |
-                                 (channel_number & MIDI_CHANNEL_MASK)));
-  bytes.append(static_cast<char>(midi_number & MIDI_DATA_BYTE_MASK));
-  bytes.append(static_cast<char>(velocity & MIDI_DATA_BYTE_MASK));
-}
+void append_note_on(QByteArray &bytes, unsigned int channel_number,
+                    unsigned int midi_number, unsigned int velocity);
 
-static inline void append_note_off(QByteArray &bytes,
-                                   unsigned int channel_number,
-                                   unsigned int midi_number) {
-  bytes.append(static_cast<char>(MIDI_NOTE_OFF_STATUS |
-                                 (channel_number & MIDI_CHANNEL_MASK)));
-  bytes.append(static_cast<char>(midi_number & MIDI_DATA_BYTE_MASK));
-  bytes.append(static_cast<char>(0));
-}
+void append_note_off(QByteArray &bytes, unsigned int channel_number,
+                     unsigned int midi_number);
 
-static inline void append_pitch_bend(QByteArray &bytes,
-                                     unsigned int channel_number,
-                                     unsigned int bend_14_bit) {
-  bytes.append(static_cast<char>(MIDI_PITCH_BEND_STATUS |
-                                 (channel_number & MIDI_CHANNEL_MASK)));
-  bytes.append(static_cast<char>(bend_14_bit & MIDI_DATA_BYTE_MASK));
-  bytes.append(static_cast<char>((bend_14_bit >> MIDI_SEPTET_BITS) &
-                                 MIDI_DATA_BYTE_MASK));
-}
+void append_pitch_bend(QByteArray &bytes, unsigned int channel_number,
+                       unsigned int bend_14_bit);
 
-static inline void append_be16(QByteArray &bytes, unsigned int value) {
-  bytes.append(
-      static_cast<char>((value >> MIDI_BITS_PER_BYTE) & MIDI_BYTE_MASK));
-  bytes.append(static_cast<char>(value & MIDI_BYTE_MASK));
-}
+void append_be16(QByteArray &bytes, unsigned int value);
 
-static inline void append_chunk(QByteArray &output, const char *const chunk_id,
-                                const QByteArray &chunk_data) {
-  output.append(chunk_id, MIDI_CHUNK_ID_LENGTH);
-  const auto length = static_cast<unsigned int>(chunk_data.size());
-  output.append(static_cast<char>((length >> (3 * MIDI_BITS_PER_BYTE)) &
-                                  MIDI_BYTE_MASK));
-  output.append(static_cast<char>((length >> (2 * MIDI_BITS_PER_BYTE)) &
-                                  MIDI_BYTE_MASK));
-  output.append(
-      static_cast<char>((length >> MIDI_BITS_PER_BYTE) & MIDI_BYTE_MASK));
-  output.append(static_cast<char>(length & MIDI_BYTE_MASK));
-  output.append(chunk_data);
-}
+void append_chunk(QByteArray &output, const char *const chunk_id,
+                  const QByteArray &chunk_data);
 
 // base of the per-event-kind payload hierarchy; each subclass knows how to
 // write only its own bytes, so a MidiTrackEvent never owns a QByteArray of
@@ -148,43 +73,27 @@ struct EventInfo {};
 struct TempoEventInfo : EventInfo {
   unsigned int microseconds_per_quarter = 0;
 
-  void write(QByteArray &track_data) const {
-    QByteArray payload;
-    payload.append(static_cast<char>(
-        (microseconds_per_quarter >> (2 * MIDI_BITS_PER_BYTE)) &
-        MIDI_BYTE_MASK));
-    payload.append(static_cast<char>(
-        (microseconds_per_quarter >> MIDI_BITS_PER_BYTE) & MIDI_BYTE_MASK));
-    payload.append(
-        static_cast<char>(microseconds_per_quarter & MIDI_BYTE_MASK));
-    append_meta_event(track_data, MIDI_TEMPO_META_TYPE, payload);
-  }
+  void write(QByteArray &track_data) const;
 };
 
 struct TrackNameEventInfo : EventInfo {
   QString name;
 
-  void write(QByteArray &track_data) const {
-    append_track_name_meta(track_data, name);
-  }
+  void write(QByteArray &track_data) const;
 };
 
 struct ProgramChangeEventInfo : EventInfo {
   unsigned int channel_number = 0;
   unsigned int program_number = 0;
 
-  void write(QByteArray &track_data) const {
-    append_program_change(track_data, channel_number, program_number);
-  }
+  void write(QByteArray &track_data) const;
 };
 
 struct PitchBendEventInfo : EventInfo {
   unsigned int channel_number = 0;
   unsigned int bend_14_bit = 0;
 
-  void write(QByteArray &track_data) const {
-    append_pitch_bend(track_data, channel_number, bend_14_bit);
-  }
+  void write(QByteArray &track_data) const;
 };
 
 struct ControlChangeEventInfo : EventInfo {
@@ -192,9 +101,7 @@ struct ControlChangeEventInfo : EventInfo {
   unsigned int controller = 0;
   unsigned int value = 0;
 
-  void write(QByteArray &track_data) const {
-    append_control_change(track_data, channel_number, controller, value);
-  }
+  void write(QByteArray &track_data) const;
 };
 
 struct NoteOnEventInfo : EventInfo {
@@ -202,18 +109,14 @@ struct NoteOnEventInfo : EventInfo {
   unsigned int midi_number = 0;
   unsigned int velocity = 0;
 
-  void write(QByteArray &track_data) const {
-    append_note_on(track_data, channel_number, midi_number, velocity);
-  }
+  void write(QByteArray &track_data) const;
 };
 
 struct NoteOffEventInfo : EventInfo {
   unsigned int channel_number = 0;
   unsigned int midi_number = 0;
 
-  void write(QByteArray &track_data) const {
-    append_note_off(track_data, channel_number, midi_number);
-  }
+  void write(QByteArray &track_data) const;
 };
 
 using MidiEventPayload =
@@ -230,9 +133,5 @@ struct MidiTrackEvent {
   int tie_break = 0;
   MidiEventPayload info;
 
-  void write(QByteArray &track_data) const {
-    std::visit([&track_data](const auto &event_info) -> void {
-      event_info.write(track_data);
-    }, info);
-  }
+  void write(QByteArray &track_data) const;
 };

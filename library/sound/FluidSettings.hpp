@@ -17,30 +17,9 @@ struct FluidSettings {
   // audio_driver is null on non-Linux platforms, where fluidsynth picks a
   // default driver instead
   explicit FluidSettings(const int midi_channels = 0, const int cpu_cores = 0,
-                         const char *const audio_driver = nullptr)
-      : internal_pointer(new_fluid_settings()) {
-    Q_ASSERT(internal_pointer != nullptr);
-    if (midi_channels > 0) {
-      auto midi_channels_was_set =
-          fluid_settings_setint(internal_pointer, "synth.midi-channels",
-                                 midi_channels) == FLUID_OK;
-      Q_ASSERT(midi_channels_was_set);
-    }
-    if (cpu_cores > 0) {
-      auto cpu_cores_was_set =
-          fluid_settings_setint(internal_pointer, "synth.cpu-cores",
-                                 cpu_cores) == FLUID_OK;
-      Q_ASSERT(cpu_cores_was_set);
-    }
-    if (audio_driver != nullptr) {
-      auto audio_driver_was_set =
-          fluid_settings_setstr(internal_pointer, "audio.driver",
-                                 audio_driver) == FLUID_OK;
-      Q_ASSERT(audio_driver_was_set);
-    }
-  }
+                         const char *const audio_driver = nullptr);
 
   NO_MOVE_COPY(FluidSettings)
 
-  ~FluidSettings() { delete_fluid_settings(internal_pointer); }
+  ~FluidSettings();
 };

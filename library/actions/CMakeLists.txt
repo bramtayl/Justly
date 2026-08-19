@@ -1,4 +1,4 @@
-target_sources(JustlyLibrary INTERFACE FILE_SET justly_headers FILES
+target_sources(JustlyLibrary PUBLIC FILE_SET justly_headers FILES
     "AffectedVoiceNote.hpp"
     "ChangeId.hpp"
     "DeleteCells.hpp"
@@ -11,4 +11,10 @@ target_sources(JustlyLibrary INTERFACE FILE_SET justly_headers FILES
     "SetCell.hpp"
     "SetCells.hpp"
     "SetDouble.hpp"
+)
+
+target_sources(JustlyLibrary PRIVATE
+    "AffectedVoiceNote.cpp"
+    "ReplaceTable.cpp"
+    "SetDouble.cpp"
 )

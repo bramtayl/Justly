@@ -13,7 +13,7 @@ public:
   explicit XMLParserContext(const char *filename)
       : internal_pointer(xmlSchemaNewParserCtxt(filename)) {}
 
-  ~XMLParserContext() { xmlSchemaFreeParserCtxt(internal_pointer); }
+  ~XMLParserContext();
 
   NO_MOVE_COPY(XMLParserContext)
 };

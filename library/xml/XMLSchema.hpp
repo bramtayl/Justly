@@ -14,7 +14,7 @@ public:
   explicit XMLSchema(const XMLParserContext &context)
       : internal_pointer(xmlSchemaParse(context.internal_pointer)) {}
 
-  ~XMLSchema() { xmlSchemaFree(internal_pointer); }
+  ~XMLSchema();
 
   NO_MOVE_COPY(XMLSchema)
 };

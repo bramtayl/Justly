@@ -6,8 +6,16 @@ set(EDITOR_HEADERS
     "VoiceNumberPicker.hpp"
 )
 
-target_sources(JustlyLibrary INTERFACE FILE_SET justly_headers FILES
+target_sources(JustlyLibrary PUBLIC FILE_SET justly_headers FILES
     ${EDITOR_HEADERS}
+)
+
+target_sources(JustlyLibrary PRIVATE
+    "IntervalEditor.cpp"
+    "MidiNumberEditor.cpp"
+    "RationalEditor.cpp"
+    "StringPicker.cpp"
+    "VoiceNumberPicker.cpp"
 )
 
 # need to include because Q_OBJECT compiles code

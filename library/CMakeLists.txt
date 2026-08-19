@@ -1,6 +1,6 @@
-target_compile_features(JustlyLibrary INTERFACE cxx_std_20)
+target_compile_features(JustlyLibrary PUBLIC cxx_std_20)
 
-target_link_libraries(JustlyLibrary INTERFACE
+target_link_libraries(JustlyLibrary PUBLIC
     FluidSynth::libfluidsynth
     LibXml2::LibXml2
     libzip::zip
@@ -10,12 +10,12 @@ target_link_libraries(JustlyLibrary INTERFACE
     Qt6::Widgets
 )
 
-add_compile_definitions(JustlyLibrary INTERFACE "$<$<CONFIG:Release>:QT_NO_DEBUG=1>")
+add_compile_definitions(JustlyLibrary PUBLIC "$<$<CONFIG:Release>:QT_NO_DEBUG=1>")
 if (NO_REALTIME_AUDIO)
-    target_compile_definitions(JustlyLibrary INTERFACE "NO_REALTIME_AUDIO")
+    target_compile_definitions(JustlyLibrary PUBLIC "NO_REALTIME_AUDIO")
 endif()
 
-target_sources(JustlyLibrary INTERFACE FILE_SET justly_headers TYPE HEADERS)
+target_sources(JustlyLibrary PUBLIC FILE_SET justly_headers TYPE HEADERS)
 
 add_subdirectory("actions")
 add_subdirectory("cell_editors")
@@ -26,10 +26,11 @@ add_subdirectory("menus")
 add_subdirectory("models")
 add_subdirectory("musicxml")
 add_subdirectory("other")
+add_subdirectory("rows")
 add_subdirectory("sound")
 add_subdirectory("widgets")
 add_subdirectory("xml")
 
-target_include_directories(JustlyLibrary INTERFACE
+target_include_directories(JustlyLibrary PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
 )

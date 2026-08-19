@@ -23,8 +23,5 @@ struct UnpitchedVoicesModel : public VoicesModel<UnpitchedVoice> {
 
   [[nodiscard]] auto check_cell(const int column_number,
                                 const QVariant &new_value) const
-      -> bool override {
-    return check_voice_name(parent, get_rows(), static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column),
-                            column_number, new_value);
-  }
+      -> bool override;
 };

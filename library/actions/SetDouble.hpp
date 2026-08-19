@@ -12,28 +12,8 @@
 #include "other/helpers.hpp"
 #include "sound/FluidSynth.hpp"
 
-static void set_double(Song &song, FluidSynth &synth, const ChangeId control_id,
-                       QDoubleSpinBox &spin_box, const double set_value) {
-  switch (control_id) {
-  case ChangeId::gain_id:
-    fluid_synth_set_gain(synth.internal_pointer, static_cast<float>(set_value));
-    break;
-  case ChangeId::starting_key_id:
-    song.starting_key = set_value;
-    break;
-  case ChangeId::starting_velocity_id:
-    song.starting_velocity = set_value;
-    break;
-  case ChangeId::starting_tempo_id:
-    song.starting_tempo = set_value;
-    break;
-  case ChangeId::replace_table_id:
-    // not a spin-box control; see ReplaceTable
-    Q_UNREACHABLE();
-  }
-  const QSignalBlocker blocker(spin_box);
-  spin_box.setValue(set_value);
-}
+void set_double(Song &song, FluidSynth &synth, const ChangeId control_id,
+                QDoubleSpinBox &spin_box, const double set_value);
 
 struct SetDouble : public QUndoCommand {
   Song &song;
@@ -51,24 +31,12 @@ struct SetDouble : public QUndoCommand {
         control_id(command_id_input), old_value(old_value_input),
         new_value(new_value_input) {}
 
-  [[nodiscard]] auto id() const -> int override {
-    return static_cast<int>(control_id);
-  }
+  [[nodiscard]] auto id() const -> int override;
 
   [[nodiscard]] auto
-  mergeWith(const QUndoCommand *const next_command_pointer) -> bool override {
-    Q_ASSERT(next_command_pointer != nullptr);
-    new_value =
-        get_reference(dynamic_cast<const SetDouble *>(next_command_pointer))
-            .new_value;
-    return true;
-  }
+  mergeWith(const QUndoCommand *const next_command_pointer) -> bool override;
 
-  void undo() override {
-    set_double(song, synth, control_id, spin_box, old_value);
-  }
+  void undo() override;
 
-  void redo() override {
-    set_double(song, synth, control_id, spin_box, new_value);
-  }
+  void redo() override;
 };

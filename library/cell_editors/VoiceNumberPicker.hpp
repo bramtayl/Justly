@@ -15,12 +15,7 @@ struct VoiceNumberPicker : public QComboBox {
 
 public:
   explicit VoiceNumberPicker(QWidget *const parent_pointer,
-                             const QList<QString> &voice_names)
-      : QComboBox(parent_pointer) {
-    addItems(voice_names);
-    // force scrollbar for combo box
-    setStyleSheet("combobox-popup: 0;");
-  }
+                             const QList<QString> &voice_names);
 
   ~VoiceNumberPicker() override = default;
 };

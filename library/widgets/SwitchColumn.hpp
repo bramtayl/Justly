@@ -23,27 +23,11 @@ struct SwitchColumn : public QWidget {
 
   QBoxLayout &column_layout = *(new QVBoxLayout(this));
 
-  SwitchColumn(QUndoStack &undo_stack, Song &song)
-      : switch_table(*new SwitchTable(undo_stack, song)) {
-    column_layout.addWidget(&editing_text);
-    column_layout.addWidget(&switch_table);
-  }
+  SwitchColumn(QUndoStack &undo_stack, Song &song);
 };
 
-[[nodiscard]] static inline auto
-get_parent_chord_number(const SwitchTable &switch_table) -> int {
-  switch (switch_table.delegate.current_row_type) {
-  case RowType::chord_type:
-  case RowType::pitched_voice_type:
-  case RowType::unpitched_voice_type:
-    return -1;
-  case RowType::pitched_note_type:
-    return switch_table.pitched_notes_model.parent_chord_number;
-  case RowType::unpitched_note_type:
-    return switch_table.unpitched_notes_model.parent_chord_number;
-  }
-  Q_UNREACHABLE();
-}
+[[nodiscard]] auto
+get_parent_chord_number(const SwitchTable &switch_table) -> int;
 
 template <typename Iterable>
 [[nodiscard]] static auto get_only(const Iterable &iterable) -> const auto & {
@@ -51,12 +35,8 @@ template <typename Iterable>
   return iterable.at(0);
 }
 
-[[nodiscard]] static inline auto get_selection_model(
-    const QAbstractItemView &item_view) -> QItemSelectionModel & {
-  return get_reference(item_view.selectionModel());
-}
+[[nodiscard]] auto get_selection_model(
+    const QAbstractItemView &item_view) -> QItemSelectionModel &;
 
-[[nodiscard]] static inline auto
-get_only_range(const QAbstractItemView &table) {
-  return get_only(get_selection_model(table).selection());
-}
+[[nodiscard]] auto
+get_only_range(const QAbstractItemView &table) -> QItemSelectionRange;

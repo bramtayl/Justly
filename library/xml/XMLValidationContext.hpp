@@ -14,7 +14,7 @@ public:
   explicit XMLValidationContext(XMLSchema &schema)
       : internal_pointer(xmlSchemaNewValidCtxt(schema.internal_pointer)) {}
 
-  ~XMLValidationContext() { xmlSchemaFreeValidCtxt(internal_pointer); }
+  ~XMLValidationContext();
 
   NO_MOVE_COPY(XMLValidationContext)
 };

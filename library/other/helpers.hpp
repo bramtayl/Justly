@@ -40,7 +40,7 @@ struct XMLString {
   explicit XMLString(xmlChar *internal_pointer_input)
       : internal_pointer(internal_pointer_input) {}
 
-  ~XMLString() { xmlFree(internal_pointer); }
+  ~XMLString();
 
   NO_MOVE_COPY(XMLString)
 };
@@ -51,9 +51,7 @@ template <typename Thing>
   return *thing_pointer;
 }
 
-[[nodiscard]] static inline auto get_clipboard() -> auto & {
-  return get_reference(QGuiApplication::clipboard());
-}
+[[nodiscard]] auto get_clipboard() -> QClipboard &;
 
 template <typename Item>
 [[nodiscard]] static auto copy_items(const QList<Item> &items,
@@ -76,121 +74,48 @@ template <typename SubType>
   return variant.value<SubType>();
 }
 
-[[nodiscard]] static auto c_string_to_xml_string(const char *text) {
-  return reinterpret_cast< // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-      const xmlChar *>(text);
-}
+[[nodiscard]] auto c_string_to_xml_string(const char *text) -> const xmlChar *;
 
-[[nodiscard]] static auto xml_string_to_c_string(const xmlChar *text) {
-  return reinterpret_cast< // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-      const char *>(text);
-}
+[[nodiscard]] auto xml_string_to_c_string(const xmlChar *text) -> const char *;
 
-[[nodiscard]] static auto xml_string_to_string(const xmlChar *text) {
-  return std::string(xml_string_to_c_string(text));
-}
+[[nodiscard]] auto xml_string_to_string(const xmlChar *text) -> std::string;
 
-[[nodiscard]] static inline auto get_xml_name(const xmlNode &node) {
-  return xml_string_to_string(node.name);
-}
+[[nodiscard]] auto get_xml_name(const xmlNode &node) -> std::string;
 
-[[nodiscard]] static auto get_content(const xmlNode &node) {
-  const XMLString content{xmlNodeGetContent(&node)};
-  return xml_string_to_string(content.internal_pointer);
-}
+[[nodiscard]] auto get_content(const xmlNode &node) -> std::string;
 
 // some musicxml fields (e.g. fifths, octave-change, repeat times) are
 // unbounded xs:integer with no schema-enforced range, so a malformed or
 // hostile file can contain a magnitude that overflows int; callers that
 // read those fields must use this instead of string_to_int and reject the
 // file on nullopt rather than letting std::stoi throw
-[[nodiscard]] static inline auto
-string_to_maybe_int(const std::string &content) -> std::optional<int> {
-  try {
-    return std::stoi(content);
-  } catch (const std::out_of_range &) {
-    return std::nullopt;
-  }
-}
+[[nodiscard]] auto
+string_to_maybe_int(const std::string &content) -> std::optional<int>;
 
-[[nodiscard]] static inline auto string_to_int(const std::string &content) {
-  const auto maybe_int = string_to_maybe_int(content);
-  // song.xsd and the clipboard xsds bound every int field they define to
-  // fit in a 32-bit int, so schema-validated callers can't reach this;
-  // genuinely unbounded musicxml fields must call string_to_maybe_int
-  // directly and reject the file instead of ever calling this on an
-  // out-of-range value
-  Q_ASSERT(maybe_int.has_value());
-  return maybe_int.value_or(0);
-}
+[[nodiscard]] auto string_to_int(const std::string &content) -> int;
 
-[[nodiscard]] static inline auto xml_content_is_integer(const xmlNode &element)
-    -> bool {
-  // some musicxml fields (e.g. divisions, duration, transpose chromatic,
-  // pitch alter) are xs:decimal rather than xs:integer, to allow fractional
-  // divisions or microtones -- xml_to_int would silently truncate those
-  // instead of parsing them, so callers that don't support fractional
-  // values must check this first and reject the file instead
-  return get_content(element).find('.') == std::string::npos;
-}
+[[nodiscard]] auto xml_content_is_integer(const xmlNode &element)
+    -> bool;
 
-[[nodiscard]] static inline auto xml_to_int(const xmlNode &element) {
-  return string_to_int(get_content(element));
-}
+[[nodiscard]] auto xml_to_int(const xmlNode &element) -> int;
 
-[[nodiscard]] static auto
+[[nodiscard]] auto
 get_new_child_pointer(xmlNode &node, const char *const field_name,
-                      const xmlChar *contents = nullptr) {
-  return xmlNewChild(&node, nullptr, c_string_to_xml_string(field_name),
-                     contents);
-}
+                      const xmlChar *contents = nullptr) -> xmlNode *;
 
-[[nodiscard]] static auto inline get_new_child(
-    xmlNode &node, const char *const field_name) -> auto & {
-  return get_reference(get_new_child_pointer(node, field_name));
-}
+[[nodiscard]] auto get_new_child(
+    xmlNode &node, const char *const field_name) -> xmlNode &;
 
-static void set_xml_string(xmlNode &node, const char *const field_name,
-                           const std::string &contents) {
-  auto *result = get_new_child_pointer(
-      node, field_name, c_string_to_xml_string(contents.c_str()));
-  Q_ASSERT(result != nullptr);
-}
+void set_xml_string(xmlNode &node, const char *const field_name,
+                     const std::string &contents);
 
-static inline void set_xml_int(xmlNode &node, const char *const field_name,
-                               int value) {
-  set_xml_string(node, field_name, std::to_string(value));
-}
+void set_xml_int(xmlNode &node, const char *const field_name,
+                  int value);
 
 // installed layout is <prefix>/share next to the binary's folder, except
 // inside a macOS app bundle, where resources live in Contents/Resources
 // rather than alongside Contents/MacOS
-[[nodiscard]] static inline auto get_share_folder() {
-  QDir folder(QCoreApplication::applicationDirPath());
-  folder.cdUp();
-  if (folder.dirName() == "Contents") {
-    folder.cd("Resources");
-  } else {
-    folder.cd("share");
-  }
-  return folder;
-}
+[[nodiscard]] auto get_share_folder() -> QDir;
 
-[[nodiscard]] static inline auto get_share_file(const char *file_name)
-    -> std::string {
-  static const auto share_folder = get_share_folder();
-  const auto result_file = share_folder.filePath(file_name);
-  if (!QFile::exists(result_file)) {
-    // Q_ASSERT compiles out in release builds, so a broken/incomplete
-    // installation missing a bundled resource (xsd schema, icon,
-    // soundfont) would otherwise silently hand the caller a nonexistent
-    // path instead of failing here; there's no valid path to hand back,
-    // so report it to the user and exit rather than throwing
-    QMessageBox::critical(
-        nullptr, QObject::tr("Missing resource file"),
-        QObject::tr("Missing bundled resource file: %1")
-            .arg(result_file));
-    std::exit(EXIT_FAILURE); // NOLINT(concurrency-mt-unsafe)
-  }
-  return result_file.toStdString();
-}
+[[nodiscard]] auto get_share_file(const char *file_name)
+    -> std::string;

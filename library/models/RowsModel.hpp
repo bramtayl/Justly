@@ -19,11 +19,8 @@
 struct Song;
 template <typename T> class QList;
 
-[[nodiscard]] static inline auto
-get_number_of_rows(const QItemSelectionRange &range) {
-  Q_ASSERT(range.isValid());
-  return range.bottom() - range.top() + 1;
-}
+[[nodiscard]] auto
+get_number_of_rows(const QItemSelectionRange &range) -> int;
 
 template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
   Song &song;
@@ -242,12 +239,8 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
   }
 };
 
-[[nodiscard]] static inline auto make_range(QAbstractItemModel &model,
-                                            const int first_row_number,
-                                            const int number_of_rows,
-                                            const int left_column,
-                                            const int right_column) {
-  return QItemSelectionRange(
-      model.index(first_row_number, left_column),
-      model.index(first_row_number + number_of_rows - 1, right_column));
-}
+[[nodiscard]] auto make_range(QAbstractItemModel &model,
+                              const int first_row_number,
+                              const int number_of_rows,
+                              const int left_column,
+                              const int right_column) -> QItemSelectionRange;

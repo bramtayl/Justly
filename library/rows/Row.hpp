@@ -60,21 +60,11 @@ static void maybe_set_xml_rows(xmlNode &node, const char *const array_name,
   }
 }
 
-static inline void maybe_add_qstring_to_xml(xmlNode &node,
-                                         const char *const field_name,
-                                         const QString &words) {
-  if (!words.isEmpty()) {
-    set_xml_string(node, field_name, words.toStdString());
-  }
-}
+void maybe_add_qstring_to_xml(xmlNode &node, const char *const field_name,
+                              const QString &words);
 
-[[nodiscard]] static inline auto get_qstring_content(const xmlNode &node) {
-  const XMLString content{xmlNodeGetContent(&node)};
-  return QString(xml_string_to_c_string(content.internal_pointer));
-}
+[[nodiscard]] auto get_qstring_content(const xmlNode &node) -> QString;
 
-[[nodiscard]] static inline auto
+[[nodiscard]] auto
 get_duration_in_milliseconds(const double beats_per_minute,
-                             const double beats_double) {
-  return beats_double * MILLISECONDS_PER_MINUTE / beats_per_minute;
-}
+                             const double beats_double) -> double;

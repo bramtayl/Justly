@@ -11,13 +11,9 @@
 struct FluidSynth {
   fluid_synth_t *const internal_pointer;
 
-  explicit FluidSynth(FluidSettings &settings)
-      : internal_pointer(new_fluid_synth(settings.internal_pointer)) {
-    Q_ASSERT(internal_pointer != nullptr);
-  }
+  explicit FluidSynth(FluidSettings &settings);
 
   NO_MOVE_COPY(FluidSynth)
 
-  ~FluidSynth() { delete_fluid_synth(internal_pointer); }
+  ~FluidSynth();
 };
-

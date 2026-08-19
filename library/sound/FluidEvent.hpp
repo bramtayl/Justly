@@ -10,11 +10,9 @@
 struct FluidEvent {
   fluid_event_t *const internal_pointer;
 
-  FluidEvent() : internal_pointer(new_fluid_event()) {
-    Q_ASSERT(internal_pointer != nullptr);
-  }
+  FluidEvent();
 
   NO_MOVE_COPY(FluidEvent)
 
-  ~FluidEvent() { delete_fluid_event(internal_pointer); }
+  ~FluidEvent();
 };

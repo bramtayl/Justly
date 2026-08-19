@@ -69,6 +69,8 @@ if (INCLUDE_WHAT_YOU_USE)
         -Xiwyu
         --check_also=${Justly_SOURCE_DIR}/library/*/*
         -Xiwyu
+        --check_also=${Justly_SOURCE_DIR}/library/*/*/*
+        -Xiwyu
         --check_also=${Justly_SOURCE_DIR}/executable/*
         -Xiwyu
         --check_also=${Justly_SOURCE_DIR}/tests/*
@@ -97,7 +99,7 @@ endif()
 # build directory, without an install step or an environment variable
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
-qt_add_library(JustlyLibrary INTERFACE)
+qt_add_library(JustlyLibrary STATIC)
 qt_add_executable(Justly)
 if (BUILD_TESTS)
    qt_add_executable(JustlyTests)

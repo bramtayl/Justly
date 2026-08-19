@@ -15,137 +15,37 @@
 static const auto MIDDLE_C_MIDI = 60;
 
 struct PitchedVoice : Voice {
-  PitchedVoice() : Voice() {
-    program = "Grand Piano";
-  }
+  PitchedVoice();
 
-  [[nodiscard]] static auto get_pitched() { return "pitched"; }
+  [[nodiscard]] static auto get_pitched() -> const char *;
 
-  [[nodiscard]] static auto is_pitched() { return true; }
+  [[nodiscard]] static auto is_pitched() -> bool;
 
-  [[nodiscard]] static auto get_preview_midi_number() -> short {
-    return MIDDLE_C_MIDI;
-  }
+  [[nodiscard]] static auto get_preview_midi_number() -> short;
 
-  void from_xml(xmlNode &node) override {
-    auto *field_pointer = xmlFirstElementChild(&node);
-    while (field_pointer != nullptr) {
-      auto &field_node = get_reference(field_pointer);
-      const auto field_name = get_xml_name(field_node);
-      if (field_name == "name") {
-        name = get_qstring_content(field_node);
-      } else if (field_name == "instrument") {
-        program = get_qstring_content(field_node);
-      } else if (field_name == "velocity_ratio") {
-        set_rational_from_xml(velocity_ratio, field_node);
-      } else {
-        Q_UNREACHABLE();
-      }
-      field_pointer = xmlNextElementSibling(field_pointer);
-    }
-  }
+  void from_xml(xmlNode &node) override;
 
-  [[nodiscard]] static auto get_clipboard_schema() -> const char * {
-    return "pitched_voice_clipboard.xsd";
-  };
+  [[nodiscard]] static auto get_clipboard_schema() -> const char *;
 
-  [[nodiscard]] static auto get_xml_field_name() -> const char * {
-    return "pitched_voice";
-  };
+  [[nodiscard]] static auto get_xml_field_name() -> const char *;
 
-  [[nodiscard]] static auto get_number_of_columns() -> int {
-    return static_cast<int>(PitchedVoiceColumn::number_of_pitched_voice_columns);
-  };
+  [[nodiscard]] static auto get_number_of_columns() -> int;
 
-  [[nodiscard]] static auto get_column_name(int column_number) {
-    switch (static_cast<PitchedVoiceColumn>(column_number)) {
-    case PitchedVoiceColumn::number_of_pitched_voice_columns:
-      Q_UNREACHABLE();
-    case PitchedVoiceColumn::pitched_voice_name_column:
-      return "Name";
-    case PitchedVoiceColumn::pitched_voice_instrument_column:
-      return "Instrument";
-    case PitchedVoiceColumn::pitched_voice_velocity_ratio_column:
-      return "Velocity ratio";
-    }
-    Q_UNREACHABLE();
-  }
+  [[nodiscard]] static auto get_column_name(int column_number) -> const char *;
 
-  [[nodiscard]] static auto get_cells_mime() {
-    return "application/prs.pitched_voice_cells+xml";
-  }
+  [[nodiscard]] static auto get_cells_mime() -> const char *;
 
-  [[nodiscard]] static auto is_column_editable(int /*column_number*/) -> bool {
-    return true;
-  }
+  [[nodiscard]] static auto is_column_editable(int /*column_number*/) -> bool;
 
   [[nodiscard]] auto
-  get_data(const int column_number) const -> QVariant override {
-    switch (static_cast<PitchedVoiceColumn>(column_number)) {
-    case PitchedVoiceColumn::number_of_pitched_voice_columns:
-      Q_UNREACHABLE();
-    case PitchedVoiceColumn::pitched_voice_name_column:
-      return name;
-    case PitchedVoiceColumn::pitched_voice_instrument_column:
-      return program;
-    case PitchedVoiceColumn::pitched_voice_velocity_ratio_column:
-      return QVariant::fromValue(velocity_ratio);
-    }
-    Q_UNREACHABLE();
-  }
+  get_data(const int column_number) const -> QVariant override;
 
-  void set_data(const int column_number, const QVariant &new_value) override {
-    switch (static_cast<PitchedVoiceColumn>(column_number)) {
-    case PitchedVoiceColumn::number_of_pitched_voice_columns:
-      Q_UNREACHABLE();
-    case PitchedVoiceColumn::pitched_voice_name_column:
-      name = variant_to<QString>(new_value);
-      break;
-    case PitchedVoiceColumn::pitched_voice_instrument_column:
-      program = variant_to<QString>(new_value);
-      break;
-    case PitchedVoiceColumn::pitched_voice_velocity_ratio_column:
-      velocity_ratio = variant_to<Rational>(new_value);
-      break;
-    }
-  }
+  void set_data(const int column_number, const QVariant &new_value) override;
 
   void copy_column_from(const PitchedVoice &template_row,
-                        const int column_number) {
-    switch (static_cast<PitchedVoiceColumn>(column_number)) {
-    case PitchedVoiceColumn::number_of_pitched_voice_columns:
-      Q_UNREACHABLE();
-    case PitchedVoiceColumn::pitched_voice_name_column:
-      name = template_row.name;
-      break;
-    case PitchedVoiceColumn::pitched_voice_instrument_column:
-      program = template_row.program;
-      break;
-    case PitchedVoiceColumn::pitched_voice_velocity_ratio_column:
-      velocity_ratio = template_row.velocity_ratio;
-      break;
-    }
-  }
+                        const int column_number);
 
-  void column_to_xml(xmlNode &node, const int column_number) const override {
-    switch (static_cast<PitchedVoiceColumn>(column_number)) {
-    case PitchedVoiceColumn::number_of_pitched_voice_columns:
-      Q_UNREACHABLE();
-    case PitchedVoiceColumn::pitched_voice_name_column:
-      maybe_add_qstring_to_xml(node, "name", name);
-      break;
-    case PitchedVoiceColumn::pitched_voice_instrument_column:
-      maybe_add_qstring_to_xml(node, "instrument", program);
-      break;
-    case PitchedVoiceColumn::pitched_voice_velocity_ratio_column:
-      maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
-      break;
-    }
-  }
+  void column_to_xml(xmlNode &node, const int column_number) const override;
 
-  void to_xml(xmlNode &node) const override {
-    maybe_add_qstring_to_xml(node, "name", name);
-    maybe_add_qstring_to_xml(node, "instrument", program);
-    maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
-  }
+  void to_xml(xmlNode &node) const override;
 };

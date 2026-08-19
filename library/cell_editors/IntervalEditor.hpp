@@ -26,30 +26,9 @@ public:
   QSpinBox &octave_box = *(new QSpinBox);
   QBoxLayout &row_layout = *(new QHBoxLayout(this));
 
-  explicit IntervalEditor(QWidget *const parent_pointer)
-      : QFrame(parent_pointer),
-        rational_editor(*(new RationalEditor(parent_pointer))) {
+  explicit IntervalEditor(QWidget *const parent_pointer);
 
-    setFrameStyle(QFrame::StyledPanel);
-    setAutoFillBackground(true);
+  [[nodiscard]] auto value() const -> Interval;
 
-    rational_editor.setFrameShape(QFrame::NoFrame);
-
-    octave_box.setMinimum(-MAX_OCTAVE);
-    octave_box.setMaximum(MAX_OCTAVE);
-
-    row_layout.addWidget(&rational_editor);
-    row_layout.addWidget(&o_text);
-    row_layout.addWidget(&octave_box);
-    row_layout.setContentsMargins(1, 0, 1, 0);
-  }
-
-  [[nodiscard]] auto value() const {
-    return Interval(rational_editor.value(), octave_box.value());
-  }
-
-  void setValue(const Interval &new_value) const {
-    rational_editor.setValue(new_value.ratio);
-    octave_box.setValue(new_value.octave);
-  }
+  void setValue(const Interval &new_value) const;
 };
