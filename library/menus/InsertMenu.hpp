@@ -50,8 +50,8 @@ void add_insert_row(SongWidget &song_widget,  int row_number,
                      RowType new_row_type);
 
 struct InsertMenu : public QMenu {
-  QAction insert_after_action = QAction(InsertMenu::tr("&After"));
-  QAction insert_into_start_action = QAction(InsertMenu::tr("&Into start"));
+  QAction insert_after_action;
+  QAction insert_into_start_action;
 
   explicit InsertMenu(SongWidget &song_widget);
 };

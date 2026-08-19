@@ -50,7 +50,11 @@ void add_paste_insert(SongWidget &song_widget, const int row_number) {
 
 }  // namespace
 
-PasteMenu::PasteMenu(SongWidget &song_widget) : QMenu(PasteMenu::tr("&Paste")) {
+PasteMenu::PasteMenu(SongWidget &song_widget)
+    : QMenu(PasteMenu::tr("&Paste")),
+      paste_over_action(PasteMenu::tr("&Over")),
+      paste_into_start_action(PasteMenu::tr("&Into start")),
+      paste_after_action(PasteMenu::tr("&After")) {
   add_menu_action(*this, paste_over_action, QKeySequence::Paste, false);
   add_menu_action(*this, paste_into_start_action);
   add_menu_action(*this, paste_after_action, QKeySequence::UnknownKey, false);

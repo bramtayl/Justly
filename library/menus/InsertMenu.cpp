@@ -66,7 +66,9 @@ void add_insert_row_default(SongWidget &song_widget, const int row_number) {
 }  // namespace
 
 InsertMenu::InsertMenu(SongWidget &song_widget)
-    : QMenu(InsertMenu::tr("&Insert row")) {
+    : QMenu(InsertMenu::tr("&Insert row")),
+      insert_after_action(InsertMenu::tr("&After")),
+      insert_into_start_action(InsertMenu::tr("&Into start")) {
   add_menu_action(*this, insert_after_action,
                   QKeySequence::InsertLineSeparator, false);
   add_menu_action(*this, insert_into_start_action, QKeySequence::AddTab);

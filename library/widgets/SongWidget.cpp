@@ -98,7 +98,15 @@ auto get_property(xmlNode &node, const char *name) -> std::string {
   return xml_string_to_string(xmlGetProp(&node, c_string_to_xml_string(name)));
 }
 
-SongWidget::SongWidget() {
+SongWidget::SongWidget()
+    : player(Player(*this)), undo_stack(QUndoStack(nullptr)),
+      current_folder(
+          QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
+      recovery_timer(*(new QTimer(this))),
+      switch_column(*(new SwitchColumn(undo_stack, song))),
+      controls_column(*(new ControlsColumn(
+          song, player.synth, undo_stack, switch_column.switch_table))),
+      row_layout(*(new QHBoxLayout(this))) {
   row_layout.addWidget(&controls_column, 0, Qt::AlignTop);
   row_layout.addWidget(&switch_column, 0, Qt::AlignTop);
 }

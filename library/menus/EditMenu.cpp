@@ -62,8 +62,11 @@ void copy_selection(const SwitchTable &switch_table) {
 }  // namespace
 
 EditMenu::EditMenu(SongWidget &song_widget)
-    : QMenu(EditMenu::tr("&Edit")), paste_menu(PasteMenu(song_widget)),
-      insert_menu(InsertMenu(song_widget)) {
+    : QMenu(EditMenu::tr("&Edit")), cut_action(EditMenu::tr("&Cut")),
+      copy_action(EditMenu::tr("&Copy")), paste_menu(PasteMenu(song_widget)),
+      insert_menu(InsertMenu(song_widget)),
+      delete_cells_action(EditMenu::tr("&Delete cells")),
+      remove_rows_action(EditMenu::tr("&Remove rows")) {
   auto &undo_stack = song_widget.undo_stack;
   auto &switch_table = song_widget.switch_column.switch_table;
 

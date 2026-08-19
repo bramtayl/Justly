@@ -13,6 +13,8 @@
 #include "rows/PitchedNote.hpp"
 #include "rows/Row.hpp"
 
+Song::Song() : starting_key(midi_number_to_frequency(DEFAULT_STARTING_MIDI)) {}
+
 auto get_octave_degree(int midi_interval) -> std::tuple<int, int> {
   const int octave =
       to_int(std::floor((1.0 * midi_interval) / HALFSTEPS_PER_OCTAVE));

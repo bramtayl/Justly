@@ -153,9 +153,9 @@ make_paste_cells_command(QWidget &parent, const int first_row_number,
 }
 
 struct PasteMenu : public QMenu {
-  QAction paste_over_action = QAction(PasteMenu::tr("&Over"));
-  QAction paste_into_start_action = QAction(PasteMenu::tr("&Into start"));
-  QAction paste_after_action = QAction(PasteMenu::tr("&After"));
+  QAction paste_over_action;
+  QAction paste_into_start_action;
+  QAction paste_after_action;
 
   explicit PasteMenu(SongWidget &song_widget);
 };

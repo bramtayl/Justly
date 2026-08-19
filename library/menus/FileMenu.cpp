@@ -35,7 +35,13 @@ auto get_selected_file(SongWidget &song_widget,
   return get_only(dialog.selectedFiles());
 }
 
-FileMenu::FileMenu(SongWidget &song_widget) : QMenu(FileMenu::tr("&File")) {
+FileMenu::FileMenu(SongWidget &song_widget)
+    : QMenu(FileMenu::tr("&File")), save_action(FileMenu::tr("&Save")),
+      open_action(FileMenu::tr("&Open")),
+      save_as_action(FileMenu::tr("&Save As...")),
+      import_action(FileMenu::tr("&Import MusicXML")),
+      export_action(FileMenu::tr("&Export recording")),
+      export_midi_action(FileMenu::tr("Export &MIDI")) {
   auto &save_action_ref = this->save_action;
   add_menu_action(*this, open_action, QKeySequence::Open);
   add_menu_action(*this, import_action, QKeySequence::UnknownKey, true);

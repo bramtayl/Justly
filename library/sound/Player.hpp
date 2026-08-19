@@ -3,7 +3,6 @@
 #include <QtCore/QHash>
 #include <QtCore/QList>
 #include <fluidsynth/types.h>
-#include <thread>
 
 #include "cell_types/Program.hpp"
 #include "other/helpers.hpp"
@@ -39,7 +38,7 @@ struct Player {
   QWidget &parent;
 
   // play state fields
-  QList<double> channel_schedules = QList<double>(NUMBER_OF_MIDI_CHANNELS, 0);
+  QList<double> channel_schedules;
   // percussion programs don't send pitch bend and (per MS_Basic.sf3)
   // have no breath-controller modulators, so unlike pitched notes, a channel
   // can safely be shared by overlapping notes of the same percussion program
@@ -52,21 +51,13 @@ struct Player {
 
   double final_time = 0;
 
-  FluidSettings settings = FluidSettings(
-      NUMBER_OF_MIDI_CHANNELS,
-      static_cast<int>(std::thread::hardware_concurrency()),
-#ifdef __linux__
-      "pulseaudio"
-#else
-      nullptr
-#endif
-  );
+  FluidSettings settings;
 
-  FluidSynth synth = FluidSynth(settings);
+  FluidSynth synth;
   FluidEvent event;
-  FluidSequencer sequencer = FluidSequencer(synth);
-  const unsigned int soundfont_id = get_soundfont_id(synth);
-  FluidDriver driver = make_audio_driver(parent, settings, synth);
+  FluidSequencer sequencer;
+  const unsigned int soundfont_id;
+  FluidDriver driver;
 
   explicit Player(QWidget &parent_input);
 

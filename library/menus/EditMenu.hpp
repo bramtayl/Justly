@@ -55,12 +55,12 @@ static void copy_from_model(QMimeData &mime_data,
 }
 
 struct EditMenu : public QMenu {
-  QAction cut_action = QAction(EditMenu::tr("&Cut"));
-  QAction copy_action = QAction(EditMenu::tr("&Copy"));
+  QAction cut_action;
+  QAction copy_action;
   PasteMenu paste_menu;
   InsertMenu insert_menu;
-  QAction delete_cells_action = QAction(EditMenu::tr("&Delete cells"));
-  QAction remove_rows_action = QAction(EditMenu::tr("&Remove rows"));
+  QAction delete_cells_action;
+  QAction remove_rows_action;
 
   explicit EditMenu(SongWidget &song_widget);
 };

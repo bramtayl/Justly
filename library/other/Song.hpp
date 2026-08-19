@@ -18,12 +18,14 @@ static const auto DEFAULT_STARTING_TEMPO = 100;
 static const auto DEFAULT_STARTING_VELOCITY = 64;
 
 struct Song {
-  double starting_key = midi_number_to_frequency(DEFAULT_STARTING_MIDI);
+  double starting_key;
   double starting_velocity = DEFAULT_STARTING_VELOCITY;
   double starting_tempo = DEFAULT_STARTING_TEMPO;
   QList<Chord> chords;
   QList<PitchedVoice> pitched_voices;
   QList<UnpitchedVoice> unpitched_voices;
+
+  Song();
 };
 
 [[nodiscard]] auto get_octave_degree(int midi_interval)

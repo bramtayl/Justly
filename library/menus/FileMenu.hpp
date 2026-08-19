@@ -16,12 +16,12 @@ struct SongWidget;
                                      const QFileDialog &dialog) -> QString;
 
 struct FileMenu : public QMenu {
-  QAction save_action = QAction(FileMenu::tr("&Save"));
-  QAction open_action = QAction(FileMenu::tr("&Open"));
-  QAction save_as_action = QAction(FileMenu::tr("&Save As..."));
-  QAction import_action = QAction(FileMenu::tr("&Import MusicXML"));
-  QAction export_action = QAction(FileMenu::tr("&Export recording"));
-  QAction export_midi_action = QAction(FileMenu::tr("Export &MIDI"));
+  QAction save_action;
+  QAction open_action;
+  QAction save_as_action;
+  QAction import_action;
+  QAction export_action;
+  QAction export_midi_action;
 
   explicit FileMenu(SongWidget &song_widget);
 };

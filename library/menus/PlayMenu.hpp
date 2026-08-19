@@ -18,9 +18,9 @@ struct PlaySelection {
     -> PlaySelection;
 
 struct PlayMenu : public QMenu {
-  QAction play_action = QAction(PlayMenu::tr("&Play selection"));
-  QAction play_to_end_action = QAction(PlayMenu::tr("Play to &end"));
-  QAction stop_playing_action = QAction(PlayMenu::tr("&Stop playing"));
+  QAction play_action;
+  QAction play_to_end_action;
+  QAction stop_playing_action;
 
   explicit PlayMenu(SongWidget &song_widget);
 };

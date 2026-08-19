@@ -431,7 +431,13 @@
       "Bash(awk -F: '$1>=100 && $1<=600')",
       "Bash(awk -F: '$1>=800 && $1<=1600')",
       "Bash(awk -F: '$1>=1150 && $1<=1700')",
-      "Bash(ninja JustlyLibrary)"
+      "Bash(ninja JustlyLibrary)",
+      "Bash(grep -rnE '^\\\\s*\\(const\\\\s+|static\\\\s+constexpr\\\\s+|constexpr\\\\s+\\)?[A-Za-z_][A-Za-z0-9_:<>,\\\\*&\\\\s]*\\\\s+[a-zA-Z_][a-zA-Z0-9_]*\\\\s*\\(=\\\\s*[^=;].*;|\\\\{[^}]*\\\\}\\\\s*;\\)' --include='*.hpp' --include='*.h' library tests)",
+      "Bash(grep -rnE '^\\\\s*[A-Za-z_][A-Za-z0-9_:<>,\\\\*&\\\\s]*\\\\s+[a-zA-Z_][a-zA-Z0-9_]*\\\\{[^}]*\\\\}\\\\s*;' --include='*.hpp' --include='*.h' library tests)",
+      "Bash(grep -rnE '^\\\\s*[A-Za-z_][A-Za-z0-9_:<>,\\\\.\\\\*&\\\\s]*[a-zA-Z_][a-zA-Z0-9_]*\\\\{[^;{}]*\\\\}\\\\s*;' --include='*.hpp' --include='*.h' library tests)",
+      "Bash(grep -E \"\\(FileMenu|ViewMenu|InsertMenu|PlayMenu|EditMenu|PasteMenu|SongMenuBar|SongWidget|Player|PianoRollNotesScene|PianoRollWidget|UnpitchedVoice|Tester|SwitchDelegate|VoicesModel|TimeIterator\\)\\\\.cpp$\")",
+      "Bash(grep -E \"\\(IntervalEditor|RationalEditor|ControlsColumn|IntervalRow|SpinBoxes|SwitchColumn\\)\\\\.cpp$\")",
+      "Bash(grep -nE '^\\\\s*[A-Za-z_][A-Za-z0-9_:<>,\\\\s\\\\*&]*\\\\s+[a-zA-Z_][a-zA-Z0-9_]*\\\\s*\\(=|\\\\{\\)[^;]*;' --include='*.hpp' --include='*.h' -r library/)"
     ],
     "additionalDirectories": [
       "/home/brandon/Justly"

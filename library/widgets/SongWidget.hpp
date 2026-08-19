@@ -49,21 +49,19 @@ struct XMLValidator;
 
 struct SongWidget : public QWidget {
   Song song;
-  Player player = Player(*this);
-  QUndoStack undo_stack = QUndoStack(nullptr);
+  Player player;
+  QUndoStack undo_stack;
   QString current_file;
-  QString current_folder =
-      QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+  QString current_folder;
 
   // debounced autosave for crash recovery -- restarted on every undo_stack
   // change and wired up by connect_recovery_timer once save_as_file and
   // friends are defined later in this header (see comment there)
-  QTimer &recovery_timer = *(new QTimer(this));
+  QTimer &recovery_timer;
 
-  SwitchColumn &switch_column = *(new SwitchColumn(undo_stack, song));
-  ControlsColumn &controls_column = *(new ControlsColumn(
-      song, player.synth, undo_stack, switch_column.switch_table));
-  QBoxLayout &row_layout = *(new QHBoxLayout(this));
+  SwitchColumn &switch_column;
+  ControlsColumn &controls_column;
+  QBoxLayout &row_layout;
 
   explicit SongWidget();
 

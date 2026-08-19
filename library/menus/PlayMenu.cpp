@@ -46,7 +46,11 @@ auto get_play_selection(const SongWidget &song_widget) -> PlaySelection {
           .number_of_rows = get_number_of_rows(range)};
 }
 
-PlayMenu::PlayMenu(SongWidget &song_widget) : QMenu(PlayMenu::tr("&Play")) {
+PlayMenu::PlayMenu(SongWidget &song_widget)
+    : QMenu(PlayMenu::tr("&Play")),
+      play_action(PlayMenu::tr("&Play selection")),
+      play_to_end_action(PlayMenu::tr("Play to &end")),
+      stop_playing_action(PlayMenu::tr("&Stop playing")) {
   add_menu_action(*this, play_action, QKeySequence::UnknownKey, false);
   play_action.setShortcut(Qt::Key_Space);
   add_menu_action(*this, play_to_end_action, QKeySequence::UnknownKey, false);

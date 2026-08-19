@@ -14,6 +14,7 @@
 #include <fluidsynth/seq.h>
 #include <fluidsynth/settings.h>
 #include <fluidsynth/types.h>
+#include <thread>
 
 auto make_audio_driver(QWidget &parent, FluidSettings &settings,
                        FluidSynth &synth) -> FluidDriver {
@@ -64,7 +65,21 @@ void set_destination(FluidEvent &event, const fluid_seq_id_t sequencer_id) {
   fluid_event_set_dest(event.internal_pointer, sequencer_id);
 }
 
-Player::Player(QWidget &parent_input) : parent(parent_input) {
+Player::Player(QWidget &parent_input)
+    : parent(parent_input),
+      channel_schedules(QList<double>(NUMBER_OF_MIDI_CHANNELS, 0)),
+      settings(FluidSettings(
+          NUMBER_OF_MIDI_CHANNELS,
+          static_cast<int>(std::thread::hardware_concurrency()),
+#ifdef __linux__
+          "pulseaudio"
+#else
+          nullptr
+#endif
+          )),
+      synth(FluidSynth(settings)), sequencer(FluidSequencer(synth)),
+      soundfont_id(get_soundfont_id(synth)),
+      driver(make_audio_driver(parent, settings, synth)) {
   set_destination(event, sequencer.sequencer_id);
 }
 
