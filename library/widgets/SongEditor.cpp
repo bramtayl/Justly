@@ -154,6 +154,8 @@ void stop_piano_roll_playhead(PianoRollWidget &widget) {
 void start_piano_roll_playhead(PianoRollWidget &widget,
                                const double baseline_ms,
                                const double end_ms) {
+  static const auto PIANO_ROLL_TIMER_INTERVAL_MS = 33;
+
   set_manual_scrolling_enabled(widget.piano_roll_scene, widget.axis_scene,
                                false);
 

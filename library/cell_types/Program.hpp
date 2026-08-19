@@ -9,16 +9,6 @@
 
 struct FluidSynth;
 
-static const auto GENERAL_BANK_NUMBER = 0;
-static const auto GENERAL_EXPRESSIVE_BANK_NUMBER = 17;
-static const auto EXTRA_BANK_NUMBER = 8;
-static const auto EXTRA_EXPRESSIVE_BANK_NUMBER = 18;
-static const auto MAX_PITCHED_BANK_NUMBER =
-    18; // banks numbers above 18 are duplicates except for detuned saw, special
-        // cased below
-static const auto TEMPLE_BLOCKS_BANK_NUMBER = 1;
-static const auto UNPITCHED_BANK_NUMBER = 128;
-
 [[nodiscard]] auto get_soundfont_id(FluidSynth &synth) -> int;
 
 template <typename SubNamed>

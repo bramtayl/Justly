@@ -4,6 +4,7 @@
 
 MidiNumberEditor::MidiNumberEditor(QWidget *const parent_pointer)
     : QSpinBox(parent_pointer) {
+  static const auto MAX_MIDI_NUMBER = 127;
   setMinimum(0);
   setMaximum(MAX_MIDI_NUMBER);
 }

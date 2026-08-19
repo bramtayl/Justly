@@ -17,20 +17,6 @@ struct Song;
 struct SongWidget;
 struct SwitchTable;
 
-static const auto PIANO_ROLL_PIXELS_PER_SEMITONE = 6;
-// how far below the lowest note the horizontal axis sits -- enough that the
-// lowest note's bar never reads as glued to (or nearly touching) the axis
-// line, without wasting a full octave of empty space underneath it
-static const auto PIANO_ROLL_AXIS_PITCH_MARGIN_SEMITONES = 3.0;
-static const auto PIANO_ROLL_LANE_HEIGHT = 20;
-static const auto PIANO_ROLL_NOTE_BAR_THICKNESS = 3.0;
-static const auto PIANO_ROLL_MIN_BAR_WIDTH = 1.0;
-static const auto PIANO_ROLL_TIMER_INTERVAL_MS = 33;
-static const auto PIANO_ROLL_MIN_HEIGHT = 300;
-static const auto PIANO_ROLL_SCENE_MARGIN = 10.0;
-static const auto PIANO_ROLL_UNPITCHED_LANE_GAP = 30.0;
-static const auto PIANO_ROLL_LEGEND_GAP = 10.0;
-static const auto PIANO_ROLL_HIGHLIGHT_PEN_WIDTH = 1.5;
 static const auto PIANO_ROLL_TIME_ZOOM_STEP = 1.25;
 
 // the functions below act on PianoRollNotesScene/PianoRollLegendScene but

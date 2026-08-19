@@ -7,9 +7,6 @@
 class QGraphicsView;
 class QWidget;
 
-static const auto PIANO_ROLL_AXIS_LABEL_GAP = 4.0;
-static const auto PIANO_ROLL_LEGEND_SWATCH_SIZE = 10.0;
-
 // a separate scene/view for the voice legend, laid out in its own
 // fixed-width column to the right of the main view -- pinned there just
 // like PianoRollAxisScene is pinned to the left, so the legend stays visible

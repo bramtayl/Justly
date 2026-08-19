@@ -45,12 +45,6 @@ struct TimeIterator;
 struct UnpitchedVoice;
 struct XMLValidator;
 
-static const auto DEFAULT_REPEAT_TIMES = 2;
-static const auto FIFTH_HALFSTEPS = 7;
-static const auto START_END_MILLISECONDS = 500;
-static const auto VOICE_PREVIEW_MILLISECONDS = 1000;
-static const auto RECOVERY_DEBOUNCE_MILLISECONDS = 5000;
-
 [[nodiscard]] auto get_property(xmlNode &node, const char *name) -> std::string;
 
 struct SongWidget : public QWidget {
@@ -101,6 +95,8 @@ template <VoiceInterface SubVoice>
 [[nodiscard]] static auto
 play_voices(Player &player, const QList<SubVoice> &voices,
             const int first_voice_number, const int number_of_voices) -> bool {
+  static const auto VOICE_PREVIEW_MILLISECONDS = 1000;
+
   auto &parent = player.parent;
 
   const auto current_time = player.play_state.current_time;
@@ -223,32 +219,6 @@ void play_chords(SongWidget &song_widget,  int first_chord_number,
 [[nodiscard]] auto get_gain(const SongWidget &song_widget) -> double;
 
 void export_to_file(SongWidget &song_widget, const QString &output_file);
-
-// 1 tick == 1 millisecond at this fixed tempo (500000 microseconds per
-// quarter / 500 ticks per quarter == 1000 microseconds per tick), so the
-// piano roll's already-computed absolute millisecond timestamps can be used
-// directly as tick values; the declared tempo itself is arbitrary and
-// doesn't reflect the song's actual tempo, which (like in live playback and
-// WAV export) is already baked into those timestamps via each chord's
-// tempo_ratio
-static const auto MIDI_TICKS_PER_QUARTER = 500;
-static const auto MIDI_MICROSECONDS_PER_QUARTER = 500000U;
-static const auto MIDI_PERCUSSION_CHANNEL = 9;
-static const auto MIDI_FORMAT_MULTI_TRACK = 1;
-// same-tick ordering: a note-off must land before any note-on (so a
-// still-sounding note doesn't get truncated), a bank select must land before
-// the program change it's meant to modify, and a program change/pitch bend
-// must land before the note-on it's meant to apply to
-static const auto MIDI_EXPORT_NOTE_OFF_TIE_BREAK = 0;
-static const auto MIDI_EXPORT_BANK_SELECT_TIE_BREAK = 1;
-static const auto MIDI_EXPORT_PROGRAM_CHANGE_TIE_BREAK = 2;
-static const auto MIDI_EXPORT_PITCH_BEND_TIE_BREAK = 3;
-static const auto MIDI_EXPORT_BREATH_TIE_BREAK = 4;
-static const auto MIDI_EXPORT_NOTE_ON_TIE_BREAK = 5;
-// the standard MIDI file format has a hard 16-channel limit (a 4-bit
-// channel nibble), unlike FluidSynth's own NUMBER_OF_MIDI_CHANNELS (64),
-// which is an internal extension used only for live playback/WAV rendering
-static const auto NUMBER_OF_STANDARD_MIDI_CHANNELS = 16;
 
 void export_midi_to_file(SongWidget &song_widget,
                          const QString &output_file);

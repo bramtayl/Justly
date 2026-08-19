@@ -14,6 +14,16 @@ PianoRollNotesScene::PianoRollNotesScene(QWidget &parent_widget)
     : QGraphicsScene(&parent_widget),
       view(*(new QGraphicsView(this, &parent_widget))),
       playhead_timer(*(new QTimer(&parent_widget))) {
+  static const auto PIANO_ROLL_SELECTION_RECT_PEN_WIDTH = 1.0;
+  static const auto PIANO_ROLL_SELECTION_RECT_FILL_ALPHA = 60;
+  // behind the note bars and axis (default z 0), not in front of them --
+  // besides reading better as a background wash rather than a mask over the
+  // notes, sitting in front would make QGraphicsScene::itemAt() (used by
+  // PianoRollWidget's double-click handler) hit the box instead of whatever
+  // note is under the cursor, since the box now stays visible for as long
+  // as the selection does rather than only during a drag
+  static const auto PIANO_ROLL_SELECTION_RECT_Z_VALUE = -1.0;
+
   // keeps the scene point under the cursor fixed on screen while
   // ctrl+wheel zooms the time axis (see PianoRollWidget::zoom_in()/
   // zoom_out()), rather than always zooming around the view's top-left

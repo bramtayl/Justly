@@ -29,6 +29,11 @@
 #include "sound/PlayState.hpp"
 #include "sound/Player.hpp"
 
+namespace {
+const auto CONCERT_A_FREQUENCY = 440;
+const auto CONCERT_A_MIDI = 69;
+}  // namespace
+
 auto frequency_to_midi_number(const double key) -> double {
   Q_ASSERT(key > 0);
   return (HALFSTEPS_PER_OCTAVE * log2(key / CONCERT_A_FREQUENCY)) +

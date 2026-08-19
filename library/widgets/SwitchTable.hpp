@@ -19,7 +19,6 @@
 class QUndoStack;
 template <RowInterface SubRow> struct RowsModel;
 struct Song;
-static const auto WORDS_WIDTH = 200;
 
 template <RowInterface SubRow>
 static void set_model(QAbstractItemView &item_view,

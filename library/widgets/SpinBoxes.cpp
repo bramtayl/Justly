@@ -48,6 +48,12 @@ void clear_and_clean(QUndoStack &undo_stack) {
 }
 
 SpinBoxes::SpinBoxes(Song &song, FluidSynth &synth, QUndoStack &undo_stack) {
+  static const auto DEFAULT_GAIN = 5;
+  static const auto GAIN_STEP = 0.1;
+  static const auto MAX_GAIN = 10;
+  static const auto MAX_KEY = 999;
+  static const auto MAX_TEMPO = 999;
+
   auto &gain_editor_ref = this->gain_editor;
   auto &starting_key_editor_ref = this->starting_key_editor;
   auto &starting_velocity_editor_ref = this->starting_velocity_editor;

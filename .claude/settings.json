@@ -427,7 +427,11 @@
       "Bash(touch ../../../../CMakeCache.txt)",
       "Bash(ninja -t clean CMakeFiles/JustlyLibrary.dir CMakeFiles/Justly.dir CMakeFiles/JustlyTests.dir)",
       "Bash(ninja -t clean)",
-      "Bash(ninja JustlyLibrary Justly JustlyTests)"
+      "Bash(ninja JustlyLibrary Justly JustlyTests)",
+      "Bash(awk -F: '$1>=100 && $1<=600')",
+      "Bash(awk -F: '$1>=800 && $1<=1600')",
+      "Bash(awk -F: '$1>=1150 && $1<=1700')",
+      "Bash(ninja JustlyLibrary)"
     ],
     "additionalDirectories": [
       "/home/brandon/Justly"

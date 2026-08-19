@@ -54,6 +54,7 @@ auto get_note_name(const int closest_midi) -> QString {
 }
 
 void add_frequency_to_stream(QTextStream &stream, const double frequency) {
+  static const auto CENTS_PER_HALFSTEP = 100;
   const auto midi_float = frequency_to_midi_number(frequency);
   const auto closest_midi = to_int(midi_float);
   const auto cents = to_int((midi_float - closest_midi) * CENTS_PER_HALFSTEP);

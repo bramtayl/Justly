@@ -9,8 +9,6 @@
 
 #include "other/helpers.hpp"
 
-static const auto MILLISECONDS_PER_MINUTE = 60000;
-
 struct Row {
   virtual ~Row() = default;
   virtual void from_xml(xmlNode &node) = 0;

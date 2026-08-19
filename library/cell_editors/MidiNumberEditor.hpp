@@ -5,8 +5,6 @@
 
 class QWidget;
 
-static const auto MAX_MIDI_NUMBER = 127;
-
 struct MidiNumberEditor : QSpinBox {
   Q_OBJECT
   Q_PROPERTY(

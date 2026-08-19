@@ -11,8 +11,6 @@ struct FluidEvent;
 struct FluidSequencer;
 
 static const auto BEND_PER_HALFSTEP = 4096;
-static const auto CONCERT_A_FREQUENCY = 440;
-static const auto CONCERT_A_MIDI = 69;
 static const auto HALFSTEPS_PER_OCTAVE = 12;
 static const auto MAX_FREQUENCY = 12911.41; // MIDI 127 plus half step
 static const auto QUARTER_STEP = 0.5;

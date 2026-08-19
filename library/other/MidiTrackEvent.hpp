@@ -5,35 +5,7 @@
 
 class QByteArray;
 
-static const auto MIDI_BITS_PER_BYTE = 8U;
-static const auto MIDI_SEPTET_BITS = 7U; // a variable-length-quantity group,
-                                         // and each half of a 14-bit pitch
-                                         // bend value, is 7 bits wide
-static const auto MIDI_DATA_BYTE_MASK = 0x7FU; // a 7-bit data byte, or one
-                                               // variable-length-quantity
-                                               // septet
-static const auto MIDI_CONTINUATION_BIT = 0x80U; // marks a non-final
-                                                 // variable-length-quantity
-                                                 // byte
-static const auto MIDI_CHANNEL_MASK = 0x0FU;
-static const auto MIDI_BYTE_MASK = 0xFFU;
-
-static const auto MIDI_META_EVENT_PREFIX = 0xFFU;
-static const auto MIDI_END_OF_TRACK_META_TYPE = 0x2FU;
 static const auto MIDI_TEMPO_META_TYPE = 0x51U;
-static const auto MIDI_TRACK_NAME_META_TYPE = 0x03U;
-static const auto MIDI_PROGRAM_CHANGE_STATUS = 0xC0U;
-static const auto MIDI_NOTE_ON_STATUS = 0x90U;
-static const auto MIDI_NOTE_OFF_STATUS = 0x80U;
-static const auto MIDI_PITCH_BEND_STATUS = 0xE0U;
-static const auto MIDI_CONTROL_CHANGE_STATUS = 0xB0U;
-static const auto MIDI_BANK_SELECT_MSB_CONTROLLER = 0x00U;
-// GM2's standard bank-select value for the percussion bank -- distinct from
-// this soundfont's own internal SF2 bank number (128, which doesn't even fit
-// in a 7-bit MIDI data byte) used to look up drum presets within FluidSynth
-static const auto GM2_PERCUSSION_BANK_SELECT_MSB = 120U;
-
-static const auto MIDI_CHUNK_ID_LENGTH = 4;
 
 void append_variable_length(QByteArray &bytes, unsigned int value);
 

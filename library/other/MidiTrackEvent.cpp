@@ -7,7 +7,22 @@
 #include <QtCore/QtSwap>
 #include <variant>
 
+namespace {
+const auto MIDI_BITS_PER_BYTE = 8U;
+const auto MIDI_SEPTET_BITS = 7U; // a variable-length-quantity group,
+                                  // and each half of a 14-bit pitch
+                                  // bend value, is 7 bits wide
+const auto MIDI_DATA_BYTE_MASK = 0x7FU; // a 7-bit data byte, or one
+                                        // variable-length-quantity
+                                        // septet
+const auto MIDI_CHANNEL_MASK = 0x0FU;
+const auto MIDI_BYTE_MASK = 0xFFU;
+}  // namespace
+
 void append_variable_length(QByteArray &bytes, unsigned int value) {
+  static const auto MIDI_CONTINUATION_BIT = 0x80U; // marks a non-final
+                                                    // variable-length-quantity
+                                                    // byte
   QList<unsigned int> septets;
   septets.push_back(value & MIDI_DATA_BYTE_MASK);
   value = value >> MIDI_SEPTET_BITS;
@@ -30,6 +45,7 @@ void append_variable_length(QByteArray &bytes, unsigned int value) {
 
 void append_meta_event(QByteArray &bytes, unsigned int type,
                        const QByteArray &payload) {
+  static const auto MIDI_META_EVENT_PREFIX = 0xFFU;
   bytes.append(static_cast<char>(MIDI_META_EVENT_PREFIX));
   bytes.append(static_cast<char>(type));
   append_variable_length(bytes, static_cast<unsigned int>(payload.size()));
@@ -37,11 +53,13 @@ void append_meta_event(QByteArray &bytes, unsigned int type,
 }
 
 void append_track_name_meta(QByteArray &bytes, const QString &name) {
+  static const auto MIDI_TRACK_NAME_META_TYPE = 0x03U;
   append_meta_event(bytes, MIDI_TRACK_NAME_META_TYPE, name.toUtf8());
 }
 
 void append_control_change(QByteArray &bytes, unsigned int channel_number,
                            unsigned int controller, unsigned int value) {
+  static const auto MIDI_CONTROL_CHANGE_STATUS = 0xB0U;
   bytes.append(static_cast<char>(MIDI_CONTROL_CHANGE_STATUS |
                                  (channel_number & MIDI_CHANNEL_MASK)));
   bytes.append(static_cast<char>(controller & MIDI_DATA_BYTE_MASK));
@@ -50,6 +68,7 @@ void append_control_change(QByteArray &bytes, unsigned int channel_number,
 
 void append_program_change(QByteArray &bytes, unsigned int channel_number,
                            unsigned int program_number) {
+  static const auto MIDI_PROGRAM_CHANGE_STATUS = 0xC0U;
   bytes.append(static_cast<char>(MIDI_PROGRAM_CHANGE_STATUS |
                                  (channel_number & MIDI_CHANNEL_MASK)));
   bytes.append(static_cast<char>(program_number & MIDI_DATA_BYTE_MASK));
@@ -57,6 +76,7 @@ void append_program_change(QByteArray &bytes, unsigned int channel_number,
 
 void append_note_on(QByteArray &bytes, unsigned int channel_number,
                     unsigned int midi_number, unsigned int velocity) {
+  static const auto MIDI_NOTE_ON_STATUS = 0x90U;
   bytes.append(static_cast<char>(MIDI_NOTE_ON_STATUS |
                                  (channel_number & MIDI_CHANNEL_MASK)));
   bytes.append(static_cast<char>(midi_number & MIDI_DATA_BYTE_MASK));
@@ -65,6 +85,7 @@ void append_note_on(QByteArray &bytes, unsigned int channel_number,
 
 void append_note_off(QByteArray &bytes, unsigned int channel_number,
                      unsigned int midi_number) {
+  static const auto MIDI_NOTE_OFF_STATUS = 0x80U;
   bytes.append(static_cast<char>(MIDI_NOTE_OFF_STATUS |
                                  (channel_number & MIDI_CHANNEL_MASK)));
   bytes.append(static_cast<char>(midi_number & MIDI_DATA_BYTE_MASK));
@@ -73,6 +94,7 @@ void append_note_off(QByteArray &bytes, unsigned int channel_number,
 
 void append_pitch_bend(QByteArray &bytes, unsigned int channel_number,
                        unsigned int bend_14_bit) {
+  static const auto MIDI_PITCH_BEND_STATUS = 0xE0U;
   bytes.append(static_cast<char>(MIDI_PITCH_BEND_STATUS |
                                  (channel_number & MIDI_CHANNEL_MASK)));
   bytes.append(static_cast<char>(bend_14_bit & MIDI_DATA_BYTE_MASK));
@@ -88,6 +110,7 @@ void append_be16(QByteArray &bytes, unsigned int value) {
 
 void append_chunk(QByteArray &output, const char *const chunk_id,
                   const QByteArray &chunk_data) {
+  static const auto MIDI_CHUNK_ID_LENGTH = 4;
   output.append(chunk_id, MIDI_CHUNK_ID_LENGTH);
   const auto length = static_cast<unsigned int>(chunk_data.size());
   output.append(static_cast<char>((length >> (3 * MIDI_BITS_PER_BYTE)) &

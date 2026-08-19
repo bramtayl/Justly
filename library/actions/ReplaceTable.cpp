@@ -187,6 +187,8 @@ void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                    const int new_chord_number,
                    PianoRollWidget &piano_roll_widget,
                    const int new_note_number) {
+  static const auto WORDS_WIDTH = 200;
+
   auto &song = song_widget.song;
   auto &switch_column = song_widget.switch_column;
   auto &switch_table = switch_column.switch_table;

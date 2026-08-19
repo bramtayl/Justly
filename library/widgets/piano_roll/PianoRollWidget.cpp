@@ -61,6 +61,14 @@
 #include "widgets/piano_roll/PianoRollNotesScene.hpp"
 #include "widgets/piano_roll/PlayheadTransition.hpp"
 
+namespace {
+const auto PIANO_ROLL_AXIS_TICK_LENGTH = 5.0;
+const auto PIANO_ROLL_AXIS_X = 0.0;
+const auto PIANO_ROLL_AXIS_LABEL_GAP = 4.0;
+const auto PIANO_ROLL_SCENE_MARGIN = 10.0;
+const auto PIANO_ROLL_MIN_HEIGHT = 300;
+}  // namespace
+
 auto to_scene_x(const PianoRollNotesScene &notes_scene,
                 const double time_ms) -> double {
   return (time_ms - notes_scene.time_axis_baseline_ms) * PIANO_ROLL_PIXELS_PER_MS;
@@ -75,6 +83,18 @@ auto to_scene_x(const PianoRollNotesScene &notes_scene,
 namespace {
 
 void redraw_time_axis_ticks(PianoRollNotesScene &notes_scene) {
+  // ticks are re-spaced on every zoom change to keep roughly this many
+  // screen pixels between them, rather than a fixed time interval --
+  // otherwise zooming in would crowd ticks together and zooming out would
+  // spread them so far apart that most of the timeline carries no labels at
+  // all
+  static const auto PIANO_ROLL_TARGET_TICK_PIXEL_SPACING = 80.0;
+  static const auto PIANO_ROLL_MS_PER_SECOND = 1000.0;
+  static const auto PIANO_ROLL_MS_PER_MINUTE = 60000.0;
+  static const auto PIANO_ROLL_SECONDS_PER_MINUTE = 60LL;
+  static const auto PIANO_ROLL_LABEL_DECIMAL_BASE = 10;
+  static const auto PIANO_ROLL_NICE_STEP_ROLLOVER = 10.0;
+
   auto &scene = notes_scene;
   auto &time_axis_items = notes_scene.time_axis_items;
 
@@ -226,6 +246,12 @@ void hide_selection_rect(PianoRollNotesScene &notes_scene) {
 void position_playhead(PianoRollNotesScene &notes_scene,
                        const double time_ms,
                        const bool follow_view) {
+  // how long the view takes to catch up to the playhead when playback
+  // starts with the playhead already right of center -- long enough to read
+  // as a deliberate scroll, short enough not to lag behind what's actually
+  // playing
+  static const auto PIANO_ROLL_PLAYHEAD_CATCHUP_MS = 400.0;
+
   const auto playhead_x = to_scene_x(notes_scene, time_ms);
   const auto &scene_rect = notes_scene.sceneRect();
   notes_scene.playhead_item.setLine(playhead_x, scene_rect.top(), playhead_x,
@@ -306,6 +332,8 @@ auto get_voice_color(const int global_voice_index) -> QColor {
 
 void draw_legend_row(QGraphicsScene &legend_scene, const QString &name,
                      const int global_voice_index, const double row_y) {
+  static const auto PIANO_ROLL_LEGEND_SWATCH_SIZE = 10.0;
+
   legend_scene.addRect(0, row_y, PIANO_ROLL_LEGEND_SWATCH_SIZE,
                PIANO_ROLL_LEGEND_SWATCH_SIZE, QPen(Qt::NoPen),
                QBrush(get_voice_color(global_voice_index)));
@@ -527,6 +555,8 @@ void apply_selection_highlight(
     const RowType selection_row_type, const int selection_chord_number,
     const int selection_first_row_number, const int selection_number_of_rows,
     const bool selecting_chord_from_playhead) {
+  static const auto PIANO_ROLL_HIGHLIGHT_PEN_WIDTH = 1.5;
+
   const auto &events = piano_roll_scene.events;
 
   const auto is_chord_selection = selection_row_type == RowType::chord_type;
@@ -646,6 +676,17 @@ void rebuild_scene(QWidget &widget, const SongWidget &song_widget,
                    const int selection_first_row_number,
                    const int selection_number_of_rows,
                    const bool selecting_chord_from_playhead) {
+  static const auto PIANO_ROLL_PIXELS_PER_SEMITONE = 6;
+  // how far below the lowest note the horizontal axis sits -- enough that
+  // the lowest note's bar never reads as glued to (or nearly touching) the
+  // axis line, without wasting a full octave of empty space underneath it
+  static const auto PIANO_ROLL_AXIS_PITCH_MARGIN_SEMITONES = 3.0;
+  static const auto PIANO_ROLL_LANE_HEIGHT = 20;
+  static const auto PIANO_ROLL_NOTE_BAR_THICKNESS = 3.0;
+  static const auto PIANO_ROLL_MIN_BAR_WIDTH = 1.0;
+  static const auto PIANO_ROLL_UNPITCHED_LANE_GAP = 30.0;
+  static const auto PIANO_ROLL_LEGEND_GAP = 10.0;
+
   const auto &song = song_widget.song;
 
   // repopulates the notes scene with a fresh set of note bars + the

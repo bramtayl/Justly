@@ -16,8 +16,6 @@ struct Program;
 struct UnpitchedVoice;
 template <typename T> class QList;
 
-static const auto BREATH_ID = 2;
-static const auto MAX_RELEASE_TIME = 6000;
 static const auto MAX_VELOCITY = 127;
 
 struct Note : Row {

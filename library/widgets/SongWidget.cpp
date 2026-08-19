@@ -89,6 +89,11 @@
 #include "xml/XMLValidator.hpp"
 #include "xml/ZipArchive.hpp"
 
+namespace {
+const auto BREATH_ID = 2;
+const auto MIDI_PERCUSSION_CHANNEL = 9;
+}  // namespace
+
 auto get_property(xmlNode &node, const char *name) -> std::string {
   return xml_string_to_string(xmlGetProp(&node, c_string_to_xml_string(name)));
 }
@@ -251,6 +256,7 @@ auto get_gain(const SongWidget &song_widget) -> double {
 }
 
 void export_to_file(SongWidget &song_widget, const QString &output_file) {
+  static const auto START_END_MILLISECONDS = 500;
   Q_ASSERT(output_file.isValidUtf16());
   auto &player = song_widget.player;
   const auto &song = song_widget.song;
@@ -314,6 +320,11 @@ namespace {
 
 auto get_pitched_midi_channels() -> const QList<int> & {
   static const auto channels = []() -> QList<int> {
+    // the standard MIDI file format has a hard 16-channel limit (a 4-bit
+    // channel nibble), unlike FluidSynth's own NUMBER_OF_MIDI_CHANNELS (64),
+    // which is an internal extension used only for live playback/WAV
+    // rendering
+    static const auto NUMBER_OF_STANDARD_MIDI_CHANNELS = 16;
     QList<int> result;
     std::ranges::copy_if(
         std::views::iota(0, NUMBER_OF_STANDARD_MIDI_CHANNELS),
@@ -331,6 +342,10 @@ void emit_note_events(QList<MidiTrackEvent> &track,
                       unsigned int midi_number,
                       unsigned int velocity, double start_tick,
                       double end_tick) {
+  // same-tick ordering: a note-off must land before any note-on, so a
+  // still-sounding note doesn't get truncated
+  static const auto MIDI_EXPORT_NOTE_OFF_TIE_BREAK = 0;
+  static const auto MIDI_EXPORT_NOTE_ON_TIE_BREAK = 5;
   track.push_back(MidiTrackEvent{
       .tick = start_tick,
       .tie_break = MIDI_EXPORT_NOTE_ON_TIE_BREAK,
@@ -349,6 +364,31 @@ void emit_note_events(QList<MidiTrackEvent> &track,
 
 void export_midi_to_file(SongWidget &song_widget, const QString &output_file) {
   Q_ASSERT(output_file.isValidUtf16());
+
+  // 1 tick == 1 millisecond at this fixed tempo (500000 microseconds per
+  // quarter / 500 ticks per quarter == 1000 microseconds per tick), so the
+  // piano roll's already-computed absolute millisecond timestamps can be
+  // used directly as tick values; the declared tempo itself is arbitrary and
+  // doesn't reflect the song's actual tempo, which (like in live playback
+  // and WAV export) is already baked into those timestamps via each chord's
+  // tempo_ratio
+  static const auto MIDI_TICKS_PER_QUARTER = 500;
+  static const auto MIDI_MICROSECONDS_PER_QUARTER = 500000U;
+  static const auto MIDI_FORMAT_MULTI_TRACK = 1;
+  // same-tick ordering: a bank select must land before the program change
+  // it's meant to modify, and a program change/pitch bend must land before
+  // the note-on it's meant to apply to
+  static const auto MIDI_EXPORT_BANK_SELECT_TIE_BREAK = 1;
+  static const auto MIDI_EXPORT_PROGRAM_CHANGE_TIE_BREAK = 2;
+  static const auto MIDI_EXPORT_PITCH_BEND_TIE_BREAK = 3;
+  static const auto MIDI_EXPORT_BREATH_TIE_BREAK = 4;
+  static const auto MIDI_BANK_SELECT_MSB_CONTROLLER = 0x00U;
+  // GM2's standard bank-select value for the percussion bank -- distinct
+  // from this soundfont's own internal SF2 bank number (128, which doesn't
+  // even fit in a 7-bit MIDI data byte) used to look up drum presets within
+  // FluidSynth
+  static const auto GM2_PERCUSSION_BANK_SELECT_MSB = 120U;
+  static const auto MIDI_END_OF_TRACK_META_TYPE = 0x2FU;
 
   const auto &song = song_widget.song;
   const auto &pitched_voices = song.pitched_voices;
@@ -865,6 +905,8 @@ auto maybe_restore_recovery(SongWidget &song_widget) -> bool {
 }
 
 void connect_recovery_timer(SongWidget &song_widget) {
+  static const auto RECOVERY_DEBOUNCE_MILLISECONDS = 5000;
+
   auto &recovery_timer = song_widget.recovery_timer;
   auto &undo_stack = song_widget.undo_stack;
 
@@ -1155,6 +1197,9 @@ auto maybe_read_musicxml_document(const QString &filename) -> XMLDocument {
 }  // namespace
 
 auto import_musicxml(SongWidget &song_widget, const QString &filename) -> bool {
+  static const auto DEFAULT_REPEAT_TIMES = 2;
+  static const auto FIFTH_HALFSTEPS = 7;
+
   auto &undo_stack = song_widget.undo_stack;
   auto &spin_boxes = song_widget.controls_column.spin_boxes;
   auto &switch_table = song_widget.switch_column.switch_table;

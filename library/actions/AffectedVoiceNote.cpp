@@ -1,5 +1,10 @@
 #include "actions/AffectedVoiceNote.hpp"
 
+#include <libxml/parser.h>
+#include <string>
+
+#include "other/helpers.hpp"
+
 void find_and_process_voice_number(xmlNode &note_node, const int first_row_number,
                                    const int last_removed_row,
                                    const int number_of_rows, const bool is_insertion,

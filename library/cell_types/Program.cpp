@@ -24,6 +24,11 @@
 #include "sound/FluidSettings.hpp"
 #include "sound/FluidSynth.hpp"
 
+namespace {
+const auto UNPITCHED_BANK_NUMBER = 128;
+const auto MAX_RELEASE_TIME = 6000;
+}  // namespace
+
 auto get_soundfont_id(FluidSynth &synth) -> int {
   const auto soundfont_id =
       fluid_synth_sfload(synth.internal_pointer,
@@ -48,6 +53,7 @@ Program::Program(const char *const name_input, const short bank_number_input,
       release_milliseconds(release_milliseconds_input) {}
 
 auto is_pitched_bank_number(const short bank_number) -> bool {
+  static const auto TEMPLE_BLOCKS_BANK_NUMBER = 1;
   return bank_number != UNPITCHED_BANK_NUMBER &&
          bank_number != TEMPLE_BLOCKS_BANK_NUMBER;
 }
@@ -126,6 +132,14 @@ auto get_actual_release_milliseconds(FluidSynth &synth,
 
 auto get_some_programs(const bool is_pitched) -> const QList<Program> & {
   static const auto all_programs = []() -> QList<Program> {
+    static const auto GENERAL_BANK_NUMBER = 0;
+    static const auto GENERAL_EXPRESSIVE_BANK_NUMBER = 17;
+    static const auto EXTRA_BANK_NUMBER = 8;
+    static const auto EXTRA_EXPRESSIVE_BANK_NUMBER = 18;
+    static const auto MAX_PITCHED_BANK_NUMBER =
+        18; // banks numbers above 18 are duplicates except for detuned saw,
+            // special cased below
+
     FluidSettings settings;
     // fluid_synth_stop() releases a voice but doesn't reclaim its slot until
     // the engine actually renders past its release tail -- this synth never
