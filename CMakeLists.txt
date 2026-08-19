@@ -12,7 +12,7 @@ if (APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0" CACHE STRING "Minimum macOS version")
 endif()
 
-project(Justly VERSION 1.1.3 LANGUAGES CXX)
+project(Justly VERSION 1.1.4 LANGUAGES CXX)
 
 # download https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic.sf3
 # and put it into the share folder as MS_Basic.sf3
