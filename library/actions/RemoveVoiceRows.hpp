@@ -4,7 +4,8 @@
 #include <QtCore/QString>
 #include <QtGui/QUndoStack>
 
-#include "actions/VoiceNoteHelpers.hpp"
+#include "actions/AffectedVoiceNote.hpp"
+#include "actions/RenumberedVoiceNote.hpp"
 #include "other/helpers.hpp"
 #include "rows/Note.hpp"
 #include "rows/Voice.hpp"

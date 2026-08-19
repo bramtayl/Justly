@@ -349,7 +349,21 @@
       "Bash(pip show *)",
       "Bash(xargs -I{} sh -c 'echo {}')",
       "Bash(llvm-cov gcov *)",
-      "Bash(cmake -S . -B /tmp/cov_check2 -DBUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release -DNO_REALTIME_AUDIO=ON -DTRACK_COVERAGE=ON -G Ninja)"
+      "Bash(cmake -S . -B /tmp/cov_check2 -DBUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release -DNO_REALTIME_AUDIO=ON -DTRACK_COVERAGE=ON -G Ninja)",
+      "Bash(gcovr --xml \"/tmp/coverage_gcc.xml\" --filter \"/home/brandon/Justly/library/\" --exclude-throw-branches)",
+      "Bash(gcovr --xml \"/tmp/coverage_gcc.xml\" --filter \"/home/brandon/Justly/library/\" --exclude-throw-branches -j 1 --gcov-ignore-errors=no_working_dir_found)",
+      "Bash(g++ --version)",
+      "Bash(gcov --version)",
+      "Bash(ulimit -n)",
+      "Bash(gcov -b -f Tester.cpp.gcda)",
+      "Bash(rm -f *.gcov)",
+      "Bash(gcovr --xml \"/tmp/coverage_gcc.xml\" --filter \"/home/brandon/Justly/library/\" --exclude-throw-branches --keep --gcov-keep -j1)",
+      "Bash(QT_QPA_PLATFORM=offscreen /tmp/cov_check_clang/bin/JustlyTests)",
+      "Bash(cmake -S /home/brandon/Justly -B /tmp/cov_check2 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON)",
+      "Bash(xargs -I{} sh -c 'echo ===={}====; cat {}')",
+      "Bash(git tag *)",
+      "Bash(git -c credential.helper='!gh auth git-credential' push origin master)",
+      "Bash(git -c credential.helper='!gh auth git-credential' push origin v1.1.4)"
     ],
     "additionalDirectories": [
       "/home/brandon/Justly"
