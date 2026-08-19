@@ -1,5 +1,29 @@
 #include "cell_types/Program.hpp"
 
+#include <QtCore/QTypeInfo>
+#include <QtCore/QtAssert>
+#include <QtCore/QtMinMax>
+#include <QtCore/QtSwap>
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <fluidsynth.h>
+#include <fluidsynth/gen.h>
+#include <fluidsynth/misc.h>
+#include <fluidsynth/settings.h>
+#include <fluidsynth/sfont.h>
+#include <fluidsynth/synth.h>
+#include <fluidsynth/types.h>
+#include <fluidsynth/voice.h>
+#include <iterator>
+#include <set>
+#include <string>
+
+#include "other/helpers.hpp"
+#include "rows/Note.hpp"
+#include "sound/FluidSettings.hpp"
+#include "sound/FluidSynth.hpp"
+
 auto get_soundfont_id(FluidSynth &synth) -> int {
   const auto soundfont_id =
       fluid_synth_sfload(synth.internal_pointer,

@@ -1,5 +1,9 @@
 #include "menus/ViewMenu.hpp"
 
+#include <QtGui/QKeySequence>
+
+#include "widgets/SongWidget.hpp"
+
 ViewMenu::ViewMenu() : QMenu(ViewMenu::tr("&View")) {
   add_menu_action(*this, back_to_chords_action, QKeySequence::Back, false);
   add_menu_action(*this, edit_pitched_voices_action, QKeySequence::UnknownKey, true);

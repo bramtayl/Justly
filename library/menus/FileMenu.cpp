@@ -1,5 +1,17 @@
 #include "menus/FileMenu.hpp"
 
+#include <QtCore/QDir>
+#include <QtCore/QList>
+#include <QtCore/QObject>
+#include <QtCore/QtAssert>
+#include <QtCore/qobjectdefs.h>
+#include <QtGui/QKeySequence>
+#include <QtGui/QUndoStack>
+#include <QtWidgets/QFileDialog>
+
+#include "widgets/SongWidget.hpp"
+#include "widgets/SwitchColumn.hpp"
+
 auto make_file_dialog(
     SongWidget &song_widget, const char *const caption, const QString &filter,
     const QFileDialog::AcceptMode accept_mode, const QString &suffix,

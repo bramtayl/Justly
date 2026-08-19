@@ -1,5 +1,53 @@
 #include "actions/ReplaceTable.hpp"
 
+#include <QtCore/QFlags>
+#include <QtCore/QItemSelectionModel>
+#include <QtCore/QList>
+#include <QtCore/QObject>
+#include <QtCore/QSize>
+#include <QtCore/QString>
+#include <QtCore/QTextStream>
+#include <QtCore/QtAssert>
+#include <QtCore/QtMinMax>
+#include <QtCore/QtSwap>
+#include <QtCore/qobjectdefs.h>
+#include <QtGui/QAction>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QTableView>
+#include <algorithm>
+
+#include "actions/ChangeId.hpp"
+#include "cell_editors/IntervalEditor.hpp"
+#include "cell_editors/RationalEditor.hpp"
+#include "cell_editors/StringPicker.hpp"
+#include "cell_types/Program.hpp"
+#include "column_numbers/ChordColumn.hpp"
+#include "column_numbers/PitchedNoteColumn.hpp"
+#include "column_numbers/PitchedVoiceColumn.hpp"
+#include "column_numbers/UnpitchedNoteColumn.hpp"
+#include "column_numbers/UnpitchedVoiceColumn.hpp"
+#include "menus/EditMenu.hpp"
+#include "menus/InsertMenu.hpp"
+#include "menus/PasteMenu.hpp"
+#include "menus/PlayMenu.hpp"
+#include "menus/SongMenuBar.hpp"
+#include "menus/ViewMenu.hpp"
+#include "models/ChordsModel.hpp"
+#include "models/PitchedNotesModel.hpp"
+#include "models/PitchedVoicesModel.hpp"
+#include "models/RowsModel.hpp"
+#include "models/UnpitchedNotesModel.hpp"
+#include "models/UnpitchedVoicesModel.hpp"
+#include "other/Song.hpp"
+#include "other/helpers.hpp"
+#include "rows/Chord.hpp"
+#include "rows/RowType.hpp"
+#include "widgets/ControlsColumn.hpp"
+#include "widgets/IntervalRow.hpp"
+#include "widgets/SwitchColumn.hpp"
+#include "widgets/SwitchTable.hpp"
+#include "widgets/piano_roll/PianoRollWidget.hpp"
+
 static auto get_string_picker_width(const QList<QString> &names) -> int {
   StringPicker editor(nullptr, names);
   editor.setFrame(false);

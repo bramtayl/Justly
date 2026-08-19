@@ -1,4 +1,9 @@
 #include "cell_editors/IntervalEditor.hpp"
+#include <QtWidgets/QFrame>
+
+#include "cell_editors/RationalEditor.hpp"
+#include "cell_types/Interval.hpp"
+
 
 IntervalEditor::IntervalEditor(QWidget *const parent_pointer)
     : QFrame(parent_pointer),

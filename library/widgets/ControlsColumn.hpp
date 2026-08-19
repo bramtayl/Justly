@@ -3,15 +3,12 @@
 #include <QtWidgets/QBoxLayout>
 #include <QtWidgets/QWidget>
 
-#include "cell_types/Interval.hpp"
-#include "cell_types/Rational.hpp"
-#include "widgets/IntervalRow.hpp"
-#include "widgets/SpinBoxes.hpp"
-
 class QUndoStack;
 struct FluidSynth;
 struct Song;
 struct SwitchTable;
+struct IntervalRow;
+struct SpinBoxes;
 
 static const auto FIVE = 5;
 static const auto SEVEN = 7;

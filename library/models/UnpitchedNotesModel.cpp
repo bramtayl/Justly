@@ -1,5 +1,16 @@
 #include "models/UnpitchedNotesModel.hpp"
 
+#include <QtCore/QList>
+#include <QtCore/QVariant>
+
+#include "cell_types/Rational.hpp"
+#include "column_numbers/UnpitchedNoteColumn.hpp"
+#include "models/UndoRowsModel.hpp"
+#include "other/Song.hpp"
+#include "rows/UnpitchedNote.hpp"
+#include "rows/UnpitchedVoice.hpp"
+#include "sound/PlayState.hpp"
+
 auto UnpitchedNotesModel::get_display_data(const int row_number,
                                            const int column_number) const
     -> QVariant {

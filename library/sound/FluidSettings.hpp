@@ -1,9 +1,5 @@
 #pragma once
 
-#include <QtCore/QtAssert>
-#include <fluidsynth.h>
-#include <fluidsynth/misc.h>
-#include <fluidsynth/settings.h>
 #include <fluidsynth/types.h>
 
 #include "other/helpers.hpp"
@@ -16,8 +12,8 @@ struct FluidSettings {
   // no playback config is applied, matching plain fluidsynth defaults;
   // audio_driver is null on non-Linux platforms, where fluidsynth picks a
   // default driver instead
-  explicit FluidSettings(const int midi_channels = 0, const int cpu_cores = 0,
-                         const char *const audio_driver = nullptr);
+  explicit FluidSettings( int midi_channels = 0,  int cpu_cores = 0,
+                         const char * audio_driver = nullptr);
 
   NO_MOVE_COPY(FluidSettings)
 

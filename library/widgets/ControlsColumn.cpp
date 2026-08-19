@@ -1,5 +1,10 @@
 #include "widgets/ControlsColumn.hpp"
 
+#include "cell_types/Interval.hpp"
+#include "cell_types/Rational.hpp"
+#include "widgets/IntervalRow.hpp"
+#include "widgets/SpinBoxes.hpp"
+
 ControlsColumn::ControlsColumn(Song &song, FluidSynth &synth, QUndoStack &undo_stack,
                                SwitchTable &switch_table)
     : spin_boxes(*new SpinBoxes(song, synth, undo_stack)),

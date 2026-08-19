@@ -3,7 +3,6 @@
 #include <QtCore/QByteArray>
 #include <QtCore/qtypes.h>
 #include <libxml/parser.h>
-#include <limits>
 
 #include "other/helpers.hpp"
 

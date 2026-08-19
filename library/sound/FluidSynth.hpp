@@ -1,12 +1,10 @@
 #pragma once
 
-#include <QtCore/QtAssert>
-#include <fluidsynth.h>
-#include <fluidsynth/synth.h>
 #include <fluidsynth/types.h>
 
 #include "other/helpers.hpp"
-#include "sound/FluidSettings.hpp"
+
+struct FluidSettings;
 
 struct FluidSynth {
   fluid_synth_t *const internal_pointer;

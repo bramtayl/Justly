@@ -2,15 +2,6 @@
 
 #include <QtCore/QHash>
 #include <QtCore/QList>
-#include <QtCore/QObject>
-#include <QtCore/QtAssert>
-#include <QtWidgets/QMessageBox>
-#include <fluidsynth.h>
-#include <fluidsynth/audio.h>
-#include <fluidsynth/event.h>
-#include <fluidsynth/misc.h>
-#include <fluidsynth/seq.h>
-#include <fluidsynth/settings.h>
 #include <fluidsynth/types.h>
 #include <thread>
 
@@ -33,15 +24,15 @@ static const auto NUMBER_OF_MIDI_CHANNELS = 64;
 
 void stop_playing(const FluidSequencer &sequencer, const FluidEvent &event);
 
-void check_fluid_ok(const int fluid_result);
+void check_fluid_ok( int fluid_result);
 
-void set_fluid_int(FluidSettings &settings, const char *const field,
-                   const int value);
+void set_fluid_int(FluidSettings &settings, const char * field,
+                    int value);
 
-void set_fluid_string(FluidSettings &settings, const char *const field,
-                      const char *const value);
+void set_fluid_string(FluidSettings &settings, const char * field,
+                      const char * value);
 
-void set_destination(FluidEvent &event, const fluid_seq_id_t sequencer_id);
+void set_destination(FluidEvent &event,  fluid_seq_id_t sequencer_id);
 
 struct Player {
   // data

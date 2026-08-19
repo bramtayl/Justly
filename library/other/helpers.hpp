@@ -1,25 +1,18 @@
 #pragma once
 
-#include <QtCore/QCoreApplication>
+#include <libxml/parser.h>
+#include <libxml/xmlstring.h>
 #include <QtCore/QDir>
-#include <QtCore/QFile>
 #include <QtCore/QList>
-#include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtCore/QVariant>
 #include <QtCore/QtAssert>
-#include <QtGui/QClipboard>
-#include <QtGui/QGuiApplication>
-#include <QtWidgets/QMessageBox>
 #include <algorithm>
-#include <cstdlib>
 #include <iterator>
-#include <libxml/parser.h>
-#include <libxml/xmlmemory.h>
-#include <libxml/xmlstring.h>
 #include <optional>
-#include <stdexcept>
 #include <string>
+
+class QClipboard;
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
 #define NO_COPY(classname)                                                     \

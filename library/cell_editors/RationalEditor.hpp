@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtCore/qtmetamacros.h>
 #include <QtWidgets/QFrame>
@@ -22,7 +21,7 @@ public:
   QSpinBox &denominator_box = *(new QSpinBox);
   QBoxLayout &row_layout = *(new QHBoxLayout(this));
 
-  explicit RationalEditor(QWidget *const parent_pointer);
+  explicit RationalEditor(QWidget * parent_pointer);
 
   [[nodiscard]] auto value() const -> Rational;
 

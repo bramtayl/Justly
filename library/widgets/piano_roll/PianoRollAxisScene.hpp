@@ -1,12 +1,11 @@
 #pragma once
 
-#include <QtCore/Qt>
-#include <QtWidgets/QFrame>
 #include <QtWidgets/QGraphicsScene>
-#include <QtWidgets/QGraphicsView>
-#include <QtWidgets/QWidget>
 
 #include "other/helpers.hpp"
+
+class QGraphicsView;
+class QWidget;
 
 // a second, fixed-width view pinned to the left edge, showing just the pitch
 // axis' ticks/labels (drawn into this scene by

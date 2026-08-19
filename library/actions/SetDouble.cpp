@@ -1,5 +1,17 @@
 #include "actions/SetDouble.hpp"
 
+#include <QtCore/QObject>
+#include <QtCore/QtAssert>
+#include <QtGui/QUndoStack>
+#include <QtWidgets/QSpinBox>
+#include <fluidsynth.h>
+#include <fluidsynth/synth.h>
+
+#include "actions/ChangeId.hpp"
+#include "other/Song.hpp"
+#include "other/helpers.hpp"
+#include "sound/FluidSynth.hpp"
+
 static void set_double(Song &song, FluidSynth &synth, const ChangeId control_id,
                 QDoubleSpinBox &spin_box, const double set_value) {
   switch (control_id) {

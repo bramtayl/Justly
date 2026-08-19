@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QtCore/QList>
+#include <concepts>
 
 #include "rows/Chord.hpp"
 #include "rows/Note.hpp"

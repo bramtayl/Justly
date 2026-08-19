@@ -1,5 +1,19 @@
 #include "rows/Chord.hpp"
 
+#include <QtCore/QTypeInfo>
+#include <QtCore/QVariant>
+#include <QtCore/QtAssert>
+#include <QtCore/QtMinMax>
+#include <QtCore/QtSwap>
+#include <libxml/parser.h>
+
+#include "cell_types/Interval.hpp"
+#include "cell_types/Rational.hpp"
+#include "column_numbers/ChordColumn.hpp"
+#include "other/helpers.hpp"
+#include "rows/Row.hpp"
+#include "sound/PlayState.hpp"
+
 void Chord::from_xml(xmlNode &node) {
   auto *field_pointer = xmlFirstElementChild(&node);
   while (field_pointer != nullptr) {

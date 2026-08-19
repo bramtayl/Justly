@@ -2,22 +2,16 @@
 
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QList>
-#include <QtCore/QTimer>
-#include <QtCore/Qt>
-#include <QtGui/QBrush>
-#include <QtGui/QColor>
-#include <QtGui/QPen>
-#include <QtWidgets/QFrame>
 #include <QtWidgets/QGraphicsItem>
-#include <QtWidgets/QGraphicsLineItem>
-#include <QtWidgets/QGraphicsRectItem>
 #include <QtWidgets/QGraphicsScene>
-#include <QtWidgets/QGraphicsView>
-#include <QtWidgets/QWidget>
 
 #include "other/PianoRollNoteEvent.hpp"
 #include "other/helpers.hpp"
 #include "widgets/piano_roll/PlayheadTransition.hpp"
+
+class QGraphicsView;
+class QTimer;
+class QWidget;
 
 static const auto PIANO_ROLL_PIXELS_PER_MS = 0.1;
 static const auto PIANO_ROLL_AXIS_TICK_LENGTH = 5.0;

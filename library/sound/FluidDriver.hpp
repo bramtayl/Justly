@@ -1,7 +1,5 @@
 #pragma once
 
-#include <fluidsynth.h>
-#include <fluidsynth/audio.h>
 #include <fluidsynth/types.h>
 
 #include "other/helpers.hpp"

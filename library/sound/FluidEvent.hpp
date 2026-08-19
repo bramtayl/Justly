@@ -1,8 +1,5 @@
 #pragma once
 
-#include <QtCore/QtAssert>
-#include <fluidsynth.h>
-#include <fluidsynth/event.h>
 #include <fluidsynth/types.h>
 
 #include "other/helpers.hpp"

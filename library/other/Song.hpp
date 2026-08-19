@@ -1,22 +1,18 @@
 #pragma once
 
 #include <QtCore/QList>
-#include <QtCore/QMap>
-#include <QtCore/QObject>
 #include <QtCore/QString>
-#include <QtCore/QTextStream>
-#include <QtCore/QtCompare>
-#include <QtCore/QtSwap>
-#include <cmath>
-#include <cstdlib>
 #include <tuple>
 
 #include "rows/Chord.hpp"
 #include "rows/PitchedNote.hpp"
 #include "rows/PitchedVoice.hpp"
-#include "rows/Row.hpp"
 #include "rows/UnpitchedVoice.hpp"
 #include "sound/PlayState.hpp"
+
+class QTextStream;
+struct Chord;
+struct UnpitchedVoice;
 
 static const auto C_0_MIDI = 12;
 static const auto CENTS_PER_HALFSTEP = 100;
@@ -40,15 +36,15 @@ void initialize_playstate(const Song &song, PlayState &play_state,
                            double current_time);
 
 [[nodiscard]] auto get_play_state_at_chord(const Song &song,
-                                           const int chord_number) -> PlayState;
+                                            int chord_number) -> PlayState;
 
-[[nodiscard]] auto get_note_name(const int closest_midi)
+[[nodiscard]] auto get_note_name( int closest_midi)
     -> QString;
 
 void add_frequency_to_stream(QTextStream &stream,
-                             const double frequency);
+                              double frequency);
 
 void add_timing_to_stream(QTextStream &stream,
                           const PlayState &play_state,
-                          const double velocity,
-                          const double beats_double);
+                           double velocity,
+                           double beats_double);

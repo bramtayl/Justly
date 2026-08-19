@@ -1,5 +1,4 @@
 [
-  { "include": ["<math.h>", "private", "<cmath>", "public"] },
   { "include": ["<qabstractitemdelegate.h>", "private", "<QtWidgets/QAbstractItemDelegate>", "public"] },
   { "include": ["<qabstractitemmodel.h>", "private", "<QtCore/QAbstractItemModel>", "public"] },
   { "include": ["<qabstractitemview.h>", "private", "<QtWidgets/QAbstractItemView>", "public"] },
@@ -78,7 +77,7 @@
   { "include": ["<qtextstream.h>", "private", "<QtCore/QTextStream>", "public"] },
   { "include": ["<qthread.h>", "private", "<QtCore/QThread>", "public"] },
   { "include": ["<qtimer.h>", "private", "<QtCore/QTimer>", "public"] },
-  { "include": ["<qtmetamacros.h>", "private", "<QtCore/qtmetamacros.h>>", "public"] },
+  { "include": ["<qtmetamacros.h>", "private", "<QtCore/qtmetamacros.h>", "public"] },
   { "include": ["<qtransform.h>", "private", "<QtGui/QTransform>", "public"] },
   { "include": ["<qtypeinfo.h>", "private", "<QtCore/QTypeInfo>", "public"] },
   { "include": ["<qundostack.h>", "private", "<QtGui/QUndoStack>", "public"] },

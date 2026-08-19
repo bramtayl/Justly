@@ -1,4 +1,9 @@
 #include "xml/XMLDocument.hpp"
+#include "other/helpers.hpp"
+
+#include <QtCore/QtTypes>
+#include <libxml/parser.h>
+#include <limits>
 
 XMLDocument::~XMLDocument() { xmlFreeDoc(internal_pointer); }
 

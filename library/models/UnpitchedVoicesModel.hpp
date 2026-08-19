@@ -1,16 +1,11 @@
 #pragma once
 
-#include <QtCore/QList>
-#include <QtCore/QString>
 #include <QtCore/QTypeInfo>
-#include <QtCore/QVariant>
 #include <QtCore/QtMinMax>
 #include <QtCore/QtSwap>
 
-#include "column_numbers/UnpitchedVoiceColumn.hpp"
 #include "models/VoicesModel.hpp"
 #include "rows/UnpitchedVoice.hpp"
-#include "rows/Voice.hpp"
 
 class QUndoStack;
 class QWidget;

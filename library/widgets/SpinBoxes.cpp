@@ -1,5 +1,21 @@
 #include "widgets/SpinBoxes.hpp"
 
+#include <QtCore/QObject>
+#include <QtCore/QString>
+#include <QtCore/QtAssert>
+#include <QtGui/QUndoStack>
+#include <QtWidgets/QFormLayout>
+#include <QtWidgets/QSizePolicy>
+#include <fluidsynth.h>
+#include <fluidsynth/synth.h>
+
+#include "actions/ChangeId.hpp"
+#include "actions/SetDouble.hpp"
+#include "other/Song.hpp"
+#include "qobjectdefs.h"
+#include "rows/Note.hpp"
+#include "sound/FluidSynth.hpp"
+
 static void add_set_double(QUndoStack &undo_stack, Song &song,
                     FluidSynth &synth, QDoubleSpinBox &spin_box,
                     const ChangeId control_id, const double old_value,

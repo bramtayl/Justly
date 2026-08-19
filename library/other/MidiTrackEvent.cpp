@@ -1,5 +1,11 @@
 #include "other/MidiTrackEvent.hpp"
 
+#include <QtCore/QByteArray>
+#include <QtCore/QList>
+#include <QtCore/QTypeInfo>
+#include <QtCore/QtMinMax>
+#include <QtCore/QtSwap>
+
 void append_variable_length(QByteArray &bytes, unsigned int value) {
   QList<unsigned int> septets;
   septets.push_back(value & MIDI_DATA_BYTE_MASK);

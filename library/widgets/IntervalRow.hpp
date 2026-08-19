@@ -1,41 +1,15 @@
 #pragma once
 
-#include <QtCore/QItemSelectionModel>
-#include <QtCore/QList>
-#include <QtCore/QMetaObject>
-#include <QtCore/QObject>
-#include <QtCore/QSize>
 #include <QtCore/QString>
-#include <QtCore/QTextStream>
-#include <QtCore/QTypeInfo>
-#include <QtCore/QtAssert>
-#include <QtCore/QtMinMax>
-#include <QtCore/QtSwap>
-#include <QtGui/QUndoStack>
 #include <QtWidgets/QBoxLayout>
-#include <QtWidgets/QLabel>
-#include <QtWidgets/QMessageBox>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QWidget>
-#include <cstdlib>
-#include <utility>
 
-#include "actions/SetCells.hpp"
-#include "cell_editors/IntervalEditor.hpp"
 #include "cell_types/Interval.hpp"
-#include "cell_types/Rational.hpp"
-#include "column_numbers/ChordColumn.hpp"
-#include "column_numbers/PitchedNoteColumn.hpp"
-#include "models/ChordsModel.hpp"
-#include "models/PitchedNotesModel.hpp"
-#include "models/RowsModel.hpp"
-#include "other/helpers.hpp"
-#include "rows/Chord.hpp"
-#include "rows/PitchedNote.hpp"
-#include "rows/RowType.hpp"
-#include "widgets/SwitchColumn.hpp"
-#include "widgets/SwitchDelegate.hpp"
-#include "widgets/SwitchTable.hpp"
+
+class QLabel;
+class QUndoStack;
+struct SwitchTable;
 
 struct IntervalRow : public QWidget {
   QUndoStack &undo_stack;
@@ -47,7 +21,7 @@ struct IntervalRow : public QWidget {
   const Interval interval;
 
   IntervalRow(QUndoStack &undo_stack_input, SwitchTable &switch_table_input,
-              const char *const interval_name, Interval interval_input);
+              const char * interval_name, Interval interval_input);
 };
 
 void set_interval_rows_is_enabled(IntervalRow &third_row,

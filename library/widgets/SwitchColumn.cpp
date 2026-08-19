@@ -1,5 +1,14 @@
 #include "widgets/SwitchColumn.hpp"
 
+#include <QtWidgets/QAbstractItemView>
+
+#include "models/PitchedNotesModel.hpp"
+#include "models/UnpitchedNotesModel.hpp"
+#include "other/helpers.hpp"
+#include "rows/RowType.hpp"
+#include "widgets/SwitchDelegate.hpp"
+#include "widgets/SwitchTable.hpp"
+
 SwitchColumn::SwitchColumn(QUndoStack &undo_stack, Song &song)
     : switch_table(*new SwitchTable(undo_stack, song)) {
   column_layout.addWidget(&editing_text);

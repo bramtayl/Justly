@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtCore/qtmetamacros.h>
 #include <QtWidgets/QBoxLayout>
@@ -8,10 +7,10 @@
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QSpinBox>
 
-#include "cell_editors/RationalEditor.hpp"
 #include "cell_types/Interval.hpp"
 
 class QWidget;
+struct RationalEditor;
 
 static const auto MAX_OCTAVE = 9;
 
@@ -26,7 +25,7 @@ public:
   QSpinBox &octave_box = *(new QSpinBox);
   QBoxLayout &row_layout = *(new QHBoxLayout(this));
 
-  explicit IntervalEditor(QWidget *const parent_pointer);
+  explicit IntervalEditor(QWidget * parent_pointer);
 
   [[nodiscard]] auto value() const -> Interval;
 

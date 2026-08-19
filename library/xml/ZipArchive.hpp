@@ -2,11 +2,8 @@
 
 #include <QtCore/QByteArray>
 #include <QtCore/QString>
-#include <QtCore/QtAssert>
-#include <limits>
 #include <string>
 #include <zip.h>
-#include <zipconf.h>
 
 #include "other/helpers.hpp"
 

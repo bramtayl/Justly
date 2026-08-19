@@ -8,8 +8,6 @@
 
 #include "cell_types/Interval.hpp"
 #include "cell_types/Rational.hpp"
-#include "other/Song.hpp"
-#include "rows/Chord.hpp"
 #include "rows/Note.hpp"
 #include "rows/Row.hpp"
 #include "sound/PlayState.hpp"
@@ -18,6 +16,7 @@ struct PitchedNote;
 struct PitchedVoice;
 struct UnpitchedNote;
 struct UnpitchedVoice;
+struct Song;
 
 struct PianoRollNoteEvent {
   double start_time_ms = 0;

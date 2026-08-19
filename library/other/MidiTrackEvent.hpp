@@ -1,9 +1,9 @@
 #pragma once
 
-#include <QtCore/QByteArray>
-#include <QtCore/QList>
 #include <QtCore/QString>
 #include <variant>
+
+class QByteArray;
 
 static const auto MIDI_BITS_PER_BYTE = 8U;
 static const auto MIDI_SEPTET_BITS = 7U; // a variable-length-quantity group,

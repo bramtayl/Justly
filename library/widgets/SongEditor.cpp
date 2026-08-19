@@ -1,5 +1,63 @@
 #include "widgets/SongEditor.hpp"
 
+#include <QtCore/QAbstractItemModel>
+#include <QtCore/QEvent>
+#include <QtCore/QList>
+#include <QtCore/QMetaType>
+#include <QtCore/QObject>
+#include <QtCore/QPoint>
+#include <QtCore/QRect>
+#include <QtCore/QSize>
+#include <QtCore/QTextStream>
+#include <QtCore/QTimer>
+#include <QtCore/QTypeInfo>
+#include <QtCore/qnamespace.h>
+#include <QtCore/qobjectdefs.h>
+#include <QtGui/QAction>
+#include <QtGui/QCloseEvent>
+#include <QtGui/QGuiApplication>
+#include <QtGui/QIcon>
+#include <QtGui/QPixmap>
+#include <QtGui/QPolygon>
+#include <QtGui/QScreen>
+#include <QtGui/QUndoStack>
+#include <QtWidgets/QAbstractItemView>
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QGraphicsItem>
+#include <QtWidgets/QGraphicsView>
+#include <QtWidgets/QStatusBar>
+#include <QtWidgets/QWidget>
+#include <functional>
+#include <libxml/xmlversion.h>
+#include <optional>
+#include <qdockwidget.h>
+#include <qelapsedtimer.h>
+#include <qmainwindow.h>
+#include <string>
+#include <utility>
+
+#include "actions/ReplaceTable.hpp"
+#include "cell_types/Interval.hpp"
+#include "cell_types/Rational.hpp"
+#include "column_numbers/ChordColumn.hpp"
+#include "menus/FileMenu.hpp"
+#include "menus/InsertMenu.hpp"
+#include "menus/PlayMenu.hpp"
+#include "menus/SongMenuBar.hpp"
+#include "menus/ViewMenu.hpp"
+#include "other/Song.hpp"
+#include "other/helpers.hpp"
+#include "rows/RowType.hpp"
+#include "widgets/SongWidget.hpp"
+#include "widgets/SpinBoxes.hpp"
+#include "widgets/SwitchColumn.hpp"
+#include "widgets/SwitchDelegate.hpp"
+#include "widgets/SwitchTable.hpp"
+#include "widgets/piano_roll/PianoRollNotesScene.hpp"
+#include "widgets/piano_roll/PianoRollWidget.hpp"
+#include "widgets/piano_roll/PlayheadTransition.hpp"
+
 static void add_replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                        const RowType new_row_type,
                        const int new_chord_number,

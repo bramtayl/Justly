@@ -1,5 +1,11 @@
 #include "cell_types/Rational.hpp"
 
+#include <QtCore/QtAssert>
+#include <libxml/parser.h>
+#include <numeric>
+
+#include "other/helpers.hpp"
+
 Rational::Rational(const int numerator_input, const int denominator_input) {
   Q_ASSERT(denominator_input != 0);
   const auto common_denominator =

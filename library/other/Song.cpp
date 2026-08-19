@@ -1,5 +1,18 @@
 #include "other/Song.hpp"
 
+#include <QtCore/QMap>
+#include <QtCore/QObject>
+#include <QtCore/QTextStream>
+#include <QtCore/QtSwap>
+#include <QtCore/qcompare.h>
+#include <cmath>
+#include <cstdlib>
+#include <tuple>
+
+#include "rows/Chord.hpp"
+#include "rows/PitchedNote.hpp"
+#include "rows/Row.hpp"
+
 auto get_octave_degree(int midi_interval) -> std::tuple<int, int> {
   const int octave =
       to_int(std::floor((1.0 * midi_interval) / HALFSTEPS_PER_OCTAVE));

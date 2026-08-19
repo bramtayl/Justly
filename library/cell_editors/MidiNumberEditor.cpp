@@ -1,5 +1,7 @@
 #include "cell_editors/MidiNumberEditor.hpp"
 
+#include <QtWidgets/QSpinBox>
+
 MidiNumberEditor::MidiNumberEditor(QWidget *const parent_pointer)
     : QSpinBox(parent_pointer) {
   setMinimum(0);

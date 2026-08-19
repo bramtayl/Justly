@@ -1,10 +1,11 @@
 #pragma once
 
+#include <QtCore/qcompare.h>
 #include <QtCore/QMap>
 #include <QtCore/QString>
-#include <QtCore/QtCompare>
 #include <QtCore/QtSwap>
 #include <string>
+#include <utility>
 
 #include "musicxml/MusicXMLChord.hpp"
 

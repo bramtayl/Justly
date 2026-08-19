@@ -1,3 +1,6 @@
+#include <QtTest/qtestcase.h>
+#include <QtTest/qtestkeyboard.h>
+#include <QtCore/qobjectdefs.h>
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -15,12 +18,11 @@
 #include <QtGui/QUndoStack>
 #include <QtTest/QTest>
 #include <QtTest/QTestData>
-#include <QtTest/qtestcase.h>
-#include <QtTest/qtestkeyboard.h>
 #include <QtWidgets/QAbstractItemDelegate>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QStyleOption>
 #include <QtWidgets/QWidget>
+#include <utility>
 
 #include "Tester.hpp"
 #include "column_numbers/PitchedNoteColumn.hpp"

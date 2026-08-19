@@ -1,5 +1,16 @@
 #include "other/helpers.hpp"
 
+#include <libxml/xmlmemory.h>
+#include <QtCore/QCoreApplication>
+#include <QtCore/QFile>
+#include <QtCore/QObject>
+#include <QtGui/QGuiApplication>
+#include <QtWidgets/QMessageBox>
+#include <cstdlib>
+#include <stdexcept>
+
+class QClipboard;
+
 XMLString::~XMLString() { xmlFree(internal_pointer); }
 
 auto get_clipboard() -> QClipboard & {

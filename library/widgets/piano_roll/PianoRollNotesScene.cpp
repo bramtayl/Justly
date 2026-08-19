@@ -1,5 +1,15 @@
 #include "widgets/piano_roll/PianoRollNotesScene.hpp"
 
+#include <QtCore/QTimer>
+#include <QtCore/qnamespace.h>
+#include <QtGui/QBrush>
+#include <QtGui/QColor>
+#include <QtGui/QPen>
+#include <QtWidgets/QFrame>
+#include <QtWidgets/QGraphicsScene>
+#include <QtWidgets/QGraphicsView>
+#include <QtWidgets/QWidget>
+
 PianoRollNotesScene::PianoRollNotesScene(QWidget &parent_widget)
     : QGraphicsScene(&parent_widget),
       view(*(new QGraphicsView(this, &parent_widget))),

@@ -378,7 +378,11 @@
       "Bash(grep -rlE '^\\\\S.*\\\\\\)\\\\s*\\(const\\)?\\\\s*\\\\{$|^\\\\S.*\\\\\\)\\\\s*->\\\\s*\\\\S.*\\\\{$' --include='*.hpp' --include='*.h' library executable tests)",
       "Bash(grep -rnE '^\\\\S.*\\\\\\)\\\\s*\\(const\\)?\\\\s*\\\\{$|^\\\\S.*\\\\\\)\\\\s*->\\\\s*\\\\S.*\\\\{$' --include='*.cpp' library executable tests)",
       "Bash(clang++ --version)",
-      "Bash(python3)"
+      "Bash(python3)",
+      "Bash(grep -n '^\\\\\\(void\\\\|auto\\\\|static\\\\\\).*\\(.*$' library/widgets/SongWidget.cpp)",
+      "Bash(awk -F: '$1<500')",
+      "Bash(grep -nE '^\\(static\\\\s+\\)?\\(void|auto|bool|int|double\\)\\\\s.*\\\\\\(.*\\(\\\\{|$\\)' library/widgets/piano_roll/PianoRollWidget.cpp)",
+      "Bash(grep -v ';\\\\s*$')"
     ],
     "additionalDirectories": [
       "/home/brandon/Justly"

@@ -1,22 +1,12 @@
 #pragma once
 
-#include <QtCore/QMetaObject>
-#include <QtCore/QObject>
-#include <QtCore/QString>
-#include <QtCore/QtAssert>
-#include <QtGui/QUndoStack>
 #include <QtWidgets/QFormLayout>
-#include <QtWidgets/QSizePolicy>
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QWidget>
-#include <fluidsynth.h>
-#include <fluidsynth/synth.h>
 
-#include "actions/ChangeId.hpp"
-#include "actions/SetDouble.hpp"
-#include "other/Song.hpp"
-#include "rows/Note.hpp"
-#include "sound/FluidSynth.hpp"
+class QUndoStack;
+struct FluidSynth;
+struct Song;
 
 static const auto DEFAULT_GAIN = 5;
 static const auto GAIN_STEP = 0.1;

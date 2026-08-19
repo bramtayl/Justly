@@ -1,24 +1,16 @@
 #pragma once
 
-#include <QtCore/QDir>
-#include <QtCore/QList>
-#include <QtCore/QMetaObject>
-#include <QtCore/QObject>
 #include <QtCore/QString>
-#include <QtCore/QtAssert>
 #include <QtGui/QAction>
-#include <QtGui/QKeySequence>
-#include <QtGui/QUndoStack>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMenu>
 
-#include "widgets/SongWidget.hpp"
-#include "widgets/SwitchColumn.hpp"
+struct SongWidget;
 
 [[nodiscard]] auto make_file_dialog(
-    SongWidget &song_widget, const char *const caption, const QString &filter,
-    const QFileDialog::AcceptMode accept_mode, const QString &suffix,
-    const QFileDialog::FileMode file_mode) -> QFileDialog &;
+    SongWidget &song_widget, const char * caption, const QString &filter,
+     QFileDialog::AcceptMode accept_mode, const QString &suffix,
+     QFileDialog::FileMode file_mode) -> QFileDialog &;
 
 [[nodiscard]] auto get_selected_file(SongWidget &song_widget,
                                      const QFileDialog &dialog) -> QString;

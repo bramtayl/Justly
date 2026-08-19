@@ -1,18 +1,16 @@
+#include <QtTest/qtestcase.h>
+#include <fluidsynth.h>
+#include <fluidsynth/types.h>
+#include <zip.h>
+#include <zipconf.h>
 #include <QtCore/QByteArray>
 #include <QtCore/QDir>
 #include <QtCore/QString>
 #include <QtCore/QtTypes>
-#include <QtTest/QTest>
 #include <QtTest/QTestData>
-#include <QtTest/qtestcase.h>
-#include <fluidsynth.h>
-#include <fluidsynth/audio.h>
-#include <fluidsynth/types.h>
 #include <limits>
 #include <string>
 #include <utility>
-#include <zip.h>
-#include <zipconf.h>
 
 #include "Tester.hpp"
 #include "other/helpers.hpp"
@@ -23,6 +21,7 @@
 #include "test_helpers.hpp"
 #include "xml/XMLDocument.hpp"
 #include "xml/ZipArchive.hpp"
+#include "widgets/SongEditor.hpp"
 
 // regression test: FluidDriver's move-assignment operator must free any
 // audio driver it already owns before taking on a new one, and must be a

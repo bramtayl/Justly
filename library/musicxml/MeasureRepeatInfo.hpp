@@ -2,6 +2,7 @@
 
 #include <QtCore/QList>
 #include <QtCore/QtSwap>
+#include <utility>
 
 struct MeasureRepeatInfo {
   int start_time = 0;

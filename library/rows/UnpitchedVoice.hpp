@@ -1,15 +1,8 @@
 #pragma once
 
-#include <QtCore/QString>
-#include <QtCore/QTypeInfo>
 #include <QtCore/QVariant>
-#include <QtCore/QtAssert>
 #include <libxml/parser.h>
 
-#include "cell_types/Rational.hpp"
-#include "column_numbers/UnpitchedVoiceColumn.hpp"
-#include "other/helpers.hpp"
-#include "rows/Row.hpp"
 #include "rows/Voice.hpp"
 
 static const auto DEFAULT_MIDI_NUMBER = 57;
@@ -40,14 +33,14 @@ struct UnpitchedVoice : Voice {
   [[nodiscard]] static auto is_column_editable(int /*column_number*/) -> bool;
 
   [[nodiscard]] auto
-  get_data(const int column_number) const -> QVariant override;
+  get_data( int column_number) const -> QVariant override;
 
-  void set_data(const int column_number, const QVariant &new_value) override;
+  void set_data( int column_number, const QVariant &new_value) override;
 
   void copy_column_from(const UnpitchedVoice &template_row,
-                        const int column_number);
+                         int column_number);
 
-  void column_to_xml(xmlNode &node, const int column_number) const override;
+  void column_to_xml(xmlNode &node,  int column_number) const override;
 
   void to_xml(xmlNode &node) const override;
 };

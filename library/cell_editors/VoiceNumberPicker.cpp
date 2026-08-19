@@ -1,7 +1,6 @@
-#include "cell_editors/VoiceNumberPicker.hpp"
+#include <QtWidgets/QComboBox>
 
-#include <QtCore/QList>
-#include <QtCore/QString>
+#include "cell_editors/VoiceNumberPicker.hpp"
 
 VoiceNumberPicker::VoiceNumberPicker(QWidget *const parent_pointer,
                                      const QList<QString> &voice_names)

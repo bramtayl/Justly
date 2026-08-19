@@ -1,52 +1,20 @@
 #pragma once
 
-#include <QtCore/QChar>
-#include <QtCore/QEasingCurve>
-#include <QtCore/QEvent>
-#include <QtCore/QItemSelectionModel>
-#include <QtCore/QList>
-#include <QtCore/QMetaObject>
 #include <QtCore/QObject>
-#include <QtCore/QPoint>
-#include <QtCore/QRectF>
-#include <QtCore/QSize>
-#include <QtCore/QString>
-#include <QtCore/Qt>
-#include <QtGui/QBrush>
-#include <QtGui/QColor>
-#include <QtGui/QPen>
-#include <QtGui/QTransform>
-#include <QtGui/QWheelEvent>
 #include <QtWidgets/QBoxLayout>
-#include <QtWidgets/QGraphicsItem>
-#include <QtWidgets/QGraphicsScene>
-#include <QtWidgets/QGraphicsSimpleTextItem>
-#include <QtWidgets/QGraphicsView>
-#include <QtWidgets/QScrollBar>
-#include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
-#include <algorithm>
-#include <cmath>
 #include <functional>
-#include <iterator>
-#include <limits>
 #include <optional>
 #include <utility>
 
-#include "other/PianoRollNoteEvent.hpp"
-#include "other/Song.hpp"
-#include "other/helpers.hpp"
-#include "rows/Chord.hpp"
-#include "rows/PitchedNote.hpp"
 #include "rows/RowType.hpp"
-#include "sound/PlayState.hpp"
-#include "widgets/SongWidget.hpp"
-#include "widgets/SwitchColumn.hpp"
-#include "widgets/SwitchTable.hpp"
 #include "widgets/piano_roll/PianoRollAxisScene.hpp"
 #include "widgets/piano_roll/PianoRollLegendScene.hpp"
 #include "widgets/piano_roll/PianoRollNotesScene.hpp"
-#include "widgets/piano_roll/PlayheadTransition.hpp"
+
+struct Song;
+struct SongWidget;
+struct SwitchTable;
 
 static const auto PIANO_ROLL_PIXELS_PER_SEMITONE = 6;
 // how far below the lowest note the horizontal axis sits -- enough that the
@@ -76,7 +44,7 @@ static const auto PIANO_ROLL_TIME_ZOOM_STEP = 1.25;
 // identity-scaled by time_axis_baseline_ms, which is 0 outside notes mode
 // (see the field's comment above) so this is a no-op there
 [[nodiscard]] auto to_scene_x(const PianoRollNotesScene &notes_scene,
-                              const double time_ms) -> double;
+                               double time_ms) -> double;
 
 // sets notes_scene's horizontal scale directly (rather than accumulating
 // via QGraphicsView::scale()) so repeated zoom_in()/zoom_out() calls can't
@@ -85,7 +53,7 @@ static const auto PIANO_ROLL_TIME_ZOOM_STEP = 1.25;
 // PianoRollAxisScene, which is never zoomed) stays visually fixed while
 // only the time axis expands/contracts
 void set_notes_view_time_zoom(PianoRollNotesScene &notes_scene,
-                              const double new_zoom_factor);
+                               double new_zoom_factor);
 
 // follow_view lets a caller move the playhead line without recentering the
 // view on it -- used when playback has already stopped (see
@@ -93,8 +61,8 @@ void set_notes_view_time_zoom(PianoRollNotesScene &notes_scene,
 // recentering would yank the view away from wherever the user had it
 // scrolled
 void position_playhead(PianoRollNotesScene &notes_scene,
-                       const double time_ms,
-                       const bool follow_view = true);
+                        double time_ms,
+                        bool follow_view = true);
 
 // number_of_notes == -1 (default) means "every note in every chord in
 // [first_chord_number, first_chord_number + number_of_chords)". A concrete
@@ -102,10 +70,10 @@ void position_playhead(PianoRollNotesScene &notes_scene,
 // should be 1 in that case), matching how the Play menu can select either a
 // range of chords or a range of notes within one chord.
 [[nodiscard]] auto get_piano_roll_time_bounds(
-    const Song &song, const int first_chord_number,
-    const int number_of_chords, const int first_note_number = 0,
-    const int number_of_notes = -1,
-    const std::optional<bool> pitched_filter = std::nullopt)
+    const Song &song,  int first_chord_number,
+     int number_of_chords,  int first_note_number = 0,
+     int number_of_notes = -1,
+     std::optional<bool> pitched_filter = std::nullopt)
     -> std::pair<double, double>;
 
 void zoom_in(PianoRollNotesScene &piano_roll_scene);
@@ -120,7 +88,7 @@ void zoom_out(PianoRollNotesScene &piano_roll_scene);
 // conflicting writer entirely.
 void set_manual_scrolling_enabled(PianoRollNotesScene &piano_roll_scene,
                                   PianoRollAxisScene &axis_scene,
-                                  const bool enabled);
+                                   bool enabled);
 
 // reapplies the highlight/cursor implied by the current selection_* fields
 // against piano_roll_scene's current note_items -- called both from
@@ -129,28 +97,28 @@ void set_manual_scrolling_enabled(PianoRollNotesScene &piano_roll_scene,
 // highlight pen set on the old ones)
 void apply_selection_highlight(
     const Song &song, PianoRollNotesScene &piano_roll_scene,
-    const RowType selection_row_type, const int selection_chord_number,
-    const int selection_first_row_number, const int selection_number_of_rows,
-    const bool selecting_chord_from_playhead);
+     RowType selection_row_type,  int selection_chord_number,
+     int selection_first_row_number,  int selection_number_of_rows,
+     bool selecting_chord_from_playhead);
 
 void rebuild_scene(QWidget &widget, const SongWidget &song_widget,
                    PianoRollNotesScene &piano_roll_scene,
                    PianoRollAxisScene &axis_scene,
                    PianoRollLegendScene &legend_scene,
                    QBoxLayout &row_layout,
-                   const RowType selection_row_type,
-                   const int selection_chord_number,
-                   const int selection_first_row_number,
-                   const int selection_number_of_rows,
-                   const bool selecting_chord_from_playhead);
+                    RowType selection_row_type,
+                    int selection_chord_number,
+                    int selection_first_row_number,
+                    int selection_number_of_rows,
+                    bool selecting_chord_from_playhead);
 
 void stop_playhead(PianoRollNotesScene &piano_roll_scene,
                    PianoRollAxisScene &axis_scene, const Song &song,
-                   const RowType selection_row_type,
-                   const int selection_chord_number,
-                   const int selection_first_row_number,
-                   const int selection_number_of_rows,
-                   const bool selecting_chord_from_playhead);
+                    RowType selection_row_type,
+                    int selection_chord_number,
+                    int selection_first_row_number,
+                    int selection_number_of_rows,
+                    bool selecting_chord_from_playhead);
 
 void update_playhead_position(PianoRollNotesScene &piano_roll_scene,
                               PianoRollAxisScene &axis_scene,

@@ -1,20 +1,19 @@
 #pragma once
 
-#include <QtCore/QtAssert>
 #include <fluidsynth.h>
 #include <fluidsynth/seq.h>
-#include <fluidsynth/seqbind.h>
 #include <fluidsynth/types.h>
 
 #include "other/helpers.hpp"
-#include "sound/FluidSynth.hpp"
+
+struct FluidSynth;
 
 // asserts before registering so a failed new_fluid_sequencer2 (e.g. OOM)
 // never gets passed into fluid_sequencer_register_fluidsynth -- a member
 // initializer can't be preceded by a constructor-body assert, since member
 // initializers all run before the body does
 [[nodiscard]] auto
-register_fluidsynth_client(fluid_sequencer_t *const sequencer_pointer,
+register_fluidsynth_client(fluid_sequencer_t * sequencer_pointer,
                            FluidSynth &synth) -> fluid_seq_id_t;
 
 struct FluidSequencer {

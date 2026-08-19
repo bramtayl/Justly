@@ -1,10 +1,7 @@
 #pragma once
 
 #include <QtGui/QAction>
-#include <QtGui/QKeySequence>
 #include <QtWidgets/QMenu>
-
-#include "widgets/SongWidget.hpp"
 
 struct ViewMenu : public QMenu {
   QAction back_to_chords_action = QAction(ViewMenu::tr("&Back to chords"));

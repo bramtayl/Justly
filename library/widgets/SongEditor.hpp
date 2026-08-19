@@ -1,51 +1,14 @@
 #pragma once
 
-#include <QtCore/QAbstractItemModel>
-#include <QtCore/QMetaObject>
-#include <QtCore/QMetaType>
-#include <QtCore/QObject>
-#include <QtCore/QRect>
-#include <QtCore/QSize>
 #include <QtCore/QString>
-#include <QtCore/QTextStream>
-#include <QtCore/QTypeInfo>
-#include <QtCore/Qt>
-#include <QtGui/QAction>
-#include <QtGui/QCloseEvent>
-#include <QtGui/QGuiApplication>
-#include <QtGui/QIcon>
-#include <QtGui/QPixmap>
-#include <QtGui/QScreen>
-#include <QtGui/QUndoStack>
-#include <QtWidgets/QAbstractItemView>
-#include <QtWidgets/QApplication>
 #include <QtWidgets/QDockWidget>
-#include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMainWindow>
-#include <QtWidgets/QStatusBar>
-#include <functional>
-#include <libxml/xmlversion.h>
-#include <optional>
-#include <string>
+#include <QtWidgets/QWidget>
 
-#include "actions/ReplaceTable.hpp"
-#include "cell_types/Interval.hpp"
-#include "cell_types/Rational.hpp"
-#include "column_numbers/ChordColumn.hpp"
-#include "menus/FileMenu.hpp"
-#include "menus/InsertMenu.hpp"
-#include "menus/PlayMenu.hpp"
-#include "menus/SongMenuBar.hpp"
-#include "menus/ViewMenu.hpp"
-#include "other/helpers.hpp"
-#include "rows/RowType.hpp"
-#include "widgets/SongWidget.hpp"
-#include "widgets/SpinBoxes.hpp"
-#include "widgets/SwitchColumn.hpp"
-#include "widgets/SwitchDelegate.hpp"
-#include "widgets/SwitchTable.hpp"
 #include "widgets/piano_roll/PianoRollWidget.hpp"
-#include "widgets/piano_roll/PlayheadTransition.hpp"
+
+struct SongMenuBar;
+struct SongWidget;
 
 // open_file/import_musicxml replace the song wholesale, bypassing the undo
 // stack, so the usual indexChanged-driven refresh never fires for them --
@@ -74,8 +37,8 @@ void zoom_out_piano_roll(PianoRollWidget &widget);
 void stop_piano_roll_playhead(PianoRollWidget &widget);
 
 void start_piano_roll_playhead(PianoRollWidget &widget,
-                               const double baseline_ms,
-                               const double end_ms);
+                                double baseline_ms,
+                                double end_ms);
 
 struct SongEditor : public QMainWindow {
 public:

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QtCore/QObject>
 #include <QtCore/qtmetamacros.h>
 #include <QtWidgets/QComboBox>
 
@@ -14,7 +13,7 @@ struct VoiceNumberPicker : public QComboBox {
       int voice_number READ currentIndex WRITE setCurrentIndex USER true)
 
 public:
-  explicit VoiceNumberPicker(QWidget *const parent_pointer,
+  explicit VoiceNumberPicker(QWidget * parent_pointer,
                              const QList<QString> &voice_names);
 
   ~VoiceNumberPicker() override = default;

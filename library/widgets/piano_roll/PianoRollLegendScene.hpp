@@ -1,11 +1,11 @@
 #pragma once
 
-#include <QtCore/Qt>
 #include <QtWidgets/QGraphicsScene>
-#include <QtWidgets/QGraphicsView>
-#include <QtWidgets/QWidget>
 
 #include "other/helpers.hpp"
+
+class QGraphicsView;
+class QWidget;
 
 static const auto PIANO_ROLL_AXIS_LABEL_GAP = 4.0;
 static const auto PIANO_ROLL_LEGEND_SWATCH_SIZE = 10.0;

@@ -1,21 +1,15 @@
 #pragma once
 
-#include <QtCore/QFlags>
 #include <QtCore/QItemSelectionModel>
 #include <QtCore/QList>
-#include <QtCore/QMetaObject>
 #include <QtCore/QMimeData>
 #include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtCore/QTextStream>
-#include <QtCore/QTypeInfo>
-#include <QtCore/Qt>
 #include <QtCore/QtAssert>
-#include <QtCore/QtMinMax>
-#include <QtCore/QtSwap>
 #include <QtGui/QAction>
+#include <QtGui/QClipboard>
 #include <QtGui/QKeySequence>
-#include <QtGui/QUndoStack>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMessageBox>
 #include <algorithm>
@@ -26,26 +20,17 @@
 
 #include "actions/InsertRemoveRows.hpp"
 #include "actions/SetCells.hpp"
-#include "models/ChordsModel.hpp"
-#include "models/PitchedNotesModel.hpp"
-#include "models/PitchedVoicesModel.hpp"
-#include "models/UnpitchedNotesModel.hpp"
-#include "models/UnpitchedVoicesModel.hpp"
 #include "other/Cells.hpp"
 #include "other/helpers.hpp"
-#include "rows/Chord.hpp"
 #include "rows/Note.hpp"
-#include "rows/PitchedNote.hpp"
 #include "rows/Row.hpp"
-#include "rows/UnpitchedNote.hpp"
 #include "widgets/SongWidget.hpp"
-#include "widgets/SwitchColumn.hpp"
-#include "widgets/SwitchTable.hpp"
 #include "xml/XMLDocument.hpp"
 #include "xml/XMLValidator.hpp"
 
 class QWidget;
 template <RowInterface SubRow> struct RowsModel;
+class QUndoCommand;
 
 [[nodiscard]] auto get_mime_description(const QString &mime_type) -> QString;
 

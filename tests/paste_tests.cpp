@@ -1,3 +1,4 @@
+#include <QtTest/qtestcase.h>
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QByteArray>
 #include <QtCore/QItemSelectionModel>
@@ -9,9 +10,7 @@
 #include <QtGui/QClipboard>
 #include <QtGui/QGuiApplication>
 #include <QtGui/QUndoStack>
-#include <QtTest/QTest>
 #include <QtTest/QTestData>
-#include <QtTest/qtestcase.h>
 #include <string>
 
 #include "Tester.hpp"

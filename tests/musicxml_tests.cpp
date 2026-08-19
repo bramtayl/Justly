@@ -1,3 +1,4 @@
+#include <QtTest/qtestcase.h>
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QDir>
 #include <QtCore/QList>
@@ -8,9 +9,9 @@
 #include <QtGui/QAction>
 #include <QtTest/QTest>
 #include <QtTest/QTestData>
-#include <QtTest/qtestcase.h>
 #include <QtWidgets/QLabel>
 #include <utility>
+#include <iterator>
 
 #include "Tester.hpp"
 #include "cell_types/Rational.hpp"
@@ -28,6 +29,7 @@
 #include "widgets/SongEditor.hpp"
 #include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"
+#include "widgets/SwitchTable.hpp"
 
 void Tester::test_musicxml_data() {
   QTest::addColumn<QString>("file_name");

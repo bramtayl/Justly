@@ -4,29 +4,10 @@
 #include <QtCore/QList>
 #include <QtCore/QMetaType>
 #include <QtCore/QString>
-#include <QtCore/QTypeInfo>
-#include <QtCore/QtAssert>
-#include <QtCore/QtMinMax>
-#include <QtCore/QtSwap>
 #include <algorithm>
-#include <array>
-#include <cmath>
-#include <fluidsynth.h>
-#include <fluidsynth/gen.h>
-#include <fluidsynth/misc.h>
-#include <fluidsynth/settings.h>
-#include <fluidsynth/sfont.h>
-#include <fluidsynth/synth.h>
-#include <fluidsynth/types.h>
-#include <fluidsynth/voice.h>
 #include <iterator>
-#include <set>
-#include <string>
 
-#include "other/helpers.hpp"
-#include "rows/Note.hpp"
-#include "sound/FluidSettings.hpp"
-#include "sound/FluidSynth.hpp"
+struct FluidSynth;
 
 static const auto GENERAL_BANK_NUMBER = 0;
 static const auto GENERAL_EXPRESSIVE_BANK_NUMBER = 17;
@@ -70,18 +51,18 @@ struct Program {
   // key to measure, and they fall back to the conservative MAX_RELEASE_TIME
   double release_milliseconds;
 
-  Program(const char *const name_input, const short bank_number_input,
-          const short preset_number_input,
-          const double release_milliseconds_input);
+  Program(const char * name_input,  short bank_number_input,
+           short preset_number_input,
+           double release_milliseconds_input);
 };
 
 Q_DECLARE_METATYPE(const Program *);
 
 [[nodiscard]] auto
-is_pitched_bank_number(const short bank_number) -> bool;
+is_pitched_bank_number( short bank_number) -> bool;
 
-[[nodiscard]] auto get_some_programs(const bool is_pitched)
+[[nodiscard]] auto get_some_programs( bool is_pitched)
     -> const QList<Program> &;
 
-[[nodiscard]] auto get_some_program_names(const bool is_pitched)
+[[nodiscard]] auto get_some_program_names( bool is_pitched)
     -> const QList<QString> &;

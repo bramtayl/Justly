@@ -1,8 +1,8 @@
 #pragma once
 
 #include <QtCore/QMap>
-#include <QtCore/QtCompare>
 #include <QtCore/QtSwap>
+#include <QtCore/qcompare.h>
 
 struct MostRecentIterator {
   QMap<int, int>::iterator state;

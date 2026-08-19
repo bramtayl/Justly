@@ -1,5 +1,22 @@
 #include "menus/PasteMenu.hpp"
 
+#include <QtCore/QFlags>
+#include <QtCore/QTypeInfo>
+#include <QtCore/QtMinMax>
+#include <QtCore/QtSwap>
+#include <QtCore/qassert.h>
+#include <QtCore/qnamespace.h>
+#include <QtCore/qobjectdefs.h>
+#include <QtGui/QKeySequence>
+#include <QtGui/QUndoStack>
+
+#include "rows/Chord.hpp"
+#include "rows/PitchedNote.hpp"
+#include "rows/UnpitchedNote.hpp"
+#include "widgets/SongWidget.hpp"
+#include "widgets/SwitchColumn.hpp"
+#include "widgets/SwitchTable.hpp"
+
 auto get_mime_description(const QString &mime_type) -> QString {
   Q_ASSERT(mime_type.isValidUtf16());
   if (mime_type == Chord::get_cells_mime()) {

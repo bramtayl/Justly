@@ -1,16 +1,12 @@
 #pragma once
 
-#include <QtCore/QObject>
-#include <QtCore/QtAssert>
 #include <QtGui/QUndoCommand>
-#include <QtWidgets/QDoubleSpinBox>
-#include <fluidsynth.h>
-#include <fluidsynth/synth.h>
+#include <cstdint>
 
-#include "actions/ChangeId.hpp"
-#include "other/Song.hpp"
-#include "other/helpers.hpp"
-#include "sound/FluidSynth.hpp"
+class QDoubleSpinBox;
+enum class ChangeId : std::uint8_t;
+struct FluidSynth;
+struct Song;
 
 struct SetDouble : public QUndoCommand {
   Song &song;
@@ -31,7 +27,7 @@ struct SetDouble : public QUndoCommand {
   [[nodiscard]] auto id() const -> int override;
 
   [[nodiscard]] auto
-  mergeWith(const QUndoCommand *const next_command_pointer) -> bool override;
+  mergeWith(const QUndoCommand * next_command_pointer) -> bool override;
 
   void undo() override;
 

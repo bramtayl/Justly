@@ -60,11 +60,11 @@ static void maybe_set_xml_rows(xmlNode &node, const char *const array_name,
   }
 }
 
-void maybe_add_qstring_to_xml(xmlNode &node, const char *const field_name,
+void maybe_add_qstring_to_xml(xmlNode &node, const char * field_name,
                               const QString &words);
 
 [[nodiscard]] auto get_qstring_content(const xmlNode &node) -> QString;
 
 [[nodiscard]] auto
-get_duration_in_milliseconds(const double beats_per_minute,
-                             const double beats_double) -> double;
+get_duration_in_milliseconds( double beats_per_minute,
+                              double beats_double) -> double;

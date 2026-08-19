@@ -1,5 +1,39 @@
 #include "widgets/IntervalRow.hpp"
 
+#include <QtCore/QItemSelectionModel>
+#include <QtCore/QList>
+#include <QtCore/QObject>
+#include <QtCore/QSize>
+#include <QtCore/QTextStream>
+#include <QtCore/QTypeInfo>
+#include <QtCore/QtAssert>
+#include <QtCore/QtMinMax>
+#include <QtCore/QtSwap>
+#include <QtCore/qobjectdefs.h>
+#include <QtGui/QUndoStack>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QMessageBox>
+#include <QtWidgets/QPushButton>
+#include <cstdlib>
+#include <utility>
+
+#include "actions/SetCells.hpp"
+#include "cell_editors/IntervalEditor.hpp"
+#include "cell_types/Interval.hpp"
+#include "cell_types/Rational.hpp"
+#include "column_numbers/ChordColumn.hpp"
+#include "column_numbers/PitchedNoteColumn.hpp"
+#include "models/ChordsModel.hpp"
+#include "models/PitchedNotesModel.hpp"
+#include "models/RowsModel.hpp"
+#include "other/helpers.hpp"
+#include "rows/Chord.hpp"
+#include "rows/PitchedNote.hpp"
+#include "rows/RowType.hpp"
+#include "widgets/SwitchColumn.hpp"
+#include "widgets/SwitchDelegate.hpp"
+#include "widgets/SwitchTable.hpp"
+
 static auto check_interval(QWidget &parent_widget, const Interval &interval) -> bool {
   const auto numerator = interval.ratio.numerator;
   const auto denominator = interval.ratio.denominator;

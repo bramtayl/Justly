@@ -1,5 +1,28 @@
 #include "menus/PlayMenu.hpp"
 
+#include <QtCore/QItemSelectionModel>
+#include <QtCore/QList>
+#include <QtCore/QObject>
+#include <QtCore/QString>
+#include <QtCore/QtAssert>
+#include <QtCore/qnamespace.h>
+#include <QtCore/qobjectdefs.h>
+#include <QtGui/QAction>
+#include <QtGui/QKeySequence>
+#include <algorithm>
+#include <ranges>
+
+#include "models/RowsModel.hpp"
+#include "other/Song.hpp"
+#include "rows/Chord.hpp"
+#include "rows/RowType.hpp"
+#include "sound/PlayState.hpp"
+#include "sound/Player.hpp"
+#include "widgets/SongWidget.hpp"
+#include "widgets/SwitchColumn.hpp"
+#include "widgets/SwitchDelegate.hpp"
+#include "widgets/SwitchTable.hpp"
+
 static void modulate_before_chord(const Song &song, PlayState &play_state,
                            const int next_chord_number) {
   const auto &chords = song.chords;

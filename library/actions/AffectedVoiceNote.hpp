@@ -1,11 +1,11 @@
 #pragma once
 
 #include <QtCore/QByteArray>
-#include <QtCore/QList>
 #include <QtCore/QMimeData>
 #include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtCore/QTextStream>
+#include <QtGui/QClipboard>
 #include <QtWidgets/QMessageBox>
 #include <libxml/parser.h>
 #include <string>
@@ -35,9 +35,9 @@ template <VoiceInterface SubVoice> struct AffectedVoiceNote {
 // voice_number collapses to 0, so the caller can warn about it the same way
 // RemoveVoiceRows warns about a live note being reassigned
 void
-find_and_process_voice_number(xmlNode &note_node, const int first_row_number,
-                              const int last_removed_row,
-                              const int number_of_rows, const bool is_insertion,
+find_and_process_voice_number(xmlNode &note_node,  int first_row_number,
+                               int last_removed_row,
+                               int number_of_rows,  bool is_insertion,
                               bool &changed, int &reassigned_count);
 
 // shared by RemoveVoiceRows and renumber_clipboard_voice_numbers so a live

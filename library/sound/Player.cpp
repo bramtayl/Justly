@@ -1,4 +1,19 @@
 #include "sound/Player.hpp"
+#include "sound/FluidDriver.hpp"
+#include "sound/FluidEvent.hpp"
+#include "sound/FluidSequencer.hpp"
+#include "sound/FluidSynth.hpp"
+
+#include <QtCore/QObject>
+#include <QtCore/QtAssert>
+#include <QtWidgets/QMessageBox>
+#include <fluidsynth.h>
+#include <fluidsynth/audio.h>
+#include <fluidsynth/event.h>
+#include <fluidsynth/misc.h>
+#include <fluidsynth/seq.h>
+#include <fluidsynth/settings.h>
+#include <fluidsynth/types.h>
 
 auto make_audio_driver(QWidget &parent, FluidSettings &settings,
                        FluidSynth &synth) -> FluidDriver {

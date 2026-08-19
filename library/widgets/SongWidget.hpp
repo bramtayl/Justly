@@ -1,95 +1,49 @@
 #pragma once
 
 #include <QtCore/QAbstractItemModel>
-#include <QtCore/QChar>
 #include <QtCore/QDir>
-#include <QtCore/QFile>
 #include <QtCore/QItemSelectionModel>
-#include <QtCore/QIterator>
 #include <QtCore/QList>
 #include <QtCore/QMap>
 #include <QtCore/QObject>
 #include <QtCore/QSet>
-#include <QtCore/QSettings>
 #include <QtCore/QStandardPaths>
 #include <QtCore/QString>
 #include <QtCore/QTextStream>
 #include <QtCore/QTimer>
-#include <QtCore/QTypeInfo>
-#include <QtCore/Qt>
-#include <QtCore/QtAssert>
-#include <QtCore/QtCompare>
-#include <QtCore/QtMinMax>
-#include <QtCore/QtSwap>
 #include <QtGui/QAction>
 #include <QtGui/QKeySequence>
 #include <QtGui/QUndoStack>
 #include <QtWidgets/QBoxLayout>
-#include <QtWidgets/QMenu>
 #include <QtWidgets/QMessageBox>
-#include <QtWidgets/QSpinBox>
 #include <QtWidgets/QWidget>
 #include <algorithm>
 #include <cmath>
-#include <fluidsynth.h>
-#include <fluidsynth/audio.h>
-#include <fluidsynth/event.h>
-#include <fluidsynth/misc.h>
-#include <fluidsynth/seq.h>
-#include <fluidsynth/synth.h>
-#include <fluidsynth/types.h>
-#include <iterator>
 #include <libxml/parser.h>
-#include <libxml/xmlschemas.h>
-#include <limits>
-#include <numeric>
 #include <optional>
-#include <ranges>
 #include <string>
-#include <tuple>
 #include <utility>
 
-#include "cell_types/Interval.hpp"
 #include "cell_types/Program.hpp"
 #include "cell_types/Rational.hpp"
-#include "iterators/MostRecentIterator.hpp"
-#include "iterators/TimeIterator.hpp"
-#include "models/ChordsModel.hpp"
-#include "models/PitchedVoicesModel.hpp"
-#include "models/UnpitchedVoicesModel.hpp"
-#include "musicxml/MeasureRepeatInfo.hpp"
-#include "musicxml/MusicXMLChord.hpp"
-#include "musicxml/MusicXMLNote.hpp"
-#include "musicxml/PartInfo.hpp"
-#include "other/MidiTrackEvent.hpp"
-#include "other/PianoRollNoteEvent.hpp"
 #include "other/Song.hpp"
 #include "other/helpers.hpp"
-#include "rows/Chord.hpp"
 #include "rows/Note.hpp"
-#include "rows/PitchedNote.hpp"
-#include "rows/PitchedVoice.hpp"
 #include "rows/Row.hpp"
-#include "rows/RowType.hpp"
-#include "rows/UnpitchedNote.hpp"
-#include "rows/UnpitchedVoice.hpp"
 #include "rows/Voice.hpp"
-#include "sound/FluidDriver.hpp"
-#include "sound/FluidEvent.hpp"
-#include "sound/FluidSequencer.hpp"
-#include "sound/FluidSynth.hpp"
 #include "sound/PlayState.hpp"
 #include "sound/Player.hpp"
 #include "widgets/ControlsColumn.hpp"
-#include "widgets/SpinBoxes.hpp"
 #include "widgets/SwitchColumn.hpp"
-#include "widgets/SwitchTable.hpp"
-#include "xml/XMLDocument.hpp"
-#include "xml/XMLValidationContext.hpp"
-#include "xml/XMLValidator.hpp"
-#include "xml/ZipArchive.hpp"
 
 template <RowInterface SubRow> struct RowsModel;
+class QMenu;
+class XMLDocument;
+struct MeasureRepeatInfo;
+struct PitchedVoice;
+struct TimeIterator;
+struct UnpitchedVoice;
+struct XMLValidator;
 
 static const auto DEFAULT_REPEAT_TIMES = 2;
 static const auto FIFTH_HALFSTEPS = 7;
@@ -136,12 +90,12 @@ void initialize_play(SongWidget &song_widget);
 // the caller should warn and abort, matching channel_is_free's contract
 [[nodiscard]] auto
 get_channel_number(QWidget &parent, Player &player, const Program &program,
-                   const double current_time) -> std::optional<int>;
+                    double current_time) -> std::optional<int>;
 
-void play_note(Player &player, const int channel_number,
-              const Program &program, const short midi_number,
-              const short velocity, const double current_time,
-              const double end_time);
+void play_note(Player &player,  int channel_number,
+              const Program &program,  short midi_number,
+               short velocity,  double current_time,
+               double end_time);
 
 template <VoiceInterface SubVoice>
 [[nodiscard]] static auto
@@ -259,10 +213,10 @@ play_all_notes(Player &player, const QList<PitchedVoice> &pitched_voices,
                     sub_notes, 0, static_cast<int>(sub_notes.size()));
 }
 
-void update_final_time(Player &player, const double new_final_time);
+void update_final_time(Player &player,  double new_final_time);
 
-void play_chords(SongWidget &song_widget, const int first_chord_number,
-                 const int number_of_chords, const int wait_frames = 0);
+void play_chords(SongWidget &song_widget,  int first_chord_number,
+                  int number_of_chords,  int wait_frames = 0);
 
 [[nodiscard]] auto can_discard_changes(SongWidget &song_widget) -> bool;
 
@@ -436,5 +390,5 @@ static void add_imported_voices(RowsModel<SubVoice> &voices_model,
 
 void add_menu_action(
     QMenu &menu, QAction &action,
-    const QKeySequence::StandardKey key_sequence = QKeySequence::UnknownKey,
-    const bool enabled = true);
+     QKeySequence::StandardKey key_sequence = QKeySequence::UnknownKey,
+     bool enabled = true);

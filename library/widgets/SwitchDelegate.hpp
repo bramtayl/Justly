@@ -1,33 +1,20 @@
 #pragma once
 
-#include <QtCore/QAbstractItemModel>
 #include <QtCore/QList>
 #include <QtCore/QString>
 #include <QtCore/QtMinMax>
 #include <QtCore/QtSwap>
-#include <QtWidgets/QFrame>
-#include <QtWidgets/QSizePolicy>
-#include <QtWidgets/QStyleOption>
 #include <QtWidgets/QStyledItemDelegate>
 #include <QtWidgets/QWidget>
 #include <algorithm>
 #include <iterator>
 
-#include "cell_editors/IntervalEditor.hpp"
-#include "cell_editors/MidiNumberEditor.hpp"
-#include "cell_editors/RationalEditor.hpp"
-#include "cell_editors/StringPicker.hpp"
 #include "cell_editors/VoiceNumberPicker.hpp"
-#include "cell_types/Program.hpp"
-#include "column_numbers/ChordColumn.hpp"
-#include "column_numbers/PitchedNoteColumn.hpp"
-#include "column_numbers/PitchedVoiceColumn.hpp"
-#include "column_numbers/UnpitchedNoteColumn.hpp"
-#include "column_numbers/UnpitchedVoiceColumn.hpp"
-#include "other/Song.hpp"
 #include "other/helpers.hpp"
 #include "rows/RowType.hpp"
 #include "rows/Voice.hpp"
+
+struct Song;
 
 template <VoiceInterface SubVoice>
 static auto create_voice_number_picker(QWidget *parent_pointer,

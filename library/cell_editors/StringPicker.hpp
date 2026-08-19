@@ -1,15 +1,10 @@
 #pragma once
 
 #include <QtCore/QList>
-#include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtCore/QStringListModel>
-#include <QtCore/QtAssert>
 #include <QtCore/qtmetamacros.h>
 #include <QtWidgets/QComboBox>
-#include <algorithm>
-#include <iterator>
-#include <utility>
 
 class QWidget;
 
@@ -20,7 +15,7 @@ struct StringPicker : public QComboBox {
 public:
   const QList<QString> strings;
   QStringListModel voice_model;
-  explicit StringPicker(QWidget *const parent_pointer,
+  explicit StringPicker(QWidget * parent_pointer,
                         QList<QString> input_voice_names);
 
   void setValue(const QString &new_value);

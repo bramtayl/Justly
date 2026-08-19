@@ -1,13 +1,49 @@
 #pragma once
 
 #include <QtCore/QAbstractItemModel>
+#include <QtCore/QArrayData>
+#include <QtCore/QByteArray>
+#include <QtCore/QCborValue>
+#include <QtCore/QDir>
+#include <QtCore/QDirListing>
+#include <QtCore/QEventLoop>
+#include <QtCore/QFileDevice>
 #include <QtCore/QFlags>
+#include <QtCore/QIODevice>
 #include <QtCore/QItemSelectionModel>
+#include <QtCore/QList>
+#include <QtCore/QLocale>
+#include <QtCore/QMetaType>
+#include <QtCore/QRegularExpression>
+#include <QtCore/QStandardPaths>
 #include <QtCore/QString>
 #include <QtCore/QTextStream>
+#include <QtCore/QUrl>
 #include <QtCore/QVariant>
 #include <QtCore/Qt>
 #include <QtCore/QtAssert>
+#include <QtCore/qstringconverter_base.h>
+#include <QtGui/QInputDevice>
+#include <QtGui/QPainter>
+#include <QtGui/QPointingDevice>
+#include <QtGui/QSurfaceFormat>
+#include <QtGui/QTextDocument>
+#include <QtGui/QTextFormat>
+#include <QtGui/qtextoption.h>
+#include <QtWidgets/QAbstractItemView>
+#include <QtWidgets/QAbstractSpinBox>
+#include <QtWidgets/QDialogButtonBox>
+#include <QtWidgets/QDockWidget>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QGraphicsItem>
+#include <QtWidgets/QGraphicsScene>
+#include <QtWidgets/QGraphicsView>
+#include <QtWidgets/QMainWindow>
+#include <QtWidgets/QMessageBox>
+#include <QtWidgets/QSizePolicy>
+#include <QtWidgets/QStyle>
+#include <QtWidgets/QStyleOption>
+#include <QtWidgets/QWidget>
 #include <algorithm>
 #include <iterator>
 #include <libxml/parser.h>
@@ -17,7 +53,6 @@
 #include "rows/Row.hpp"
 
 struct Song;
-template <typename T> class QList;
 
 [[nodiscard]] auto
 get_number_of_rows(const QItemSelectionRange &range) -> int;
@@ -240,7 +275,7 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
 };
 
 [[nodiscard]] auto make_range(QAbstractItemModel &model,
-                              const int first_row_number,
-                              const int number_of_rows,
-                              const int left_column,
-                              const int right_column) -> QItemSelectionRange;
+                               int first_row_number,
+                               int number_of_rows,
+                               int left_column,
+                               int right_column) -> QItemSelectionRange;

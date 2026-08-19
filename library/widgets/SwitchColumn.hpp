@@ -2,20 +2,14 @@
 
 #include <QtCore/QItemSelectionModel>
 #include <QtCore/QtAssert>
-#include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QBoxLayout>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QWidget>
 
-#include "models/PitchedNotesModel.hpp"
-#include "models/UnpitchedNotesModel.hpp"
-#include "other/helpers.hpp"
-#include "rows/RowType.hpp"
-#include "widgets/SwitchDelegate.hpp"
-#include "widgets/SwitchTable.hpp"
-
 class QUndoStack;
 struct Song;
+class QAbstractItemView;
+struct SwitchTable;
 
 struct SwitchColumn : public QWidget {
   QLabel &editing_text = *(new QLabel(SwitchColumn::tr("Chords")));

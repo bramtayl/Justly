@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QtCore/QList>
 #include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtCore/QTextStream>
@@ -14,7 +15,6 @@
 #include "rows/Row.hpp"
 
 class QWidget;
-template <typename T> class QList;
 
 struct Voice : Row {
   QString name;

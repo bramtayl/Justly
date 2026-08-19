@@ -1,5 +1,12 @@
 #include "cell_types/Interval.hpp"
 
+#include <QtCore/QtAssert>
+#include <cmath>
+#include <libxml/parser.h>
+
+#include "cell_types/Rational.hpp"
+#include "other/helpers.hpp"
+
 Interval::Interval(Rational ratio_input, const int octave_input)
     : ratio(ratio_input), octave(octave_input) {
   // a numerator of 0 can never become odd by halving -- 0 % 2 == 0 forever

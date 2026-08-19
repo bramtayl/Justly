@@ -1,5 +1,22 @@
 #include "rows/UnpitchedNote.hpp"
 
+#include <QtCore/QList>
+#include <QtCore/QString>
+#include <QtCore/QTypeInfo>
+#include <QtCore/QVariant>
+#include <QtCore/QtAssert>
+#include <libxml/parser.h>
+#include <optional>
+
+#include "cell_types/Program.hpp"
+#include "cell_types/Rational.hpp"
+#include "column_numbers/UnpitchedNoteColumn.hpp"
+#include "other/helpers.hpp"
+#include "rows/Note.hpp"
+#include "rows/Row.hpp"
+#include "rows/UnpitchedVoice.hpp"
+#include "rows/Voice.hpp"
+
 void UnpitchedNote::from_xml(xmlNode &node) {
   auto *field_pointer = xmlFirstElementChild(&node);
   while (field_pointer != nullptr) {

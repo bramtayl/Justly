@@ -1,5 +1,34 @@
 #include "rows/PitchedNote.hpp"
 
+#include <QtCore/QList>
+#include <QtCore/QObject>
+#include <QtCore/QString>
+#include <QtCore/QTextStream>
+#include <QtCore/QTypeInfo>
+#include <QtCore/QVariant>
+#include <QtCore/QtAssert>
+#include <QtWidgets/QMessageBox>
+#include <cmath>
+#include <fluidsynth.h>
+#include <fluidsynth/event.h>
+#include <fluidsynth/seq.h>
+#include <libxml/parser.h>
+#include <optional>
+
+#include "cell_types/Interval.hpp"
+#include "cell_types/Program.hpp"
+#include "cell_types/Rational.hpp"
+#include "column_numbers/PitchedNoteColumn.hpp"
+#include "other/helpers.hpp"
+#include "rows/Note.hpp"
+#include "rows/PitchedVoice.hpp"
+#include "rows/Row.hpp"
+#include "rows/Voice.hpp"
+#include "sound/FluidEvent.hpp"
+#include "sound/FluidSequencer.hpp"
+#include "sound/PlayState.hpp"
+#include "sound/Player.hpp"
+
 auto frequency_to_midi_number(const double key) -> double {
   Q_ASSERT(key > 0);
   return (HALFSTEPS_PER_OCTAVE * log2(key / CONCERT_A_FREQUENCY)) +

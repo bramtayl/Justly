@@ -1,5 +1,10 @@
 #include "models/ChordsModel.hpp"
 
+#include "cell_types/Rational.hpp"
+#include "models/UndoRowsModel.hpp"
+#include "other/Song.hpp"
+#include "sound/PlayState.hpp"
+
 ChordsModel::ChordsModel(QUndoStack &undo_stack, Song &song_input)
     : UndoRowsModel(undo_stack, song_input) {}
 

@@ -1,4 +1,8 @@
+#include <QtCore/qhashfunctions.h>
+#include <libxml/parser.h>
+
 #include "rows/Row.hpp"
+#include "other/helpers.hpp"
 
 void maybe_add_qstring_to_xml(xmlNode &node, const char *const field_name,
                               const QString &words) {
@@ -9,7 +13,7 @@ void maybe_add_qstring_to_xml(xmlNode &node, const char *const field_name,
 
 auto get_qstring_content(const xmlNode &node) -> QString {
   const XMLString content{xmlNodeGetContent(&node)};
-  return QString(xml_string_to_c_string(content.internal_pointer));
+  return {xml_string_to_c_string(content.internal_pointer)};
 }
 
 auto get_duration_in_milliseconds(const double beats_per_minute,

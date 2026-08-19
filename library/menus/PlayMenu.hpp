@@ -1,28 +1,11 @@
 #pragma once
 
-#include <QtCore/QItemSelectionModel>
-#include <QtCore/QList>
-#include <QtCore/QMetaObject>
-#include <QtCore/QObject>
-#include <QtCore/QString>
-#include <QtCore/Qt>
-#include <QtCore/QtAssert>
 #include <QtGui/QAction>
-#include <QtGui/QKeySequence>
 #include <QtWidgets/QMenu>
-#include <algorithm>
-#include <ranges>
+#include <cstdint>
 
-#include "models/RowsModel.hpp"
-#include "other/Song.hpp"
-#include "rows/Chord.hpp"
-#include "rows/Note.hpp"
-#include "rows/RowType.hpp"
-#include "sound/Player.hpp"
-#include "widgets/SongWidget.hpp"
-#include "widgets/SwitchColumn.hpp"
-#include "widgets/SwitchDelegate.hpp"
-#include "widgets/SwitchTable.hpp"
+enum class RowType : std::uint8_t;
+struct SongWidget;
 
 struct PlaySelection {
   RowType row_type;
