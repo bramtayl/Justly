@@ -1,3 +1,5 @@
+#include <QtWidgets/QLabel>
+
 #include "Tester.hpp"
 #include "musicxml/MeasureRepeatInfo.hpp"
 

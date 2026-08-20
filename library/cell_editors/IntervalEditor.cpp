@@ -1,10 +1,17 @@
 #include "cell_editors/IntervalEditor.hpp"
 
+#include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QSpinBox>
+
 #include "cell_editors/RationalEditor.hpp"
 
 IntervalEditor::IntervalEditor(QWidget* const parent_pointer)
     : QFrame(parent_pointer),
-      rational_editor(*(new RationalEditor(parent_pointer))) {
+      rational_editor(*(new RationalEditor(parent_pointer))),
+      o_text(*(new QLabel("o"))),
+      octave_box(*(new QSpinBox)),
+      row_layout(*(new QHBoxLayout(this))) {
   setFrameStyle(QFrame::StyledPanel);
   setAutoFillBackground(true);
 

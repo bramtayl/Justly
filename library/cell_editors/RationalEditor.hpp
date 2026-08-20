@@ -1,20 +1,22 @@
 #pragma once
 
-#include <QtWidgets/QHBoxLayout>
-#include <QtWidgets/QLabel>
-#include <QtWidgets/QSpinBox>
+#include <QtWidgets/QFrame>
 
 #include "cell_types/Rational.hpp"
+
+class QBoxLayout;
+class QLabel;
+class QSpinBox;
 
 struct RationalEditor : QFrame {
   Q_OBJECT
   Q_PROPERTY(Rational rational READ value WRITE setValue USER true)
 
  public:
-  QSpinBox& numerator_box = *(new QSpinBox);
-  QLabel& slash_text = *(new QLabel("/"));
-  QSpinBox& denominator_box = *(new QSpinBox);
-  QBoxLayout& row_layout = *(new QHBoxLayout(this));
+  QSpinBox& numerator_box;
+  QLabel& slash_text;
+  QSpinBox& denominator_box;
+  QBoxLayout& row_layout;
 
   explicit RationalEditor(QWidget* parent_pointer);
 

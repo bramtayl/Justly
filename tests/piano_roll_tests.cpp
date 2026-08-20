@@ -1,7 +1,12 @@
-#include "Tester.hpp"
-#include "widgets/SwitchDelegate.hpp"
-
+#include <QDockWidget>
+#include <QtWidgets/QGraphicsItem>
 #include <QtWidgets/QGraphicsView>
+
+#include "Tester.hpp"
+#include "other/PianoRollNoteEvent.hpp"
+#include "widgets/SwitchDelegate.hpp"
+#include "widgets/piano_roll/PianoRollNotesScene.hpp"
+#include "widgets/piano_roll/PianoRollWidget.hpp"
 
 namespace {
 // checks that exactly the events matching the given criteria (mirroring

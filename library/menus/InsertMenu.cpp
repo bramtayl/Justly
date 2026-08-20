@@ -2,6 +2,7 @@
 
 #include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"
+#include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
 
 void add_insert_row(SongWidget& song_widget, const int row_number,

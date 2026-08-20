@@ -1,13 +1,14 @@
 #pragma once
 
-#include <QtWidgets/QBoxLayout>
 #include <QtWidgets/QWidget>
 
 #include "rows/RowType.hpp"
-#include "widgets/piano_roll/PianoRollAxisScene.hpp"
-#include "widgets/piano_roll/PianoRollLegendScene.hpp"
-#include "widgets/piano_roll/PianoRollNotesScene.hpp"
 
+struct PianoRollAxisScene;
+struct PianoRollLegendScene;
+struct PianoRollNotesScene;
+class QBoxLayout;
+struct Song;
 struct SongWidget;
 struct SwitchTable;
 
@@ -103,15 +104,15 @@ void update_playhead_position(PianoRollNotesScene& piano_roll_scene,
 struct PianoRollWidget : public QWidget {
   const SongWidget& song_widget;
 
-  PianoRollNotesScene& piano_roll_scene = *(new PianoRollNotesScene(*this));
+  PianoRollNotesScene& piano_roll_scene;
   // a second, fixed-width view pinned to the left edge, showing the pitch
   // axis -- see PianoRollAxisScene for details
-  PianoRollAxisScene& axis_scene = *(new PianoRollAxisScene(*this));
+  PianoRollAxisScene& axis_scene;
   // a separate scene/view for the voice legend, pinned to the right edge --
   // see PianoRollLegendScene for details
-  PianoRollLegendScene& legend_scene = *(new PianoRollLegendScene(*this));
+  PianoRollLegendScene& legend_scene;
 
-  QBoxLayout& row_layout = *(new QHBoxLayout(this));
+  QBoxLayout& row_layout;
 
   // true for the duration of select_chord_at_playhead()'s own call to
   // QItemSelectionModel::select() -- that select() re-enters this widget

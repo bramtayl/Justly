@@ -1,21 +1,22 @@
 #pragma once
 
-#include <QtWidgets/QBoxLayout>
-#include <QtWidgets/QPushButton>
+#include <QtWidgets/QWidget>
 
 #include "cell_types/Interval.hpp"
 
+class QBoxLayout;
 class QLabel;
+class QPushButton;
 class QUndoStack;
 struct SwitchTable;
 
 struct IntervalRow : public QWidget {
   QUndoStack& undo_stack;
   SwitchTable& switch_table;
-  QBoxLayout& row_layout = *(new QHBoxLayout(this));
-  QPushButton& minus_button = *(new QPushButton("−", this));
+  QBoxLayout& row_layout;
+  QPushButton& minus_button;
   QLabel& text;
-  QPushButton& plus_button = *(new QPushButton("+", this));
+  QPushButton& plus_button;
   const Interval interval;
 
   IntervalRow(QUndoStack& undo_stack_input, SwitchTable& switch_table_input,

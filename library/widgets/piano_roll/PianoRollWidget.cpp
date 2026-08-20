@@ -4,6 +4,8 @@
 #include <QtCore/QEvent>
 #include <QtCore/QTimer>
 #include <QtGui/QWheelEvent>
+#include <QtWidgets/QBoxLayout>
+#include <QtWidgets/QGraphicsLineItem>
 #include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QScrollBar>
 
@@ -11,6 +13,9 @@
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
+#include "widgets/piano_roll/PianoRollAxisScene.hpp"
+#include "widgets/piano_roll/PianoRollLegendScene.hpp"
+#include "widgets/piano_roll/PianoRollNotesScene.hpp"
 
 namespace {
 const auto PIANO_ROLL_AXIS_TICK_LENGTH = 5.0;
@@ -1000,7 +1005,11 @@ void update_playhead_position(PianoRollNotesScene& piano_roll_scene,
 }
 
 PianoRollWidget::PianoRollWidget(const SongWidget& song_widget_input)
-    : song_widget(song_widget_input) {
+    : song_widget(song_widget_input),
+      piano_roll_scene(*(new PianoRollNotesScene(*this))),
+      axis_scene(*(new PianoRollAxisScene(*this))),
+      legend_scene(*(new PianoRollLegendScene(*this))),
+      row_layout(*(new QHBoxLayout(this))) {
   // a bottom dock would otherwise default to a cramped sliver; this keeps
   // it usable out of the box while still letting the user drag it taller
   // (or shorter, down to this floor) via the splitter

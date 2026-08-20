@@ -1,11 +1,11 @@
 #pragma once
 
-#include <QtWidgets/QBoxLayout>
-#include <QtWidgets/QLabel>
-#include <QtWidgets/QSpinBox>
+#include <QtWidgets/QFrame>
 
 #include "cell_types/Interval.hpp"
 
+class QBoxLayout;
+class QSpinBox;
 struct RationalEditor;
 
 static const auto MAX_OCTAVE = 9;
@@ -17,9 +17,9 @@ struct IntervalEditor : QFrame {
  public:
   RationalEditor& rational_editor;
 
-  QWidget& o_text = *(new QLabel("o"));
-  QSpinBox& octave_box = *(new QSpinBox);
-  QBoxLayout& row_layout = *(new QHBoxLayout(this));
+  QWidget& o_text;
+  QSpinBox& octave_box;
+  QBoxLayout& row_layout;
 
   explicit IntervalEditor(QWidget* parent_pointer);
 

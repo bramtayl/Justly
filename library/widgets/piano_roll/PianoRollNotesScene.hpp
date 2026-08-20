@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QtCore/QElapsedTimer>
-#include <QtWidgets/QGraphicsLineItem>
 #include <QtWidgets/QGraphicsScene>
 
 #include "other/PianoRollNoteEvent.hpp"
@@ -23,14 +22,14 @@ static const auto PIANO_ROLL_MAX_TIME_ZOOM = 8.0;
 // heap-allocated and parented to parent_widget directly
 struct PianoRollNotesScene : public QGraphicsScene {
   QGraphicsView& view;
-  QGraphicsLineItem& playhead_item = *(new QGraphicsLineItem);
+  QGraphicsLineItem& playhead_item;
   // the shaded box drawn behind the notes over the current selection's
   // timeline extent -- purely visual feedback for whatever the switch
   // table's own selection already is (see
   // PianoRollWidget::apply_selection_highlight()), so it never itself drives
   // selection and stays visible for as long as that selection does,
   // including after a drag's mouse release
-  QGraphicsRectItem& selection_rect_item = *(new QGraphicsRectItem);
+  QGraphicsRectItem& selection_rect_item;
 
   QTimer& playhead_timer;
   QElapsedTimer playhead_elapsed_timer;

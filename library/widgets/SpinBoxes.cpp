@@ -1,7 +1,10 @@
 #include "widgets/SpinBoxes.hpp"
 
-#include <QtGui/QUndoStack>
 #include <fluidsynth.h>
+
+#include <QtGui/QUndoStack>
+#include <QtWidgets/QDoubleSpinBox>
+#include <QtWidgets/QFormLayout>
 
 #include "actions/ChangeId.hpp"
 #include "actions/SetDouble.hpp"
@@ -39,7 +42,12 @@ void clear_and_clean(QUndoStack& undo_stack) {
   undo_stack.setClean();
 }
 
-SpinBoxes::SpinBoxes(Song& song, FluidSynth& synth, QUndoStack& undo_stack) {
+SpinBoxes::SpinBoxes(Song& song, FluidSynth& synth, QUndoStack& undo_stack)
+    : gain_editor(*(new QDoubleSpinBox)),
+      starting_key_editor(*(new QDoubleSpinBox)),
+      starting_velocity_editor(*(new QDoubleSpinBox)),
+      starting_tempo_editor(*(new QDoubleSpinBox)),
+      spin_boxes_form(*(new QFormLayout(this))) {
   static const auto DEFAULT_GAIN = 5;
   static const auto GAIN_STEP = 0.1;
   static const auto MAX_GAIN = 10;

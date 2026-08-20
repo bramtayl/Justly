@@ -1,6 +1,6 @@
 #include "widgets/piano_roll/PianoRollNotesScene.hpp"
 
-#include <QtCore/qnamespace.h>
+#include <QtWidgets/QGraphicsItem>
 
 #include <QtCore/QTimer>
 #include <QtGui/QBrush>
@@ -14,6 +14,8 @@
 PianoRollNotesScene::PianoRollNotesScene(QWidget& parent_widget)
     : QGraphicsScene(&parent_widget),
       view(*(new QGraphicsView(this, &parent_widget))),
+      playhead_item(*(new QGraphicsLineItem)),
+      selection_rect_item(*(new QGraphicsRectItem)),
       playhead_timer(*(new QTimer(&parent_widget))) {
   static const auto PIANO_ROLL_SELECTION_RECT_PEN_WIDTH = 1.0;
   static const auto PIANO_ROLL_SELECTION_RECT_FILL_ALPHA = 60;

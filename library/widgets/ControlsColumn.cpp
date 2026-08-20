@@ -1,5 +1,7 @@
 #include "widgets/ControlsColumn.hpp"
 
+#include <QtWidgets/QVBoxLayout>
+
 #include "widgets/IntervalRow.hpp"
 #include "widgets/SpinBoxes.hpp"
 
@@ -14,7 +16,8 @@ ControlsColumn::ControlsColumn(Song& song, FluidSynth& synth,
       seventh_row(*new IntervalRow(undo_stack, switch_table, "Harmonic seventh",
                                    Interval(Rational(SEVEN, 4), 0))),
       octave_row(*new IntervalRow(undo_stack, switch_table, "Octave",
-                                  Interval(Rational(), 1))) {
+                                  Interval(Rational(), 1))),
+      column_layout(*(new QVBoxLayout(this))) {
   column_layout.addWidget(&spin_boxes);
   column_layout.addWidget(&third_row);
   column_layout.addWidget(&fifth_row);

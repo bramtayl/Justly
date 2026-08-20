@@ -1,11 +1,10 @@
 #pragma once
 
-#include <QtWidgets/QDockWidget>
 #include <QtWidgets/QMainWindow>
 
-#include "widgets/piano_roll/PianoRollWidget.hpp"
-
+struct PianoRollWidget;
 struct SongMenuBar;
+struct SongWidget;
 
 // open_file/import_musicxml replace the song wholesale, bypassing the undo
 // stack, so the usual indexChanged-driven refresh never fires for them --
@@ -39,9 +38,8 @@ struct SongEditor : public QMainWindow {
  public:
   SongWidget& song_widget;
   SongMenuBar& song_menu_bar;
-  PianoRollWidget& piano_roll_widget = *(new PianoRollWidget(song_widget));
-  QDockWidget& piano_roll_dock =
-      *(new QDockWidget(SongEditor::tr("Piano Roll"), this));
+  PianoRollWidget& piano_roll_widget;
+  QDockWidget& piano_roll_dock;
 
   explicit SongEditor();
 

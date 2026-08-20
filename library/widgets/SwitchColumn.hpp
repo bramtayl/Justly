@@ -1,20 +1,20 @@
 #pragma once
 
 #include <QtCore/QItemSelectionModel>
-#include <QtWidgets/QBoxLayout>
-#include <QtWidgets/QLabel>
 #include <QtWidgets/QWidget>
 
+class QBoxLayout;
+class QLabel;
 class QUndoStack;
 struct Song;
 class QAbstractItemView;
 struct SwitchTable;
 
 struct SwitchColumn : public QWidget {
-  QLabel& editing_text = *(new QLabel(SwitchColumn::tr("Chords")));
+  QLabel& editing_text;
   SwitchTable& switch_table;
 
-  QBoxLayout& column_layout = *(new QVBoxLayout(this));
+  QBoxLayout& column_layout;
 
   SwitchColumn(QUndoStack& undo_stack, Song& song);
 };

@@ -3,6 +3,7 @@
 #include "Tester.hpp"
 #include "widgets/ControlsColumn.hpp"
 #include "widgets/SpinBoxes.hpp"
+#include <QDoubleSpinBox>
 
 void Tester::test_save() {
   auto& song_widget = song_editor.song_widget;

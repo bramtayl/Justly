@@ -3,6 +3,7 @@
 #include "actions/DeleteCells.hpp"
 #include "actions/RemoveVoiceRows.hpp"
 #include "widgets/SwitchColumn.hpp"
+#include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
 
 namespace {

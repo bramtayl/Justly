@@ -1,4 +1,6 @@
 #include "Tester.hpp"
+#include "widgets/piano_roll/PianoRollNotesScene.hpp"
+#include "widgets/piano_roll/PianoRollWidget.hpp"
 
 void Tester::test_play_data() {
   add_table_columns();

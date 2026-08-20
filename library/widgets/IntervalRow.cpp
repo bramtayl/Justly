@@ -1,12 +1,16 @@
 #include "widgets/IntervalRow.hpp"
 
+#include <QtWidgets/QBoxLayout>
+#include <QtWidgets/QLabel>
 #include <QtWidgets/QMessageBox>
+#include <QtWidgets/QPushButton>
 
 #include "actions/SetCells.hpp"
 #include "cell_editors/IntervalEditor.hpp"
 #include "column_numbers/ChordColumn.hpp"
 #include "column_numbers/PitchedNoteColumn.hpp"
 #include "widgets/SwitchColumn.hpp"
+#include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
 
 namespace {
@@ -111,7 +115,10 @@ IntervalRow::IntervalRow(QUndoStack& undo_stack_input,
                          Interval interval_input)
     : undo_stack(undo_stack_input),
       switch_table(switch_table_input),
+      row_layout(*(new QHBoxLayout(this))),
+      minus_button(*(new QPushButton("−", this))),
       text(*(new QLabel(interval_name, this))),
+      plus_button(*(new QPushButton("+", this))),
       interval(interval_input) {
   make_square(minus_button);
   make_square(plus_button);

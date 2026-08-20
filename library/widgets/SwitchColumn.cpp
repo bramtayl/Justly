@@ -1,9 +1,15 @@
 #include "widgets/SwitchColumn.hpp"
 
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QVBoxLayout>
+
+#include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
 
 SwitchColumn::SwitchColumn(QUndoStack& undo_stack, Song& song)
-    : switch_table(*new SwitchTable(undo_stack, song)) {
+    : editing_text(*(new QLabel(SwitchColumn::tr("Chords")))),
+      switch_table(*new SwitchTable(undo_stack, song)),
+      column_layout(*(new QVBoxLayout(this))) {
   column_layout.addWidget(&editing_text);
   column_layout.addWidget(&switch_table);
 }

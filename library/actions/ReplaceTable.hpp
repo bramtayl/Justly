@@ -2,6 +2,7 @@
 
 #include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"
+#include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
 
 struct PianoRollWidget;

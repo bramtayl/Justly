@@ -3,6 +3,9 @@
 #include <QtCore/QSettings>
 #include <QtCore/QStandardPaths>
 #include <QtCore/QTimer>
+#include <QtWidgets/QDoubleSpinBox>
+#include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QLabel>
 #include <QtWidgets/QMenu>
 
 #include "iterators/MostRecentIterator.hpp"
@@ -18,6 +21,7 @@
 #include "widgets/ControlsColumn.hpp"
 #include "widgets/SpinBoxes.hpp"
 #include "widgets/SwitchColumn.hpp"
+#include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
 #include "xml/XMLDocument.hpp"
 #include "xml/XMLValidator.hpp"

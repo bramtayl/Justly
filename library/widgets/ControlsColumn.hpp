@@ -1,8 +1,8 @@
 #pragma once
 
-#include <QtWidgets/QBoxLayout>
 #include <QtWidgets/QWidget>
 
+class QBoxLayout;
 class QUndoStack;
 struct FluidSynth;
 struct Song;
@@ -19,7 +19,7 @@ struct ControlsColumn : public QWidget {
   IntervalRow& fifth_row;
   IntervalRow& seventh_row;
   IntervalRow& octave_row;
-  QBoxLayout& column_layout = *(new QVBoxLayout(this));
+  QBoxLayout& column_layout;
 
   ControlsColumn(Song& song, FluidSynth& synth, QUndoStack& undo_stack,
                  SwitchTable& switch_table);

@@ -5,6 +5,8 @@
 #include <QtGui/QCloseEvent>
 #include <QtGui/QScreen>
 #include <QtWidgets/QApplication>
+#include <QtWidgets/QDockWidget>
+#include <QtWidgets/QGraphicsItem>
 #include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QStatusBar>
 
@@ -14,6 +16,8 @@
 #include "widgets/SongWidget.hpp"
 #include "widgets/SpinBoxes.hpp"
 #include "widgets/SwitchDelegate.hpp"
+#include "widgets/piano_roll/PianoRollNotesScene.hpp"
+#include "widgets/piano_roll/PianoRollWidget.hpp"
 
 namespace {
 
@@ -143,7 +147,9 @@ void start_piano_roll_playhead(PianoRollWidget& widget,
 
 SongEditor::SongEditor()
     : song_widget(*(new SongWidget)),
-      song_menu_bar(*(new SongMenuBar(song_widget))) {
+      song_menu_bar(*(new SongMenuBar(song_widget))),
+      piano_roll_widget(*(new PianoRollWidget(song_widget))),
+      piano_roll_dock(*(new QDockWidget(SongEditor::tr("Piano Roll"), this))) {
   setWindowIcon(QIcon(QString::fromStdString(get_share_file("Justly.svg"))));
 
   auto& song_menu_bar_ref = this->song_menu_bar;

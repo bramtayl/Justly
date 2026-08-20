@@ -1,5 +1,7 @@
 #include "actions/ReplaceTable.hpp"
 
+#include <QtWidgets/QLabel>
+
 #include "actions/ChangeId.hpp"
 #include "cell_editors/IntervalEditor.hpp"
 #include "cell_editors/RationalEditor.hpp"
