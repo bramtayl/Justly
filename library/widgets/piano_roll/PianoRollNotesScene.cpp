@@ -1,8 +1,7 @@
 #include "widgets/piano_roll/PianoRollNotesScene.hpp"
 
-#include <QtWidgets/QGraphicsItem>
-
 #include <QtCore/QTimer>
+#include <QtWidgets/QGraphicsItem>
 #include <QtWidgets/QGraphicsView>
 
 PianoRollNotesScene::PianoRollNotesScene(QWidget& parent_widget)

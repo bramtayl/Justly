@@ -1,8 +1,9 @@
+#include <QDoubleSpinBox>
+
 #include "Tester.hpp"
 #include "widgets/ControlsColumn.hpp"
 #include "widgets/IntervalRow.hpp"
 #include "widgets/SpinBoxes.hpp"
-#include <QDoubleSpinBox>
 
 void Tester::test_flag_data() {
   add_table_columns();

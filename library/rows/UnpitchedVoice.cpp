@@ -1,4 +1,5 @@
 #include "rows/UnpitchedVoice.hpp"
+
 #include "column_numbers/UnpitchedVoiceColumn.hpp"
 
 UnpitchedVoice::UnpitchedVoice() : Voice() { program = "Standard"; }

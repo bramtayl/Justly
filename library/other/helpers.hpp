@@ -5,6 +5,8 @@
 #include <QtCore/QDir>
 
 class QClipboard;
+class QAbstractItemModel;
+class QItemSelectionRange;
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
 #define NO_COPY(classname)              \
@@ -37,6 +39,12 @@ template <typename Thing>
 }
 
 [[nodiscard]] auto get_clipboard() -> QClipboard&;
+
+[[nodiscard]] auto get_number_of_rows(const QItemSelectionRange& range) -> int;
+
+[[nodiscard]] auto make_range(QAbstractItemModel& model, int first_row_number,
+                              int number_of_rows, int left_column,
+                              int right_column) -> QItemSelectionRange;
 
 template <typename Item>
 [[nodiscard]] static auto copy_items(const QList<Item>& items,

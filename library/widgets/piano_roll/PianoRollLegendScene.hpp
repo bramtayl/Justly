@@ -4,9 +4,6 @@
 
 #include "other/helpers.hpp"
 
-class QGraphicsView;
-class QWidget;
-
 // a separate scene/view for the voice legend, laid out in its own
 // fixed-width column to the right of the main view -- pinned there just
 // like PianoRollAxisScene is pinned to the left, so the legend stays visible

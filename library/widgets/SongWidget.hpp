@@ -9,15 +9,11 @@
 
 template <RowInterface SubRow>
 struct RowsModel;
-class QMenu;
 class XMLDocument;
 struct MeasureRepeatInfo;
-struct PitchedVoice;
 struct TimeIterator;
-struct UnpitchedVoice;
 struct XMLValidator;
 class QBoxLayout;
-class QTimer;
 struct ControlsColumn;
 struct SwitchColumn;
 

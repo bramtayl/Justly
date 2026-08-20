@@ -7,8 +7,6 @@
 #include "menus/PlayMenu.hpp"
 #include "menus/ViewMenu.hpp"
 
-struct SongWidget;
-
 struct SongMenuBar : public QMenuBar {
   FileMenu file_menu;
   EditMenu edit_menu;

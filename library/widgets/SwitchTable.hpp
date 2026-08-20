@@ -9,8 +9,6 @@
 #include "models/UnpitchedVoicesModel.hpp"
 #include "widgets/SwitchDelegate.hpp"
 
-struct SwitchDelegate;
-
 template <RowInterface SubRow>
 static void set_model(QAbstractItemView& item_view,
                       RowsModel<SubRow>& rows_model) {

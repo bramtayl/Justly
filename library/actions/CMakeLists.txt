@@ -14,7 +14,6 @@ target_sources(JustlyLibrary PUBLIC FILE_SET justly_headers FILES
 )
 
 target_sources(JustlyLibrary PRIVATE
-    "AffectedVoiceNote.cpp"
     "ReplaceTable.cpp"
     "SetDouble.cpp"
 )

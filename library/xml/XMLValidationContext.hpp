@@ -2,8 +2,6 @@
 
 #include "xml/XMLSchema.hpp"
 
-struct _xmlSchemaValidCtxt;
-
 class XMLValidationContext {
  public:
   _xmlSchemaValidCtxt* const internal_pointer;

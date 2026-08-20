@@ -1,6 +1,5 @@
 #include "other/Song.hpp"
 
-
 #include "rows/Chord.hpp"
 
 Song::Song() : starting_key(midi_number_to_frequency(DEFAULT_STARTING_MIDI)) {}

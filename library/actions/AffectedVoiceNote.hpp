@@ -17,18 +17,6 @@ struct AffectedVoiceNote {
   int old_voice_number;
 };
 
-// looks for a direct voice_number child of note_node and renumbers it (or,
-// for a removal that swallows it, zeroes it) the same way
-// InsertVoiceRow/RemoveVoiceRows renumber notes still in song.chords; used
-// both for a flat copied note row and for a single pitched_note/unpitched_note
-// nested inside a copied chord. reassigned_count is bumped whenever a
-// voice_number collapses to 0, so the caller can warn about it the same way
-// RemoveVoiceRows warns about a live note being reassigned
-void find_and_process_voice_number(xmlNode& note_node, int first_row_number,
-                                   int last_removed_row, int number_of_rows,
-                                   bool is_insertion, bool& changed,
-                                   int& reassigned_count);
-
 // shared by RemoveVoiceRows and renumber_clipboard_voice_numbers so a live
 // note reassignment and a stale clipboard reassignment are reported
 // identically, aside from is_clipboard calling out that the latter only

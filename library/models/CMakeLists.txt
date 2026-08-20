@@ -13,7 +13,6 @@ target_sources(JustlyLibrary PRIVATE
     "ChordsModel.cpp"
     "PitchedNotesModel.cpp"
     "PitchedVoicesModel.cpp"
-    "RowsModel.cpp"
     "UnpitchedNotesModel.cpp"
     "UnpitchedVoicesModel.cpp"
 )

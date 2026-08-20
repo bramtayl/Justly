@@ -39,7 +39,7 @@ auto read_zip_entry(const ZipArchive& archive, const std::string& entry_name)
       zip_fread(file_pointer, bytes.data(), entry_stat.size);
   zip_fclose(file_pointer);
 
-  if (bytes_read != static_cast<zip_int64_t>(entry_stat.size)) {
+  if (std::cmp_not_equal(bytes_read, entry_stat.size)) {
     return {};
   }
   return bytes;

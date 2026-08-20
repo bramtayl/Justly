@@ -2,8 +2,6 @@
 
 #include "xml/XMLParserContext.hpp"
 
-struct _xmlSchema;
-
 class XMLSchema {
  public:
   _xmlSchema* const internal_pointer;

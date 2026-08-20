@@ -107,16 +107,14 @@ EditMenu::EditMenu(SongWidget& song_widget)
                                     first_row_number, number_of_rows);
             break;
           case RowType::pitched_voice_type:
-            undo_command =
-                new RemoveVoiceRows<  // NOLINT(cppcoreguidelines-owning-memory)
-                    PitchedVoice, PitchedNote>(
+            undo_command =  // NOLINT(cppcoreguidelines-owning-memory)
+                new RemoveVoiceRows<PitchedVoice, PitchedNote>(
                     switch_table.pitched_voices_model, first_row_number,
                     number_of_rows);
             break;
           case RowType::unpitched_voice_type:
-            undo_command =
-                new RemoveVoiceRows<  // NOLINT(cppcoreguidelines-owning-memory)
-                    UnpitchedVoice, UnpitchedNote>(
+            undo_command =  // NOLINT(cppcoreguidelines-owning-memory)
+                new RemoveVoiceRows<UnpitchedVoice, UnpitchedNote>(
                     switch_table.unpitched_voices_model, first_row_number,
                     number_of_rows);
             break;

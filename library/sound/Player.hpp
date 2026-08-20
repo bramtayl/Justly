@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "sound/FluidDriver.hpp"
 #include "sound/FluidEvent.hpp"
 #include "sound/FluidSequencer.hpp"

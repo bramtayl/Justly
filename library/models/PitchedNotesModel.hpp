@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "models/UndoRowsModel.hpp"
 #include "rows/PitchedNote.hpp"
 

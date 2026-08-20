@@ -6,10 +6,6 @@
 #include "other/PianoRollNoteEvent.hpp"
 #include "widgets/piano_roll/PlayheadTransition.hpp"
 
-class QGraphicsView;
-class QTimer;
-class QWidget;
-
 static const auto PIANO_ROLL_PIXELS_PER_MS = 0.1;
 static const auto PIANO_ROLL_DEFAULT_AXIS_Y = 0.0;
 static const auto PIANO_ROLL_MIN_TIME_ZOOM = 0.25;

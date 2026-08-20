@@ -1,5 +1,6 @@
 #include "other/helpers.hpp"
 
+#include <QtCore/QItemSelectionModel>
 #include <QtGui/QGuiApplication>
 #include <QtWidgets/QMessageBox>
 
@@ -7,6 +8,18 @@ XMLString::~XMLString() { xmlFree(internal_pointer); }
 
 auto get_clipboard() -> QClipboard& {
   return get_reference(QGuiApplication::clipboard());
+}
+
+auto get_number_of_rows(const QItemSelectionRange& range) -> int {
+  Q_ASSERT(range.isValid());
+  return range.bottom() - range.top() + 1;
+}
+
+auto make_range(QAbstractItemModel& model, const int first_row_number,
+                const int number_of_rows, const int left_column,
+                const int right_column) -> QItemSelectionRange {
+  return {model.index(first_row_number, left_column),
+          model.index(first_row_number + number_of_rows - 1, right_column)};
 }
 
 auto c_string_to_xml_string(const char* text) -> const xmlChar* {
@@ -20,7 +33,7 @@ auto xml_string_to_c_string(const xmlChar* text) -> const char* {
 }
 
 auto xml_string_to_string(const xmlChar* text) -> std::string {
-  return std::string(xml_string_to_c_string(text));
+  return {xml_string_to_c_string(text)};
 }
 
 auto get_xml_name(const xmlNode& node) -> std::string {

@@ -6,8 +6,6 @@
 
 struct Song;
 
-[[nodiscard]] auto get_number_of_rows(const QItemSelectionRange& range) -> int;
-
 template <RowInterface SubRow>
 struct RowsModel : public QAbstractTableModel {
   Song& song;
@@ -225,7 +223,3 @@ struct RowsModel : public QAbstractTableModel {
     endRemoveRows();
   }
 };
-
-[[nodiscard]] auto make_range(QAbstractItemModel& model, int first_row_number,
-                              int number_of_rows, int left_column,
-                              int right_column) -> QItemSelectionRange;

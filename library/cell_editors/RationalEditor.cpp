@@ -5,8 +5,10 @@
 #include <QtWidgets/QSpinBox>
 
 RationalEditor::RationalEditor(QWidget* const parent_pointer)
-    : QFrame(parent_pointer), numerator_box(*(new QSpinBox)),
-      slash_text(*(new QLabel("/"))), denominator_box(*(new QSpinBox)),
+    : QFrame(parent_pointer),
+      numerator_box(*(new QSpinBox)),
+      slash_text(*(new QLabel("/"))),
+      denominator_box(*(new QSpinBox)),
       row_layout(*(new QHBoxLayout(this))) {
   setFrameStyle(QFrame::StyledPanel);
   setAutoFillBackground(true);
