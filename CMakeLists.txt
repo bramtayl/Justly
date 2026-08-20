@@ -1,21 +1,18 @@
 cmake_minimum_required(VERSION 3.24)
 
-# on windows, add a path to Qt
-list(APPEND CMAKE_PREFIX_PATH C:/Users/brand/6.5.1/msvc2019_64)
+# on windows, add a path to Qt, e.g.
+# list(APPEND CMAKE_PREFIX_PATH C:/Users/brand/6.5.1/msvc2019_64)
 
-# must be set before project() -- otherwise CMake defaults it to the SDK
-# version of whatever Xcode happens to be installed on the build machine, so
-# release bundles built on a newer macOS runner silently refuse to launch
-# ("You can't use Justly with this version of macOS") on any older-but-still
-# supported Mac
+# must be set before project(), otherwise CMake defaults to build version
 if (APPLE)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0" CACHE STRING "Minimum macOS version")
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0")
 endif()
 
 project(Justly VERSION 1.1.4 LANGUAGES CXX)
 
 # download https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic.sf3
-# and put it into the share folder as MS_Basic.sf3
+# and https://github.com/musescore/MuseScore/blob/v4.7.4/share/sound/MS%20Basic_License.md
+# put it into the share folder as MS_Basic.sf3 abd MS_Basic_License.sf3
 # too big to commit to git
 
 include(CTest)
@@ -27,6 +24,8 @@ option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
 option(TRACK_COVERAGE "Track coverage" OFF)
 
 if (UNIX AND NOT APPLE)
+    # rpath fixes is broken in qt_generate_deploy_app_script
+    # because ubuntu installed plugins don't have an rpath
     # need to set before find_package(Qt6Core)
     set(QT_DEPLOY_FORCE_ADJUST_RPATHS OFF)
 endif()
@@ -41,25 +40,19 @@ find_package(Qt6Test REQUIRED)
 find_package(Qt6Widgets REQUIRED)
 
 if (UNIX AND NOT APPLE)
-    # in Debian/Ubuntu, plugins have separate packages
-    find_package(Qt6QSvgPlugin REQUIRED
-        PATHS "${Qt6Gui_DIR}" "${Qt6Svg_DIR}" NO_DEFAULT_PATH)
-    find_package(Qt6QXcbIntegrationPlugin REQUIRED
-        PATHS "${Qt6Gui_DIR}" NO_DEFAULT_PATH)
+    # in Debian, these are separate packages in Qt6Gui_DIR
+    list(APPEND CMAKE_PREFIX_PATH "${Qt6Gui_DIR}")
     # needed for ctest to run offsecreen
-    find_package(Qt6QOffscreenIntegrationPlugin REQUIRED
-        PATHS "${Qt6Gui_DIR}" NO_DEFAULT_PATH)
-    # GTK theme on Ubuntu
-    find_package(Qt6QGtk3ThemePlugin REQUIRED
-        PATHS "${Qt6Gui_DIR}" NO_DEFAULT_PATH)
+    find_package(Qt6QOffscreenIntegrationPlugin REQUIRED PATHS "${Qt6Gui_DIR}")
+    # to look native
+    find_package(Qt6QGtk3ThemePlugin REQUIRED PATHS "${Qt6Gui_DIR}")
 endif()
 
 qt_standard_project_setup()
 
 if (INCLUDE_WHAT_YOU_USE)
-    # most of the codebase lives in headers with no matching .cpp, and iwyu
-    # only reports on a .cpp and its associated header by default, so tell it
-    # to also check every project header directly
+    # headers without  mathching .cpp files won't get checked by default
+    # so specify all header dirs
     set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE
         include-what-you-use
         -Xiwyu
@@ -93,10 +86,8 @@ if (TRACK_COVERAGE)
     add_link_options("--coverage")
 endif()
 
-# mirror the installed layout (bin/ next to share/, or Contents/MacOS next to
-# Contents/Resources) inside the build tree too, so Justly/JustlyTests can
-# find share/ (see get_share_folder() in helpers.hpp) straight out of the
-# build directory, without an install step or an environment variable
+# add an extra subfolder so that we can put a share folder next to it
+# to mirror the install tree
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 qt_add_library(JustlyLibrary STATIC)
@@ -109,8 +100,6 @@ if (BUILD_TESTS)
    endif()
 endif()
 
-# the set of app targets that get installed/deployed the same way; used to
-# share install/deploy logic between Justly and JustlyTests below
 set(app_targets Justly)
 if (BUILD_TESTS)
     list(APPEND app_targets JustlyTests)
@@ -119,38 +108,13 @@ endif()
 add_subdirectory("library")
 add_subdirectory("executable")
 
-# executable/CMakeLists.txt sets MACOSX_BUNDLE ON for Justly on Apple
-# platforms (and JustlyTests mirrors it above); test the target's actual
-# bundle-ness rather than assuming any particular OS builds a bundle
-get_target_property(is_bundle Justly MACOSX_BUNDLE)
-
 if (UNIX AND NOT APPLE)
-    # need since plugins have separate packages
-    set_property(TARGET Qt6::Gui APPEND PROPERTY _qt_plugins
-        QXcbIntegrationPlugin
-        QOffscreenIntegrationPlugin
-        QGtk3ThemePlugin
-    )
-    set_property(TARGET Qt6::Svg APPEND PROPERTY _qt_plugins QSvgPlugin)
-
-    # need to import non-default plugins
-    qt_import_plugins(Justly INCLUDE
-        Qt6::QGtk3ThemePlugin
-    )
+    # qt_import_plugins won't work with the offscreen plugin
+    qt_import_plugins(Justly INCLUDE Qt6::QGtk3ThemePlugin)
 endif()
 
-# need to call before qt_generate_deploy_app_script
-foreach(app_target ${app_targets})
-    install(TARGETS ${app_target}
-        RUNTIME DESTINATION bin
-        BUNDLE DESTINATION .
-    )
-endforeach()
-
-# regexes for Qt's deploy script to skip: system libraries already provided
-# by the OS on Linux; empty elsewhere so the same deploy call below works on
-# every platform
-set(system_lib_exclude_regexes "")
+# qt will deploy system libraries by default on linux
+# so exclude them manually
 if (UNIX AND NOT APPLE)
     set(system_lib_exclude_regexes
         "^ld-linux"
@@ -217,22 +181,43 @@ if (UNIX AND NOT APPLE)
         "^libz[.]"
         "^libzstd"
     )
+else()
+    set(system_lib_exclude_regexes "")
 endif()
 
-if (UNIX AND NOT APPLE)
-    # need to set rpath on linux
-    set_target_properties(Justly PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
-    # force plugins to use Justly's rpath
-    target_link_options(Justly PRIVATE "LINKER:--disable-new-dtags")
-
-    if (BUILD_TESTS)
-        set_target_properties(JustlyTests PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
-        target_link_options(JustlyTests PRIVATE "LINKER:--disable-new-dtags")
+# install the share folder, and also put it into the build dir so the target works there too
+function(justly_install_share share_folder bundle_target)
+    if (APPLE)
+        set(share_sub_folder "Resources")
+        set(install_sub_folder "${bundle_target}.app/Contents/")
+    else()
+        set(share_sub_folder "share")
+        set(install_sub_folder "")
     endif()
-endif()
+
+    install(DIRECTORY "${share_folder}" DESTINATION "${install_sub_folder}${share_sub_folder}")
+
+    add_custom_command(TARGET ${bundle_target} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${share_folder}" "$<TARGET_FILE_DIR:${bundle_target}>/../${share_sub_folder}"
+    )
+endfunction()
 
 foreach(app_target ${app_targets})
-    # PRE_EXCLUDE_REGEXES requires a fairly new version of Qt
+    # need to call before qt_generate_deploy_app_script
+    install(TARGETS ${app_target}
+        RUNTIME DESTINATION bin
+        BUNDLE DESTINATION .
+    )
+
+    if (UNIX AND NOT APPLE)
+        # need to set rpath on linux
+        set_target_properties(${app_target} PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+        # if plugins inherit justly's rpath, since they are in a different location, the rpath won't work
+        # so disable rpath inheritance
+        target_link_options(${app_target} PRIVATE "LINKER:--disable-new-dtags")
+    endif()
+
     qt_generate_deploy_app_script(
         TARGET ${app_target}
         OUTPUT_SCRIPT deploy_script
@@ -240,43 +225,23 @@ foreach(app_target ${app_targets})
         PRE_EXCLUDE_REGEXES ${system_lib_exclude_regexes}
     )
     install(SCRIPT ${deploy_script})
+
+    justly_install_share("${Justly_SOURCE_DIR}/share/" ${app_target})
+
+    if (WIN32)
+        # install manually to get runtime dependencies
+        install(TARGETS ${app_target} RUNTIME_DEPENDENCY_SET dependencies)
+    endif()
 endforeach()
 
 if (WIN32)
-    # windeployqt only deploys qt dependencies
-    # need to install other dependencies manually
-    foreach(app_target ${app_targets})
-        install(TARGETS ${app_target} RUNTIME_DEPENDENCY_SET vcpkg_deps)
-    endforeach()
-
-    # normalizes paths (forward slashes only) before POST_EXCLUDE_REGEXES
-    # matching -- without this, file(GET_RUNTIME_DEPENDENCIES) can hand back
-    # mixed-separator paths (e.g. "C:\Windows\system32/foo.dll") depending on
-    # how a dependency was found, which would make the System32 exclude below
-    # silently fail to match on some but not all of them
+    # normalize path separators
     cmake_policy(SET CMP0207 NEW)
-
-    # deny-list instead of an allowlist so a newly added vcpkg dependency
-    # (e.g. the sndfile/vorbis/flac/opus/mpg123/mp3lame/ogg chain pulled in
-    # for SF3 support) gets deployed automatically -- an allowlist silently
-    # drops anything nobody remembered to add, which is exactly what let
-    # JustlyTests.exe ship without sndfile.dll and fail to even start.
-    #
-    # PRE_EXCLUDE_REGEXES skips resolution entirely for names that would
-    # otherwise make file(GET_RUNTIME_DEPENDENCIES) hard-error with "Could
-    # not resolve runtime dependencies": Qt's own DLLs (windeployqt deploys
-    # those separately, see above) and a couple of Windows-internal names
-    # (hvsifiletrust.dll, wtdccm.dll) that don't correspond to a real file
-    # anywhere CMake looks, observed by actually running this and reading
-    # the resulting error message -- if a future dependency addition hits
-    # the same error, add its name here too.
-    #
-    # since CMake 3.31, dependency names are lowercased before matching
-    # against these regexes, so every pattern here must be lowercase or it
-    # silently never matches (this is what broke "^Qt6" -- the actual name
-    # being matched is "qt6cored.dll", not "Qt6Cored.dll")
-    install(RUNTIME_DEPENDENCY_SET vcpkg_deps
+    
+    install(RUNTIME_DEPENDENCY_SET dependencies
+        # needs path to vcpkg dependencies
         DIRECTORIES "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin"
+        # skip system libraries
         PRE_EXCLUDE_REGEXES
             "^api-ms-"
             "^ext-ms-"
@@ -284,68 +249,46 @@ if (WIN32)
             "^hvsifiletrust\\.dll$"
             "^wtdccm\\.dll$"
         POST_EXCLUDE_REGEXES
-            ".*/[Ss]ystem32/.*\\.dll"
+            ".*/System32/.*\\.dll"
         RUNTIME DESTINATION bin
     )
 endif()
 
-if (is_bundle)
-    foreach(app_target ${app_targets})
-        install(DIRECTORY "${Justly_SOURCE_DIR}/share/"
-            DESTINATION "${app_target}.app/Contents/Resources"
-        )
-    endforeach()
-else()
-    install(DIRECTORY "${Justly_SOURCE_DIR}/share/" TYPE DATA)
-endif()
-
-foreach(app_target ${app_targets})
-    if (is_bundle)
-        set(build_share_dest "$<TARGET_FILE_DIR:${app_target}>/../Resources")
-    else()
-        set(build_share_dest "$<TARGET_FILE_DIR:${app_target}>/../share")
-    endif()
-    add_custom_command(TARGET ${app_target} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${Justly_SOURCE_DIR}/share" "${build_share_dest}"
-    )
-endforeach()
-
 if (BUILD_TESTS)
-    # qt deploy (windeployqt/macdeployqt, or the manual copy_directory-style
-    # install below on Linux) only deploys the platform plugin matching the
-    # host OS (qwindows/cocoa/xcb) plus whatever qt_import_plugins requested
-    # above -- it ignores the non-default "offscreen" platform that
-    # QT_QPA_PLATFORM=offscreen (set on run_tests below) asks for at runtime,
-    # so it has to be deployed manually here on every platform
-    if (is_bundle)
-        set(offscreen_plugin_dir "JustlyTests.app/Contents/PlugIns/platforms")
+    # qt_import_plugins won't work for platform plugins
+    # so the offscreen plugin needs to be deployed manually
+    if (APPLE)
+        set(platform_plugin_subfolder "JustlyTests.app/Contents/PlugIns/platforms")
     elseif (WIN32)
-        # Qt's plugin loader looks for platform plugins in a "platforms"
-        # directory next to the executable
-        set(offscreen_plugin_dir "bin/platforms")
+        set(platform_plugin_subfolder "bin/platforms")
     else()
-        set(qt_lib_arch_dir "")
         if (CMAKE_LIBRARY_ARCHITECTURE)
-            set(qt_lib_arch_dir "${CMAKE_LIBRARY_ARCHITECTURE}/")
+            set(architecture_folder "${CMAKE_LIBRARY_ARCHITECTURE}/")
+        else()
+            set(architecture_folder "")
         endif()
-        set(offscreen_plugin_dir "lib/${qt_lib_arch_dir}qt6/plugins/platforms")
+        set(platform_plugin_subfolder "lib/${architecture_folder}qt6/plugins/platforms")
     endif()
 
+    set(platform_plugin_folder "\${CMAKE_INSTALL_PREFIX}/${platform_plugin_subfolder}")
+    set(platform_plugin_path "${platform_plugin_folder}/$<TARGET_FILE_NAME:Qt6::QOffscreenIntegrationPlugin>")
+
+    # install(IMPORTED_RUNTIME_ARTIFACTS) doesn't reliably resolve this
+    # plugin's location, so copy it manually via $<TARGET_FILE:...>
     install(CODE "
-        file(MAKE_DIRECTORY \"\${CMAKE_INSTALL_PREFIX}/${offscreen_plugin_dir}\")
+        file(MAKE_DIRECTORY \"${platform_plugin_folder}\")
         file(COPY_FILE
             \"$<TARGET_FILE:Qt6::QOffscreenIntegrationPlugin>\"
-            \"\${CMAKE_INSTALL_PREFIX}/${offscreen_plugin_dir}/$<TARGET_FILE_NAME:Qt6::QOffscreenIntegrationPlugin>\"
+            \"${platform_plugin_path}\"
         )
     ")
 
-    if (is_bundle)
-        # bundle plugins load relative to the bundle's Frameworks directory
+    if (APPLE)
+        # set the rpath for the platform plugin
         install(CODE "
             execute_process(COMMAND install_name_tool -add_rpath
                 \"@loader_path/../../Frameworks\"
-                \"\${CMAKE_INSTALL_PREFIX}/${offscreen_plugin_dir}/$<TARGET_FILE_NAME:Qt6::QOffscreenIntegrationPlugin>\"
+                \"${platform_plugin_path}\"
             )
         ")
     endif()
@@ -354,20 +297,7 @@ endif()
 if (BUILD_TESTS)
     add_subdirectory("tests")
 
-    if (is_bundle)
-        install(DIRECTORY "${Justly_SOURCE_DIR}/tests/share/"
-            DESTINATION "JustlyTests.app/Contents/Resources"
-        )
-        set(build_tests_share_dest "$<TARGET_FILE_DIR:JustlyTests>/../Resources")
-    else()
-        install(DIRECTORY "${Justly_SOURCE_DIR}/tests/share/" TYPE DATA)
-        set(build_tests_share_dest "$<TARGET_FILE_DIR:JustlyTests>/../share")
-    endif()
-
-    add_custom_command(TARGET JustlyTests POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${Justly_SOURCE_DIR}/tests/share" "${build_tests_share_dest}"
-    )
+    justly_install_share("${Justly_SOURCE_DIR}/tests/share/" JustlyTests)
 
     set(test_install_folder "${Justly_SOURCE_DIR}/test_install")
 
@@ -379,41 +309,26 @@ if (BUILD_TESTS)
 
     add_dependencies(install_tests JustlyLibrary Justly JustlyTests)
 
-    # QTest's plain-text logger (implicit default, or "-o -,txt" for stdout)
-    # never reaches ctest's captured output on Windows CI -- Start/Totals/
-    # Finished lines never appear even though the test itself runs and
-    # passes. Only writing to a real file works, so force that and have the
-    # workflow cat the file afterwards to surface it in the CI log.
-    if (is_bundle)
-        add_test(NAME run_tests
-            COMMAND "${test_install_folder}/JustlyTests.app/Contents/MacOS/JustlyTests" -o test_output.txt,txt)
-        # separate from run_tests: launches via LaunchServices (as Finder
-        # would) to catch bundle-structure problems that direct-binary
-        # invocation above wouldn't (e.g. bad Info.plist); open's own exit
-        # code only reflects whether the launch succeeded, not the app's
-        # exit status, so this can't replace run_tests as a pass/fail check
-        add_test(NAME bundle_opens
-            COMMAND open -W -a "${test_install_folder}/JustlyTests.app")
+    if (APPLE)
+        set(run_tests_subfolder "JustlyTests.app/Contents/MacOS")
+        set(run_tests_args "")
     else()
-        add_test(NAME run_tests COMMAND "${test_install_folder}/bin/JustlyTests" -o test_output.txt,txt)
+        set(run_tests_subfolder "bin")
+        if (WIN32)
+            # test output doesn't get piped to stdout on windows
+            set(run_tests_args -o test_output.txt,txt)
+        else()
+            set(run_tests_args "")
+        endif()
     endif()
 
-    # without offscreen, QGuiApplication::clipboard() talks to the real
-    # desktop session -- clipboard ownership handoff isn't instant there, so
-    # copy/paste tests can read back whatever the desktop's clipboard last
-    # held (e.g. a browser copy) instead of the data the test just copied,
-    # popping an unexpected QMessageBox that nothing is waiting to close
-    #
-    # QT_TEST_FUNCTION_TIMEOUT makes QTest itself abort whichever single test
-    # function is stuck, with a message naming it, instead of the whole
-    # process hanging silently until something external (ctest's TIMEOUT
-    # here, or the CI-level timeout used instead of ctest) kills it blind --
-    # this is what would have turned the sndfile.dll deployment gap into an
-    # immediate, attributable failure instead of a 25-minute silent hang
-    set_tests_properties(run_tests PROPERTIES
-        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_TEST_FUNCTION_TIMEOUT=120000"
-        TIMEOUT 300
-    )
+    add_test(NAME run_tests COMMAND "${test_install_folder}/${run_tests_subfolder}/JustlyTests" ${run_tests_args})
+
+    if (APPLE)
+        # make sure the bundle can open
+        add_test(NAME bundle_opens
+            COMMAND open -W -a "${test_install_folder}/JustlyTests.app")
+    endif()
 endif()
 
 include(CPack)
