@@ -1,20 +1,7 @@
 #pragma once
 
-#include <QtCore/QItemSelectionModel>
-#include <QtCore/QMimeData>
-#include <QtGui/QAction>
-#include <QtWidgets/QMenu>
-
-#include "actions/InsertRemoveRows.hpp"
 #include "menus/InsertMenu.hpp"
 #include "menus/PasteMenu.hpp"
-#include "models/RowsModel.hpp"
-#include "other/helpers.hpp"
-#include "rows/Row.hpp"
-#include "xml/XMLDocument.hpp"
-
-class QUndoCommand;
-struct SongWidget;
 
 template <RowInterface SubRow>
 [[nodiscard]] static auto make_remove_command(RowsModel<SubRow>& rows_model,

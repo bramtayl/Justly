@@ -1,12 +1,8 @@
 #pragma once
 
-#include <QtCore/QList>
-#include <QtGui/QUndoStack>
-#include <utility>
+#include <QtGui/QUndoCommand>
 
 #include "models/RowsModel.hpp"
-#include "other/helpers.hpp"
-#include "rows/Row.hpp"
 
 template <RowInterface SubRow>
 struct SetCells : public QUndoCommand {

@@ -1,19 +1,8 @@
 #include "other/Song.hpp"
 
-#include <QtCore/qcompare.h>
-
 #include <QtCore/QMap>
-#include <QtCore/QObject>
-#include <QtCore/QTextStream>
-#include <QtCore/QtSwap>
-#include <cmath>
-#include <cstdlib>
-#include <tuple>
-#include <utility>
 
 #include "rows/Chord.hpp"
-#include "rows/PitchedNote.hpp"
-#include "rows/Row.hpp"
 
 Song::Song() : starting_key(midi_number_to_frequency(DEFAULT_STARTING_MIDI)) {}
 

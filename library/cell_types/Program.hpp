@@ -1,11 +1,7 @@
 #pragma once
 
-#include <QtCore/QByteArray>
 #include <QtCore/QList>
 #include <QtCore/QMetaType>
-#include <QtCore/QString>
-#include <algorithm>
-#include <iterator>
 
 struct FluidSynth;
 

@@ -1,12 +1,6 @@
 #include "models/PitchedVoicesModel.hpp"
 
-#include <QtCore/QList>
-#include <QtCore/QString>
-
 #include "column_numbers/PitchedVoiceColumn.hpp"
-#include "rows/Voice.hpp"
-
-class QVariant;
 
 auto PitchedVoicesModel::check_cell(const int column_number,
                                     const QVariant& new_value) const -> bool {

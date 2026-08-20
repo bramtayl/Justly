@@ -1,13 +1,5 @@
 #include "rows/Row.hpp"
 
-#include <libxml/parser.h>
-
-#include <string>
-
-#include "other/helpers.hpp"
-
-class QString;
-
 void maybe_add_qstring_to_xml(xmlNode& node, const char* const field_name,
                               const QString& words) {
   if (!words.isEmpty()) {

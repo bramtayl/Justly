@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QtCore/QList>
-#include <QtCore/QtSwap>
 
 #include "musicxml/MusicXMLNote.hpp"
 

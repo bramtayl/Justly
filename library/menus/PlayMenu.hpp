@@ -1,8 +1,6 @@
 #pragma once
 
-#include <QtGui/QAction>
 #include <QtWidgets/QMenu>
-#include <cstdint>
 
 enum class RowType : std::uint8_t;
 struct SongWidget;

@@ -1,9 +1,3 @@
-#include "actions/AffectedVoiceNote.hpp"
-
-#include <libxml/parser.h>
-
-#include <string>
-
 #include "other/helpers.hpp"
 
 void find_and_process_voice_number(xmlNode& note_node,

@@ -1,8 +1,5 @@
 #include "other/PianoRollNoteEvent.hpp"
 
-#include <QtCore/QList>
-#include <utility>
-
 #include "other/Song.hpp"
 #include "rows/Chord.hpp"
 

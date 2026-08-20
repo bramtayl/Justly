@@ -4,14 +4,6 @@
 #include <libxml/xmlstring.h>
 
 #include <QtCore/QDir>
-#include <QtCore/QList>
-#include <QtCore/QString>
-#include <QtCore/QVariant>
-#include <QtCore/QtAssert>
-#include <algorithm>
-#include <iterator>
-#include <optional>
-#include <string>
 
 class QClipboard;
 

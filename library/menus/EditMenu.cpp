@@ -1,37 +1,8 @@
 #include "menus/EditMenu.hpp"
 
-#include <QtCore/qobjectdefs.h>
-#include <libxml/parser.h>
-
-#include <QtCore/QList>
-#include <QtCore/QObject>
-#include <QtCore/QTypeInfo>
-#include <QtCore/QtMinMax>
-#include <QtCore/QtSwap>
-#include <QtGui/QClipboard>
-#include <QtGui/QKeySequence>
-#include <QtGui/QUndoStack>
-#include <utility>
-
 #include "actions/DeleteCells.hpp"
 #include "actions/RemoveVoiceRows.hpp"
-#include "menus/InsertMenu.hpp"
-#include "menus/PasteMenu.hpp"
-#include "models/ChordsModel.hpp"
-#include "models/PitchedNotesModel.hpp"
-#include "models/PitchedVoicesModel.hpp"
-#include "models/RowsModel.hpp"
-#include "models/UnpitchedNotesModel.hpp"
-#include "models/UnpitchedVoicesModel.hpp"
-#include "other/helpers.hpp"
-#include "rows/PitchedNote.hpp"
-#include "rows/PitchedVoice.hpp"
-#include "rows/RowType.hpp"
-#include "rows/UnpitchedNote.hpp"
-#include "rows/UnpitchedVoice.hpp"
-#include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"
-#include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
 
 namespace {

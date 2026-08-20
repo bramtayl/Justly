@@ -1,7 +1,5 @@
 #include "widgets/ControlsColumn.hpp"
 
-#include "cell_types/Interval.hpp"
-#include "cell_types/Rational.hpp"
 #include "widgets/IntervalRow.hpp"
 #include "widgets/SpinBoxes.hpp"
 

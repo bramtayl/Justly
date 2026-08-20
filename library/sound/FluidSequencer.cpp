@@ -1,11 +1,5 @@
 #include "sound/FluidSequencer.hpp"
 
-#include <fluidsynth/seq.h>
-#include <fluidsynth/seqbind.h>
-#include <fluidsynth/types.h>
-
-#include <QtCore/QtAssert>
-
 #include "sound/FluidSynth.hpp"
 
 auto register_fluidsynth_client(fluid_sequencer_t* const sequencer_pointer,

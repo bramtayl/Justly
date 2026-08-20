@@ -2,7 +2,6 @@
 
 #include <QtWidgets/QFormLayout>
 #include <QtWidgets/QSpinBox>
-#include <QtWidgets/QWidget>
 
 class QUndoStack;
 struct FluidSynth;

@@ -1,8 +1,6 @@
 #pragma once
 
 #include <fluidsynth.h>
-#include <fluidsynth/seq.h>
-#include <fluidsynth/types.h>
 
 #include "other/helpers.hpp"
 

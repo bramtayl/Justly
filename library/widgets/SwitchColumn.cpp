@@ -1,14 +1,5 @@
 #include "widgets/SwitchColumn.hpp"
 
-#include <QtCore/QItemSelectionModel>
-#include <QtCore/QtAssert>
-#include <QtWidgets/QAbstractItemView>
-
-#include "models/PitchedNotesModel.hpp"
-#include "models/UnpitchedNotesModel.hpp"
-#include "other/helpers.hpp"
-#include "rows/RowType.hpp"
-#include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
 
 SwitchColumn::SwitchColumn(QUndoStack& undo_stack, Song& song)

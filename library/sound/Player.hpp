@@ -2,9 +2,6 @@
 
 #include <fluidsynth/types.h>
 
-#include <QtCore/QHash>
-#include <QtCore/QList>
-
 #include "other/helpers.hpp"
 #include "sound/FluidDriver.hpp"
 #include "sound/FluidEvent.hpp"

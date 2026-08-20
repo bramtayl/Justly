@@ -4,9 +4,6 @@
 
 #include "other/helpers.hpp"
 
-class QGraphicsView;
-class QWidget;
-
 // a second, fixed-width view pinned to the left edge, showing just the pitch
 // axis' ticks/labels (drawn into this scene by
 // PianoRollWidget::rebuild_scene()); its vertical scroll is kept in lockstep

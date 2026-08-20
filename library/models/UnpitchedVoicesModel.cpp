@@ -1,12 +1,6 @@
 #include "models/UnpitchedVoicesModel.hpp"
 
-#include <QtCore/QList>
-#include <QtCore/QString>
-
 #include "column_numbers/UnpitchedVoiceColumn.hpp"
-#include "rows/Voice.hpp"
-
-class QVariant;
 
 auto UnpitchedVoicesModel::check_cell(const int column_number,
                                       const QVariant& new_value) const -> bool {

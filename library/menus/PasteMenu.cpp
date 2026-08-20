@@ -1,20 +1,5 @@
 #include "menus/PasteMenu.hpp"
 
-#include <QtCore/qnamespace.h>
-#include <QtCore/qobjectdefs.h>
-
-#include <QtCore/QFlags>
-#include <QtCore/QTypeInfo>
-#include <QtCore/QtMinMax>
-#include <QtCore/QtSwap>
-#include <QtGui/QKeySequence>
-#include <QtGui/QUndoStack>
-#include <string>
-
-#include "rows/Chord.hpp"
-#include "rows/PitchedNote.hpp"
-#include "rows/UnpitchedNote.hpp"
-#include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchTable.hpp"
 

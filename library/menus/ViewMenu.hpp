@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QtGui/QAction>
 #include <QtWidgets/QMenu>
 
 struct ViewMenu : public QMenu {

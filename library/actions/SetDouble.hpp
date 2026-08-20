@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QtGui/QUndoCommand>
-#include <cstdint>
 
 class QDoubleSpinBox;
 enum class ChangeId : std::uint8_t;

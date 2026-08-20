@@ -1,10 +1,6 @@
 #include "sound/FluidSettings.hpp"
 
 #include <fluidsynth.h>
-#include <fluidsynth/misc.h>
-#include <fluidsynth/settings.h>
-
-#include <QtCore/QtAssert>
 
 FluidSettings::FluidSettings(const int midi_channels, const int cpu_cores,
                              const char* const audio_driver)

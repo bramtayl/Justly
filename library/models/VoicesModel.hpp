@@ -3,10 +3,6 @@
 #include "models/UndoRowsModel.hpp"
 #include "rows/Voice.hpp"
 
-class QUndoStack;
-class QWidget;
-struct Song;
-
 template <VoiceInterface SubVoice>
 struct VoicesModel : public UndoRowsModel<SubVoice> {
   QWidget& parent;

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QtCore/QList>
-#include <QtCore/QtSwap>
 
 struct MeasureRepeatInfo {
   int start_time = 0;

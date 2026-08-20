@@ -1,16 +1,8 @@
 #pragma once
 
-#include <QtCore/QTypeInfo>
-#include <QtCore/QtMinMax>
-#include <QtCore/QtSwap>
 
 #include "models/UndoRowsModel.hpp"
 #include "rows/PitchedNote.hpp"
-
-class QTextStream;
-class QUndoStack;
-class QVariant;
-struct Song;
 
 struct PitchedNotesModel : public UndoRowsModel<PitchedNote> {
   explicit PitchedNotesModel(QUndoStack& undo_stack, Song& song)

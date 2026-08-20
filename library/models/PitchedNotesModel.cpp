@@ -1,16 +1,7 @@
 #include "models/PitchedNotesModel.hpp"
 
-#include <QtCore/QList>
-#include <QtCore/QVariant>
-
-#include "cell_types/Interval.hpp"
-#include "cell_types/Rational.hpp"
 #include "column_numbers/PitchedNoteColumn.hpp"
-#include "models/UndoRowsModel.hpp"
 #include "other/Song.hpp"
-#include "rows/PitchedNote.hpp"
-#include "rows/PitchedVoice.hpp"
-#include "sound/PlayState.hpp"
 
 auto PitchedNotesModel::get_display_data(const int row_number,
                                          const int column_number) const

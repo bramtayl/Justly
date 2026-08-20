@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QtCore/QItemSelectionModel>
-#include <QtCore/QtAssert>
 #include <QtWidgets/QBoxLayout>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QWidget>

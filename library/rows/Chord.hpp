@@ -1,14 +1,6 @@
 #pragma once
 
-#include <libxml/parser.h>
-
-#include <QtCore/QList>
-#include <QtCore/QString>
-
-#include "cell_types/Interval.hpp"
-#include "cell_types/Rational.hpp"
 #include "rows/PitchedNote.hpp"
-#include "rows/Row.hpp"
 #include "rows/UnpitchedNote.hpp"
 
 struct PlayState;

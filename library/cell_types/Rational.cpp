@@ -1,11 +1,5 @@
 #include "cell_types/Rational.hpp"
 
-#include <libxml/parser.h>
-
-#include <QtCore/QtAssert>
-#include <numeric>
-#include <string>
-
 #include "other/helpers.hpp"
 
 Rational::Rational(const int numerator_input, const int denominator_input) {

@@ -2,9 +2,6 @@
 
 #include <libxml/parser.h>
 
-#include <QtCore/QByteArray>
-#include <QtCore/QtTypes>
-
 #include "other/helpers.hpp"
 
 class XMLDocument {

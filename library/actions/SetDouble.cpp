@@ -1,16 +1,11 @@
 #include "actions/SetDouble.hpp"
 
 #include <fluidsynth.h>
-#include <fluidsynth/synth.h>
 
-#include <QtCore/QObject>
-#include <QtCore/QtAssert>
-#include <QtGui/QUndoStack>
 #include <QtWidgets/QSpinBox>
 
 #include "actions/ChangeId.hpp"
 #include "other/Song.hpp"
-#include "other/helpers.hpp"
 #include "sound/FluidSynth.hpp"
 
 namespace {

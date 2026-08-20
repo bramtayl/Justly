@@ -1,12 +1,5 @@
 #include "xml/XMLDocument.hpp"
 
-#include <libxml/parser.h>
-
-#include <QtCore/QtTypes>
-#include <limits>
-
-#include "other/helpers.hpp"
-
 XMLDocument::~XMLDocument() { xmlFreeDoc(internal_pointer); }
 
 auto get_root(const XMLDocument& document) -> xmlNode& {

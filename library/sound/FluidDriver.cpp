@@ -1,7 +1,6 @@
 #include "sound/FluidDriver.hpp"
 
 #include <fluidsynth.h>
-#include <fluidsynth/audio.h>
 
 void FluidDriver::reset() {
   if (internal_pointer != nullptr) {

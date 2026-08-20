@@ -1,15 +1,9 @@
 #pragma once
 
-#include <QtCore/QList>
-#include <QtCore/QString>
-#include <tuple>
-#include <variant>
-
 #include "rows/PitchedVoice.hpp"
 #include "rows/UnpitchedVoice.hpp"
 #include "sound/PlayState.hpp"
 
-class QTextStream;
 struct Chord;
 
 static const auto C_0_MIDI = 12;

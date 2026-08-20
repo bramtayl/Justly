@@ -1,8 +1,6 @@
 #pragma once
 
-#include <QtCore/QList>
 #include <QtGui/QUndoStack>
-#include <utility>
 
 #include "rows/Row.hpp"
 

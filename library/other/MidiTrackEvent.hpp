@@ -1,9 +1,6 @@
 #pragma once
 
 #include <QtCore/QString>
-#include <variant>
-
-class QByteArray;
 
 static const auto MIDI_TEMPO_META_TYPE = 0x51U;
 

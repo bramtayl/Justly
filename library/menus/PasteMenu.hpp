@@ -1,38 +1,15 @@
 #pragma once
 
-#include <libxml/parser.h>
-
-#include <QtCore/QItemSelectionModel>
-#include <QtCore/QList>
 #include <QtCore/QMimeData>
-#include <QtCore/QObject>
-#include <QtCore/QString>
-#include <QtCore/QTextStream>
-#include <QtCore/QtAssert>
-#include <QtGui/QAction>
 #include <QtGui/QClipboard>
-#include <QtGui/QKeySequence>
 #include <QtWidgets/QMenu>
-#include <QtWidgets/QMessageBox>
-#include <algorithm>
-#include <limits>
-#include <optional>
-#include <utility>
 
 #include "actions/InsertRemoveRows.hpp"
 #include "actions/SetCells.hpp"
 #include "other/Cells.hpp"
-#include "other/helpers.hpp"
-#include "rows/Note.hpp"
-#include "rows/Row.hpp"
 #include "widgets/SongWidget.hpp"
 #include "xml/XMLDocument.hpp"
 #include "xml/XMLValidator.hpp"
-
-class QWidget;
-template <RowInterface SubRow>
-struct RowsModel;
-class QUndoCommand;
 
 [[nodiscard]] auto get_mime_description(const QString& mime_type) -> QString;
 

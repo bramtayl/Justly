@@ -1,6 +1,8 @@
 #include "Tester.hpp"
 #include "widgets/SwitchDelegate.hpp"
 
+#include <QtWidgets/QGraphicsView>
+
 namespace {
 // checks that exactly the events matching the given criteria (mirroring
 // get_selected_piano_roll_event_indices) are drawn with a highlight pen,

@@ -1,21 +1,11 @@
 #pragma once
 
-#include <QtCore/QList>
-#include <QtCore/QString>
-#include <QtCore/QtMinMax>
-#include <QtCore/QtSwap>
 #include <QtWidgets/QStyledItemDelegate>
-#include <QtWidgets/QWidget>
-#include <algorithm>
-#include <iterator>
 
 #include "cell_editors/VoiceNumberPicker.hpp"
-#include "other/helpers.hpp"
 #include "rows/RowType.hpp"
 #include "rows/Voice.hpp"
 
-class QModelIndex;
-class QStyleOptionViewItem;
 struct Song;
 
 template <VoiceInterface SubVoice>

@@ -1,19 +1,6 @@
 #include "rows/Chord.hpp"
 
-#include <libxml/parser.h>
-
-#include <QtCore/QTypeInfo>
-#include <QtCore/QVariant>
-#include <QtCore/QtAssert>
-#include <QtCore/QtMinMax>
-#include <QtCore/QtSwap>
-#include <string>
-
-#include "cell_types/Interval.hpp"
-#include "cell_types/Rational.hpp"
 #include "column_numbers/ChordColumn.hpp"
-#include "other/helpers.hpp"
-#include "rows/Row.hpp"
 #include "sound/PlayState.hpp"
 
 void Chord::from_xml(xmlNode& node) {

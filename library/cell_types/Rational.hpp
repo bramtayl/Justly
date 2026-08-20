@@ -2,7 +2,6 @@
 
 #include <libxml/parser.h>
 
-#include <QtCore/QByteArray>
 #include <QtCore/QMetaType>
 
 static const auto MAX_NUMERATOR = 999;

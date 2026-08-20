@@ -1,7 +1,5 @@
 #include "menus/ViewMenu.hpp"
 
-#include <QtGui/QKeySequence>
-
 #include "widgets/SongWidget.hpp"
 
 ViewMenu::ViewMenu()

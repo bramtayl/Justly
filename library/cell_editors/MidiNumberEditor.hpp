@@ -1,10 +1,6 @@
 #pragma once
 
-#include <QtCore/qtmetamacros.h>
-
 #include <QtWidgets/QSpinBox>
-
-class QWidget;
 
 struct MidiNumberEditor : QSpinBox {
   Q_OBJECT

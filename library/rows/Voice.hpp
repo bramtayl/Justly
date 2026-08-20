@@ -1,17 +1,9 @@
 #pragma once
 
-#include <QtCore/QList>
-#include <QtCore/QObject>
-#include <QtCore/QString>
-#include <QtCore/QTextStream>
-#include <QtCore/QVariant>
-#include <QtCore/QtAssert>
 #include <QtWidgets/QMessageBox>
-#include <concepts>
 
 #include "cell_types/Program.hpp"
 #include "cell_types/Rational.hpp"
-#include "other/helpers.hpp"
 #include "rows/Row.hpp"
 
 class QWidget;

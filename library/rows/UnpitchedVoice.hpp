@@ -1,10 +1,6 @@
 #pragma once
 
-#include <libxml/parser.h>
-
 #include "rows/Voice.hpp"
-
-class QVariant;
 
 static const auto DEFAULT_MIDI_NUMBER = 57;
 

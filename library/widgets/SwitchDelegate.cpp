@@ -1,28 +1,15 @@
 #include "widgets/SwitchDelegate.hpp"
 
-#include <QtCore/QAbstractItemModel>
-#include <QtCore/QList>
-#include <QtWidgets/QFrame>
-#include <QtWidgets/QSizePolicy>
-#include <QtWidgets/QStyledItemDelegate>
-
 #include "cell_editors/IntervalEditor.hpp"
 #include "cell_editors/MidiNumberEditor.hpp"
 #include "cell_editors/RationalEditor.hpp"
 #include "cell_editors/StringPicker.hpp"
-#include "cell_types/Program.hpp"
 #include "column_numbers/ChordColumn.hpp"
 #include "column_numbers/PitchedNoteColumn.hpp"
 #include "column_numbers/PitchedVoiceColumn.hpp"
 #include "column_numbers/UnpitchedNoteColumn.hpp"
 #include "column_numbers/UnpitchedVoiceColumn.hpp"
 #include "other/Song.hpp"
-#include "other/helpers.hpp"
-#include "rows/PitchedVoice.hpp"
-#include "rows/RowType.hpp"
-#include "rows/UnpitchedVoice.hpp"
-
-class QString;
 
 namespace {
 

@@ -1,19 +1,10 @@
 #include "widgets/SwitchTable.hpp"
 
-#include <QtCore/QSize>
-#include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QScrollBar>
 
 #include "cell_editors/IntervalEditor.hpp"
-#include "models/ChordsModel.hpp"
-#include "models/PitchedNotesModel.hpp"
-#include "models/PitchedVoicesModel.hpp"
-#include "models/UnpitchedNotesModel.hpp"
-#include "models/UnpitchedVoicesModel.hpp"
 #include "other/Song.hpp"
-#include "other/helpers.hpp"
-#include "widgets/SwitchDelegate.hpp"
 
 SwitchTable::SwitchTable(QUndoStack& undo_stack, Song& song)
     : chords_model(ChordsModel(undo_stack, song)),

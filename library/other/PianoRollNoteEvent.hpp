@@ -1,22 +1,10 @@
 #pragma once
 
-#include <QtCore/QList>
-#include <QtCore/QTypeInfo>
-#include <QtCore/QtMinMax>
-#include <QtCore/QtSwap>
-#include <type_traits>
-
-#include "cell_types/Interval.hpp"
-#include "cell_types/Rational.hpp"
 #include "rows/Note.hpp"
-#include "rows/Row.hpp"
 #include "sound/PlayState.hpp"
 
 struct PitchedNote;
-struct PitchedVoice;
-struct UnpitchedVoice;
 struct Song;
-struct UnpitchedNote;
 
 struct PianoRollNoteEvent {
   double start_time_ms = 0;

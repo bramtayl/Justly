@@ -1,35 +1,13 @@
 #pragma once
 
-#include <QtCore/qobjectdefs.h>
-#include <QtTest/qtestcase.h>
-#include <QtTest/qtestkeyboard.h>
-
 #include <QtCore/QAbstractItemModel>
-#include <QtCore/QByteArray>
-#include <QtCore/QFile>
-#include <QtCore/QIODevice>
 #include <QtCore/QItemSelectionModel>
-#include <QtCore/QList>
-#include <QtCore/QObject>
-#include <QtCore/QString>
 #include <QtCore/QTemporaryFile>
 #include <QtCore/QTimer>
-#include <QtCore/QTypeInfo>
-#include <QtCore/Qt>
-#include <QtCore/QtAssert>
-#include <QtGui/QAction>
-#include <QtGui/QUndoStack>
-#include <QtTest/QTestData>
-#include <QtWidgets/QAbstractItemView>
+#include <QtTest/QTest>
 #include <QtWidgets/QApplication>
-#include <QtWidgets/QFileDialog>
 #include <QtWidgets/QLineEdit>
-#include <QtWidgets/QMessageBox>
 #include <QtWidgets/QPushButton>
-#include <QtWidgets/QWidget>
-#include <memory>
-#include <string>
-#include <utility>
 
 #include "column_numbers/ChordColumn.hpp"
 #include "column_numbers/PitchedNoteColumn.hpp"
@@ -37,9 +15,6 @@
 #include "column_numbers/UnpitchedNoteColumn.hpp"
 #include "column_numbers/UnpitchedVoiceColumn.hpp"
 #include "menus/SongMenuBar.hpp"
-#include "menus/ViewMenu.hpp"
-#include "other/helpers.hpp"
-#include "rows/RowType.hpp"
 #include "widgets/SongEditor.hpp"
 #include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"

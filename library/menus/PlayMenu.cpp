@@ -1,31 +1,7 @@
 #include "menus/PlayMenu.hpp"
 
-#include <QtCore/qnamespace.h>
-#include <QtCore/qobjectdefs.h>
-
-#include <QtCore/QItemSelectionModel>
-#include <QtCore/QList>
-#include <QtCore/QObject>
-#include <QtCore/QString>
-#include <QtCore/QtAssert>
-#include <QtGui/QAction>
-#include <QtGui/QKeySequence>
-#include <algorithm>
-#include <ranges>
-
-#include "models/RowsModel.hpp"
-#include "other/Song.hpp"
-#include "rows/Chord.hpp"
-#include "rows/PitchedNote.hpp"
-#include "rows/PitchedVoice.hpp"
-#include "rows/RowType.hpp"
-#include "rows/UnpitchedNote.hpp"
-#include "rows/UnpitchedVoice.hpp"
-#include "sound/PlayState.hpp"
-#include "sound/Player.hpp"
 #include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"
-#include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
 
 namespace {

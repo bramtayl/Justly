@@ -1,12 +1,8 @@
 #pragma once
 
-#include <QtCore/QItemSelectionModel>
-#include <QtCore/QList>
 #include <QtGui/QUndoCommand>
 
 #include "models/RowsModel.hpp"
-#include "other/helpers.hpp"
-#include "rows/Row.hpp"
 
 template <RowInterface SubRow>
 struct DeleteCells : public QUndoCommand {

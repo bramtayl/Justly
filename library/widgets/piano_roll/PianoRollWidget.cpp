@@ -1,66 +1,16 @@
 #include "widgets/piano_roll/PianoRollWidget.hpp"
 
-#include <QtCore/qcoreevent.h>
-#include <QtCore/qnamespace.h>
-#include <QtCore/qobjectdefs.h>
-
-#include <QtCore/QAbstractItemModel>
-#include <QtCore/QChar>
 #include <QtCore/QEasingCurve>
-#include <QtCore/QElapsedTimer>
 #include <QtCore/QEvent>
-#include <QtCore/QFlags>
-#include <QtCore/QItemSelectionModel>
-#include <QtCore/QList>
-#include <QtCore/QMargins>
-#include <QtCore/QObject>
-#include <QtCore/QPoint>
-#include <QtCore/QRect>
-#include <QtCore/QSize>
-#include <QtCore/QString>
 #include <QtCore/QTimer>
-#include <QtCore/QTypeInfo>
-#include <QtCore/QVariant>
-#include <QtCore/QtMinMax>
-#include <QtCore/QtSwap>
-#include <QtGui/QBrush>
-#include <QtGui/QColor>
-#include <QtGui/QPen>
-#include <QtGui/QPolygon>
-#include <QtGui/QTransform>
 #include <QtGui/QWheelEvent>
-#include <QtWidgets/QGraphicsItem>
-#include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QScrollBar>
-#include <algorithm>
-#include <cmath>
-#include <iterator>
-#include <limits>
-#include <optional>
-#include <ranges>
-#include <utility>
 
-#include "models/ChordsModel.hpp"
-#include "models/PitchedNotesModel.hpp"
-#include "models/UnpitchedNotesModel.hpp"
-#include "other/PianoRollNoteEvent.hpp"
-#include "other/Song.hpp"
-#include "other/helpers.hpp"
-#include "rows/Chord.hpp"
-#include "rows/PitchedNote.hpp"
-#include "rows/PitchedVoice.hpp"
-#include "rows/RowType.hpp"
-#include "rows/UnpitchedVoice.hpp"
-#include "sound/PlayState.hpp"
 #include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
-#include "widgets/piano_roll/PianoRollAxisScene.hpp"
-#include "widgets/piano_roll/PianoRollLegendScene.hpp"
-#include "widgets/piano_roll/PianoRollNotesScene.hpp"
-#include "widgets/piano_roll/PlayheadTransition.hpp"
 
 namespace {
 const auto PIANO_ROLL_AXIS_TICK_LENGTH = 5.0;

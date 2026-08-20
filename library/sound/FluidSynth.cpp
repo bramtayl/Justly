@@ -1,9 +1,6 @@
 #include "sound/FluidSynth.hpp"
 
 #include <fluidsynth.h>
-#include <fluidsynth/synth.h>
-
-#include <QtCore/QtAssert>
 
 #include "sound/FluidSettings.hpp"
 

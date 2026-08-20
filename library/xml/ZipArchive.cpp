@@ -1,11 +1,5 @@
 #include "xml/ZipArchive.hpp"
 
-#include <zip.h>
-#include <zipconf.h>
-
-#include <limits>
-#include <string>
-
 ZipArchive::~ZipArchive() {
   if (internal_pointer != nullptr) {
     zip_close(internal_pointer);

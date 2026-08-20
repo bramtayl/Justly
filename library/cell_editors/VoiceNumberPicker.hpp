@@ -1,13 +1,6 @@
 #pragma once
 
-#include <QtCore/qtmetamacros.h>
-
 #include <QtWidgets/QComboBox>
-
-class QString;
-class QWidget;
-template <typename T>
-class QList;
 
 struct VoiceNumberPicker : public QComboBox {
   Q_OBJECT

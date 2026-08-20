@@ -2,10 +2,6 @@
 
 #include <zip.h>
 
-#include <QtCore/QByteArray>
-#include <QtCore/QString>
-#include <string>
-
 #include "other/helpers.hpp"
 
 class ZipArchive {

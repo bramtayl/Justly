@@ -1,12 +1,5 @@
 #include "cell_types/Interval.hpp"
 
-#include <libxml/parser.h>
-
-#include <QtCore/QtAssert>
-#include <cmath>
-#include <string>
-
-#include "cell_types/Rational.hpp"
 #include "other/helpers.hpp"
 
 Interval::Interval(Rational ratio_input, const int octave_input)

@@ -1,15 +1,5 @@
 #include "menus/FileMenu.hpp"
 
-#include <QtCore/qobjectdefs.h>
-
-#include <QtCore/QDir>
-#include <QtCore/QList>
-#include <QtCore/QObject>
-#include <QtCore/QtAssert>
-#include <QtGui/QKeySequence>
-#include <QtGui/QUndoStack>
-#include <QtWidgets/QFileDialog>
-
 #include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"
 

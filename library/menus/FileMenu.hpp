@@ -1,7 +1,5 @@
 #pragma once
 
-#include <QtCore/QString>
-#include <QtGui/QAction>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMenu>
 

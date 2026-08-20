@@ -1,7 +1,5 @@
 #include "cell_editors/MidiNumberEditor.hpp"
 
-#include <QtWidgets/QSpinBox>
-
 MidiNumberEditor::MidiNumberEditor(QWidget* const parent_pointer)
     : QSpinBox(parent_pointer) {
   static const auto MAX_MIDI_NUMBER = 127;

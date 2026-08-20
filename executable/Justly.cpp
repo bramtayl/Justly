@@ -1,5 +1,4 @@
 #include <QtWidgets/QApplication>
-#include <clocale>
 // #include "SDL.h"
 
 #include "widgets/SongEditor.hpp"

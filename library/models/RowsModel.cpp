@@ -1,8 +1,4 @@
-#include "models/RowsModel.hpp"
-
-#include <QtCore/QAbstractItemModel>
 #include <QtCore/QItemSelectionModel>
-#include <QtCore/QtAssert>
 
 auto get_number_of_rows(const QItemSelectionRange& range) -> int {
   Q_ASSERT(range.isValid());

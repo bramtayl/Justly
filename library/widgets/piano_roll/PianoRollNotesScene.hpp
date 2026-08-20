@@ -1,12 +1,10 @@
 #pragma once
 
 #include <QtCore/QElapsedTimer>
-#include <QtCore/QList>
-#include <QtWidgets/QGraphicsItem>
+#include <QtWidgets/QGraphicsLineItem>
 #include <QtWidgets/QGraphicsScene>
 
 #include "other/PianoRollNoteEvent.hpp"
-#include "other/helpers.hpp"
 #include "widgets/piano_roll/PlayheadTransition.hpp"
 
 class QGraphicsView;

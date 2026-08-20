@@ -1,15 +1,7 @@
 #pragma once
 
-#include <QtCore/QAbstractItemModel>
-#include <QtCore/QVariant>
-#include <QtCore/Qt>
-#include <QtGui/QUndoStack>
-
 #include "actions/SetCell.hpp"
 #include "models/RowsModel.hpp"
-#include "rows/Row.hpp"
-
-struct Song;
 
 template <RowInterface SubRow>
 struct UndoRowsModel : public RowsModel<SubRow> {

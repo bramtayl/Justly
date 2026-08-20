@@ -1,10 +1,6 @@
 #pragma once
 
-#include <libxml/parser.h>
-
 #include "rows/Voice.hpp"
-
-class QVariant;
 
 static const auto MIDDLE_C_MIDI = 60;
 

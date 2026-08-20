@@ -2,19 +2,12 @@
 
 #include <QtWidgets/QBoxLayout>
 #include <QtWidgets/QWidget>
-#include <functional>
-#include <iterator>
-#include <optional>
-#include <utility>
 
 #include "rows/RowType.hpp"
 #include "widgets/piano_roll/PianoRollAxisScene.hpp"
 #include "widgets/piano_roll/PianoRollLegendScene.hpp"
 #include "widgets/piano_roll/PianoRollNotesScene.hpp"
 
-struct QEvent;
-struct QObject;
-struct Song;
 struct SongWidget;
 struct SwitchTable;
 

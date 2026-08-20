@@ -1,10 +1,5 @@
 #include "cell_editors/RationalEditor.hpp"
 
-#include <QtWidgets/QBoxLayout>
-#include <QtWidgets/QFrame>
-
-#include "cell_types/Rational.hpp"
-
 RationalEditor::RationalEditor(QWidget* const parent_pointer)
     : QFrame(parent_pointer) {
   setFrameStyle(QFrame::StyledPanel);

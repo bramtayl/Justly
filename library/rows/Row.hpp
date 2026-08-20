@@ -1,13 +1,5 @@
 #pragma once
 
-#include <libxml/parser.h>
-
-#include <QtCore/QList>
-#include <QtCore/QString>
-#include <QtCore/QVariant>
-#include <concepts>
-#include <utility>
-
 #include "other/helpers.hpp"
 
 struct Row {

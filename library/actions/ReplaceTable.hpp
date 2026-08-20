@@ -1,14 +1,9 @@
 #pragma once
 
-#include <QtGui/QUndoStack>
-#include <cstdint>
-
 #include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"
-#include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
 
-enum class RowType : std::uint8_t;
 struct PianoRollWidget;
 struct SongMenuBar;
 

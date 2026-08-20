@@ -1,29 +1,7 @@
 #include "menus/InsertMenu.hpp"
 
-#include <libxml/parser.h>
-
-#include <QtCore/QTypeInfo>
-#include <QtCore/QtMinMax>
-#include <QtCore/QtSwap>
-#include <QtGui/QKeySequence>
-#include <QtGui/QUndoStack>
-
-#include "QtCore/qobjectdefs.h"
-#include "actions/InsertRow.hpp"
-#include "models/ChordsModel.hpp"
-#include "models/PitchedNotesModel.hpp"
-#include "models/PitchedVoicesModel.hpp"
-#include "models/UnpitchedNotesModel.hpp"
-#include "models/UnpitchedVoicesModel.hpp"
-#include "other/Song.hpp"
-#include "rows/PitchedNote.hpp"
-#include "rows/PitchedVoice.hpp"
-#include "rows/RowType.hpp"
-#include "rows/UnpitchedNote.hpp"
-#include "rows/UnpitchedVoice.hpp"
 #include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"
-#include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
 
 void add_insert_row(SongWidget& song_widget, const int row_number,

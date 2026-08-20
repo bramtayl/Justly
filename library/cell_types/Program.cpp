@@ -1,23 +1,7 @@
 #include "cell_types/Program.hpp"
 
 #include <fluidsynth.h>
-#include <fluidsynth/gen.h>
-#include <fluidsynth/types.h>
 
-#include <QtCore/QTypeInfo>
-#include <QtCore/QtAssert>
-#include <QtCore/QtMinMax>
-#include <QtCore/QtSwap>
-#include <algorithm>
-#include <array>
-#include <cmath>
-#include <compare>
-#include <iterator>
-#include <set>
-#include <string>
-#include <utility>
-
-#include "other/helpers.hpp"
 #include "sound/FluidSettings.hpp"
 #include "sound/FluidSynth.hpp"
 

@@ -1,43 +1,8 @@
-#include <QtCore/qobjectdefs.h>
-#include <QtTest/qtestcase.h>
-
-#include <QtCore/QAbstractItemModel>
-#include <QtCore/QDebug>
-#include <QtCore/QItemSelectionModel>
-#include <QtCore/QMetaObject>
-#include <QtCore/QObject>
-#include <QtCore/QString>
-#include <QtCore/QTypeInfo>
-#include <QtCore/QVariant>
-#include <QtCore/Qt>
-#include <QtGui/QAction>
-#include <QtGui/QUndoStack>
-#include <QtTest/QTestData>
-#include <QtWidgets/QAbstractItemDelegate>
 #include <QtWidgets/QSpinBox>
-#include <QtWidgets/QStyleOption>
-#include <QtWidgets/QWidget>
 
 #include "Tester.hpp"
-#include "column_numbers/ChordColumn.hpp"
-#include "column_numbers/PitchedNoteColumn.hpp"
-#include "column_numbers/PitchedVoiceColumn.hpp"
-#include "column_numbers/UnpitchedNoteColumn.hpp"
-#include "column_numbers/UnpitchedVoiceColumn.hpp"
-#include "menus/EditMenu.hpp"
-#include "menus/PasteMenu.hpp"
-#include "menus/SongMenuBar.hpp"
-#include "menus/ViewMenu.hpp"
-#include "other/Song.hpp"
-#include "other/helpers.hpp"
-#include "rows/RowType.hpp"
-#include "test_helpers.hpp"
 #include "widgets/ControlsColumn.hpp"
-#include "widgets/SongEditor.hpp"
-#include "widgets/SongWidget.hpp"
 #include "widgets/SpinBoxes.hpp"
-#include "widgets/SwitchColumn.hpp"
-#include "widgets/SwitchTable.hpp"
 
 void Tester::test_column_count_data() {
   add_table_columns();

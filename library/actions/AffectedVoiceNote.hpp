@@ -1,23 +1,11 @@
 #pragma once
 
-#include <libxml/parser.h>
-
-#include <QtCore/QByteArray>
 #include <QtCore/QMimeData>
-#include <QtCore/QObject>
-#include <QtCore/QString>
-#include <QtCore/QTextStream>
 #include <QtGui/QClipboard>
-#include <QtWidgets/QMessageBox>
-#include <string>
 
-#include "other/helpers.hpp"
 #include "rows/Chord.hpp"
-#include "rows/Note.hpp"
 #include "rows/Voice.hpp"
 #include "xml/XMLDocument.hpp"
-
-class QWidget;
 
 // a note whose voice_number was overwritten with a value that doesn't encode
 // the original (e.g. reassigned to the first remaining voice), so the old

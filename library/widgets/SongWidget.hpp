@@ -1,36 +1,11 @@
 #pragma once
 
-#include <libxml/parser.h>
-
-#include <QtCore/QAbstractItemModel>
-#include <QtCore/QDir>
-#include <QtCore/QItemSelectionModel>
-#include <QtCore/QList>
-#include <QtCore/QMap>
-#include <QtCore/QObject>
-#include <QtCore/QSet>
-#include <QtCore/QString>
-#include <QtCore/QTextStream>
-#include <QtGui/QAction>
-#include <QtGui/QKeySequence>
+#include <QtCore/QModelIndex>
 #include <QtGui/QUndoStack>
-#include <QtWidgets/QMessageBox>
-#include <QtWidgets/QWidget>
-#include <algorithm>
-#include <cmath>
-#include <iterator>
-#include <optional>
-#include <string>
-#include <utility>
 
-#include "cell_types/Program.hpp"
-#include "cell_types/Rational.hpp"
 #include "other/Song.hpp"
-#include "other/helpers.hpp"
 #include "rows/Note.hpp"
-#include "rows/Row.hpp"
 #include "rows/Voice.hpp"
-#include "sound/PlayState.hpp"
 #include "sound/Player.hpp"
 
 template <RowInterface SubRow>

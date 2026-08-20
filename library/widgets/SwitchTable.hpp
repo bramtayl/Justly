@@ -1,10 +1,6 @@
 #pragma once
 
-#include <QtCore/QtAssert>
-#include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QTableView>
-#include <QtWidgets/QWidget>
-#include <concepts>
 
 #include "models/ChordsModel.hpp"
 #include "models/PitchedNotesModel.hpp"
@@ -14,13 +10,6 @@
 #include "rows/Row.hpp"
 #include "rows/RowType.hpp"
 #include "widgets/SwitchDelegate.hpp"
-
-class QSize;
-class QUndoStack;
-template <RowInterface SubRow>
-struct RowsModel;
-struct Song;
-struct SwitchDelegate;
 
 template <RowInterface SubRow>
 static void set_model(QAbstractItemView& item_view,

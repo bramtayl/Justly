@@ -1,19 +1,11 @@
 #include "widgets/SpinBoxes.hpp"
 
-#include <fluidsynth.h>
-#include <fluidsynth/synth.h>
-
-#include <QtCore/QObject>
-#include <QtCore/QString>
-#include <QtCore/QtAssert>
 #include <QtGui/QUndoStack>
-#include <QtWidgets/QFormLayout>
-#include <QtWidgets/QSizePolicy>
+#include <fluidsynth.h>
 
 #include "actions/ChangeId.hpp"
 #include "actions/SetDouble.hpp"
 #include "other/Song.hpp"
-#include "qobjectdefs.h"
 #include "rows/Note.hpp"
 #include "sound/FluidSynth.hpp"
 

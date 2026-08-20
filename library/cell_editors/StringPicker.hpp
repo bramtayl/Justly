@@ -1,13 +1,7 @@
 #pragma once
 
-#include <QtCore/qtmetamacros.h>
-
-#include <QtCore/QList>
-#include <QtCore/QString>
 #include <QtCore/QStringListModel>
 #include <QtWidgets/QComboBox>
-
-class QWidget;
 
 struct StringPicker : public QComboBox {
   Q_OBJECT

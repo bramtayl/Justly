@@ -1,13 +1,7 @@
 #pragma once
 
-#include <QtCore/QList>
-#include <concepts>
-
 #include "rows/Chord.hpp"
-#include "rows/Note.hpp"
 #include "rows/Voice.hpp"
-
-struct PitchedVoice;
 
 template <VoiceInterface SubVoice, NoteInterface SubNote>
 [[nodiscard]] static auto get_voice_notes(Chord& chord) -> QList<SubNote>& {

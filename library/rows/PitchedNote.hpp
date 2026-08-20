@@ -1,15 +1,10 @@
 #pragma once
 
-#include <libxml/parser.h>
-
-#include <optional>
-
 #include "cell_types/Interval.hpp"
 #include "rows/Note.hpp"
 
 struct FluidEvent;
 struct FluidSequencer;
-struct Rational;
 
 static const auto BEND_PER_HALFSTEP = 4096;
 static const auto HALFSTEPS_PER_OCTAVE = 12;

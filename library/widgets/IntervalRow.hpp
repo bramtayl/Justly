@@ -1,9 +1,7 @@
 #pragma once
 
-#include <QtCore/QString>
 #include <QtWidgets/QBoxLayout>
 #include <QtWidgets/QPushButton>
-#include <QtWidgets/QWidget>
 
 #include "cell_types/Interval.hpp"
 

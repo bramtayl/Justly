@@ -1,26 +1,10 @@
 #pragma once
 
-#include <QtCore/QList>
-#include <QtCore/QObject>
-#include <QtCore/QTextStream>
-#include <QtGui/QAction>
-#include <QtGui/QKeySequence>
 #include <QtWidgets/QMenu>
-#include <cstdint>
-#include <utility>
 
 #include "actions/InsertRow.hpp"
 #include "actions/InsertVoiceRow.hpp"
-#include "rows/Chord.hpp"
-#include "rows/Note.hpp"
-#include "rows/Row.hpp"
-#include "rows/Voice.hpp"
 
-template <RowInterface SubRow>
-struct RowsModel;
-template <VoiceInterface SubVoice>
-struct VoicesModel;
-class QUndoCommand;
 enum class RowType : std::uint8_t;
 struct SongWidget;
 

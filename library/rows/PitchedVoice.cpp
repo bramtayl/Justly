@@ -1,18 +1,6 @@
 #include "rows/PitchedVoice.hpp"
 
-#include <libxml/parser.h>
-
-#include <QtCore/QString>
-#include <QtCore/QTypeInfo>
-#include <QtCore/QVariant>
-#include <QtCore/QtAssert>
-#include <string>
-
-#include "cell_types/Rational.hpp"
 #include "column_numbers/PitchedVoiceColumn.hpp"
-#include "other/helpers.hpp"
-#include "rows/Row.hpp"
-#include "rows/Voice.hpp"
 
 PitchedVoice::PitchedVoice() : Voice() { program = "Grand Piano"; }
 

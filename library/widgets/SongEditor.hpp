@@ -1,14 +1,11 @@
 #pragma once
 
-#include <QtCore/QString>
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QMainWindow>
 
 #include "widgets/piano_roll/PianoRollWidget.hpp"
 
-class QCloseEvent;
 struct SongMenuBar;
-struct SongWidget;
 
 // open_file/import_musicxml replace the song wholesale, bypassing the undo
 // stack, so the usual indexChanged-driven refresh never fires for them --

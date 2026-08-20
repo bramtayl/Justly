@@ -1,14 +1,9 @@
 #pragma once
 
-#include <QtCore/QList>
-#include <QtCore/QString>
 #include <QtGui/QUndoStack>
 
 #include "actions/AffectedVoiceNote.hpp"
 #include "actions/RenumberedVoiceNote.hpp"
-#include "other/helpers.hpp"
-#include "rows/Note.hpp"
-#include "rows/Voice.hpp"
 
 template <VoiceInterface SubVoice>
 struct VoicesModel;

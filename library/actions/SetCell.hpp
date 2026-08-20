@@ -1,10 +1,7 @@
 #pragma once
 
-#include <QtCore/QAbstractItemModel>
-#include <QtCore/QVariant>
-#include <QtCore/Qt>
-#include <QtGui/QUndoStack>
-#include <utility>
+#include <QtCore/QModelIndex>
+#include <QtGui/QUndoCommand>
 
 #include "rows/Row.hpp"
 

@@ -1,11 +1,6 @@
 #include "other/MidiTrackEvent.hpp"
 
-#include <QtCore/QByteArray>
 #include <QtCore/QList>
-#include <QtCore/QTypeInfo>
-#include <QtCore/QtMinMax>
-#include <QtCore/QtSwap>
-#include <variant>
 
 namespace {
 const auto MIDI_BITS_PER_BYTE = 8U;

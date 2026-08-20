@@ -1,12 +1,6 @@
 #pragma once
 
-#include <libxml/parser.h>
-#include <optional>
-
 #include "rows/Note.hpp"
-
-class QVariant;
-struct Rational;
 
 struct UnpitchedNote : Note {
   void from_xml(xmlNode& node) override;
