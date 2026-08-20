@@ -1,7 +1,6 @@
 #include "widgets/piano_roll/PianoRollWidget.hpp"
 
 #include <QtCore/QEasingCurve>
-#include <QtCore/QEvent>
 #include <QtCore/QTimer>
 #include <QtGui/QWheelEvent>
 #include <QtWidgets/QBoxLayout>
@@ -11,7 +10,6 @@
 
 #include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"
-#include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
 #include "widgets/piano_roll/PianoRollAxisScene.hpp"
 #include "widgets/piano_roll/PianoRollLegendScene.hpp"

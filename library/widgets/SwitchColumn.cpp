@@ -3,7 +3,6 @@
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QVBoxLayout>
 
-#include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
 
 SwitchColumn::SwitchColumn(QUndoStack& undo_stack, Song& song)

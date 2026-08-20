@@ -3,13 +3,7 @@
 #include <QtWidgets/QGraphicsItem>
 
 #include <QtCore/QTimer>
-#include <QtGui/QBrush>
-#include <QtGui/QColor>
-#include <QtGui/QPen>
-#include <QtWidgets/QFrame>
-#include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsView>
-#include <QtWidgets/QWidget>
 
 PianoRollNotesScene::PianoRollNotesScene(QWidget& parent_widget)
     : QGraphicsScene(&parent_widget),

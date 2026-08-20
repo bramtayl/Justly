@@ -1,11 +1,8 @@
 #pragma once
 
-#include <QtCore/QAbstractItemModel>
-#include <QtCore/QItemSelectionModel>
 #include <QtCore/QTemporaryFile>
 #include <QtCore/QTimer>
 #include <QtTest/QTest>
-#include <QtWidgets/QApplication>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QPushButton>
 
@@ -16,7 +13,6 @@
 #include "column_numbers/UnpitchedVoiceColumn.hpp"
 #include "menus/SongMenuBar.hpp"
 #include "widgets/SongEditor.hpp"
-#include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchTable.hpp"
 

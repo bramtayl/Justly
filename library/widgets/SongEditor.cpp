@@ -1,9 +1,7 @@
 #include "widgets/SongEditor.hpp"
 
-#include <QtCore/QEvent>
 #include <QtCore/QTimer>
 #include <QtGui/QCloseEvent>
-#include <QtGui/QScreen>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QGraphicsItem>
@@ -13,9 +11,7 @@
 #include "actions/ReplaceTable.hpp"
 #include "column_numbers/ChordColumn.hpp"
 #include "menus/SongMenuBar.hpp"
-#include "widgets/SongWidget.hpp"
 #include "widgets/SpinBoxes.hpp"
-#include "widgets/SwitchDelegate.hpp"
 #include "widgets/piano_roll/PianoRollNotesScene.hpp"
 #include "widgets/piano_roll/PianoRollWidget.hpp"
 

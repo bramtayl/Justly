@@ -1,10 +1,7 @@
 #include "rows/PitchedNote.hpp"
 
-#include "cell_types/Program.hpp"
 #include "column_numbers/PitchedNoteColumn.hpp"
 #include "rows/PitchedVoice.hpp"
-#include "sound/FluidEvent.hpp"
-#include "sound/FluidSequencer.hpp"
 #include "sound/Player.hpp"
 
 namespace {

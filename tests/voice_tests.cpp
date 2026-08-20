@@ -1,52 +1,6 @@
-#include <QtCore/qobjectdefs.h>
-#include <QtTest/qtestcase.h>
-#include <QtTest/qtestkeyboard.h>
 
-#include <QtCore/QAbstractItemModel>
-#include <QtCore/QDir>
-#include <QtCore/QFile>
-#include <QtCore/QItemSelectionModel>
-#include <QtCore/QList>
-#include <QtCore/QMetaObject>
-#include <QtCore/QObject>
-#include <QtCore/QString>
-#include <QtCore/QTemporaryFile>
-#include <QtCore/QTimer>
-#include <QtCore/QTypeInfo>
-#include <QtCore/QVariant>
-#include <QtCore/Qt>
-#include <QtGui/QAction>
-#include <QtGui/QUndoStack>
-#include <QtTest/QTest>
-#include <QtTest/QTestData>
-#include <QtWidgets/QAbstractItemDelegate>
-#include <QtWidgets/QMessageBox>
-#include <QtWidgets/QStyleOption>
-#include <QtWidgets/QWidget>
-#include <utility>
 
 #include "Tester.hpp"
-#include "column_numbers/PitchedNoteColumn.hpp"
-#include "column_numbers/PitchedVoiceColumn.hpp"
-#include "column_numbers/UnpitchedNoteColumn.hpp"
-#include "column_numbers/UnpitchedVoiceColumn.hpp"
-#include "menus/EditMenu.hpp"
-#include "menus/InsertMenu.hpp"
-#include "menus/PasteMenu.hpp"
-#include "menus/SongMenuBar.hpp"
-#include "menus/ViewMenu.hpp"
-#include "models/ChordsModel.hpp"
-#include "other/Song.hpp"
-#include "other/helpers.hpp"
-#include "rows/Chord.hpp"
-#include "rows/PitchedNote.hpp"
-#include "rows/RowType.hpp"
-#include "rows/UnpitchedNote.hpp"
-#include "test_helpers.hpp"
-#include "widgets/SongEditor.hpp"
-#include "widgets/SongWidget.hpp"
-#include "widgets/SwitchColumn.hpp"
-#include "widgets/SwitchTable.hpp"
 
 void Tester::test_voice_error_data() {
   QTest::addColumn<QString>("text");

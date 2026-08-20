@@ -7,8 +7,6 @@
 #include "models/PitchedVoicesModel.hpp"
 #include "models/UnpitchedNotesModel.hpp"
 #include "models/UnpitchedVoicesModel.hpp"
-#include "rows/Row.hpp"
-#include "rows/RowType.hpp"
 #include "widgets/SwitchDelegate.hpp"
 
 struct SwitchDelegate;

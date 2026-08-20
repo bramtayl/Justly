@@ -1,6 +1,5 @@
 #include "other/Song.hpp"
 
-#include <QtCore/QMap>
 
 #include "rows/Chord.hpp"
 

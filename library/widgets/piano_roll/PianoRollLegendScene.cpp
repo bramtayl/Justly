@@ -1,6 +1,5 @@
 #include "widgets/piano_roll/PianoRollLegendScene.hpp"
 
-#include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsView>
 
 PianoRollLegendScene::PianoRollLegendScene(QWidget& parent_widget)

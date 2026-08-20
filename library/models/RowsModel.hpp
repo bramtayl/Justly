@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QtCore/QAbstractTableModel>
 #include <QtCore/QItemSelectionRange>
 
 #include "rows/Row.hpp"

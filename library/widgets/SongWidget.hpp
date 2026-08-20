@@ -5,7 +5,6 @@
 
 #include "other/Song.hpp"
 #include "rows/Note.hpp"
-#include "rows/Voice.hpp"
 #include "sound/Player.hpp"
 
 template <RowInterface SubRow>

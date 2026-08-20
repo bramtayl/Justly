@@ -1,8 +1,6 @@
 #pragma once
 
-#include <fluidsynth/types.h>
 
-#include "other/helpers.hpp"
 #include "sound/FluidDriver.hpp"
 #include "sound/FluidEvent.hpp"
 #include "sound/FluidSequencer.hpp"

@@ -1,6 +1,5 @@
 #include "widgets/piano_roll/PianoRollAxisScene.hpp"
 
-#include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsView>
 
 PianoRollAxisScene::PianoRollAxisScene(QWidget& parent_widget)

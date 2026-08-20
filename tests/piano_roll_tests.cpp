@@ -3,8 +3,6 @@
 #include <QtWidgets/QGraphicsView>
 
 #include "Tester.hpp"
-#include "other/PianoRollNoteEvent.hpp"
-#include "widgets/SwitchDelegate.hpp"
 #include "widgets/piano_roll/PianoRollNotesScene.hpp"
 #include "widgets/piano_roll/PianoRollWidget.hpp"
 

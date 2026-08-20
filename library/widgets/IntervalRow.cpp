@@ -2,7 +2,6 @@
 
 #include <QtWidgets/QBoxLayout>
 #include <QtWidgets/QLabel>
-#include <QtWidgets/QMessageBox>
 #include <QtWidgets/QPushButton>
 
 #include "actions/SetCells.hpp"
@@ -10,7 +9,6 @@
 #include "column_numbers/ChordColumn.hpp"
 #include "column_numbers/PitchedNoteColumn.hpp"
 #include "widgets/SwitchColumn.hpp"
-#include "widgets/SwitchDelegate.hpp"
 #include "widgets/SwitchTable.hpp"
 
 namespace {

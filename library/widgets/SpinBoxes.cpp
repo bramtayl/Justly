@@ -2,7 +2,6 @@
 
 #include <fluidsynth.h>
 
-#include <QtGui/QUndoStack>
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QFormLayout>
 
