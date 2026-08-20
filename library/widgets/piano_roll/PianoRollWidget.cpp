@@ -1079,11 +1079,11 @@ auto PianoRollWidget::eventFilter(QObject* watched_pointer,
         view.mapToScene(mouse_event.pos()), view.transform());
     if (item_pointer != nullptr) {
       const auto event_index_data = item_pointer->data(0);
-      if (event_index_data.isValid() && note_double_clicked) {
+      if (event_index_data.isValid()) {
         const auto& event =
             piano_roll_scene.events.at(event_index_data.toInt());
-        note_double_clicked(event.chord_number, event.note_number,
-                            event.is_pitched);
+        emit note_double_clicked(event.chord_number, event.note_number,
+                                 event.is_pitched);
       }
     }
   }

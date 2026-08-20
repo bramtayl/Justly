@@ -323,6 +323,10 @@ if (BUILD_TESTS)
     endif()
 
     add_test(NAME run_tests COMMAND "${test_install_folder}/${run_tests_subfolder}/JustlyTests" ${run_tests_args})
+    # JustlyTests creates real widgets, which needs a display -- CI runners
+    # don't have one, so force Qt's software-rendered offscreen backend
+    # (see the Qt6QOffscreenIntegrationPlugin find_package() call above)
+    set_tests_properties(run_tests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
     if (APPLE)
         # make sure the bundle can open

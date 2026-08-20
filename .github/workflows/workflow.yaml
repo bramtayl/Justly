@@ -150,12 +150,7 @@ jobs:
       if: matrix.family != 'windows'
       run: |
         cd with_tests
-        if [ "${{ matrix.family }}" = "macos" ]; then
-          exe="../test_install/JustlyTests.app/Contents/MacOS/JustlyTests"
-        else
-          exe="../test_install/bin/JustlyTests"
-        fi
-        QT_QPA_PLATFORM=offscreen $exe
+        ctest --output-on-failure -C Debug
 
     # the Release build below links against these the same way the Debug
     # build did, so they have to come back before "Configure without tests
@@ -192,9 +187,8 @@ jobs:
       run: |
         $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -notlike "$env:QT_ROOT_DIR*" }) -join ';'
         Remove-Item Env:\QT_PLUGIN_PATH -ErrorAction SilentlyContinue
-        $env:QT_QPA_PLATFORM = "offscreen"
         cd with_tests
-        ..\test_install\bin\JustlyTests.exe -o test_output.txt,txt
+        ctest --output-on-failure -C Debug
 
     - name: Show QTest output on Windows
       if: always() && matrix.family == 'windows'
@@ -220,7 +214,7 @@ jobs:
       if: matrix.family == 'ubuntu'
       run: |
         cd with_tests_release
-        QT_QPA_PLATFORM=offscreen ../test_install/bin/JustlyTests
+        ctest --output-on-failure -C Release
 
     - name: Run gcovr
       if: matrix.family == 'ubuntu'

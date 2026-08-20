@@ -102,6 +102,9 @@ void update_playhead_position(PianoRollNotesScene& piano_roll_scene,
                               bool& selecting_chord_from_playhead);
 
 struct PianoRollWidget : public QWidget {
+  Q_OBJECT
+
+ public:
   const SongWidget& song_widget;
 
   PianoRollNotesScene& piano_roll_scene;
@@ -142,14 +145,14 @@ struct PianoRollWidget : public QWidget {
   // dragged over in between
   int drag_start_chord_number = -1;
 
-  // set from outside (SongEditor) once it has access to the song menu bar
-  // and song widget needed to switch tables; left empty in contexts (e.g.
-  // tests) that never wire it up
-  std::function<void(int chord_number, int note_number, bool is_pitched)>
-      note_double_clicked;
-
   explicit PianoRollWidget(const SongWidget& song_widget_input);
 
   auto eventFilter(QObject* watched_pointer, QEvent* event_pointer)
       -> bool override;
+
+ signals:
+  // emitted when a note in the piano roll is double-clicked; SongEditor
+  // connects to this to open the pitched/unpitched notes table for the
+  // note's chord, scrolled to and highlighting that note
+  void note_double_clicked(int chord_number, int note_number, bool is_pitched);
 };

@@ -266,15 +266,16 @@ SongEditor::SongEditor()
   // double-clicking a note in the piano roll opens the pitched/unpitched
   // notes table for its chord, scrolled to and highlighting that note --
   // mirroring the chords table's own double-click-into-notes behavior
-  piano_roll_widget.note_double_clicked =
+  QObject::connect(
+      &piano_roll_widget_ref, &PianoRollWidget::note_double_clicked, this,
       [&song_menu_bar_ref, &song_widget_ref, &piano_roll_widget_ref](
           const int chord_number, const int note_number,
           const bool is_pitched) -> void {
-    add_replace_table(
-        song_menu_bar_ref, song_widget_ref,
-        is_pitched ? RowType::pitched_note_type : RowType::unpitched_note_type,
-        chord_number, piano_roll_widget_ref, note_number);
-  };
+        add_replace_table(song_menu_bar_ref, song_widget_ref,
+                          is_pitched ? RowType::pitched_note_type
+                                     : RowType::unpitched_note_type,
+                          chord_number, piano_roll_widget_ref, note_number);
+      });
 
   // wires the piano roll's playhead animation to the existing Play/Stop
   // actions, since playback itself remains fire-and-forget (no
