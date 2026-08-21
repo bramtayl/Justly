@@ -250,13 +250,19 @@ if (WIN32)
     # warn and move on instead, which is fine since those aren't ones we
     # could bundle even if we wanted to.
     install(CODE "
+        # cmake_policy() at configure time doesn't carry into this script --
+        # it runs as its own separate invocation at install time -- so it
+        # has to be set again here, otherwise file(GET_RUNTIME_DEPENDENCIES)
+        # matches POST_EXCLUDE_REGEXES against paths with mixed slash
+        # direction and case, which can dodge the regex below entirely
+        cmake_policy(SET CMP0207 NEW)
         file(GET_RUNTIME_DEPENDENCIES
             RESOLVED_DEPENDENCIES_VAR resolved_deps
             UNRESOLVED_DEPENDENCIES_VAR unresolved_deps
             EXECUTABLES ${runtime_dep_executables}
             DIRECTORIES \"${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin\"
             PRE_EXCLUDE_REGEXES \"^api-ms-\" \"^ext-ms-\" \"^qt6\"
-            POST_EXCLUDE_REGEXES \".*/System32/.*[.]dll\"
+            POST_EXCLUDE_REGEXES \".*/[Ss]ystem32/.*[.]dll\"
         )
         if(unresolved_deps)
             message(WARNING \"Skipping unresolved runtime dependencies (assumed to be optional Windows OS components not bundled anyway): \${unresolved_deps}\")
