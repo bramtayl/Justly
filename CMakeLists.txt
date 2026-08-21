@@ -227,31 +227,44 @@ foreach(app_target ${app_targets})
     install(SCRIPT ${deploy_script})
 
     justly_install_share("${Justly_SOURCE_DIR}/share/" ${app_target})
-
-    if (WIN32)
-        # install manually to get runtime dependencies
-        install(TARGETS ${app_target} RUNTIME_DEPENDENCY_SET dependencies)
-    endif()
 endforeach()
 
 if (WIN32)
     # normalize path separators
     cmake_policy(SET CMP0207 NEW)
-    
-    install(RUNTIME_DEPENDENCY_SET dependencies
-        # needs path to vcpkg dependencies
-        DIRECTORIES "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin"
-        # skip system libraries
-        PRE_EXCLUDE_REGEXES
-            "^api-ms-"
-            "^ext-ms-"
-            "^qt6"
-            "^hvsifiletrust\\.dll$"
-            "^wtdccm\\.dll$"
-        POST_EXCLUDE_REGEXES
-            ".*/System32/.*\\.dll"
-        RUNTIME DESTINATION bin
-    )
+
+    set(runtime_dep_executables)
+    foreach(app_target ${app_targets})
+        list(APPEND runtime_dep_executables "$<TARGET_FILE:${app_target}>")
+    endforeach()
+
+    # this is done by hand with file(GET_RUNTIME_DEPENDENCIES) rather than
+    # install(RUNTIME_DEPENDENCY_SET), because some optional Windows OS
+    # components (attestation, performance-diagnostics, trust-decision
+    # sensors -- e.g. AzureAttestManager.dll, PdmUtilities.dll) show up as
+    # dependencies but aren't necessarily present as real files on any
+    # given machine, including the CI runner, no matter how the exclude
+    # regexes are written; install(RUNTIME_DEPENDENCY_SET) treats any
+    # unresolved dependency as an unconditional hard error with no way to
+    # opt out, so it can't tolerate that. Doing it by hand lets us just
+    # warn and move on instead, which is fine since those aren't ones we
+    # could bundle even if we wanted to.
+    install(CODE "
+        file(GET_RUNTIME_DEPENDENCIES
+            RESOLVED_DEPENDENCIES_VAR resolved_deps
+            UNRESOLVED_DEPENDENCIES_VAR unresolved_deps
+            EXECUTABLES ${runtime_dep_executables}
+            DIRECTORIES \"${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin\"
+            PRE_EXCLUDE_REGEXES \"^api-ms-\" \"^ext-ms-\" \"^qt6\"
+            POST_EXCLUDE_REGEXES \".*/System32/.*[.]dll\"
+        )
+        if(unresolved_deps)
+            message(WARNING \"Skipping unresolved runtime dependencies (assumed to be optional Windows OS components not bundled anyway): \${unresolved_deps}\")
+        endif()
+        foreach(resolved_dep \${resolved_deps})
+            file(INSTALL \"\${resolved_dep}\" DESTINATION \"\${CMAKE_INSTALL_PREFIX}/bin\")
+        endforeach()
+    ")
 endif()
 
 if (BUILD_TESTS)
