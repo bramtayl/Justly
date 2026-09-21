@@ -372,6 +372,19 @@ void Tester::test_octave_bound() {
   maybe_switch_back_to_chords(undo_stack, RowType::pitched_note_type);
 }
 
+void Tester::test_octave_bound_chord() {
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& undo_stack = song_widget.undo_stack;
+
+  select_cell(switch_table, 0, 0);
+  close_message_later(song_editor, waiting_for_message,
+                      "Octave 10 (absolutely) greater than maximum 9");
+  press_times(song_widget.controls_column.octave_row.plus_button,
+              OCTAVE_SHIFT_TIMES + 1);
+  undo_times(undo_stack, OCTAVE_SHIFT_TIMES);  // undo shift octave
+}
+
 void Tester::test_ratio_bound_data() {
   QTest::addColumn<QPushButton*>("fifth_button_pointer");
   QTest::addColumn<QPushButton*>("octave_button_pointer");

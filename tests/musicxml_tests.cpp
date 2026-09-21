@@ -39,6 +39,16 @@ void Tester::test_musicxml_error_data() {
   QTest::newRow("not musicxml")
       << "not_musicxml.xml" << "Invalid musicxml file";
   QTest::newRow("invalid mxl") << "invalid.mxl" << "Invalid XML file";
+  // a compressed score's container.xml has to exist, parse, and name a
+  // rootfile
+  QTest::newRow("mxl without container")
+      << "mxl_no_container.mxl" << "Invalid XML file";
+  QTest::newRow("mxl with invalid container")
+      << "mxl_bad_container.mxl" << "Invalid XML file";
+  QTest::newRow("mxl container without rootfiles")
+      << "mxl_no_rootfiles.mxl" << "Invalid XML file";
+  QTest::newRow("mxl container without rootfile")
+      << "mxl_no_rootfile.mxl" << "Invalid XML file";
   QTest::newRow("empty") << "empty.musicxml" << "No chords";
   QTest::newRow("grace notes") << "MozartPianoSonata.musicxml"
                                << "Notes without durations not supported";
@@ -271,4 +281,181 @@ void Tester::test_failed_import_does_not_reset_notes_view() {
 
   maybe_switch_back_to_chords(song_widget.undo_stack,
                               RowType::pitched_note_type);
+}
+
+// an imported voice whose name exactly matches a built-in program (here, the
+// part is named "Marimba") should use that program instead of the default
+void Tester::test_import_musicxml_voice_named_like_program() {
+  auto& song_widget = song_editor.song_widget;
+
+  import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                             song_editor.piano_roll_widget,
+                             test_dir.filePath("program_named_part.musicxml"));
+
+  const auto& pitched_voices = song_widget.song.pitched_voices;
+  QCOMPARE(pitched_voices.size(), 1);
+  QCOMPARE(pitched_voices.at(0).name, QString("Marimba"));
+  QCOMPARE(pitched_voices.at(0).program, QString("Marimba"));
+
+  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}
+
+namespace {
+
+// wraps one measure of the given <attributes> children and body elements in
+// a minimal single-part score
+auto make_musicxml(const QString& attributes, const QString& body) -> QString {
+  return "<score-partwise version=\"4.0\"><part-list><score-part id=\"P1\">"
+         "<part-name>P</part-name></score-part></part-list><part id=\"P1\">"
+         "<measure number=\"1\"><attributes>" +
+         attributes + "</attributes>" + body + "</measure></part></score-partwise>";
+}
+
+auto make_pitch_note(const QString& alter, const QString& duration)
+    -> QString {
+  return "<note><pitch><step>C</step>" +
+         (alter.isEmpty() ? QString() : "<alter>" + alter + "</alter>") +
+         "<octave>4</octave></pitch><duration>" + duration +
+         "</duration></note>";
+}
+
+const QString DIVISIONS = "<divisions>1</divisions>";
+// too big for a 32-bit int, but still valid for the schema's unbounded types
+const QString HUGE_NUMBER = "99999999999";
+
+}  // namespace
+
+// each of these fields is unbounded or decimal in the musicxml schema, so a
+// valid file can hold a value the importer can't represent; it must warn and
+// reject the file instead of truncating or overflowing
+void Tester::test_musicxml_inline_error_data() {
+  QTest::addColumn<QString>("attributes");
+  QTest::addColumn<QString>("body");
+  QTest::addColumn<QString>("error_message");
+
+  const auto plain_note = make_pitch_note("", "1");
+
+  QTest::newRow("fifths out of range")
+      << DIVISIONS + "<key><fifths>" + HUGE_NUMBER + "</fifths></key>"
+      << plain_note << "Fifths value is out of range";
+  QTest::newRow("microtonal transpose")
+      << DIVISIONS + "<transpose><chromatic>1.5</chromatic></transpose>"
+      << plain_note << "Microtonal transpositions are not supported";
+  QTest::newRow("chromatic out of range")
+      << DIVISIONS + "<transpose><chromatic>" + HUGE_NUMBER +
+             "</chromatic></transpose>"
+      << plain_note << "Chromatic value is out of range";
+  QTest::newRow("octave change out of range")
+      << DIVISIONS + "<transpose><chromatic>0</chromatic><octave-change>" +
+             HUGE_NUMBER + "</octave-change></transpose>"
+      << plain_note << "Octave change value is out of range";
+  QTest::newRow("microtonal pitch")
+      << DIVISIONS << make_pitch_note("0.5", "1")
+      << "Microtonal pitches are not supported";
+  QTest::newRow("alter out of range")
+      << DIVISIONS << make_pitch_note(HUGE_NUMBER, "1")
+      << "Alter value is out of range";
+  QTest::newRow("fractional note duration")
+      << DIVISIONS << make_pitch_note("", "1.5")
+      << "Fractional note durations are not supported";
+  QTest::newRow("note duration out of range")
+      << DIVISIONS << make_pitch_note("", HUGE_NUMBER)
+      << "Note duration is out of range";
+  QTest::newRow("fractional backup")
+      << DIVISIONS << "<backup><duration>1.5</duration></backup>"
+      << "Fractional durations are not supported";
+  QTest::newRow("fractional forward")
+      << DIVISIONS << "<forward><duration>1.5</duration></forward>"
+      << "Fractional durations are not supported";
+  QTest::newRow("backup duration out of range")
+      << DIVISIONS
+      << "<backup><duration>" + HUGE_NUMBER + "</duration></backup>"
+      << "Duration is out of range";
+  QTest::newRow("forward duration out of range")
+      << DIVISIONS
+      << "<forward><duration>" + HUGE_NUMBER + "</duration></forward>"
+      << "Duration is out of range";
+  QTest::newRow("repeat times out of range")
+      << DIVISIONS
+      << plain_note + "<barline><repeat direction=\"backward\" times=\"" +
+             HUGE_NUMBER + "\"/></barline>"
+      << "Repeat times is out of range";
+}
+
+void Tester::test_musicxml_inline_error() {
+  QFETCH(const QString, attributes);
+  QFETCH(const QString, body);
+  QFETCH(const QString, error_message);
+
+  QTemporaryFile temp_file;
+  QVERIFY(temp_file.open());
+  temp_file.write(make_musicxml(attributes, body).toStdString().c_str());
+  temp_file.close();
+
+  close_message_later(song_editor, waiting_for_message, error_message);
+  import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                             song_editor.piano_roll_widget,
+                             temp_file.fileName());
+}
+
+// a backward repeat's explicit "times" attribute sets how many passes the
+// repeated measure plays (the default, without it, is two)
+void Tester::test_musicxml_repeat_times() {
+  QTemporaryFile temp_file;
+  QVERIFY(temp_file.open());
+  temp_file.write(
+      make_musicxml(DIVISIONS,
+                    make_pitch_note("", "1") +
+                        "<barline><repeat direction=\"backward\" "
+                        "times=\"3\"/></barline>")
+          .toStdString()
+          .c_str());
+  temp_file.close();
+
+  auto& song_widget = song_editor.song_widget;
+  import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                             song_editor.piano_roll_widget,
+                             temp_file.fileName());
+  QCOMPARE(song_widget.song.chords.size(), 3);
+
+  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}
+
+// a transposing part's <octave-change> shifts every pitched note by that many
+// octaves, on top of its chromatic transposition
+void Tester::test_musicxml_octave_change() {
+  auto& song_widget = song_editor.song_widget;
+
+  auto import_first_note_octave = [this, &song_widget](
+                                      const QString& transpose,
+                                      int& octave) -> void {
+    QTemporaryFile temp_file;
+    QVERIFY(temp_file.open());
+    temp_file.write(
+        make_musicxml(DIVISIONS + "<transpose><chromatic>0</chromatic>" +
+                          transpose + "</transpose>",
+                      make_pitch_note("", "1"))
+            .toStdString()
+            .c_str());
+    temp_file.close();
+    import_musicxml_and_reload(song_editor.song_menu_bar,
+                               song_editor.song_widget,
+                               song_editor.piano_roll_widget,
+                               temp_file.fileName());
+    octave = song_widget.song.chords.at(0).pitched_notes.at(0).interval.octave;
+  };
+
+  auto plain_octave = 0;
+  import_first_note_octave("", plain_octave);
+  auto shifted_octave = 0;
+  import_first_note_octave("<octave-change>1</octave-change>", shifted_octave);
+  QCOMPARE(shifted_octave, plain_octave + 1);
+
+  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
 }

@@ -1,5 +1,6 @@
 #include <QDoubleSpinBox>
 #include <QtCore/QSettings>
+#include <QtGui/QCloseEvent>
 #include <QtTest/QSignalSpy>
 
 #include "Tester.hpp"
@@ -187,4 +188,45 @@ void Tester::test_recovery_no_prompt_when_missing() {
   // the class-wide unexpected_message_timer watchdog fails the test if a
   // dialog appears here
   QVERIFY(!maybe_restore_recovery(song_editor.song_widget));
+}
+
+// closing with unsaved changes asks first; declining must keep the window
+// open (event ignored) and leave any recovery file in place
+void Tester::test_close_event_discard_declined() {
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_table = song_widget.switch_column.switch_table;
+
+  select_cell(switch_table, 0, 0);
+  song_editor.song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();
+  QVERIFY(!song_widget.undo_stack.isClean());
+  write_recovery_file(song_widget);
+
+  answer_question_later(song_editor, waiting_for_message,
+                        "Discard unsaved changes?", QMessageBox::No);
+  QCloseEvent close_event;
+  song_editor.closeEvent(&close_event);
+
+  QVERIFY(!close_event.isAccepted());
+  QVERIFY(QFile::exists(get_recovery_file_path()));
+
+  // restore the shared fixture (also removes the recovery file)
+  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}
+
+// a clean shutdown must delete the crash-recovery file, since its presence
+// is what tells the next launch that the last session crashed
+void Tester::test_close_event_removes_recovery_file() {
+  auto& song_widget = song_editor.song_widget;
+
+  QVERIFY(song_widget.undo_stack.isClean());
+  write_recovery_file(song_widget);
+  QVERIFY(QFile::exists(get_recovery_file_path()));
+
+  QCloseEvent close_event;
+  song_editor.closeEvent(&close_event);
+
+  QVERIFY(close_event.isAccepted());
+  QVERIFY(!QFile::exists(get_recovery_file_path()));
 }

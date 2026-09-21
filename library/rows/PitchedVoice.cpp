@@ -113,10 +113,10 @@ void PitchedVoice::copy_column_from(const PitchedVoice& template_row,
 void PitchedVoice::column_to_xml(xmlNode& node, const int column_number) const {
   switch (static_cast<PitchedVoiceColumn>(column_number)) {
     case PitchedVoiceColumn::number_of_pitched_voice_columns:
-      Q_UNREACHABLE();
     case PitchedVoiceColumn::pitched_voice_name_column:
-      maybe_add_qstring_to_xml(node, "name", name);
-      break;
+      // copy/cut are disabled when a voice name is selected; see
+      // ReplaceTable.cpp's update_actions
+      Q_UNREACHABLE();
     case PitchedVoiceColumn::pitched_voice_instrument_column:
       maybe_add_qstring_to_xml(node, "instrument", program);
       break;

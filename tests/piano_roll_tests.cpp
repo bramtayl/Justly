@@ -578,3 +578,27 @@ void Tester::test_piano_roll_zoom() {
   // restore, so later tests see the default 1x zoom
   set_notes_view_time_zoom(piano_roll_widget.piano_roll_scene, 1.0);
 }
+
+// starting playback far to the right of the view's current center should
+// make the playhead catch up to the center rather than wait for it
+void Tester::test_piano_roll_playhead_starts_past_center() {
+  auto& piano_roll_widget = song_editor.piano_roll_widget;
+  auto& piano_roll_scene = piano_roll_widget.piano_roll_scene;
+
+  start_piano_roll_playhead(piano_roll_widget, 1000000.0, 1001000.0);
+  QCOMPARE(piano_roll_scene.playhead_transition,
+           PlayheadTransition::catching_up);
+
+  stop_piano_roll_playhead(piano_roll_widget);
+}
+
+void Tester::test_piano_roll_zoom_actions() {
+  auto& piano_roll_widget = song_editor.piano_roll_widget;
+  auto& view_menu = song_editor.song_menu_bar.view_menu;
+
+  view_menu.zoom_in_action.trigger();
+  QCOMPARE(piano_roll_widget.piano_roll_scene.view.transform().m11(),
+           PIANO_ROLL_TIME_ZOOM_STEP);
+  view_menu.zoom_out_action.trigger();
+  QCOMPARE(piano_roll_widget.piano_roll_scene.view.transform().m11(), 1.0);
+}

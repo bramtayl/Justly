@@ -8,17 +8,28 @@
 // reassignment and, on self-move specifically, null out internal_pointer
 // without ever freeing it, losing the handle entirely
 void Tester::test_fluid_driver_move_assign() {
+  // the "file" audio driver renders to a file instead of a sound card, so
+  // this doesn't depend on the environment having an audio backend
+  QTemporaryDir temp_dir;
+  QVERIFY(temp_dir.isValid());
   FluidSettings settings;
-#ifdef __linux__
-  set_fluid_string(settings, "audio.driver", "pulseaudio");
-#endif
+  set_fluid_string(settings, "audio.driver", "file");
+  set_fluid_string(settings, "audio.file.name",
+                   temp_dir.filePath("driver.wav").toStdString().c_str());
   FluidSynth synth(settings);
   auto* const audio_driver_pointer =
       new_fluid_audio_driver(settings.internal_pointer, synth.internal_pointer);
   if (audio_driver_pointer == nullptr) {
     QSKIP("no audio driver available in this environment");
   }
-  FluidDriver driver(audio_driver_pointer);
+  // the move constructor is never reached through Player (guaranteed copy
+  // elision constructs make_audio_driver's result in place), so exercise it
+  // directly
+  FluidDriver source_driver(audio_driver_pointer);
+  FluidDriver driver(std::move(source_driver));
+  QCOMPARE(driver.internal_pointer, audio_driver_pointer);
+  QCOMPARE(source_driver.internal_pointer,
+           static_cast<fluid_audio_driver_t*>(nullptr));
 
   // an intermediate reference keeps this a genuine self-move at runtime
   // without the literal "driver = std::move(driver)" syntax that trips
@@ -81,6 +92,35 @@ void Tester::test_read_zip_entry_null_archive() const {
   const ZipArchive archive(test_dir.filePath("does_not_exist.zip"));
   QCOMPARE(archive.internal_pointer, nullptr);
   QCOMPARE(read_zip_entry(archive, "anything"), QByteArray());
+}
+
+// every way read_zip_entry can fail on an archive that opened fine must give
+// the documented empty QByteArray instead of a partial or garbage buffer
+void Tester::test_read_zip_entry_error_data() {
+  QTest::addColumn<QString>("archive_name");
+  QTest::addColumn<QString>("entry_name");
+
+  QTest::newRow("missing entry")
+      << "prelude.mxl" << "does_not_exist.xml";
+  // the central directory claims a size that doesn't fit in an int
+  QTest::newRow("oversized entry")
+      << "zip_oversized_entry.zip" << "a.txt";
+  // the entry is flagged as encrypted and no password is available, so it
+  // shows up in the archive but can't be opened
+  QTest::newRow("encrypted entry")
+      << "zip_encrypted_entry.zip" << "a.txt";
+  // the entry's data ends before the size the central directory claims
+  QTest::newRow("short entry")
+      << "zip_short_entry.zip" << "a.txt";
+}
+
+void Tester::test_read_zip_entry_error() const {
+  QFETCH(const QString, archive_name);
+  QFETCH(const QString, entry_name);
+
+  const ZipArchive archive(test_dir.filePath(archive_name));
+  QVERIFY(archive.internal_pointer != nullptr);
+  QCOMPARE(read_zip_entry(archive, entry_name.toStdString()), QByteArray());
 }
 
 // regression test: read_xml_document casts a QByteArray's size down to int

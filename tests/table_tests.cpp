@@ -495,6 +495,10 @@ void Tester::test_status_data() {
   QTest::newRow("unpitched note")
       << RowType::unpitched_note_type << 1
       << "Velocity 30; 300 bpm; Start at 600 ms; Duration 200 ms";
+  // voice rows have no status tip; exercises RowsModel's default
+  // add_to_status
+  QTest::newRow("pitched voice") << RowType::pitched_voice_type << -1 << "";
+  QTest::newRow("unpitched voice") << RowType::unpitched_voice_type << -1 << "";
 }
 
 void Tester::test_status() {

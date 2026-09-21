@@ -129,10 +129,10 @@ void UnpitchedVoice::column_to_xml(xmlNode& node,
                                    const int column_number) const {
   switch (static_cast<UnpitchedVoiceColumn>(column_number)) {
     case UnpitchedVoiceColumn::number_of_unpitched_voice_columns:
-      Q_UNREACHABLE();
     case UnpitchedVoiceColumn::unpitched_voice_name_column:
-      maybe_add_qstring_to_xml(node, "name", name);
-      break;
+      // copy/cut are disabled when a voice name is selected; see
+      // ReplaceTable.cpp's update_actions
+      Q_UNREACHABLE();
     case UnpitchedVoiceColumn::unpitched_voice_percussion_set_column:
       maybe_add_qstring_to_xml(node, "percussion_set_pointer", program);
       break;

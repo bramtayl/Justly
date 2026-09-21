@@ -112,6 +112,12 @@ void Tester::test_paste_error_data() {
   QTest::addColumn<QString>("copied");
   QTest::addColumn<QString>("mime_type");
   QTest::addColumn<QString>("error_message");
+  QTest::newRow("chord empty clipboard")
+      << RowType::chord_type << -1 << "" << "" << "Nothing to paste!";
+  QTest::newRow("pitched note empty clipboard")
+      << RowType::pitched_note_type << 1 << "" << "" << "Nothing to paste!";
+  QTest::newRow("unpitched note empty clipboard")
+      << RowType::unpitched_note_type << 1 << "" << "" << "Nothing to paste!";
   QTest::newRow("chord not a mime")
       << RowType::chord_type << -1 << "" << "not a mime"
       << "Cannot paste not a mime as chords cells";
@@ -165,7 +171,10 @@ void Tester::test_paste_error() {
   auto& new_data =
       get_reference(new QMimeData);  // NOLINT(cppcoreguidelines-owning-memory)
 
-  new_data.setData(mime_type, copied.toStdString().c_str());
+  // an empty mime type leaves the mime data with no formats at all
+  if (!mime_type.isEmpty()) {
+    new_data.setData(mime_type, copied.toStdString().c_str());
+  }
 
   auto& clipboard = get_reference(QGuiApplication::clipboard());
   clipboard.setMimeData(&new_data);

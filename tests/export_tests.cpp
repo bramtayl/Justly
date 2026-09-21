@@ -1,3 +1,9 @@
+#ifdef __linux__
+#include <sys/resource.h>
+
+#include <csignal>
+#endif
+
 #include "Tester.hpp"
 #include "other/MidiTrackEvent.hpp"
 
@@ -127,6 +133,33 @@ void Tester::test_export_unwritable_path() {
   QVERIFY(temp_export_file.open());
   temp_export_file.close();
   export_to_file(song_widget, temp_export_file.fileName());
+}
+
+// a file size limit lets the renderer open its output file and then fails
+// its writes partway through the export, which a full disk would do too
+void Tester::test_export_write_error() {
+#ifdef __linux__
+  static const rlim_t SMALL_FILE_SIZE_LIMIT = 4096;
+
+  QTemporaryDir temp_export_dir;
+  QVERIFY(temp_export_dir.isValid());
+  const auto export_filename = temp_export_dir.filePath("export.wav");
+
+  rlimit old_limit{};
+  QCOMPARE(getrlimit(RLIMIT_FSIZE, &old_limit), 0);
+  auto* const old_handler = std::signal(SIGXFSZ, SIG_IGN);
+  auto new_limit = old_limit;
+  new_limit.rlim_cur = SMALL_FILE_SIZE_LIMIT;
+  QCOMPARE(setrlimit(RLIMIT_FSIZE, &new_limit), 0);
+
+  close_message_later(song_editor, waiting_for_message, "Error writing file");
+  export_to_file(song_editor.song_widget, export_filename);
+
+  QCOMPARE(setrlimit(RLIMIT_FSIZE, &old_limit), 0);
+  std::signal(SIGXFSZ, old_handler);
+#else
+  QSKIP("file size limits are Linux-specific");
+#endif
 }
 
 // regression test: FileMenu's dialogs (make_file_dialog) must not leak --
@@ -285,4 +318,117 @@ void Tester::test_midi_track_event_write_dispatch() {
       .info = NoteOffEventInfo{.channel_number = 1, .midi_number = 60}}
       .write(bytes);
   QCOMPARE(bytes, QByteArray::fromHex("813C00"));
+}
+
+namespace {
+
+// one pitched voice, one unpitched voice, and a single chord holding the
+// given notes (an empty string omits that kind of note from the chord)
+auto make_export_song_xml(const int starting_velocity,
+                          const QString& pitched_note_fields,
+                          const QString& unpitched_note_fields) -> QString {
+  QString xml =
+      "<song><gain>1</gain><starting_key>220</starting_key>"
+      "<starting_tempo>100</starting_tempo><starting_velocity>" +
+      QString::number(starting_velocity) +
+      "</starting_velocity><pitched_voices><pitched_voice><name>A</name>"
+      "<instrument>Marimba</instrument></pitched_voice></pitched_voices>"
+      "<unpitched_voices><unpitched_voice><name>D</name>"
+      "<percussion_set_pointer>Room</percussion_set_pointer>"
+      "<midi_number>36</midi_number></unpitched_voice></unpitched_voices>"
+      "<chords><chord>";
+  if (!pitched_note_fields.isEmpty()) {
+    xml += "<pitched_notes><pitched_note><voice_number>0</voice_number>" +
+           pitched_note_fields + "</pitched_note></pitched_notes>";
+  }
+  if (!unpitched_note_fields.isEmpty()) {
+    xml += "<unpitched_notes><unpitched_note><voice_number>0</voice_number>" +
+           unpitched_note_fields + "</unpitched_note></unpitched_notes>";
+  }
+  xml += "</chord></chords></song>";
+  return xml;
+}
+
+const QString PLAIN_WORDS = "<words>n</words>";
+
+const QString DOUBLE_VELOCITY =
+    "<velocity_ratio><numerator>2</numerator></velocity_ratio>";
+
+}  // namespace
+
+void Tester::test_export_midi_error_data() {
+  QTest::addColumn<QString>("text");
+  QTest::addColumn<QString>("error_message");
+
+  QTest::newRow("pitched velocity too high")
+      << make_export_song_xml(100, DOUBLE_VELOCITY, "")
+      << "Velocity 200 exceeds 127 for chord 1, pitched note 1";
+  QTest::newRow("unpitched velocity too high")
+      << make_export_song_xml(100, "", DOUBLE_VELOCITY)
+      << "Velocity 200 exceeds 127 for chord 1, unpitched note 1";
+  QTest::newRow("frequency too high")
+      << make_export_song_xml(10, "<interval><octave>9</octave></interval>", "")
+      << "Frequency 1.13e+05 for chord 1, pitched note 1 is out of MIDI "
+         "export range";
+  QTest::newRow("frequency too low")
+      << make_export_song_xml(10, "<interval><octave>-9</octave></interval>",
+                              "")
+      << "Frequency 0.43 for chord 1, pitched note 1 is out of MIDI export "
+         "range";
+}
+
+void Tester::test_export_midi_error() {
+  QFETCH(const QString, text);
+  QFETCH(const QString, error_message);
+
+  QTemporaryFile temp_export_file;
+  QVERIFY(temp_export_file.open());
+  temp_export_file.close();
+
+  open_text(song_editor, text);
+  close_message_later(song_editor, waiting_for_message, error_message);
+  export_midi_to_file(song_editor.song_widget, temp_export_file.fileName());
+
+  // restore the shared fixture
+  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}
+
+void Tester::test_export_midi_success() {
+  QTemporaryDir temp_export_dir;
+  QVERIFY(temp_export_dir.isValid());
+  const auto export_filename = temp_export_dir.filePath("export.mid");
+
+  open_text(song_editor, make_export_song_xml(10, PLAIN_WORDS, PLAIN_WORDS));
+  export_midi_to_file(song_editor.song_widget, export_filename);
+
+  QFile written_file(export_filename);
+  QVERIFY(written_file.open(QIODevice::ReadOnly));
+  QCOMPARE(written_file.read(4), QByteArray("MThd"));
+  // one tempo track plus one track per voice
+  QCOMPARE(QString::fromLatin1(written_file.readAll()).count("MTrk"), 3);
+
+  // restore the shared fixture
+  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}
+
+void Tester::test_export_midi_unwritable_path() {
+  QTemporaryDir temp_export_dir;
+  QVERIFY(temp_export_dir.isValid());
+  const auto unwritable_path =
+      temp_export_dir.filePath("nonexistent_subdir/export.mid");
+
+  open_text(song_editor, make_export_song_xml(10, PLAIN_WORDS, PLAIN_WORDS));
+  close_message_later(song_editor, waiting_for_message,
+                      "Cannot open file for writing");
+  export_midi_to_file(song_editor.song_widget, unwritable_path);
+  QVERIFY(!QFile::exists(unwritable_path));
+
+  // restore the shared fixture
+  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
 }
