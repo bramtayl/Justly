@@ -218,9 +218,10 @@ jobs:
 
     - name: Run gcovr
       if: matrix.family == 'ubuntu'
-      # --filter targets library/ (renamed from src/ in 704b1074, which
-      # silently broke this filter -- gcovr matched 0 files and uploaded an
-      # empty report for the past year).
+      # Options live in gcovr.cfg at the repo root (gcovr reads it from the
+      # working directory). Its filter targets library/ (renamed from src/ in
+      # 704b1074, which silently broke the filter -- gcovr matched 0 files and
+      # uploaded an empty report for the past year).
       #
       # coverage.xml is generated from with_tests_release (a Release build),
       # not with_tests (the Debug build tested above). library/ has no
@@ -232,26 +233,27 @@ jobs:
       # which shows up as an uncovered line. In Release, NDEBUG makes it
       # lower to a bare __builtin_unreachable(), so with optimizations on
       # the compiler proves the arm dead and emits no code for it at all --
-      # it never shows up as a line in the report, so no
-      # --exclude-lines-by-pattern workaround is needed here.
+      # it never shows up as a line in the report. (gcovr.cfg also excludes
+      # Q_UNREACHABLE lines by pattern, for local Debug-build coverage runs.)
       #
       # There are no `throw` statements anywhere in library/ --
-      # --exclude-throw-branches drops the compiler-generated
+      # exclude-throw-branches drops the compiler-generated
       # exception-unwind edges GCC adds to every call to a non-noexcept
       # function, which otherwise dominate the branch count and can't be
       # exercised without deliberately forcing failures like std::bad_alloc.
       # (this relies on GCC/gcov's "(throw)" branch annotation -- clang's
       # llvm-cov gcov emulation doesn't emit it, so don't switch this build
       # to clang without re-checking that the exclusion still works)
-      run: >
-        gcovr --xml "coverage.xml"
-        --filter "$(pwd)/library/"
-        --exclude-throw-branches
+      run: gcovr
 
     - name: Upload code coverage
       uses: codecov/codecov-action@v7
       if: matrix.family == 'ubuntu'
       with:
+        # only upload the gcovr report. Otherwise the uploader also searches
+        # for .gcno files and runs gcov itself, and those unfiltered reports
+        # bypass everything in gcovr.cfg
+        disable_search: true
         files: ./coverage.xml
         token: ${{ secrets.CODECOV_TOKEN }}
 
