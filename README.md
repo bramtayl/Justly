@@ -111,9 +111,11 @@ For example, a minor third is up a perfect fifth and down a major third: 3/2 * 4
 
 Here are some useful composite intervals:
 
+- Minor second: 16/15 = octave / perfect fifth / major third
 - Major second: 9/8 = perfect fifth * perfect fifth / octave
 - Minor third: 6/5 = perfect fifth / major third
 - Perfect fourth: 4/3 = octave / perfect fifth
+- Tritone: 45/32 = perfect fifth * perfect fifth * major third / octave
 - Minor sixth: 8/5 = octave / major third
 - Major sixth: 5/3 = octave / perfect fifth * major third
 - Minor seventh: 9/5 = perfect fifth * perfect fifth / major third
@@ -188,12 +190,16 @@ You can edit the gain, starting key, starting velocity, and starting tempo using
 
 ### Interval buttons
 
-There are buttons on the left for raising (+) or lowering (-) the pitch ratio of a chord or unpitched note by:
+There are buttons on the left for raising (+) or lowering (-) the pitch ratio of selected chords or pitched notes by:
 
 - A major third (5/4)
 - A perfect fifth (3/2)
 - A harmonic seventh (7/4)
 - An octave (2)
+
+Below these, there is one more row for raising or lowering by any interval you choose.
+You can type the interval in directly, or pick one from the dropdown underneath: a minor second (16/15), major second (9/8), minor third (6/5), perfect fourth (4/3), tritone (45/32), minor sixth (8/5), major sixth (5/3), minor seventh (9/5), or major seventh (15/8).
+The dropdown shows "Custom" when the interval you typed isn't one of these.
 
 ### Table editor
 
@@ -306,12 +312,12 @@ To do so, Justly uses a few heuristics.
 
 Justly uses the current key signature to find the tonic. Justly then uses the following scale relative to the tonic:
 
-- Minor second: 16/5
+- Minor second: 16/15
 - Major second: 9/8
 - Minor third: 6/5
 - Major third: 5/4
 - Perfect fourth: 4/3
-- Augmented fourth/diminished fifth: 45/32
+- Tritone: 45/32
 - Perfect fifth: 3/2
 - Minor sixth: 8/5
 - Major sixth: 5/3
@@ -321,12 +327,26 @@ Justly uses the current key signature to find the tonic. Justly then uses the fo
 
 For example, in the key of A, the frequency of any E (a perfect fifth away from the tonic) will be 3/2 of the frequency of the tonic below it.
 
+This scale guarantees that the major/minor triads based on the tonic (I), dominant (V), and subdominant (IV) will be in tune. For example, in the key of C, the C major/minor, F major/minor, and G major/minor triads will all be in tune.
+
 When the key signature changes, Justly modulates by the interval of the new key in the old key signature. So, if you modulate from the key of A to the key of E, Justly will modulate by an interval of 3/2 (plus or minus an octave).
+
+Justly reads each note's pitch from its accidentals the way a musician would: a note without an accidental takes the most recent accidental on the same staff, step, and octave earlier in the measure, or otherwise the key signature. A note tied across a barline keeps the pitch it was tied from.
+
+Justly reads accidentals with arrows, which usually denote quartertone adjustments, as septimal quartertone adjustments instead.
+
+- A down arrow lowers a note by a septimal quartertone, 36/35 (about 49 cents). For example, in the key of G, F natural with a down arrow is a harmonic seventh (7/4) above G, instead of a minor seventh (9/5).
+- An up arrow raises a note by a septimal quartertone. For example, in the key of D major, B with an up arrow is a harmonic seventh (7/4) below the fifth A, instead of a minor seventh (9/5).
+
+Arrows work on naturals, sharps, flats, double sharps, and double flats. You can write them with the arrow accidentals in MuseScore and similar notation programs. Justly doesn't support other microtonal accidentals, such as quartertone sharps and flats.
 
 Here are some tips for importing music written in standard notation:
 
-- Change key signatures every time the underlying chord in the music changes.
-- You might need to manually adjust seventh intervals. In the context of a seventh chord, you might want to change the seventh of the chord to be a harmonic seventh above the tonic. Likewise, in the context of a half-diminished seventh chord, you might want to change the root note of the chord to be a harmonic seventh below the top note of the chord. Be careful, however, because harmonic seventh intervals are noticeably different from minor seventh intervals.
+- Change key signatures every time the underlying chord in the music changes, as follows:
+  - For major chords, e.g. C major, use the major key of the root, e.g. C major.
+  - For minor chords, e.g. A minor, use the *major* key of the root, e.g. A major.
+  - For seventh chords, e.g. G-B-D-F, use the major key of the root, e.g. G major, and use a down arrow to mark the harmonic seventh, e.g. F natural, so that all of the notes will be in the overtone series of G.
+  - For half-diminished seventh chords, e.g. B-D-F-A, use the *major* key of the third, e.g. D major, and use an up arrow to mark the root (B), so that all the notes will be in the undertone series of A.
 
 ## Example
 
@@ -343,7 +363,7 @@ The key does not change in the first chord.
 After 1 beat, the key changes: Justly divides the key by 3/2, so the key goes down by a fifth. Now, the key is close to D4.
 
 After 1 more beat, Justly multiplies the key by 3/2, so the key goes up by a fifth. Now, the key is back to A3.
-6
+
 Here is a screenshot of the pitched notes in the first chord:
 
 ![chord 1 pitched notes screenshot](examples/chord_1_pitched_notes.png)

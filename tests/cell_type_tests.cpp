@@ -234,26 +234,33 @@ void Tester::test_interval_presets() {
   static const auto CUSTOM_NUMERATOR = 7;
   static const auto CUSTOM_DENOMINATOR = 6;
   static const auto PERFECT_FIFTH_HALFSTEPS = 7;
+  static const auto MINOR_SIXTH_HALFSTEPS = 8;
 
   auto& custom_row = song_editor.song_widget.controls_column.custom_row;
   auto& interval_editor = custom_row.interval_editor;
   auto& presets_box = custom_row.presets_box;
   const auto& just_scale = get_just_scale();
-  // unison is left out
-  QCOMPARE(presets_box.count(), just_scale.size() - 1);
+  // unison, the major third, and the perfect fifth are left out
+  QCOMPARE(presets_box.count(), just_scale.size() - 3);
   const auto original_value = interval_editor.value();
   for (auto index = 0; index < presets_box.count(); index++) {
     presets_box.setCurrentIndex(index);
-    QCOMPARE(interval_editor.value(),
-             Interval(just_scale[index + 1].ratio, 0));
+    QCOMPARE(
+        interval_editor.value(),
+        Interval(just_scale[presets_box.itemData(index).toInt()].ratio, 0));
   }
 
   interval_editor.setValue(
       Interval(Rational(CUSTOM_NUMERATOR, CUSTOM_DENOMINATOR), 0));
   QCOMPARE(presets_box.currentIndex(), -1);
   interval_editor.setValue(
+      Interval(just_scale[MINOR_SIXTH_HALFSTEPS].ratio, 0));
+  QCOMPARE(presets_box.currentIndex(),
+           presets_box.findData(MINOR_SIXTH_HALFSTEPS));
+  // the perfect fifth has its own row, so it counts as custom here
+  interval_editor.setValue(
       Interval(just_scale[PERFECT_FIFTH_HALFSTEPS].ratio, 0));
-  QCOMPARE(presets_box.currentIndex(), PERFECT_FIFTH_HALFSTEPS - 1);
+  QCOMPARE(presets_box.currentIndex(), -1);
 
   interval_editor.setValue(original_value);
 }
