@@ -93,6 +93,7 @@ struct Tester : public QObject {
   void test_insert_into();
   void test_interval_button_data();
   void test_interval_button();
+  void test_interval_presets();
   static void test_voice_error_data();
   void test_voice_error();
   static void test_voice_name_rejected_data();

@@ -343,7 +343,7 @@ The key does not change in the first chord.
 After 1 beat, the key changes: Justly divides the key by 3/2, so the key goes down by a fifth. Now, the key is close to D4.
 
 After 1 more beat, Justly multiplies the key by 3/2, so the key goes up by a fifth. Now, the key is back to A3.
-
+6
 Here is a screenshot of the pitched notes in the first chord:
 
 ![chord 1 pitched notes screenshot](examples/chord_1_pitched_notes.png)

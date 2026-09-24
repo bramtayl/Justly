@@ -893,11 +893,7 @@ auto get_duration(QWidget& parent, xmlNode& measure_element)
 
 auto get_interval(const int midi_interval) -> Interval {
   const auto [octave, degree] = get_octave_degree(midi_interval);
-  static const QList<Rational> scale = {
-      Rational(1, 1), Rational(16, 15), Rational(9, 8),   Rational(6, 5),
-      Rational(5, 4), Rational(4, 3),   Rational(45, 32), Rational(3, 2),
-      Rational(8, 5), Rational(5, 3),   Rational(9, 5),   Rational(15, 8)};
-  return Interval(scale[degree], octave);
+  return Interval(get_just_scale()[degree].ratio, octave);
 }
 
 auto get_max_duration(const QList<MusicXMLNote>& notes) -> int {

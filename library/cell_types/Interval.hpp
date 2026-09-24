@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QtCore/QList>
+
 #include "cell_types/Rational.hpp"
 
 static const auto OCTAVE_RATIO = 2.0;
@@ -21,6 +23,14 @@ struct Interval {
 };
 
 Q_DECLARE_METATYPE(Interval);
+
+struct NamedRatio {
+  const char* name;
+  Rational ratio;
+};
+
+// a just ratio for each of the 12 halfsteps in an octave, starting at unison
+[[nodiscard]] auto get_just_scale() -> const QList<NamedRatio>&;
 
 [[nodiscard]] auto interval_to_double(const Interval& interval) -> double;
 

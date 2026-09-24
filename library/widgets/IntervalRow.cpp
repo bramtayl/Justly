@@ -46,6 +46,8 @@ auto check_interval(QWidget& parent_widget, const Interval& interval) -> bool {
   return true;
 }
 
+}  // namespace
+
 void update_interval(QUndoStack& undo_stack, SwitchTable& switch_table,
                      const Interval& interval) {
   const auto& range = get_only_range(switch_table);
@@ -95,7 +97,7 @@ void update_interval(QUndoStack& undo_stack, SwitchTable& switch_table,
     case RowType::pitched_voice_type:
     case RowType::unpitched_voice_type:
       // interval rows are disabled for these row types; see
-      // ReplaceTable.hpp's update_actions/set_interval_rows_is_enabled
+      // ReplaceTable.hpp's update_actions/set_interval_rows_are_enabled
       Q_UNREACHABLE();
   }
   undo_stack.push(undo_command);
@@ -104,8 +106,6 @@ void update_interval(QUndoStack& undo_stack, SwitchTable& switch_table,
 void make_square(QPushButton& button) {
   button.setFixedWidth(button.sizeHint().height());
 }
-
-}  // namespace
 
 IntervalRow::IntervalRow(QUndoStack& undo_stack_input,
                          SwitchTable& switch_table_input,
@@ -140,23 +140,4 @@ IntervalRow::IntervalRow(QUndoStack& undo_stack_input,
       [&undo_stack_ref, &switch_table_ref, &interval_ref]() -> auto {
         update_interval(undo_stack_ref, switch_table_ref, interval_ref);
       });
-}
-
-namespace {
-
-void set_interval_row_is_enabled(IntervalRow& interval_row, bool is_enabled) {
-  interval_row.minus_button.setEnabled(is_enabled);
-  interval_row.plus_button.setEnabled(is_enabled);
-}
-
-}  // namespace
-
-void set_interval_rows_is_enabled(IntervalRow& third_row,
-                                  IntervalRow& fifth_row,
-                                  IntervalRow& seventh_row,
-                                  IntervalRow& octave_row, bool is_enabled) {
-  set_interval_row_is_enabled(third_row, is_enabled);
-  set_interval_row_is_enabled(fifth_row, is_enabled);
-  set_interval_row_is_enabled(seventh_row, is_enabled);
-  set_interval_row_is_enabled(octave_row, is_enabled);
 }

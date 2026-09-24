@@ -1,7 +1,10 @@
+#include <QComboBox>
 #include <QDoubleSpinBox>
 
 #include "Tester.hpp"
+#include "cell_editors/IntervalEditor.hpp"
 #include "widgets/ControlsColumn.hpp"
+#include "widgets/CustomIntervalRow.hpp"
 #include "widgets/IntervalRow.hpp"
 #include "widgets/SpinBoxes.hpp"
 
@@ -179,6 +182,8 @@ void Tester::test_interval_button_data() {
   auto& seventh_plus_button = seventh_row.plus_button;
   auto& octave_minus_button = octave_row.minus_button;
   auto& octave_plus_button = octave_row.plus_button;
+  auto& custom_minus_button = controls_column.custom_row.minus_button;
+  auto& custom_plus_button = controls_column.custom_row.plus_button;
 
   QTest::addColumn<QPushButton*>("button_pointer");
   add_table_columns();
@@ -199,6 +204,10 @@ void Tester::test_interval_button_data() {
       << &octave_minus_button << RowType::chord_type << -1;
   QTest::newRow("chord octave +")
       << &octave_plus_button << RowType::chord_type << -1;
+  QTest::newRow("chord custom -")
+      << &custom_minus_button << RowType::chord_type << -1;
+  QTest::newRow("chord custom +")
+      << &custom_plus_button << RowType::chord_type << -1;
   QTest::newRow("pitched note third -")
       << &third_minus_button << RowType::pitched_note_type << 1;
   QTest::newRow("pitched note third +")
@@ -215,6 +224,38 @@ void Tester::test_interval_button_data() {
       << &octave_minus_button << RowType::pitched_note_type << 1;
   QTest::newRow("pitched note octave +")
       << &octave_plus_button << RowType::pitched_note_type << 1;
+  QTest::newRow("pitched note custom -")
+      << &custom_minus_button << RowType::pitched_note_type << 1;
+  QTest::newRow("pitched note custom +")
+      << &custom_plus_button << RowType::pitched_note_type << 1;
+}
+
+void Tester::test_interval_presets() {
+  static const auto CUSTOM_NUMERATOR = 7;
+  static const auto CUSTOM_DENOMINATOR = 6;
+  static const auto PERFECT_FIFTH_HALFSTEPS = 7;
+
+  auto& custom_row = song_editor.song_widget.controls_column.custom_row;
+  auto& interval_editor = custom_row.interval_editor;
+  auto& presets_box = custom_row.presets_box;
+  const auto& just_scale = get_just_scale();
+  // unison is left out
+  QCOMPARE(presets_box.count(), just_scale.size() - 1);
+  const auto original_value = interval_editor.value();
+  for (auto index = 0; index < presets_box.count(); index++) {
+    presets_box.setCurrentIndex(index);
+    QCOMPARE(interval_editor.value(),
+             Interval(just_scale[index + 1].ratio, 0));
+  }
+
+  interval_editor.setValue(
+      Interval(Rational(CUSTOM_NUMERATOR, CUSTOM_DENOMINATOR), 0));
+  QCOMPARE(presets_box.currentIndex(), -1);
+  interval_editor.setValue(
+      Interval(just_scale[PERFECT_FIFTH_HALFSTEPS].ratio, 0));
+  QCOMPARE(presets_box.currentIndex(), PERFECT_FIFTH_HALFSTEPS - 1);
+
+  interval_editor.setValue(original_value);
 }
 
 void Tester::test_interval_button() {

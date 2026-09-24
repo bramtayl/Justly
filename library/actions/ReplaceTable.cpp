@@ -13,7 +13,6 @@
 #include "column_numbers/UnpitchedVoiceColumn.hpp"
 #include "menus/SongMenuBar.hpp"
 #include "widgets/ControlsColumn.hpp"
-#include "widgets/IntervalRow.hpp"
 #include "widgets/piano_roll/PianoRollWidget.hpp"
 
 namespace {
@@ -91,11 +90,9 @@ void update_actions(SongMenuBar& song_menu_bar, SongWidget& song_widget,
   const auto current_row_type = switch_table.delegate.current_row_type;
   const auto is_voice = get_is_voice(current_row_type);
 
-  set_interval_rows_is_enabled(
-      controls_column.third_row, controls_column.fifth_row,
-      controls_column.seventh_row, controls_column.octave_row,
-      anything_selected && !is_voice &&
-          current_row_type != RowType::unpitched_note_type);
+  set_interval_rows_are_enabled(
+      controls_column, anything_selected && !is_voice &&
+                           current_row_type != RowType::unpitched_note_type);
 
   song_menu_bar.play_menu.play_action.setEnabled(anything_selected);
   song_menu_bar.play_menu.play_to_end_action.setEnabled(anything_selected &&

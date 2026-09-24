@@ -23,7 +23,7 @@ struct IntervalRow : public QWidget {
               const char* interval_name, Interval interval_input);
 };
 
-void set_interval_rows_is_enabled(IntervalRow& third_row,
-                                  IntervalRow& fifth_row,
-                                  IntervalRow& seventh_row,
-                                  IntervalRow& octave_row, bool is_enabled);
+void update_interval(QUndoStack& undo_stack, SwitchTable& switch_table,
+                     const Interval& interval);
+
+void make_square(QPushButton& button);

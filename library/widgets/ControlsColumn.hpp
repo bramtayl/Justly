@@ -4,6 +4,7 @@
 
 class QBoxLayout;
 class QUndoStack;
+struct CustomIntervalRow;
 struct FluidSynth;
 struct Song;
 struct SwitchTable;
@@ -19,8 +20,12 @@ struct ControlsColumn : public QWidget {
   IntervalRow& fifth_row;
   IntervalRow& seventh_row;
   IntervalRow& octave_row;
+  CustomIntervalRow& custom_row;
   QBoxLayout& column_layout;
 
   ControlsColumn(Song& song, FluidSynth& synth, QUndoStack& undo_stack,
                  SwitchTable& switch_table);
 };
+
+void set_interval_rows_are_enabled(ControlsColumn& controls_column,
+                                   bool is_enabled);

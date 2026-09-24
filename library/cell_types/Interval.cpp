@@ -19,6 +19,17 @@ Interval::Interval(Rational ratio_input, const int octave_input)
   }
 }
 
+auto get_just_scale() -> const QList<NamedRatio>& {
+  static const QList<NamedRatio> scale = {
+      {"Unison", Rational(1, 1)},          {"Minor second", Rational(16, 15)},
+      {"Major second", Rational(9, 8)},    {"Minor third", Rational(6, 5)},
+      {"Major third", Rational(5, 4)},     {"Perfect fourth", Rational(4, 3)},
+      {"Tritone", Rational(45, 32)},       {"Perfect fifth", Rational(3, 2)},
+      {"Minor sixth", Rational(8, 5)},     {"Major sixth", Rational(5, 3)},
+      {"Minor seventh", Rational(9, 5)},   {"Major seventh", Rational(15, 8)}};
+  return scale;
+}
+
 auto Interval::operator==(const Interval& other_interval) const -> bool {
   return ratio == other_interval.ratio && octave == other_interval.octave;
 }
