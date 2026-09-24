@@ -115,6 +115,8 @@ struct Tester : public QObject {
   void test_musicxml_inline_error();
   void test_musicxml_repeat_times();
   void test_musicxml_octave_change();
+  static void test_musicxml_accidentals_data();
+  void test_musicxml_accidentals();
   static void test_compute_measure_expansion_lone_backward_repeat();
   void test_import_musicxml_ties_do_not_cross_voices();
   void test_import_musicxml_orphan_tie_stop();

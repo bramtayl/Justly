@@ -891,9 +891,49 @@ auto get_duration(QWidget& parent, xmlNode& measure_element)
                          QObject::tr("Duration is out of range"));
 }
 
-auto get_interval(const int midi_interval) -> Interval {
+auto get_interval(const int midi_interval, const int septimal_quartertones = 0)
+    -> Interval {
+  // Johnston's 7 lowers by 36/35, taking a 9/5 minor seventh to a 7/4
+  // harmonic seventh; his el raises by the same amount
+  static const auto SEPTIMAL_QUARTERTONE = Rational(36, 35);
   const auto [octave, degree] = get_octave_degree(midi_interval);
-  return Interval(get_just_scale()[degree].ratio, octave);
+  auto ratio = get_just_scale()[degree].ratio;
+  if (septimal_quartertones > 0) {
+    ratio = ratio * SEPTIMAL_QUARTERTONE;
+  } else if (septimal_quartertones < 0) {
+    ratio = ratio / SEPTIMAL_QUARTERTONE;
+  }
+  return Interval(ratio, octave);
+}
+
+const auto STEPS_PER_OCTAVE = 7;
+
+struct Spelling {
+  int chromatic = 0;
+  int septimal_quartertones = 0;
+};
+
+// the key signature's alteration for each step, indexed C through B
+auto get_key_alterations(const int fifths) -> std::array<int, STEPS_PER_OCTAVE> {
+  // step indices in the order sharps (or, reversed, flats) are added
+  static const std::array<int, STEPS_PER_OCTAVE> SHARP_ORDER = {3, 0, 4, 1,
+                                                             5, 2, 6};
+  std::array<int, STEPS_PER_OCTAVE> alterations = {};
+  const auto number_of_accidentals = std::abs(static_cast<long long>(fifths));
+  const auto direction = fifths > 0 ? 1 : -1;
+  for (auto position = 0; position < STEPS_PER_OCTAVE; position = position + 1) {
+    const auto step_index =
+        fifths > 0 ? SHARP_ORDER.at(position)
+                   : SHARP_ORDER.at(STEPS_PER_OCTAVE - 1 - position);
+    // past seven accidentals, the cycle wraps around into double accidentals
+    const auto times = number_of_accidentals > position
+                           ? (number_of_accidentals - 1 - position) /
+                                     STEPS_PER_OCTAVE +
+                                 1
+                           : 0;
+    alterations.at(step_index) = direction * static_cast<int>(times);
+  }
+  return alterations;
 }
 
 auto get_max_duration(const QList<MusicXMLNote>& notes) -> int {
@@ -929,7 +969,8 @@ void add_chord(ChordsModel& chords_model, const MusicXMLChord& parse_chord,
     PitchedNote new_note;
     new_note.beats = Rational(parse_pitched_note.duration, song_divisions);
     new_note.words = parse_pitched_note.words;
-    new_note.interval = get_interval(parse_pitched_note.midi_number - key);
+    new_note.interval = get_interval(parse_pitched_note.midi_number - key,
+                                     parse_pitched_note.septimal_quartertones);
     new_note.voice_number = parse_pitched_note.voice_number;
     pitched_notes.push_back(std::move(new_note));
   }
@@ -1205,6 +1246,7 @@ auto import_musicxml(SongWidget& song_widget, const QString& filename) -> bool {
       auto chord_start_time = current_time;
       auto measure_number = 1;
       auto current_transpose_semitones = 0;
+      std::array<int, STEPS_PER_OCTAVE> key_alterations = {};
 
       QMap<QString, MusicXMLNote> tied_notes;
       QList<MeasureRepeatInfo> measure_infos;
@@ -1217,6 +1259,9 @@ auto import_musicxml(SongWidget& song_widget, const QString& filename) -> bool {
         MeasureRepeatInfo measure_info;
         measure_info.start_time = current_time;
         measure_info.ending_numbers = active_ending_numbers;
+        // an accidental lasts until the end of its measure, for notes on the
+        // same staff, step, and octave
+        QMap<QString, Spelling> measure_spellings;
         auto* measure_element_pointer = xmlFirstElementChild(&measure);
         while (measure_element_pointer != nullptr) {
           auto& measure_element = get_reference(measure_element_pointer);
@@ -1236,6 +1281,7 @@ auto import_musicxml(SongWidget& song_widget, const QString& filename) -> bool {
                 if (!maybe_fifths.has_value()) {
                   return false;  // endpoint
                 }
+                key_alterations = get_key_alterations(maybe_fifths.value());
                 const auto [octave, degree] =
                     get_octave_degree(FIFTH_HALFSTEPS * maybe_fifths.value());
                 part_midi_keys_dict[current_time] = MIDDLE_C_MIDI + degree;
@@ -1304,6 +1350,11 @@ auto import_musicxml(SongWidget& song_widget, const QString& filename) -> bool {
           } else if (measure_element_name == "note") {
             auto note_duration = 0;
             auto midi_number = -1;
+            auto septimal_quartertones = 0;
+            std::string step;
+            auto octave_number = 0;
+            std::optional<Spelling> maybe_accidental;
+            std::string staff = "1";
             bool is_pitched = true;
             bool tie_start = false;
             bool tie_end = false;
@@ -1312,11 +1363,33 @@ auto import_musicxml(SongWidget& song_widget, const QString& filename) -> bool {
             QString instrument_name = "";
             std::string instrument_id;
 
-            static const QMap<std::string, int> note_to_midi = {
-                {"C", 0},   {"C#", 1}, {"Db", 1}, {"D", 2},  {"D#", 3},
-                {"Eb", 3},  {"E", 4},  {"F", 5},  {"F#", 6}, {"Gb", 6},
-                {"G", 7},   {"G#", 8}, {"Ab", 8}, {"A", 9},  {"A#", 10},
-                {"Bb", 10}, {"B", 11}};
+            static const QMap<std::string, int> step_indices = {
+                {"C", 0}, {"D", 1}, {"E", 2}, {"F", 3},
+                {"G", 4}, {"A", 5}, {"B", 6}};
+            static const std::array<int, STEPS_PER_OCTAVE> step_halfsteps = {
+                0, 2, 4, 5, 7, 9, 11};
+            // arrows mark Johnston's 7 (down) and el (up)
+            static const QMap<std::string, Spelling> accidental_spellings = {
+                {"triple-flat", {-3, 0}},
+                {"flat-flat", {-2, 0}},
+                {"flat-flat-down", {-2, -1}},
+                {"flat-flat-up", {-2, 1}},
+                {"flat", {-1, 0}},
+                {"natural-flat", {-1, 0}},
+                {"flat-down", {-1, -1}},
+                {"flat-up", {-1, 1}},
+                {"natural", {0, 0}},
+                {"natural-down", {0, -1}},
+                {"natural-up", {0, 1}},
+                {"sharp", {1, 0}},
+                {"natural-sharp", {1, 0}},
+                {"sharp-down", {1, -1}},
+                {"sharp-up", {1, 1}},
+                {"double-sharp", {2, 0}},
+                {"sharp-sharp", {2, 0}},
+                {"double-sharp-down", {2, -1}},
+                {"double-sharp-up", {2, 1}},
+                {"triple-sharp", {3, 0}}};
 
             auto* note_field_pointer =
                 xmlFirstElementChild(measure_element_pointer);
@@ -1324,38 +1397,26 @@ auto import_musicxml(SongWidget& song_widget, const QString& filename) -> bool {
               auto& note_field = get_reference(note_field_pointer);
               const auto& name = get_xml_name(note_field);
               if (name == "pitch") {
-                auto midi_degree = 0;
-                auto octave_number = 0;
-                auto alter = 0;
-
-                auto* pitch_field_pointer = xmlFirstElementChild(&note_field);
-                while (pitch_field_pointer != nullptr) {
-                  auto& pitch_field = get_reference(pitch_field_pointer);
-                  const auto& pitch_field_name = get_xml_name(pitch_field);
-                  if (pitch_field_name == "step") {
-                    midi_degree = note_to_midi[get_content(pitch_field)];
-                  } else if (pitch_field_name == "octave") {
-                    octave_number = xml_to_int(pitch_field);
-                  } else if (pitch_field_name == "alter") {
-                    if (!xml_content_is_integer(pitch_field)) {
-                      QMessageBox::warning(
-                          &song_widget, QObject::tr("Pitch error"),
-                          QObject::tr("Microtonal pitches are not supported"));
-                      return false;  // endpoint
-                    }
-                    const auto maybe_alter = get_int_or_warn(
-                        song_widget, pitch_field, QObject::tr("Pitch error"),
-                        QObject::tr("Alter value is out of range"));
-                    if (!maybe_alter.has_value()) {
-                      return false;  // endpoint
-                    }
-                    alter = maybe_alter.value();
-                  }
-                  pitch_field_pointer =
-                      xmlNextElementSibling(pitch_field_pointer);
+                // <alter> is ignored: it can't tell apart e.g. an F raised by
+                // an el from an F# lowered by a 7, so pitches are spelled
+                // from the accidentals as they would be read
+                step = get_content(get_xml_child(note_field, "step"));
+                octave_number =
+                    xml_to_int(get_xml_child(note_field, "octave"));
+              } else if (name == "accidental") {
+                const auto accidental_name = get_content(note_field);
+                const auto found_spelling =
+                    accidental_spellings.find(accidental_name);
+                if (found_spelling == accidental_spellings.end()) {
+                  QMessageBox::warning(
+                      &song_widget, QObject::tr("Pitch error"),
+                      QObject::tr("Accidental %1 is not supported")
+                          .arg(QString::fromStdString(accidental_name)));
+                  return false;  // endpoint
                 }
-                midi_number = midi_degree + alter +
-                              octave_number * HALFSTEPS_PER_OCTAVE + C_0_MIDI;
+                maybe_accidental = found_spelling.value();
+              } else if (name == "staff") {
+                staff = get_content(note_field);
               } else if (name == "duration") {
                 if (!xml_content_is_integer(note_field)) {
                   QMessageBox::warning(
@@ -1391,8 +1452,26 @@ auto import_musicxml(SongWidget& song_widget, const QString& filename) -> bool {
               note_field_pointer = xmlNextElementSibling(note_field_pointer);
             }
 
-            if (is_pitched) {
-              midi_number += current_transpose_semitones;
+            const auto has_pitch = !step.empty();
+            if (has_pitch) {
+              const auto step_index = step_indices[step];
+              const auto spelling_key =
+                  QString::fromStdString(staff + ":" + step) + ":" +
+                  QString::number(octave_number);
+              Spelling spelling;
+              if (maybe_accidental.has_value()) {
+                spelling = maybe_accidental.value();
+                measure_spellings[spelling_key] = spelling;
+              } else if (measure_spellings.contains(spelling_key)) {
+                spelling = measure_spellings[spelling_key];
+              } else {
+                spelling.chromatic = key_alterations.at(step_index);
+              }
+              midi_number = step_halfsteps.at(step_index) +
+                            spelling.chromatic +
+                            octave_number * HALFSTEPS_PER_OCTAVE + C_0_MIDI +
+                            current_transpose_semitones;
+              septimal_quartertones = spelling.septimal_quartertones;
             }
 
             if (note_duration == 0) {
@@ -1416,8 +1495,12 @@ auto import_musicxml(SongWidget& song_widget, const QString& filename) -> bool {
               // in one part, or an unresolved tie carried over from an
               // earlier part) tying the same pitch clobber each other's
               // still-open note
+              // keyed by written step and octave rather than pitch, since a
+              // note tied across a barline usually drops its accidental,
+              // but still continues the pitch it was tied from
               const auto tied_note_key =
-                  voice_key + ":" + QString::number(midi_number);
+                  voice_key + ":" + QString::fromStdString(step) + ":" +
+                  QString::number(octave_number);
               if (tie_end && !tied_notes.contains(tied_note_key)) {
                 // no matching tie-start -- the schema doesn't require ties
                 // to be well-formed, so a malformed or hand-edited file can
@@ -1443,6 +1526,7 @@ auto import_musicxml(SongWidget& song_widget, const QString& filename) -> bool {
                   stream << QObject::tr(" instrument ") << instrument_name;
                 }
                 new_note.midi_number = midi_number;
+                new_note.septimal_quartertones = septimal_quartertones;
                 new_note.start_time = chord_start_time;
                 auto& voice_numbers = is_pitched ? pitched_voice_numbers
                                                  : unpitched_voice_numbers;

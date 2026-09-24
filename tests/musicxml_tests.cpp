@@ -313,13 +313,36 @@ auto make_musicxml(const QString& attributes, const QString& body) -> QString {
          attributes + "</attributes>" + body + "</measure></part></score-partwise>";
 }
 
-auto make_pitch_note(const QString& alter, const QString& duration)
+auto make_pitch_note(const QString& accidental, const QString& duration)
     -> QString {
-  return "<note><pitch><step>C</step>" +
-         (alter.isEmpty() ? QString() : "<alter>" + alter + "</alter>") +
-         "<octave>4</octave></pitch><duration>" + duration +
-         "</duration></note>";
+  return "<note><pitch><step>C</step><octave>4</octave></pitch><duration>" +
+         duration + "</duration>" +
+         (accidental.isEmpty() ? QString()
+                               : "<accidental>" + accidental + "</accidental>") +
+         "</note>";
 }
+
+// a quarter note (with one division per quarter), optionally tied, with an
+// accidental, or on a given staff
+auto make_spelled_note(const QString& step, const QString& octave,
+                       const QString& accidental = "",
+                       const QString& tie_type = "",
+                       const QString& staff = "") -> QString {
+  return "<note><pitch><step>" + step + "</step><octave>" + octave +
+         "</octave></pitch><duration>1</duration>" +
+         (tie_type.isEmpty() ? QString()
+                             : "<tie type=\"" + tie_type + "\"/>") +
+         (accidental.isEmpty() ? QString()
+                               : "<accidental>" + accidental + "</accidental>") +
+         (staff.isEmpty() ? QString() : "<staff>" + staff + "</staff>") +
+         "</note>";
+}
+
+auto make_key(const QString& fifths) -> QString {
+  return "<key><fifths>" + fifths + "</fifths></key>";
+}
+
+const QString NEXT_MEASURE = "</measure><measure number=\"2\">";
 
 const QString DIVISIONS = "<divisions>1</divisions>";
 // too big for a 32-bit int, but still valid for the schema's unbounded types
@@ -351,12 +374,14 @@ void Tester::test_musicxml_inline_error_data() {
       << DIVISIONS + "<transpose><chromatic>0</chromatic><octave-change>" +
              HUGE_NUMBER + "</octave-change></transpose>"
       << plain_note << "Octave change value is out of range";
-  QTest::newRow("microtonal pitch")
-      << DIVISIONS << make_pitch_note("0.5", "1")
-      << "Microtonal pitches are not supported";
-  QTest::newRow("alter out of range")
-      << DIVISIONS << make_pitch_note(HUGE_NUMBER, "1")
-      << "Alter value is out of range";
+  // only arrows are read as septimal quartertones, since a bare quartertone
+  // accidental doesn't say which chromatic accidental it modifies
+  QTest::newRow("quartertone accidental")
+      << DIVISIONS << make_pitch_note("quarter-flat", "1")
+      << "Accidental quarter-flat is not supported";
+  QTest::newRow("other accidental")
+      << DIVISIONS << make_pitch_note("other", "1")
+      << "Accidental other is not supported";
   QTest::newRow("fractional note duration")
       << DIVISIONS << make_pitch_note("", "1.5")
       << "Fractional note durations are not supported";
@@ -454,6 +479,115 @@ void Tester::test_musicxml_octave_change() {
   auto shifted_octave = 0;
   import_first_note_octave("<octave-change>1</octave-change>", shifted_octave);
   QCOMPARE(shifted_octave, plain_octave + 1);
+
+  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}
+
+// notes are spelled from their accidentals, as they would be read, with
+// arrows as Johnston's 7 (down, 35/36) and el (up, 36/35); the checked note
+// is the first in the last chord, measured from the key
+void Tester::test_musicxml_accidentals_data() {
+  QTest::addColumn<QString>("attributes");
+  QTest::addColumn<QString>("body");
+  QTest::addColumn<Interval>("expected_interval");
+
+  const auto c_major = DIVISIONS + make_key("0");
+
+  QTest::newRow("minor seventh")
+      << c_major << make_spelled_note("B", "4", "flat")
+      << Interval(Rational(9, 5));
+  QTest::newRow("harmonic seventh")
+      << c_major << make_spelled_note("B", "4", "flat-down")
+      << Interval(Rational(7, 4));
+  QTest::newRow("el")
+      << c_major << make_spelled_note("B", "4", "flat-up")
+      << Interval(Rational(324, 175));
+  QTest::newRow("natural with 7")
+      << c_major << make_spelled_note("B", "4", "natural-down")
+      << Interval(Rational(175, 96));
+  // not the same as an F raised by an el, even though both are notated a
+  // quartertone above F
+  QTest::newRow("sharp with 7")
+      << c_major << make_spelled_note("F", "4", "sharp-down")
+      << Interval(Rational(175, 128));
+  QTest::newRow("natural with el")
+      << c_major << make_spelled_note("F", "4", "natural-up")
+      << Interval(Rational(48, 35));
+  QTest::newRow("double flat with 7")
+      << c_major << make_spelled_note("B", "4", "flat-flat-down")
+      << Interval(Rational(175, 108));
+  QTest::newRow("double sharp with el")
+      << c_major << make_spelled_note("C", "4", "double-sharp-up")
+      << Interval(Rational(81, 70));
+  // <alter> is ignored in favor of the accidental
+  QTest::newRow("alter ignored")
+      << c_major
+      << "<note><pitch><step>B</step><alter>-1</alter><octave>4</octave>"
+         "</pitch><duration>1</duration></note>"
+      << Interval(Rational(15, 8));
+  // F major: B is flat, and the key is F
+  QTest::newRow("key signature flat")
+      << DIVISIONS + make_key("-1") << make_spelled_note("B", "4")
+      << Interval(Rational(4, 3));
+  // G# major: the eighth sharp doubles F, and the key is G#
+  QTest::newRow("key signature double sharp")
+      << DIVISIONS + make_key("8") << make_spelled_note("F", "4")
+      << Interval(Rational(15, 8), -1);
+  QTest::newRow("accidental lasts through the measure")
+      << c_major
+      << make_spelled_note("B", "4", "flat-down") + make_spelled_note("B", "4")
+      << Interval(Rational(7, 4));
+  QTest::newRow("accidental replaced later in the measure")
+      << c_major
+      << make_spelled_note("B", "4", "flat-down") +
+             make_spelled_note("B", "4", "flat")
+      << Interval(Rational(9, 5));
+  QTest::newRow("accidental only applies to its octave")
+      << c_major
+      << make_spelled_note("B", "4", "flat-down") + make_spelled_note("B", "3")
+      << Interval(Rational(15, 8), -1);
+  QTest::newRow("accidental only applies to its staff")
+      << c_major
+      << make_spelled_note("B", "4", "flat-down", "", "1") +
+             make_spelled_note("B", "4", "", "", "2")
+      << Interval(Rational(15, 8));
+  QTest::newRow("accidental ends with the measure")
+      << c_major
+      << make_spelled_note("B", "4", "flat-down") + NEXT_MEASURE +
+             make_spelled_note("B", "4")
+      << Interval(Rational(15, 8));
+  // a tied-over note keeps the pitch it was tied from, without an accidental
+  QTest::newRow("tie continues across the barline")
+      << c_major
+      << make_spelled_note("B", "4", "flat-down", "start") + NEXT_MEASURE +
+             make_spelled_note("B", "4", "", "stop")
+      << Interval(Rational(7, 4));
+}
+
+void Tester::test_musicxml_accidentals() {
+  QFETCH(const QString, attributes);
+  QFETCH(const QString, body);
+  QFETCH(const Interval, expected_interval);
+
+  QTemporaryFile temp_file;
+  QVERIFY(temp_file.open());
+  temp_file.write(make_musicxml(attributes, body).toStdString().c_str());
+  temp_file.close();
+
+  auto& song_widget = song_editor.song_widget;
+  import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                             song_editor.piano_roll_widget,
+                             temp_file.fileName());
+  const auto& chords = song_widget.song.chords;
+  QVERIFY(!chords.isEmpty());
+  const auto& pitched_notes = chords.last().pitched_notes;
+  QVERIFY(!pitched_notes.isEmpty());
+  const auto& interval = pitched_notes.at(0).interval;
+  QCOMPARE(interval.ratio.numerator, expected_interval.ratio.numerator);
+  QCOMPARE(interval.ratio.denominator, expected_interval.ratio.denominator);
+  QCOMPARE(interval.octave, expected_interval.octave);
 
   open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
                        song_editor.piano_roll_widget,
