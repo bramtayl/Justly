@@ -38,8 +38,10 @@ auto UnpitchedNote::get_number_of_columns() -> int {
 
 auto UnpitchedNote::get_column_name(int column_number) -> const char* {
   switch (static_cast<UnpitchedNoteColumn>(column_number)) {
+    // GCOVR_EXCL_START
     case UnpitchedNoteColumn::number_of_unpitched_note_columns:
       Q_UNREACHABLE();
+    // GCOVR_EXCL_STOP
     case UnpitchedNoteColumn::unpitched_note_voice_number_column:
       return "Voice";
     case UnpitchedNoteColumn::unpitched_note_beats_column:
@@ -86,8 +88,10 @@ auto UnpitchedNote::get_voice_velocity_ratio(
 
 auto UnpitchedNote::get_data(const int column_number) const -> QVariant {
   switch (static_cast<UnpitchedNoteColumn>(column_number)) {
+    // GCOVR_EXCL_START
     case UnpitchedNoteColumn::number_of_unpitched_note_columns:
       Q_UNREACHABLE();
+    // GCOVR_EXCL_STOP
     case UnpitchedNoteColumn::unpitched_note_voice_number_column:
       return voice_number;
     case UnpitchedNoteColumn::unpitched_note_beats_column:
@@ -103,8 +107,10 @@ auto UnpitchedNote::get_data(const int column_number) const -> QVariant {
 void UnpitchedNote::set_data(const int column_number,
                              const QVariant& new_value) {
   switch (static_cast<UnpitchedNoteColumn>(column_number)) {
+    // GCOVR_EXCL_START
     case UnpitchedNoteColumn::number_of_unpitched_note_columns:
       Q_UNREACHABLE();
+    // GCOVR_EXCL_STOP
     case UnpitchedNoteColumn::unpitched_note_voice_number_column:
       voice_number = variant_to<int>(new_value);
       break;
@@ -123,8 +129,10 @@ void UnpitchedNote::set_data(const int column_number,
 void UnpitchedNote::copy_column_from(const UnpitchedNote& template_row,
                                      const int column_number) {
   switch (static_cast<UnpitchedNoteColumn>(column_number)) {
+    // GCOVR_EXCL_START
     case UnpitchedNoteColumn::number_of_unpitched_note_columns:
       Q_UNREACHABLE();
+    // GCOVR_EXCL_STOP
     case UnpitchedNoteColumn::unpitched_note_voice_number_column:
       voice_number = template_row.voice_number;
       break;
@@ -143,8 +151,10 @@ void UnpitchedNote::copy_column_from(const UnpitchedNote& template_row,
 void UnpitchedNote::column_to_xml(xmlNode& node,
                                   const int column_number) const {
   switch (static_cast<UnpitchedNoteColumn>(column_number)) {
+    // GCOVR_EXCL_START
     case UnpitchedNoteColumn::number_of_unpitched_note_columns:
       Q_UNREACHABLE();
+    // GCOVR_EXCL_STOP
     case UnpitchedNoteColumn::unpitched_note_voice_number_column:
       set_xml_int(node, "voice_number", voice_number);
       break;

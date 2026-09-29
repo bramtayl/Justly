@@ -1,6 +1,9 @@
 #include <QtWidgets/QSpinBox>
 
 #include "Tester.hpp"
+#include "cell_editors/MidiNumberEditor.hpp"
+#include "cell_editors/RationalEditor.hpp"
+#include "cell_editors/StringPicker.hpp"
 #include "widgets/ControlsColumn.hpp"
 #include "widgets/SpinBoxes.hpp"
 
@@ -620,4 +623,124 @@ void Tester::test_unused_role() {
   QCOMPARE(test_index.data(Qt::DecorationRole), QVariant());
   QVERIFY(!(model.setData(test_index, QVariant(), Qt::DecorationRole)));
   maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
+}
+
+void Tester::test_voice_cell_editors_data() {
+  QTest::addColumn<RowType>("row_type");
+  QTest::addColumn<int>("column_number");
+  QTest::addColumn<QString>("editor_kind");
+
+  QTest::newRow("pitched voice instrument")
+      << RowType::pitched_voice_type
+      << static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column)
+      << "string picker";
+  QTest::newRow("pitched voice velocity ratio")
+      << RowType::pitched_voice_type
+      << static_cast<int>(
+             PitchedVoiceColumn::pitched_voice_velocity_ratio_column)
+      << "rational";
+  QTest::newRow("pitched voice name")
+      << RowType::pitched_voice_type
+      << static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column)
+      << "text";
+  QTest::newRow("unpitched voice percussion set")
+      << RowType::unpitched_voice_type
+      << static_cast<int>(
+             UnpitchedVoiceColumn::unpitched_voice_percussion_set_column)
+      << "string picker";
+  QTest::newRow("unpitched voice midi number")
+      << RowType::unpitched_voice_type
+      << static_cast<int>(
+             UnpitchedVoiceColumn::unpitched_voice_midi_number_column)
+      << "midi number";
+  QTest::newRow("unpitched voice velocity ratio")
+      << RowType::unpitched_voice_type
+      << static_cast<int>(
+             UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column)
+      << "rational";
+  QTest::newRow("unpitched voice name")
+      << RowType::unpitched_voice_type
+      << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column)
+      << "text";
+}
+
+// each voice column gets the editor suited to its values
+void Tester::test_voice_cell_editors() {
+  QFETCH(const RowType, row_type);
+  QFETCH(const int, column_number);
+  QFETCH(const QString, editor_kind);
+
+  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+  switch_to(song_editor, row_type, -1);
+
+  auto& delegate = get_reference(switch_table.itemDelegate());
+  auto* const editor_pointer = delegate.createEditor(
+      &get_reference(switch_table.viewport()), QStyleOptionViewItem(),
+      get_model(switch_table).index(0, column_number));
+  const auto actual_kind = [editor_pointer]() -> QString {
+    if (dynamic_cast<StringPicker*>(editor_pointer) != nullptr) {
+      return "string picker";
+    }
+    if (dynamic_cast<RationalEditor*>(editor_pointer) != nullptr) {
+      return "rational";
+    }
+    if (dynamic_cast<MidiNumberEditor*>(editor_pointer) != nullptr) {
+      return "midi number";
+    }
+    if (dynamic_cast<QLineEdit*>(editor_pointer) != nullptr) {
+      return "text";
+    }
+    return "other";
+  }();
+  delete editor_pointer;  // NOLINT(cppcoreguidelines-owning-memory)
+  QCOMPARE(actual_kind, editor_kind);
+
+  maybe_switch_back_to_chords(song_editor.song_widget.undo_stack, row_type);
+}
+
+// moving between chords' notes after an edit merges the moves into one undo
+// step, like it does without the edit
+void Tester::test_navigate_chords_after_edit() {
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& undo_stack = song_widget.undo_stack;
+  auto& view_menu = song_editor.song_menu_bar.view_menu;
+
+  switch_to(song_editor, RowType::pitched_note_type, 1);
+  auto& model = get_model(switch_table);
+  QVERIFY(model.setData(
+      model.index(0,
+                  static_cast<int>(PitchedNoteColumn::pitched_note_words_column)),
+      "edited"));
+  const auto index_after_edit = undo_stack.index();
+
+  view_menu.next_chord_action.trigger();
+  view_menu.next_chord_action.trigger();
+  QCOMPARE(get_parent_chord_number(switch_table), 3);
+  QCOMPARE(undo_stack.index(), index_after_edit + 1);
+
+  undo_stack.undo();
+  QCOMPARE(switch_table.delegate.current_row_type, RowType::pitched_note_type);
+  QCOMPARE(get_parent_chord_number(switch_table), 1);
+
+  undo_stack.undo();  // the edit
+  undo_stack.undo();  // back to chords
+  QCOMPARE(switch_table.delegate.current_row_type, RowType::chord_type);
+}
+
+// double-clicking only opens notes from a chord's notes columns
+void Tester::test_double_click_outside_notes_columns() {
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_table = song_widget.switch_column.switch_table;
+
+  double_click_column(switch_table, 1,
+                      static_cast<int>(ChordColumn::chord_interval_column));
+  QCOMPARE(switch_table.delegate.current_row_type, RowType::chord_type);
+
+  switch_to(song_editor, RowType::pitched_note_type, 1);
+  double_click_column(switch_table, 0, 0);
+  QCOMPARE(switch_table.delegate.current_row_type, RowType::pitched_note_type);
+  QCOMPARE(get_parent_chord_number(switch_table), 1);
+  maybe_switch_back_to_chords(song_widget.undo_stack,
+                              RowType::pitched_note_type);
 }

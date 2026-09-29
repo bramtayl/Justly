@@ -456,14 +456,16 @@ void Tester::test_export_midi_unwritable_path() {
 }
 
 // unpitched notes from the same percussion set share the percussion
-// channel, so they can start together without a conflict
+// channel, so they can start together without a conflict, and any percussion
+// can follow later on
 void Tester::test_export_midi_shared_percussion_set() {
   QTemporaryDir temp_export_dir;
   QVERIFY(temp_export_dir.isValid());
   const auto export_filename = temp_export_dir.filePath("export.mid");
 
   open_text(song_editor,
-            make_voice_song_xml({"A"}, {"D", "E"}, {{{}, {0, 1}}}));
+            make_voice_song_xml({"A"}, {"D", "E"},
+                                          {{{}, {0, 1}}, {{}, {0}}}));
   export_midi_to_file(song_editor.song_widget, export_filename);
 
   QFile written_file(export_filename);

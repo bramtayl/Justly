@@ -100,19 +100,17 @@ void redraw_time_axis_ticks(PianoRollNotesScene& notes_scene) {
 
     // formats a time-axis tick label in whichever unit best suits the
     // current tick spacing (step_ms) -- milliseconds when ticks are
-    // sub-second, and seconds (with a decimal only when the step itself
-    // needs one) once ticks are a second or more apart -- so labels stay
-    // round and readable at every zoom level rather than always being
-    // expressed in one fixed unit. PIANO_ROLL_MIN_TIME_ZOOM caps the step
-    // at a few seconds, so ticks never get far enough apart to need minutes
+    // sub-second, and whole seconds once ticks are a second or more apart
+    // (a nice step that big is always a whole number of seconds) -- so
+    // labels stay round and readable at every zoom level rather than always
+    // being expressed in one fixed unit. PIANO_ROLL_MIN_TIME_ZOOM caps the
+    // step at a few seconds, so ticks never get far enough apart to need
+    // minutes
     auto& label = get_reference(scene.addSimpleText([&]() -> QString {
       if (step_ms < PIANO_ROLL_MS_PER_SECOND) {
         return QString::number(std::llround(time_ms)) + "ms";
       }
-      const auto has_sub_second_step =
-          std::fmod(step_ms, PIANO_ROLL_MS_PER_SECOND) != 0.0;
-      return QString::number(time_ms / PIANO_ROLL_MS_PER_SECOND, 'f',
-                             has_sub_second_step ? 1 : 0) +
+      return QString::number(std::llround(time_ms / PIANO_ROLL_MS_PER_SECOND)) +
              "s";
     }()));
     // keeps the label's on-screen size constant across zoom levels --

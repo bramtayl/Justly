@@ -233,24 +233,34 @@ void Tester::test_remove_voice_row_consistent_during_warning() {
 }
 
 // removing a voice only rewrites a copied note's voice_number when the copy
-// actually holds one -- a copy that starts after the voice column, or a
-// clipboard that doesn't parse, is left exactly as it was, with no extra
-// clipboard warning
+// actually holds one -- a copy that starts after the voice column, a copied
+// chord with no notes, a clipboard holding something else entirely, or one
+// that doesn't parse, is left exactly as it was, with no extra clipboard
+// warning
 void Tester::test_remove_voice_leaves_clipboard_data() {
   QTest::addColumn<QString>("clipboard_text");
+  QTest::addColumn<QString>("mime_type");
+
+  const QString notes_mime = PitchedNote::get_cells_mime();
 
   // empty means copy a live note's interval cell instead
-  QTest::newRow("copy after voice column") << "";
-  QTest::newRow("invalid clipboard") << "<";
+  QTest::newRow("copy after voice column") << "" << notes_mime;
+  QTest::newRow("invalid clipboard") << "<" << notes_mime;
+  QTest::newRow("chord without notes")
+      << "<clipboard><left_column>6</left_column><right_column>6</"
+         "right_column><rows><chord><words>hi</words></chord></rows>"
+         "</clipboard>"
+      << Chord::get_cells_mime();
+  QTest::newRow("not Justly cells") << "plain text" << "text/plain";
 }
 
 void Tester::test_remove_voice_leaves_clipboard() {
   QFETCH(const QString, clipboard_text);
+  QFETCH(const QString, mime_type);
 
   auto& song_widget = song_editor.song_widget;
   auto& switch_table = song_widget.switch_column.switch_table;
   auto& edit_menu = song_editor.song_menu_bar.edit_menu;
-  const auto* const mime_type = PitchedNote::get_cells_mime();
 
   open_text(song_editor,
             make_voice_song_xml({"A", "B"}, {"D"}, {{{0, 1}, {}}}));
@@ -270,6 +280,7 @@ void Tester::test_remove_voice_leaves_clipboard() {
   }
   const auto old_clipboard =
       get_reference(get_clipboard().mimeData()).data(mime_type);
+  QVERIFY(!old_clipboard.isEmpty());
 
   // only the live note gets a warning
   switch_to(song_editor, RowType::pitched_voice_type, -1);
@@ -282,6 +293,103 @@ void Tester::test_remove_voice_leaves_clipboard() {
 
   QCOMPARE(get_reference(get_clipboard().mimeData()).data(mime_type),
            old_clipboard);
+  song_editor.song_menu_bar.view_menu.back_to_chords_action.trigger();
+
+  // restore the shared fixture
+  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}
+
+namespace {
+
+// a copied pitched note on voice_number, with a non-voice field alongside
+// it, as the clipboard XML Justly writes for a two-column copy
+void set_pitched_note_clipboard(const int voice_number) {
+  auto& new_data =
+      get_reference(new QMimeData);  // NOLINT(cppcoreguidelines-owning-memory)
+  new_data.setData(
+      PitchedNote::get_cells_mime(),
+      QString("<clipboard><left_column>0</left_column><right_column>1</"
+              "right_column><rows><pitched_note><voice_number>%1</"
+              "voice_number><words>hi</words></pitched_note></rows>"
+              "</clipboard>")
+          .arg(voice_number)
+          .toUtf8());
+  get_clipboard().setMimeData(&new_data);
+}
+
+auto get_pitched_note_clipboard() -> QString {
+  return QString::fromUtf8(get_reference(get_clipboard().mimeData())
+                               .data(PitchedNote::get_cells_mime()));
+}
+
+}  // namespace
+
+void Tester::test_voice_change_keeps_earlier_clipboard_voice_data() {
+  QTest::addColumn<bool>("is_insertion");
+
+  QTest::newRow("insert") << true;
+  QTest::newRow("remove") << false;
+}
+
+// a copied note on a voice before the inserted/removed row keeps its voice
+// number, along with the rest of its copied fields
+void Tester::test_voice_change_keeps_earlier_clipboard_voice() {
+  QFETCH(const bool, is_insertion);
+
+  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+  auto& edit_menu = song_editor.song_menu_bar.edit_menu;
+
+  open_text(song_editor,
+            make_voice_song_xml({"A", "B"}, {"D"}, {{{0, 1}, {}}}));
+  set_pitched_note_clipboard(0);
+
+  switch_to(song_editor, RowType::pitched_voice_type, -1);
+  if (is_insertion) {
+    select_cell(switch_table, 0, 0);
+    edit_menu.insert_menu.insert_after_action.trigger();
+  } else {
+    select_cell(switch_table, 1, 0);
+    close_message_later(song_editor, waiting_for_message,
+                        "Reassigning 1 pitched note voice to the first voice "
+                        "\"A\"");
+    edit_menu.remove_rows_action.trigger();
+    QVERIFY(!waiting_for_message);
+  }
+
+  const auto clipboard_text = get_pitched_note_clipboard();
+  QVERIFY(clipboard_text.contains("<voice_number>0</voice_number>"));
+  QVERIFY(clipboard_text.contains("<words>hi</words>"));
+  song_editor.song_menu_bar.view_menu.back_to_chords_action.trigger();
+
+  // restore the shared fixture
+  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}
+
+// undoing a voice insertion removes that voice again, so a copied note on it
+// falls back to the first voice -- silently, since the user is undoing
+// rather than removing the voice themselves
+void Tester::test_undo_voice_insert_reassigns_clipboard() {
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_table = song_widget.switch_column.switch_table;
+
+  open_text(song_editor, make_voice_song_xml({"A"}, {"D"}, {{{0}, {}}}));
+
+  switch_to(song_editor, RowType::pitched_voice_type, -1);
+  select_cell(switch_table, 0, 0);
+  song_editor.song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();
+  QCOMPARE(song_widget.song.pitched_voices.size(), 2);
+
+  set_pitched_note_clipboard(1);
+  // the class-wide unexpected_message_timer watchdog fails the test if a
+  // warning appears here
+  song_widget.undo_stack.undo();
+  QCOMPARE(song_widget.song.pitched_voices.size(), 1);
+  QVERIFY(get_pitched_note_clipboard().contains(
+      "<voice_number>0</voice_number>"));
   song_editor.song_menu_bar.view_menu.back_to_chords_action.trigger();
 
   // restore the shared fixture

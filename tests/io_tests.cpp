@@ -243,3 +243,63 @@ void Tester::test_import_via_dialog() {
                        song_editor.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
+
+void Tester::test_open_asks_to_discard_changes_data() {
+  QTest::addColumn<QString>("action_text");
+  QTest::addColumn<bool>("discard");
+
+  QTest::newRow("open, keep changes") << "&Open" << false;
+  QTest::newRow("open, discard changes") << "&Open" << true;
+  QTest::newRow("import, keep changes") << "&Import MusicXML" << false;
+  QTest::newRow("import, discard changes") << "&Import MusicXML" << true;
+}
+
+// opening or importing over unsaved changes asks first, and only goes on to
+// pick a file once the user agrees to discard them
+void Tester::test_open_asks_to_discard_changes() {
+  QFETCH(const QString, action_text);
+  QFETCH(const bool, discard);
+
+  auto& song_widget = song_editor.song_widget;
+  auto& undo_stack = song_widget.undo_stack;
+  const auto actions = song_editor.song_menu_bar.file_menu.actions();
+  const auto action_iterator = std::ranges::find_if(
+      actions, [&action_text](const QAction* const action_pointer) -> auto {
+        return action_pointer->text() == action_text;
+      });
+  QVERIFY(action_iterator != actions.cend());
+
+  select_cell(song_widget.switch_column.switch_table, 0, 0);
+  song_editor.song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();
+  QVERIFY(!undo_stack.isClean());
+  const auto number_of_chords = song_widget.song.chords.size();
+
+  answer_question_later(song_editor, waiting_for_message,
+                        "Discard unsaved changes?",
+                        discard ? QMessageBox::Yes : QMessageBox::No);
+  // only shows up (and then gets cancelled) if the changes were discarded
+  auto dialog_shown = false;
+  auto& timer =  // NOLINT(cppcoreguidelines-owning-memory)
+      *(new QTimer(&song_editor));
+  timer.setSingleShot(true);
+  QObject::connect(&timer, &QTimer::timeout, &song_editor,
+                   [&dialog_shown]() -> auto {
+                     auto* const found_dialog = find_top_level_file_dialog();
+                     if (found_dialog != nullptr) {
+                       dialog_shown = true;
+                       found_dialog->reject();
+                     }
+                   });
+  timer.start(WAIT_TIME * 2);
+
+  get_reference(*action_iterator).trigger();
+  if (!discard) {
+    // give the dialog timer its chance to find nothing
+    QTest::qWait(WAIT_TIME * 3);
+  }
+
+  QCOMPARE(dialog_shown, discard);
+  QCOMPARE(song_widget.song.chords.size(), number_of_chords);
+  undo_stack.undo();
+  QVERIFY(undo_stack.isClean());
+}

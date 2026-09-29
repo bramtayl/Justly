@@ -47,8 +47,10 @@ auto UnpitchedVoice::get_number_of_columns() -> int {
 
 auto UnpitchedVoice::get_column_name(int column_number) -> const char* {
   switch (static_cast<UnpitchedVoiceColumn>(column_number)) {
+    // GCOVR_EXCL_START
     case UnpitchedVoiceColumn::number_of_unpitched_voice_columns:
       Q_UNREACHABLE();
+    // GCOVR_EXCL_STOP
     case UnpitchedVoiceColumn::unpitched_voice_name_column:
       return "Name";
     case UnpitchedVoiceColumn::unpitched_voice_percussion_set_column:
@@ -71,8 +73,10 @@ auto UnpitchedVoice::is_column_editable(int /*column_number*/) -> bool {
 
 auto UnpitchedVoice::get_data(const int column_number) const -> QVariant {
   switch (static_cast<UnpitchedVoiceColumn>(column_number)) {
+    // GCOVR_EXCL_START
     case UnpitchedVoiceColumn::number_of_unpitched_voice_columns:
       Q_UNREACHABLE();
+    // GCOVR_EXCL_STOP
     case UnpitchedVoiceColumn::unpitched_voice_name_column:
       return name;
     case UnpitchedVoiceColumn::unpitched_voice_percussion_set_column:
@@ -88,8 +92,10 @@ auto UnpitchedVoice::get_data(const int column_number) const -> QVariant {
 void UnpitchedVoice::set_data(const int column_number,
                               const QVariant& new_value) {
   switch (static_cast<UnpitchedVoiceColumn>(column_number)) {
+    // GCOVR_EXCL_START
     case UnpitchedVoiceColumn::number_of_unpitched_voice_columns:
       Q_UNREACHABLE();
+    // GCOVR_EXCL_STOP
     case UnpitchedVoiceColumn::unpitched_voice_name_column:
       name = variant_to<QString>(new_value);
       break;
@@ -108,8 +114,10 @@ void UnpitchedVoice::set_data(const int column_number,
 void UnpitchedVoice::copy_column_from(const UnpitchedVoice& template_row,
                                       const int column_number) {
   switch (static_cast<UnpitchedVoiceColumn>(column_number)) {
+    // GCOVR_EXCL_START
     case UnpitchedVoiceColumn::number_of_unpitched_voice_columns:
       Q_UNREACHABLE();
+    // GCOVR_EXCL_STOP
     case UnpitchedVoiceColumn::unpitched_voice_name_column:
       name = template_row.name;
       break;
@@ -128,11 +136,13 @@ void UnpitchedVoice::copy_column_from(const UnpitchedVoice& template_row,
 void UnpitchedVoice::column_to_xml(xmlNode& node,
                                    const int column_number) const {
   switch (static_cast<UnpitchedVoiceColumn>(column_number)) {
+    // GCOVR_EXCL_START
     case UnpitchedVoiceColumn::number_of_unpitched_voice_columns:
     case UnpitchedVoiceColumn::unpitched_voice_name_column:
       // copy/cut are disabled when a voice name is selected; see
       // ReplaceTable.cpp's update_actions
       Q_UNREACHABLE();
+    // GCOVR_EXCL_STOP
     case UnpitchedVoiceColumn::unpitched_voice_percussion_set_column:
       maybe_add_qstring_to_xml(node, "percussion_set_pointer", program);
       break;

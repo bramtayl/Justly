@@ -81,6 +81,8 @@ struct Tester : public QObject {
   void test_file_dialog_reject();
   void test_open_via_dialog();
   void test_import_via_dialog();
+  static void test_open_asks_to_discard_changes_data();
+  void test_open_asks_to_discard_changes();
   static void test_midi_append_variable_length_data();
   static void test_midi_append_variable_length();
   static void test_midi_byte_encoding();
@@ -109,6 +111,9 @@ struct Tester : public QObject {
   void test_remove_voice_row_consistent_during_warning();
   static void test_remove_voice_leaves_clipboard_data();
   void test_remove_voice_leaves_clipboard();
+  static void test_voice_change_keeps_earlier_clipboard_voice_data();
+  void test_voice_change_keeps_earlier_clipboard_voice();
+  void test_undo_voice_insert_reassigns_clipboard();
   static void test_remove_last_voice_disables_action_data();
   void test_remove_last_voice_disables_action();
   static void test_unreduced_ratio_from_xml_data();
@@ -148,6 +153,10 @@ struct Tester : public QObject {
   void test_failed_import_does_not_reset_notes_view();
   static void test_next_previous_data();
   void test_next_previous();
+  void test_navigate_chords_after_edit();
+  void test_double_click_outside_notes_columns();
+  static void test_voice_cell_editors_data();
+  void test_voice_cell_editors();
   void test_reconnecting_selection_model_does_not_duplicate_connections();
   void test_octave_bound();
   void test_octave_bound_chord();
@@ -246,4 +255,13 @@ struct Tester : public QObject {
   void test_piano_roll_right_click_ignored();
   static void test_piano_roll_click_bar_in_chords_mode_data();
   void test_piano_roll_click_bar_in_chords_mode();
+  void test_piano_roll_playhead_reaches_end();
+  void test_piano_roll_short_clip_catch_up();
+  void test_piano_roll_ignores_other_widgets();
+  void test_piano_roll_double_click_empty_space();
+  void test_piano_roll_drag_before_start();
+  void test_piano_roll_click_without_selection();
+  void test_piano_roll_click_replaces_note_row();
+  void test_piano_roll_click_empty_song();
+  void test_piano_roll_minimum_bar_width();
 };
