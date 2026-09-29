@@ -12,7 +12,7 @@
 #include "column_numbers/UnpitchedNoteColumn.hpp"
 #include "column_numbers/UnpitchedVoiceColumn.hpp"
 #include "menus/SongMenuBar.hpp"
-#include "widgets/SongEditor.hpp"
+#include "widgets/MainWindow.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchTable.hpp"
 
@@ -61,8 +61,8 @@ inline auto get_model(QAbstractItemView& table) -> auto& {
   return get_reference(table.model());
 }
 
-inline void double_click_column(QAbstractItemView& table, const int row_number,
-                                const int column_number) {
+inline void double_click_cell(QAbstractItemView& table, const int row_number,
+                              const int column_number) {
   table.doubleClicked(get_model(table).index(row_number, column_number));
 }
 
@@ -72,30 +72,30 @@ inline void select_cell(QAbstractItemView& table, const int row,
                                     SELECT_AND_CLEAR);
 }
 
-inline void switch_to(SongEditor& song_editor, const RowType row_type,
+inline void switch_to(MainWindow& main_window, const RowType row_type,
                       const int chord_number) {
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
   switch (row_type) {
     case RowType::chord_type:
       QVERIFY(chord_number == -1);
       break;
     case RowType::pitched_note_type:
-      double_click_column(
+      double_click_cell(
           switch_table, chord_number,
           static_cast<int>(ChordColumn::chord_pitched_notes_column));
       break;
     case RowType::unpitched_note_type:
-      double_click_column(
+      double_click_cell(
           switch_table, chord_number,
           static_cast<int>(ChordColumn::chord_unpitched_notes_column));
       break;
     case RowType::pitched_voice_type:
       QVERIFY(chord_number == -1);
-      song_editor.song_menu_bar.view_menu.edit_pitched_voices_action.trigger();
+      main_window.song_menu_bar.view_menu.edit_pitched_voices_action.trigger();
       break;
     case RowType::unpitched_voice_type:
       QVERIFY(chord_number == -1);
-      song_editor.song_menu_bar.view_menu.edit_unpitched_voices_action
+      main_window.song_menu_bar.view_menu.edit_unpitched_voices_action
           .trigger();
       break;
   }
@@ -108,13 +108,13 @@ inline void maybe_switch_back_to_chords(QUndoStack& undo_stack,
   }
 }
 
-inline void open_text(SongEditor& song_editor, const QString& song_text) {
+inline void open_text(MainWindow& main_window, const QString& song_text) {
   QTemporaryFile temp_file;
   QVERIFY(temp_file.open());
   temp_file.write(song_text.toStdString().c_str());
   temp_file.close();
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget, temp_file.fileName());
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget, temp_file.fileName());
 }
 
 // wraps the given voices and chords in a <song> with a fixed gain, key, and

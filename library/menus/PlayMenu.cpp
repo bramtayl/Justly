@@ -1,8 +1,8 @@
 #include "menus/PlayMenu.hpp"
 
-#include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchTable.hpp"
+#include "widgets/WindowBody.hpp"
 
 namespace {
 
@@ -19,8 +19,8 @@ void modulate_before_chord(const Song& song, PlayState& play_state,
 
 }  // namespace
 
-auto get_play_selection(const SongWidget& song_widget) -> PlaySelection {
-  const auto& switch_table = song_widget.switch_column.switch_table;
+auto get_play_selection(const WindowBody& window_body) -> PlaySelection {
+  const auto& switch_table = window_body.switch_column.switch_table;
   const auto& range = get_only_range(switch_table);
   return {.row_type = switch_table.delegate.current_row_type,
           .chord_number = get_parent_chord_number(switch_table),
@@ -28,7 +28,7 @@ auto get_play_selection(const SongWidget& song_widget) -> PlaySelection {
           .number_of_rows = get_number_of_rows(range)};
 }
 
-PlayMenu::PlayMenu(SongWidget& song_widget)
+PlayMenu::PlayMenu(WindowBody& window_body)
     : QMenu(PlayMenu::tr("&Play")),
       play_action(PlayMenu::tr("&Play selection")),
       play_to_end_action(PlayMenu::tr("Play to &end")),
@@ -39,27 +39,27 @@ PlayMenu::PlayMenu(SongWidget& song_widget)
   play_to_end_action.setShortcut(Qt::ShiftModifier | Qt::Key_Space);
   add_menu_action(*this, stop_playing_action, QKeySequence::Cancel);
 
-  const auto& player = song_widget.player;
+  const auto& player = window_body.player;
   QObject::connect(
-      &play_action, &QAction::triggered, this, [&song_widget]() -> auto {
-        const auto& song = song_widget.song;
+      &play_action, &QAction::triggered, this, [&window_body]() -> auto {
+        const auto& song = window_body.song;
         const auto& pitched_voices = song.pitched_voices;
         const auto& unpitched_voices = song.unpitched_voices;
-        auto& player = song_widget.player;
+        auto& player = window_body.player;
         auto& play_state = player.play_state;
 
-        const auto selection = get_play_selection(song_widget);
+        const auto selection = get_play_selection(window_body);
         const auto current_row_type = selection.row_type;
         const auto first_row_number = selection.first_row_number;
         const auto number_of_rows = selection.number_of_rows;
 
         stop_playing(player.sequencer, player.event);
-        initialize_play(song_widget);
+        initialize_play(window_body);
 
         switch (current_row_type) {
           case RowType::chord_type:
             modulate_before_chord(song, play_state, first_row_number);
-            play_chords(song_widget, first_row_number, number_of_rows);
+            play_chords(window_body, first_row_number, number_of_rows);
             break;
           case RowType::pitched_note_type:
           case RowType::unpitched_note_type: {
@@ -100,25 +100,25 @@ PlayMenu::PlayMenu(SongWidget& song_widget)
       });
 
   QObject::connect(
-      &play_to_end_action, &QAction::triggered, this, [&song_widget]() -> auto {
-        const auto& song = song_widget.song;
+      &play_to_end_action, &QAction::triggered, this, [&window_body]() -> auto {
+        const auto& song = window_body.song;
         const auto& pitched_voices = song.pitched_voices;
         const auto& unpitched_voices = song.unpitched_voices;
-        auto& player = song_widget.player;
+        auto& player = window_body.player;
         auto& play_state = player.play_state;
         const auto number_of_chords = static_cast<int>(song.chords.size());
 
-        const auto selection = get_play_selection(song_widget);
+        const auto selection = get_play_selection(window_body);
         const auto current_row_type = selection.row_type;
         const auto first_row_number = selection.first_row_number;
 
         stop_playing(player.sequencer, player.event);
-        initialize_play(song_widget);
+        initialize_play(window_body);
 
         switch (current_row_type) {
           case RowType::chord_type:
             modulate_before_chord(song, play_state, first_row_number);
-            play_chords(song_widget, first_row_number,
+            play_chords(window_body, first_row_number,
                         number_of_chords - first_row_number);
             break;
           case RowType::pitched_note_type:
@@ -148,7 +148,7 @@ PlayMenu::PlayMenu(SongWidget& song_widget)
             }
             move_time(play_state, chord);
             update_final_time(player, play_state.current_time);
-            play_chords(song_widget, chord_number + 1,
+            play_chords(window_body, chord_number + 1,
                         number_of_chords - chord_number - 1);
             break;
           }

@@ -52,7 +52,7 @@ void update_piano_roll_widget_selection(PianoRollWidget& widget,
   widget.selection_first_row_number = first_row_number;
   widget.selection_number_of_rows = number_of_rows;
   apply_selection_highlight(
-      widget.song_widget.song, widget.piano_roll_scene,
+      widget.window_body.song, widget.piano_roll_scene,
       widget.selection_row_type, widget.selection_chord_number,
       widget.selection_first_row_number, widget.selection_number_of_rows,
       widget.selecting_chord_from_playhead);
@@ -62,8 +62,8 @@ void update_piano_roll_widget_selection(PianoRollWidget& widget,
 // note bar(s) get highlighted, where the cursor jumps to); an empty
 // selection clears both, since get_only_range() asserts on an empty range
 void update_piano_roll_selection(PianoRollWidget& piano_roll_widget,
-                                 const SongWidget& song_widget) {
-  const auto& switch_table = song_widget.switch_column.switch_table;
+                                 const WindowBody& window_body) {
+  const auto& switch_table = window_body.switch_column.switch_table;
   const auto row_type = switch_table.delegate.current_row_type;
   const auto chord_number = get_parent_chord_number(switch_table);
   if (get_selection_model(switch_table).selection().empty()) {
@@ -76,16 +76,16 @@ void update_piano_roll_selection(PianoRollWidget& piano_roll_widget,
                                      range.top(), get_number_of_rows(range));
 }
 
-void update_actions(SongMenuBar& song_menu_bar, SongWidget& song_widget,
+void update_actions(SongMenuBar& song_menu_bar, WindowBody& window_body,
                     const QItemSelectionModel& selector) {
   auto& edit_menu = song_menu_bar.edit_menu;
-  auto& controls_column = song_widget.controls_column;
+  auto& controls_column = window_body.controls_column;
 
   const auto selection = selector.selection();
 
   const auto anything_selected = !selection.empty();
 
-  const auto& switch_table = song_widget.switch_column.switch_table;
+  const auto& switch_table = window_body.switch_column.switch_table;
 
   const auto current_row_type = switch_table.delegate.current_row_type;
   const auto is_voice = get_is_voice(current_row_type);
@@ -145,21 +145,21 @@ void update_actions(SongMenuBar& song_menu_bar, SongWidget& song_widget,
 
 }  // namespace
 
-void replace_table(SongMenuBar& song_menu_bar, SongWidget& song_widget,
+void replace_table(SongMenuBar& song_menu_bar, WindowBody& window_body,
                    const RowType new_row_type, const int new_chord_number,
                    PianoRollWidget& piano_roll_widget,
                    const int new_note_number) {
   static const auto WORDS_WIDTH = 200;
 
-  auto& song = song_widget.song;
-  auto& switch_column = song_widget.switch_column;
+  auto& song = window_body.song;
+  auto& switch_column = window_body.switch_column;
   auto& switch_table = switch_column.switch_table;
   auto& view_menu = song_menu_bar.view_menu;
 
   auto& previous_chord_action = view_menu.previous_chord_action;
   auto& next_chord_action = view_menu.next_chord_action;
 
-  auto& chords = song_widget.song.chords;
+  auto& chords = window_body.song.chords;
   auto to_chords = new_row_type == RowType::chord_type;
 
   const auto old_row_type = switch_table.delegate.current_row_type;
@@ -358,8 +358,8 @@ void replace_table(SongMenuBar& song_menu_bar, SongWidget& song_widget,
 
   switch_table.delegate.current_row_type = new_row_type;
   auto& selection_model = get_selection_model(switch_table);
-  update_actions(song_menu_bar, song_widget, selection_model);
-  update_piano_roll_selection(piano_roll_widget, song_widget);
+  update_actions(song_menu_bar, window_body, selection_model);
+  update_piano_roll_selection(piano_roll_widget, window_body);
   // set_model only swaps in a new selection model when row_type_changed, so
   // when it's false this reconnects to the same selection model as last
   // time; disconnect first so repeated calls (e.g. navigating between
@@ -370,10 +370,10 @@ void replace_table(SongMenuBar& song_menu_bar, SongWidget& song_widget,
   QObject::connect(
       &selection_model, &QItemSelectionModel::selectionChanged,
       &selection_model,
-      [&song_menu_bar, &song_widget, &selection_model,
+      [&song_menu_bar, &window_body, &selection_model,
        &piano_roll_widget]() -> auto {
-        update_actions(song_menu_bar, song_widget, selection_model);
-        update_piano_roll_selection(piano_roll_widget, song_widget);
+        update_actions(song_menu_bar, window_body, selection_model);
+        update_piano_roll_selection(piano_roll_widget, window_body);
       });
 }
 
@@ -398,11 +398,11 @@ auto ReplaceTable::mergeWith(const QUndoCommand* const next_command_pointer)
 }
 
 void ReplaceTable::undo() {
-  replace_table(song_menu_bar, song_widget, old_row_type, old_chord_number,
+  replace_table(song_menu_bar, window_body, old_row_type, old_chord_number,
                 piano_roll_widget);
 }
 
 void ReplaceTable::redo() {
-  replace_table(song_menu_bar, song_widget, new_row_type, new_chord_number,
+  replace_table(song_menu_bar, window_body, new_row_type, new_chord_number,
                 piano_roll_widget, new_note_number);
 }

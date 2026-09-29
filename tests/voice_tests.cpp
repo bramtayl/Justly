@@ -28,20 +28,20 @@ void Tester::test_voice_error() {
   QFETCH(const QString, text);
   QFETCH(const QString, error_message);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& chords_model = song_widget.switch_column.switch_table.chords_model;
-  const auto old_current_file = song_widget.current_file;
+  auto& window_body = main_window.window_body;
+  auto& chords_model = window_body.switch_column.switch_table.chords_model;
+  const auto old_current_file = window_body.current_file;
   const auto old_chord_count = chords_model.rowCount(QModelIndex());
   QVERIFY(old_chord_count > 0);
 
-  close_message_later(song_editor, waiting_for_message, error_message);
-  open_text(song_editor, text);
+  close_message_later(main_window, waiting_for_message, error_message);
+  open_text(main_window, text);
 
   // a file that fails voice validation must leave the previously open
   // song untouched rather than clearing it out from under the user (open_file
   // used to clear/repopulate the models before validating, so a rejected
   // file silently wiped out whatever was open, with no undo path back)
-  QCOMPARE(song_widget.current_file, old_current_file);
+  QCOMPARE(window_body.current_file, old_current_file);
   QCOMPARE(chords_model.rowCount(QModelIndex()), old_chord_count);
 }
 
@@ -76,17 +76,17 @@ void Tester::test_voice_name_rejected() {
   QFETCH(const QVariant, new_value);
   QFETCH(const QString, warning_message);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& undo_stack = song_widget.undo_stack;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& undo_stack = window_body.undo_stack;
 
-  switch_to(song_editor, row_type, chord_number);
+  switch_to(main_window, row_type, chord_number);
 
   auto& model = get_model(switch_table);
   const auto test_index = model.index(0, column_number);
   const auto old_value = test_index.data();
 
-  close_message_later(song_editor, waiting_for_message, warning_message);
+  close_message_later(main_window, waiting_for_message, warning_message);
   QVERIFY(!model.setData(test_index, new_value, Qt::EditRole));
   QCOMPARE(test_index.data(), old_value);
 
@@ -119,20 +119,20 @@ void Tester::test_remove_voice_reassigns_notes() {
   QFETCH(const bool, is_pitched);
   QFETCH(const QString, warning_message);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& undo_stack = song_widget.undo_stack;
-  auto& song = song_widget.song;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& undo_stack = window_body.undo_stack;
+  auto& song = window_body.song;
   const auto voice_row_type =
       is_pitched ? RowType::pitched_voice_type : RowType::unpitched_voice_type;
 
-  open_text(song_editor, text);
+  open_text(main_window, text);
 
-  switch_to(song_editor, voice_row_type, -1);
+  switch_to(main_window, voice_row_type, -1);
   QCOMPARE(get_model(switch_table).rowCount(), 3);
   select_cell(switch_table, 1, 0);
-  close_message_later(song_editor, waiting_for_message, warning_message);
-  song_editor.song_menu_bar.edit_menu.remove_rows_action.trigger();
+  close_message_later(main_window, waiting_for_message, warning_message);
+  main_window.song_menu_bar.edit_menu.remove_rows_action.trigger();
   QCOMPARE(get_model(switch_table).rowCount(), 2);
 
   if (is_pitched) {
@@ -168,8 +168,8 @@ void Tester::test_remove_voice_reassigns_notes() {
   maybe_switch_back_to_chords(undo_stack, voice_row_type);
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -182,24 +182,24 @@ void Tester::test_remove_voice_reassigns_notes() {
 // the warning dialog appears, song.pitched_voices and every note's
 // voice_number already agree with each other.
 void Tester::test_remove_voice_row_consistent_during_warning() {
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& undo_stack = song_widget.undo_stack;
-  auto& song = song_widget.song;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& undo_stack = window_body.undo_stack;
+  auto& song = window_body.song;
 
-  open_text(song_editor,
+  open_text(main_window,
             make_voice_song_xml({"A", "B", "C"}, {"D"}, {{{0, 1, 2}, {}}}));
 
-  switch_to(song_editor, RowType::pitched_voice_type, -1);
+  switch_to(main_window, RowType::pitched_voice_type, -1);
   select_cell(switch_table, 1, 0);
 
   const auto waiting_before = waiting_for_message;
   waiting_for_message = true;
   auto& timer =  // NOLINT(cppcoreguidelines-owning-memory)
-      *(new QTimer(&song_editor));
+      *(new QTimer(&main_window));
   timer.setSingleShot(true);
   QObject::connect(
-      &timer, &QTimer::timeout, &song_editor, [this, &song]() -> auto {
+      &timer, &QTimer::timeout, &main_window, [this, &song]() -> auto {
         auto* const box_pointer = find_top_level_message_box();
         if (box_pointer != nullptr) {
           waiting_for_message = false;
@@ -214,7 +214,7 @@ void Tester::test_remove_voice_row_consistent_during_warning() {
   timer.start(WAIT_TIME);
   QVERIFY(!waiting_before);
 
-  song_editor.song_menu_bar.edit_menu.remove_rows_action.trigger();
+  main_window.song_menu_bar.edit_menu.remove_rows_action.trigger();
   QVERIFY(!waiting_for_message);
 
   QCOMPARE(song.pitched_voices.size(), 2);
@@ -227,8 +227,8 @@ void Tester::test_remove_voice_row_consistent_during_warning() {
   maybe_switch_back_to_chords(undo_stack, RowType::pitched_voice_type);
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -258,20 +258,20 @@ void Tester::test_remove_voice_leaves_clipboard() {
   QFETCH(const QString, clipboard_text);
   QFETCH(const QString, mime_type);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& edit_menu = song_editor.song_menu_bar.edit_menu;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& edit_menu = main_window.song_menu_bar.edit_menu;
 
-  open_text(song_editor,
+  open_text(main_window,
             make_voice_song_xml({"A", "B"}, {"D"}, {{{0, 1}, {}}}));
 
   if (clipboard_text.isEmpty()) {
-    switch_to(song_editor, RowType::pitched_note_type, 0);
+    switch_to(main_window, RowType::pitched_note_type, 0);
     select_cell(
         switch_table, 1,
         static_cast<int>(PitchedNoteColumn::pitched_note_interval_column));
     edit_menu.copy_action.trigger();
-    song_editor.song_menu_bar.view_menu.back_to_chords_action.trigger();
+    main_window.song_menu_bar.view_menu.back_to_chords_action.trigger();
   } else {
     auto& new_data = get_reference(
         new QMimeData);  // NOLINT(cppcoreguidelines-owning-memory)
@@ -283,9 +283,9 @@ void Tester::test_remove_voice_leaves_clipboard() {
   QVERIFY(!old_clipboard.isEmpty());
 
   // only the live note gets a warning
-  switch_to(song_editor, RowType::pitched_voice_type, -1);
+  switch_to(main_window, RowType::pitched_voice_type, -1);
   select_cell(switch_table, 1, 0);
-  close_message_later(song_editor, waiting_for_message,
+  close_message_later(main_window, waiting_for_message,
                       "Reassigning 1 pitched note voice to the first voice "
                       "\"A\"");
   edit_menu.remove_rows_action.trigger();
@@ -293,11 +293,11 @@ void Tester::test_remove_voice_leaves_clipboard() {
 
   QCOMPARE(get_reference(get_clipboard().mimeData()).data(mime_type),
            old_clipboard);
-  song_editor.song_menu_bar.view_menu.back_to_chords_action.trigger();
+  main_window.song_menu_bar.view_menu.back_to_chords_action.trigger();
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -338,20 +338,20 @@ void Tester::test_voice_change_keeps_earlier_clipboard_voice_data() {
 void Tester::test_voice_change_keeps_earlier_clipboard_voice() {
   QFETCH(const bool, is_insertion);
 
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
-  auto& edit_menu = song_editor.song_menu_bar.edit_menu;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
+  auto& edit_menu = main_window.song_menu_bar.edit_menu;
 
-  open_text(song_editor,
+  open_text(main_window,
             make_voice_song_xml({"A", "B"}, {"D"}, {{{0, 1}, {}}}));
   set_pitched_note_clipboard(0);
 
-  switch_to(song_editor, RowType::pitched_voice_type, -1);
+  switch_to(main_window, RowType::pitched_voice_type, -1);
   if (is_insertion) {
     select_cell(switch_table, 0, 0);
     edit_menu.insert_menu.insert_after_action.trigger();
   } else {
     select_cell(switch_table, 1, 0);
-    close_message_later(song_editor, waiting_for_message,
+    close_message_later(main_window, waiting_for_message,
                         "Reassigning 1 pitched note voice to the first voice "
                         "\"A\"");
     edit_menu.remove_rows_action.trigger();
@@ -361,11 +361,11 @@ void Tester::test_voice_change_keeps_earlier_clipboard_voice() {
   const auto clipboard_text = get_pitched_note_clipboard();
   QVERIFY(clipboard_text.contains("<voice_number>0</voice_number>"));
   QVERIFY(clipboard_text.contains("<words>hi</words>"));
-  song_editor.song_menu_bar.view_menu.back_to_chords_action.trigger();
+  main_window.song_menu_bar.view_menu.back_to_chords_action.trigger();
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -373,28 +373,28 @@ void Tester::test_voice_change_keeps_earlier_clipboard_voice() {
 // falls back to the first voice -- silently, since the user is undoing
 // rather than removing the voice themselves
 void Tester::test_undo_voice_insert_reassigns_clipboard() {
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
 
-  open_text(song_editor, make_voice_song_xml({"A"}, {"D"}, {{{0}, {}}}));
+  open_text(main_window, make_voice_song_xml({"A"}, {"D"}, {{{0}, {}}}));
 
-  switch_to(song_editor, RowType::pitched_voice_type, -1);
+  switch_to(main_window, RowType::pitched_voice_type, -1);
   select_cell(switch_table, 0, 0);
-  song_editor.song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();
-  QCOMPARE(song_widget.song.pitched_voices.size(), 2);
+  main_window.song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();
+  QCOMPARE(window_body.song.pitched_voices.size(), 2);
 
   set_pitched_note_clipboard(1);
   // the class-wide unexpected_message_timer watchdog fails the test if a
   // warning appears here
-  song_widget.undo_stack.undo();
-  QCOMPARE(song_widget.song.pitched_voices.size(), 1);
+  window_body.undo_stack.undo();
+  QCOMPARE(window_body.song.pitched_voices.size(), 1);
   QVERIFY(get_pitched_note_clipboard().contains(
       "<voice_number>0</voice_number>"));
-  song_editor.song_menu_bar.view_menu.back_to_chords_action.trigger();
+  main_window.song_menu_bar.view_menu.back_to_chords_action.trigger();
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -415,26 +415,26 @@ void Tester::test_remove_last_voice_disables_action() {
   QFETCH(const QString, text);
   QFETCH(const bool, is_pitched);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& undo_stack = song_widget.undo_stack;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& undo_stack = window_body.undo_stack;
   const auto voice_row_type =
       is_pitched ? RowType::pitched_voice_type : RowType::unpitched_voice_type;
 
-  open_text(song_editor, text);
+  open_text(main_window, text);
 
-  switch_to(song_editor, voice_row_type, -1);
+  switch_to(main_window, voice_row_type, -1);
   auto& model = get_model(switch_table);
   QCOMPARE(model.rowCount(), 1);
 
   select_cell(switch_table, 0, 0);
-  QVERIFY(!song_editor.song_menu_bar.edit_menu.remove_rows_action.isEnabled());
+  QVERIFY(!main_window.song_menu_bar.edit_menu.remove_rows_action.isEnabled());
 
   maybe_switch_back_to_chords(undo_stack, voice_row_type);
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -460,12 +460,12 @@ void Tester::test_paste_stale_voice() {
   QFETCH(const QString, text);
   QFETCH(const bool, is_pitched);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& edit_menu = song_editor.song_menu_bar.edit_menu;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& edit_menu = main_window.song_menu_bar.edit_menu;
   auto& back_to_chords_action =
-      song_editor.song_menu_bar.view_menu.back_to_chords_action;
-  auto& song = song_widget.song;
+      main_window.song_menu_bar.view_menu.back_to_chords_action;
+  auto& song = window_body.song;
 
   const auto note_row_type =
       is_pitched ? RowType::pitched_note_type : RowType::unpitched_note_type;
@@ -487,11 +487,11 @@ void Tester::test_paste_stale_voice() {
                            "Reassigning 1 clipboard unpitched note voice "
                            "to the first voice \"D\""};
 
-  open_text(song_editor, text);
+  open_text(main_window, text);
 
   // copy the second note's voice cell, which references the last (soon to
   // be removed) voice
-  switch_to(song_editor, note_row_type, 0);
+  switch_to(main_window, note_row_type, 0);
   select_cell(switch_table, 1, voice_column);
   edit_menu.copy_action.trigger();
   back_to_chords_action.trigger();
@@ -499,15 +499,15 @@ void Tester::test_paste_stale_voice() {
   // remove that voice; the fixture's only note gets reassigned to voice 0,
   // warning about that live note, and separately about the clipboard copy
   // (of that same note's voice cell) that also collapses to voice 0
-  switch_to(song_editor, voice_row_type, -1);
+  switch_to(main_window, voice_row_type, -1);
   select_cell(switch_table, 1, 0);
-  close_messages_later(song_editor, waiting_for_message, reassign_warnings);
+  close_messages_later(main_window, waiting_for_message, reassign_warnings);
   edit_menu.remove_rows_action.trigger();
   back_to_chords_action.trigger();
 
   // pasting the reassigned clipboard should succeed silently, landing on
   // the first remaining voice instead of erroring or misassigning
-  switch_to(song_editor, note_row_type, 0);
+  switch_to(main_window, note_row_type, 0);
   select_cell(switch_table, 0, voice_column);
   edit_menu.paste_menu.paste_over_action.trigger();
   QCOMPARE(is_pitched ? song.chords.at(0).pitched_notes.at(0).voice_number
@@ -516,8 +516,8 @@ void Tester::test_paste_stale_voice() {
   back_to_chords_action.trigger();
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -542,12 +542,12 @@ void Tester::test_paste_voice_renumbered_on_insert() {
   QFETCH(const QString, text);
   QFETCH(const bool, is_pitched);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& edit_menu = song_editor.song_menu_bar.edit_menu;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& edit_menu = main_window.song_menu_bar.edit_menu;
   auto& back_to_chords_action =
-      song_editor.song_menu_bar.view_menu.back_to_chords_action;
-  auto& song = song_widget.song;
+      main_window.song_menu_bar.view_menu.back_to_chords_action;
+  auto& song = window_body.song;
 
   const auto note_row_type =
       is_pitched ? RowType::pitched_note_type : RowType::unpitched_note_type;
@@ -559,24 +559,24 @@ void Tester::test_paste_voice_renumbered_on_insert() {
                  : static_cast<int>(
                        UnpitchedNoteColumn::unpitched_note_voice_number_column);
 
-  open_text(song_editor, text);
+  open_text(main_window, text);
 
   // copy the second note's voice cell, which references the second voice
-  switch_to(song_editor, note_row_type, 0);
+  switch_to(main_window, note_row_type, 0);
   select_cell(switch_table, 1, voice_column);
   edit_menu.copy_action.trigger();
   back_to_chords_action.trigger();
 
   // insert a new voice before both existing voices; the fixture's notes
   // both shift up by one, and so must the clipboard's copied voice_number
-  switch_to(song_editor, voice_row_type, -1);
+  switch_to(main_window, voice_row_type, -1);
   select_cell(switch_table, 0, 0);
   edit_menu.insert_menu.insert_into_start_action.trigger();
   back_to_chords_action.trigger();
 
   // pasting the shifted clipboard should land on the second voice's new
   // index, not the stale pre-insert index (which now points elsewhere)
-  switch_to(song_editor, note_row_type, 0);
+  switch_to(main_window, note_row_type, 0);
   select_cell(switch_table, 0, voice_column);
   edit_menu.paste_menu.paste_over_action.trigger();
   QCOMPARE(is_pitched ? song.chords.at(0).pitched_notes.at(0).voice_number
@@ -585,8 +585,8 @@ void Tester::test_paste_voice_renumbered_on_insert() {
   back_to_chords_action.trigger();
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -613,18 +613,18 @@ void Tester::test_paste_chord_voice_renumbered_on_insert() {
   QFETCH(const QString, text);
   QFETCH(const bool, is_pitched);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& edit_menu = song_editor.song_menu_bar.edit_menu;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& edit_menu = main_window.song_menu_bar.edit_menu;
   auto& back_to_chords_action =
-      song_editor.song_menu_bar.view_menu.back_to_chords_action;
-  auto& song = song_widget.song;
+      main_window.song_menu_bar.view_menu.back_to_chords_action;
+  auto& song = window_body.song;
 
   const auto voice_row_type =
       is_pitched ? RowType::pitched_voice_type : RowType::unpitched_voice_type;
   const auto last_column = Chord::get_number_of_columns() - 1;
 
-  open_text(song_editor, text);
+  open_text(main_window, text);
 
   // copy the whole chord row, including its pitched_notes/unpitched_notes
   // column, which nests both notes' voice_number fields in the clipboard
@@ -636,7 +636,7 @@ void Tester::test_paste_chord_voice_renumbered_on_insert() {
 
   // insert a new voice before both existing voices; the live chord's notes
   // shift up by one, and so must the nested voice_numbers on the clipboard
-  switch_to(song_editor, voice_row_type, -1);
+  switch_to(main_window, voice_row_type, -1);
   select_cell(switch_table, 0, 0);
   edit_menu.insert_menu.insert_into_start_action.trigger();
   back_to_chords_action.trigger();
@@ -657,8 +657,8 @@ void Tester::test_paste_chord_voice_renumbered_on_insert() {
            2);
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -726,29 +726,29 @@ void Tester::test_voice_velocity_ratio() {
   QFETCH(const RowType, row_type);
   QFETCH(const QString, status);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
 
-  open_text(song_editor, text);
+  open_text(main_window, text);
 
-  switch_to(song_editor, row_type, 0);
+  switch_to(main_window, row_type, 0);
   QCOMPARE(get_model(switch_table).index(0, 0).data(Qt::StatusTipRole), status);
-  maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
+  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
 
   // velocity ratio should also round-trip through save/load like any
   // other ratio column
   QTemporaryFile temp_save_file;
   QVERIFY(temp_save_file.open());
   temp_save_file.close();
-  save_as_file(song_widget, temp_save_file.fileName());
+  save_as_file(window_body, temp_save_file.fileName());
   QVERIFY(get_file_text(temp_save_file.fileName())
               .contains("<velocity_ratio><numerator>2</numerator>"
                         "</velocity_ratio>"));
   QFile(temp_save_file.fileName()).remove();
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -776,11 +776,11 @@ void Tester::test_set_voice_name() {
   QFETCH(const int, column_number);
   QFETCH(const QString, new_name);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& undo_stack = song_widget.undo_stack;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& undo_stack = window_body.undo_stack;
 
-  switch_to(song_editor, row_type, -1);
+  switch_to(main_window, row_type, -1);
 
   auto& model = get_model(switch_table);
   const auto index = model.index(0, column_number);
@@ -823,12 +823,12 @@ void Tester::test_voice_paste_insert_disabled() {
   QFETCH(const RowType, row_type);
   QFETCH(const int, column_number);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& undo_stack = song_widget.undo_stack;
-  auto& paste_menu = song_editor.song_menu_bar.edit_menu.paste_menu;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& undo_stack = window_body.undo_stack;
+  auto& paste_menu = main_window.song_menu_bar.edit_menu.paste_menu;
 
-  switch_to(song_editor, row_type, -1);
+  switch_to(main_window, row_type, -1);
   select_cell(switch_table, 0, column_number);
 
   QVERIFY(!paste_menu.paste_after_action.isEnabled());
@@ -860,12 +860,12 @@ void Tester::test_voice_velocity_ratio_cells() {
   QFETCH(const int, chord_number);
   QFETCH(const int, column_number);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& edit_menu = song_editor.song_menu_bar.edit_menu;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& edit_menu = main_window.song_menu_bar.edit_menu;
 
-  open_text(song_editor, make_voice_song_xml({"A", "B"}, {"C", "D"}));
-  switch_to(song_editor, row_type, chord_number);
+  open_text(main_window, make_voice_song_xml({"A", "B"}, {"C", "D"}));
+  switch_to(main_window, row_type, chord_number);
 
   auto& model = get_model(switch_table);
   const auto first_index = model.index(0, column_number);
@@ -883,8 +883,8 @@ void Tester::test_voice_velocity_ratio_cells() {
   QCOMPARE(second_index.data(Qt::EditRole), new_ratio);
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -908,12 +908,12 @@ void Tester::test_paste_voice_renumbered_on_remove() {
   QFETCH(const QString, text);
   QFETCH(const bool, is_pitched);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& edit_menu = song_editor.song_menu_bar.edit_menu;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& edit_menu = main_window.song_menu_bar.edit_menu;
   auto& back_to_chords_action =
-      song_editor.song_menu_bar.view_menu.back_to_chords_action;
-  auto& song = song_widget.song;
+      main_window.song_menu_bar.view_menu.back_to_chords_action;
+  auto& song = window_body.song;
 
   const auto note_row_type =
       is_pitched ? RowType::pitched_note_type : RowType::unpitched_note_type;
@@ -925,22 +925,22 @@ void Tester::test_paste_voice_renumbered_on_remove() {
                  : static_cast<int>(
                        UnpitchedNoteColumn::unpitched_note_voice_number_column);
 
-  open_text(song_editor, text);
+  open_text(main_window, text);
 
   // copy the first note's voice cell, which references the second voice
-  switch_to(song_editor, note_row_type, 0);
+  switch_to(main_window, note_row_type, 0);
   select_cell(switch_table, 0, voice_column);
   edit_menu.copy_action.trigger();
   back_to_chords_action.trigger();
 
   // remove the first voice; no note uses it, so nothing is reassigned or
   // warned about, but the clipboard's voice_number must still shift down
-  switch_to(song_editor, voice_row_type, -1);
+  switch_to(main_window, voice_row_type, -1);
   select_cell(switch_table, 0, 0);
   edit_menu.remove_rows_action.trigger();
   back_to_chords_action.trigger();
 
-  switch_to(song_editor, note_row_type, 0);
+  switch_to(main_window, note_row_type, 0);
   select_cell(switch_table, 1, voice_column);
   edit_menu.paste_menu.paste_over_action.trigger();
   QCOMPARE(is_pitched ? song.chords.at(0).pitched_notes.at(1).voice_number
@@ -949,7 +949,7 @@ void Tester::test_paste_voice_renumbered_on_remove() {
   back_to_chords_action.trigger();
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }

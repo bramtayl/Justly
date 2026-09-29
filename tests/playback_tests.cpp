@@ -51,12 +51,12 @@ void Tester::test_play() {
   QFETCH(const int, second_row_number);
   QFETCH(const int, column_number);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& play_menu = song_editor.song_menu_bar.play_menu;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& play_menu = main_window.song_menu_bar.play_menu;
   auto& play_action = play_menu.play_action;
 
-  switch_to(song_editor, row_type, chord_number);
+  switch_to(main_window, row_type, chord_number);
 
   auto& model = get_model(switch_table);
   get_selection_model(switch_table)
@@ -70,17 +70,17 @@ void Tester::test_play() {
   QThread::msleep(WAIT_TIME);
   play_menu.stop_playing_action.trigger();
 
-  maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
+  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
 }
 
 void Tester::test_play_to_end_starts_playhead() {
   // regression test: "Play to end" is a separate action from "Play
   // selection" and must independently start the piano roll playhead
   // animation, not just trigger audio playback
-  auto& song_widget = song_editor.song_widget;
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& play_menu = song_editor.song_menu_bar.play_menu;
+  auto& window_body = main_window.window_body;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& play_menu = main_window.song_menu_bar.play_menu;
 
   select_cell(switch_table, 0, 0);
 
@@ -119,18 +119,18 @@ void Tester::test_play_to_end() {
   QFETCH(const int, row_number);
   QFETCH(const int, column_number);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& play_menu = song_editor.song_menu_bar.play_menu;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& play_menu = main_window.song_menu_bar.play_menu;
 
-  switch_to(song_editor, row_type, chord_number);
+  switch_to(main_window, row_type, chord_number);
 
   select_cell(switch_table, row_number, column_number);
   play_menu.play_to_end_action.trigger();
   QThread::msleep(WAIT_TIME);
   play_menu.stop_playing_action.trigger();
 
-  maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
+  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
 }
 
 // starting velocity 100 with a 2x note and/or voice velocity ratio exceeds
@@ -193,60 +193,60 @@ void Tester::test_play_velocity_error() {
     </chord>
   </chords>)");
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& play_menu = song_editor.song_menu_bar.play_menu;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& play_menu = main_window.song_menu_bar.play_menu;
 
-  open_text(song_editor, song_text);
-  switch_to(song_editor, row_type, chord_number);
+  open_text(main_window, song_text);
+  switch_to(main_window, row_type, chord_number);
   select_cell(switch_table, 0, 0);
 
-  close_message_later(song_editor, waiting_for_message, error_message);
+  close_message_later(main_window, waiting_for_message, error_message);
   (play_to_end ? play_menu.play_to_end_action : play_menu.play_action)
       .trigger();
   play_menu.stop_playing_action.trigger();
 
-  maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
+  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
 // every voice preview sounds for a second, so previewing more voices at once
 // than there are MIDI channels leaves the last one with no free channel
 void Tester::test_play_channel_exhausted() {
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& play_menu = song_editor.song_menu_bar.play_menu;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& play_menu = main_window.song_menu_bar.play_menu;
 
   QList<QString> voice_names;
   for (auto voice_number = 0; voice_number <= NUMBER_OF_MIDI_CHANNELS;
        voice_number++) {
     voice_names.push_back(QString("Voice %1").arg(voice_number));
   }
-  open_text(song_editor, make_voice_song_xml(voice_names, {"D"}));
+  open_text(main_window, make_voice_song_xml(voice_names, {"D"}));
 
-  switch_to(song_editor, RowType::pitched_voice_type, -1);
+  switch_to(main_window, RowType::pitched_voice_type, -1);
   auto& model = get_model(switch_table);
   get_selection_model(switch_table)
       .select(QItemSelection(model.index(0, 0),
                              model.index(NUMBER_OF_MIDI_CHANNELS, 0)),
               SELECT_AND_CLEAR);
 
-  close_message_later(song_editor, waiting_for_message,
+  close_message_later(main_window, waiting_for_message,
                       "More notes are sounding at once than there are "
                       "available MIDI channels");
   play_menu.play_action.trigger();
   play_menu.stop_playing_action.trigger();
 
-  maybe_switch_back_to_chords(song_widget.undo_stack,
+  maybe_switch_back_to_chords(window_body.undo_stack,
                               RowType::pitched_voice_type);
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -264,23 +264,23 @@ void Tester::test_play_chord_error() {
   QFETCH(const int, number_of_pitched_notes);
   QFETCH(const int, number_of_unpitched_notes);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& play_menu = song_editor.song_menu_bar.play_menu;
+  auto& window_body = main_window.window_body;
+  auto& play_menu = main_window.song_menu_bar.play_menu;
 
-  open_text(song_editor,
+  open_text(main_window,
             make_voice_song_xml({"A"}, {"D"},
                                 {{QList<int>(number_of_pitched_notes, 0),
                                   QList<int>(number_of_unpitched_notes, 0)}}));
-  select_cell(song_widget.switch_column.switch_table, 0, 0);
+  select_cell(window_body.switch_column.switch_table, 0, 0);
 
-  close_message_later(song_editor, waiting_for_message,
+  close_message_later(main_window, waiting_for_message,
                       "More notes are sounding at once than there are "
                       "available MIDI channels");
   play_menu.play_action.trigger();
   play_menu.stop_playing_action.trigger();
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }

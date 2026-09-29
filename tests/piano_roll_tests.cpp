@@ -89,7 +89,7 @@ void Tester::test_piano_roll_events() const {
   QFETCH(const double, duration_ms);
   QFETCH(const double, velocity);
 
-  const auto events = get_piano_roll_events(song_editor.song_widget.song);
+  const auto events = get_piano_roll_events(main_window.window_body.song);
   const auto matching_event = std::ranges::find_if(
       events, [note_number](const PianoRollNoteEvent& event) -> auto {
         return event.chord_number == 1 && event.note_number == note_number &&
@@ -103,17 +103,17 @@ void Tester::test_piano_roll_events() const {
 }
 
 void Tester::test_piano_roll_events_total_count() const {
-  QCOMPARE(get_piano_roll_events(song_editor.song_widget.song).size(), 12);
+  QCOMPARE(get_piano_roll_events(main_window.window_body.song).size(), 12);
 }
 
 void Tester::test_piano_roll_time_bounds() const {
   const auto [baseline_ms, end_ms] =
-      get_piano_roll_time_bounds(song_editor.song_widget.song, 1, 1);
+      get_piano_roll_time_bounds(main_window.window_body.song, 1, 1);
   QCOMPARE(baseline_ms, 600.0);
   QCOMPARE(end_ms, 1200.0);
 
   // a note range with no pitched/unpitched filter spans both kinds of note
-  const auto& song = song_editor.song_widget.song;
+  const auto& song = main_window.window_body.song;
   const auto pitched_end_ms =
       get_piano_roll_time_bounds(song, 1, 1, 0, 1, true).second;
   const auto unpitched_end_ms =
@@ -123,11 +123,11 @@ void Tester::test_piano_roll_time_bounds() const {
 }
 
 void Tester::test_piano_roll_dock_toggle() {
-  auto& piano_roll_dock = song_editor.piano_roll_dock;
+  auto& piano_roll_dock = main_window.piano_roll_dock;
   auto& show_piano_roll_action =
-      song_editor.song_menu_bar.view_menu.show_piano_roll_action;
+      main_window.song_menu_bar.view_menu.show_piano_roll_action;
 
-  // song_editor is never shown() in these headless tests, so isVisible()
+  // main_window is never shown() in these headless tests, so isVisible()
   // would always be false regardless of the dock's own shown/hidden state
   // (it also depends on the whole ancestor chain being on-screen);
   // isHidden() reflects the dock's own explicit show/hide state instead.
@@ -139,16 +139,16 @@ void Tester::test_piano_roll_dock_toggle() {
 }
 
 void Tester::test_piano_roll_rebuilds_on_edit() {
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& undo_stack = song_widget.undo_stack;
-  auto& scene = song_editor.piano_roll_widget.piano_roll_scene;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& undo_stack = window_body.undo_stack;
+  auto& scene = main_window.piano_roll_widget.piano_roll_scene;
 
-  switch_to(song_editor, RowType::pitched_note_type, 1);
+  switch_to(main_window, RowType::pitched_note_type, 1);
   const auto old_item_count = scene.items().size();
 
   select_cell(switch_table, 0, 0);
-  song_editor.song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();
+  main_window.song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();
   QCOMPARE(scene.items().size(), old_item_count + 1);
 
   undo_stack.undo();  // undo insert
@@ -171,9 +171,9 @@ void Tester::test_piano_roll_double_click_selects_note() {
   QFETCH(const int, note_number);
   QFETCH(const RowType, expected_row_type);
 
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
-  auto& undo_stack = song_editor.song_widget.undo_stack;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
+  auto& undo_stack = main_window.window_body.undo_stack;
 
   // chord number 1 (from test_song.xml) has both pitched and unpitched
   // notes, matching the fixture used by the other piano-roll tests above
@@ -245,15 +245,15 @@ void Tester::test_piano_roll_click_selects_note() {
   QFETCH(const bool, is_pitched);
   QFETCH(const int, note_number);
 
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
-  auto& undo_stack = song_editor.song_widget.undo_stack;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
+  auto& undo_stack = main_window.window_body.undo_stack;
 
   // enters note mode for chord 1, matching the fixture used by
   // test_piano_roll_double_click_selects_note above, then starts on
   // a different row so the click below has to actually move the
   // selection rather than leave an already-correct one alone
-  switch_to(song_editor, row_type, 1);
+  switch_to(main_window, row_type, 1);
   select_cell(switch_table, 0, 0);
 
   const auto& events = piano_roll_widget.piano_roll_scene.events;
@@ -312,44 +312,44 @@ void Tester::test_piano_roll_click_selects_note() {
 }
 
 void Tester::test_piano_roll_notes_mode_shows_only_chord_notes() {
-  auto& song_widget = song_editor.song_widget;
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
+  auto& window_body = main_window.window_body;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
 
   // two chords, each with a single note of its own, so entering notes
   // mode for one chord can be checked to hide the other chord's note
   // rather than keep showing every chord's notes on the timeline
   static const QString text =
       make_voice_song_xml({"A"}, {"D"}, {{{0}, {}}, {{0}, {}}});
-  open_text(song_editor, text);
+  open_text(main_window, text);
 
-  QCOMPARE(get_piano_roll_events(song_widget.song).size(), 2);
+  QCOMPARE(get_piano_roll_events(window_body.song).size(), 2);
 
-  switch_to(song_editor, RowType::pitched_note_type, 0);
+  switch_to(main_window, RowType::pitched_note_type, 0);
   QCOMPARE(piano_roll_widget.piano_roll_scene.events.size(), 1);
   QCOMPARE(piano_roll_widget.piano_roll_scene.events.at(0).chord_number, 0);
-  maybe_switch_back_to_chords(song_widget.undo_stack,
+  maybe_switch_back_to_chords(window_body.undo_stack,
                               RowType::pitched_note_type);
 
-  switch_to(song_editor, RowType::pitched_note_type, 1);
+  switch_to(main_window, RowType::pitched_note_type, 1);
   QCOMPARE(piano_roll_widget.piano_roll_scene.events.size(), 1);
   QCOMPARE(piano_roll_widget.piano_roll_scene.events.at(0).chord_number, 1);
-  maybe_switch_back_to_chords(song_widget.undo_stack,
+  maybe_switch_back_to_chords(window_body.undo_stack,
                               RowType::pitched_note_type);
 
   // back in chord mode, both chords' notes are shown again
   QCOMPARE(piano_roll_widget.piano_roll_scene.events.size(), 2);
 
   // restore the fixture used by the other tests
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
 void Tester::test_piano_roll_notes_mode_axis_starts_at_chord_start() {
-  auto& song_widget = song_editor.song_widget;
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
+  auto& window_body = main_window.window_body;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
   auto& piano_roll_scene = piano_roll_widget.piano_roll_scene;
-  auto& undo_stack = song_widget.undo_stack;
+  auto& undo_stack = window_body.undo_stack;
 
   // outside notes mode the axis spans the whole song, starting at time 0
   QCOMPARE(piano_roll_scene.time_axis_baseline_ms, 0.0);
@@ -359,7 +359,7 @@ void Tester::test_piano_roll_notes_mode_axis_starts_at_chord_start() {
   // be rebased to that chord's own start, so it only spans the 600ms
   // during which chord 1's notes actually play rather than dragging along
   // the silent 600ms before them
-  switch_to(song_editor, RowType::pitched_note_type, 1);
+  switch_to(main_window, RowType::pitched_note_type, 1);
   QCOMPARE(piano_roll_scene.time_axis_baseline_ms, 600.0);
   QCOMPARE(piano_roll_scene.time_axis_max_time_ms, 600.0);
 
@@ -377,8 +377,8 @@ void Tester::test_piano_roll_notes_mode_axis_starts_at_chord_start() {
 }
 
 void Tester::test_piano_roll_selection_highlights_chord() {
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
 
   // chord number 1 (from test_song.xml) has both pitched and unpitched
   // notes, matching the fixture used by the other piano-roll tests above
@@ -403,11 +403,11 @@ void Tester::test_piano_roll_selection_highlights_note() {
   QFETCH(const RowType, row_type);
   QFETCH(const int, note_number);
 
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
-  auto& undo_stack = song_editor.song_widget.undo_stack;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
+  auto& undo_stack = main_window.window_body.undo_stack;
 
-  switch_to(song_editor, row_type, 1);
+  switch_to(main_window, row_type, 1);
   select_cell(switch_table, note_number, 0);
 
   check_piano_roll_highlight(piano_roll_widget, row_type, 1, note_number);
@@ -424,9 +424,9 @@ void Tester::test_piano_roll_selection_highlights_note() {
 }
 
 void Tester::test_piano_roll_selection_ignores_voice_table() {
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
-  auto& undo_stack = song_editor.song_widget.undo_stack;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
+  auto& undo_stack = main_window.window_body.undo_stack;
 
   // put a highlight/cursor up first, so switching to a voice table (which
   // has no timeline position) has to actually clear it rather than just
@@ -434,7 +434,7 @@ void Tester::test_piano_roll_selection_ignores_voice_table() {
   select_cell(switch_table, 1, 0);
   QVERIFY(piano_roll_widget.piano_roll_scene.playhead_item.isVisible());
 
-  switch_to(song_editor, RowType::pitched_voice_type, -1);
+  switch_to(main_window, RowType::pitched_voice_type, -1);
   select_cell(switch_table, 0, 0);
 
   QVERIFY(!piano_roll_widget.piano_roll_scene.playhead_item.isVisible());
@@ -447,7 +447,7 @@ void Tester::test_piano_roll_selection_ignores_voice_table() {
 }
 
 void Tester::test_piano_roll_selection_preserves_multi_row_range() {
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
 
   // selecting a range of chords (e.g. for "Play selection") must not get
   // collapsed down to a single row by the piano roll's cursor-follows-
@@ -465,8 +465,8 @@ void Tester::test_piano_roll_selection_preserves_multi_row_range() {
 }
 
 void Tester::test_piano_roll_drag_selects_chord() {
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
 
   // start on chord 1 (600ms-1200ms, per test_piano_roll_time_bounds()
   // above) so the drag below has to actually move the selection rather
@@ -497,12 +497,12 @@ void Tester::test_piano_roll_drag_selects_chord() {
 }
 
 void Tester::test_piano_roll_drag_selects_chord_range() {
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
   auto& view = piano_roll_widget.piano_roll_scene.view;
   auto& selection_rect_item =
       piano_roll_widget.piano_roll_scene.selection_rect_item;
-  const auto& song = song_editor.song_widget.song;
+  const auto& song = main_window.window_body.song;
 
   // start on chord 0 so the drag below has to actually move the
   // selection rather than leave an already-correct one alone
@@ -590,8 +590,8 @@ void Tester::test_piano_roll_drag_selects_chord_range() {
 }
 
 void Tester::test_piano_roll_playback_selects_chord() {
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
 
   // start on chord 0; starting playback at chord 2's baseline (1200ms,
   // per test_piano_roll_time_bounds() above) shouldn't itself move the
@@ -615,7 +615,7 @@ void Tester::test_piano_roll_playback_selects_chord() {
 }
 
 void Tester::test_piano_roll_zoom() {
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
 
   QCOMPARE(piano_roll_widget.piano_roll_scene.view.transform().m11(), 1.0);
   QCOMPARE(piano_roll_widget.piano_roll_scene.view.transform().m22(), 1.0);
@@ -651,7 +651,7 @@ void Tester::test_piano_roll_zoom() {
 // starting playback far to the right of the view's current center should
 // make the playhead catch up to the center rather than wait for it
 void Tester::test_piano_roll_playhead_starts_past_center() {
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
   auto& piano_roll_scene = piano_roll_widget.piano_roll_scene;
 
   start_piano_roll_playhead(piano_roll_widget, 1000000.0, 1001000.0);
@@ -662,8 +662,8 @@ void Tester::test_piano_roll_playhead_starts_past_center() {
 }
 
 void Tester::test_piano_roll_zoom_actions() {
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
-  auto& view_menu = song_editor.song_menu_bar.view_menu;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
+  auto& view_menu = main_window.song_menu_bar.view_menu;
 
   view_menu.zoom_in_action.trigger();
   QCOMPARE(piano_roll_widget.piano_roll_scene.view.transform().m11(),
@@ -679,7 +679,7 @@ void Tester::test_piano_roll_playhead_transitions() {
   static const auto FAR_RIGHT_MS = 1000000.0;
   static const auto PAST_CATCHUP_WAIT_MS = 500;
 
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
   auto& piano_roll_scene = piano_roll_widget.piano_roll_scene;
 
   start_piano_roll_playhead(piano_roll_widget, 0.0, FAR_RIGHT_MS);
@@ -700,7 +700,7 @@ void Tester::test_piano_roll_playhead_transitions() {
 }
 
 void Tester::test_piano_roll_ctrl_wheel_zoom() {
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
   auto& piano_roll_scene = piano_roll_widget.piano_roll_scene;
   auto* const viewport_pointer = piano_roll_scene.view.viewport();
 
@@ -730,9 +730,9 @@ void Tester::test_piano_roll_ctrl_wheel_zoom() {
 
 // clicking takes the playhead over from playback, the same as dragging it
 void Tester::test_piano_roll_click_stops_playhead() {
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
   auto& piano_roll_scene = piano_roll_widget.piano_roll_scene;
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
 
   select_cell(switch_table, 0, 0);
   start_piano_roll_playhead(piano_roll_widget, 0.0, 1800.0);
@@ -751,8 +751,8 @@ void Tester::test_piano_roll_click_stops_playhead() {
 }
 
 void Tester::test_piano_roll_right_click_ignored() {
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
 
   select_cell(switch_table, 0, 0);
   QVERIFY(!send_piano_roll_mouse_event(
@@ -776,8 +776,8 @@ void Tester::test_piano_roll_click_bar_in_chords_mode() {
   QFETCH(const bool, is_pitched);
   QFETCH(const int, note_number);
 
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
 
   // already on the bar's chord, so the chord selection is left alone too
   select_cell(switch_table, 1, 0);
@@ -801,9 +801,9 @@ void Tester::test_piano_roll_click_bar_in_chords_mode() {
 // chord it ended on -- without that selection yanking the playhead back to
 // the chord's start
 void Tester::test_piano_roll_playhead_reaches_end() {
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
   auto& piano_roll_scene = piano_roll_widget.piano_roll_scene;
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
 
   select_cell(switch_table, 0, 0);
   // chord 2 starts at 1200ms, per test_piano_roll_time_bounds() above; an
@@ -831,7 +831,7 @@ void Tester::test_piano_roll_short_clip_catch_up() {
   static const auto FAR_RIGHT_MS = 1000000.0;
   static const auto SHORT_CLIP_MS = 100.0;
 
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
   auto& piano_roll_scene = piano_roll_widget.piano_roll_scene;
 
   start_piano_roll_playhead(piano_roll_widget, FAR_RIGHT_MS,
@@ -847,9 +847,9 @@ void Tester::test_piano_roll_short_clip_catch_up() {
 // events on anything other than the notes viewport pass through untouched,
 // even mid-drag
 void Tester::test_piano_roll_ignores_other_widgets() {
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
   auto& piano_roll_scene = piano_roll_widget.piano_roll_scene;
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
 
   select_cell(switch_table, 0, 0);
   const QPointF chord_1_pos(600.0 * PIANO_ROLL_PIXELS_PER_MS, 0);
@@ -886,8 +886,8 @@ void Tester::test_piano_roll_ignores_other_widgets() {
 
 // double-clicking empty space, away from every note bar, opens nothing
 void Tester::test_piano_roll_double_click_empty_space() {
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
 
   // far below every bar, in the first chord
   const QPointF empty_pos(
@@ -900,10 +900,10 @@ void Tester::test_piano_roll_double_click_empty_space() {
 
 // dragging past the start of the song clamps to the first chord
 void Tester::test_piano_roll_drag_before_start() {
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
   auto& piano_roll_scene = piano_roll_widget.piano_roll_scene;
   auto& view = piano_roll_scene.view;
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
 
   const QPointF chord_1_pos(600.0 * PIANO_ROLL_PIXELS_PER_MS, 0);
   QVERIFY(send_piano_roll_mouse_event(piano_roll_widget,
@@ -930,8 +930,8 @@ void Tester::test_piano_roll_drag_before_start() {
 
 // a press with nothing selected yet still selects the chord under it
 void Tester::test_piano_roll_click_without_selection() {
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
 
   get_selection_model(switch_table).clear();
   const QPointF chord_1_pos(600.0 * PIANO_ROLL_PIXELS_PER_MS, 0);
@@ -946,11 +946,11 @@ void Tester::test_piano_roll_click_without_selection() {
 
 // clicking a note bar replaces a different whole-row note selection
 void Tester::test_piano_roll_click_replaces_note_row() {
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
-  auto& undo_stack = song_editor.song_widget.undo_stack;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
+  auto& undo_stack = main_window.window_body.undo_stack;
 
-  switch_to(song_editor, RowType::pitched_note_type, 1);
+  switch_to(main_window, RowType::pitched_note_type, 1);
   get_selection_model(switch_table)
       .select(switch_table.pitched_notes_model.index(0, 0),
               QItemSelectionModel::Select | QItemSelectionModel::Clear |
@@ -973,10 +973,10 @@ void Tester::test_piano_roll_click_replaces_note_row() {
 
 // a song without chords has nothing for a click to select
 void Tester::test_piano_roll_click_empty_song() {
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
 
-  open_text(song_editor, make_voice_song_xml({"A"}, {"D"}));
+  open_text(main_window, make_voice_song_xml({"A"}, {"D"}));
   QVERIFY(send_piano_roll_mouse_event(piano_roll_widget,
                                       QEvent::MouseButtonPress, QPointF(),
                                       Qt::LeftButton));
@@ -986,17 +986,17 @@ void Tester::test_piano_roll_click_empty_song() {
                                       Qt::NoButton));
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
 // a note too short to see at the current zoom still gets a visible bar
 void Tester::test_piano_roll_minimum_bar_width() {
-  auto& piano_roll_widget = song_editor.piano_roll_widget;
+  auto& piano_roll_widget = main_window.piano_roll_widget;
 
   // 1/100 of a beat at 100 bpm is 6ms, well under a pixel wide
-  open_text(song_editor,
+  open_text(main_window,
             make_voice_song_xml({"A"}, {"D"}, {{{0}, {}}})
                 .replace("</voice_number></pitched_note>",
                          "</voice_number><beats><numerator>1</numerator>"
@@ -1007,7 +1007,7 @@ void Tester::test_piano_roll_minimum_bar_width() {
   QCOMPARE(get_reference(note_items.at(0)).rect().width(), 1.0);
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }

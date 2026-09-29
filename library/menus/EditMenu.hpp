@@ -50,5 +50,5 @@ struct EditMenu : public QMenu {
   QAction delete_cells_action;
   QAction remove_rows_action;
 
-  explicit EditMenu(SongWidget& song_widget);
+  explicit EditMenu(WindowBody& window_body);
 };

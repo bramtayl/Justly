@@ -9,7 +9,7 @@ struct PianoRollLegendScene;
 struct PianoRollNotesScene;
 class QBoxLayout;
 struct Song;
-struct SongWidget;
+struct WindowBody;
 struct SwitchTable;
 
 static const auto PIANO_ROLL_TIME_ZOOM_STEP = 1.25;
@@ -82,7 +82,7 @@ void apply_selection_highlight(const Song& song,
                                int selection_number_of_rows,
                                bool selecting_chord_from_playhead);
 
-void rebuild_scene(QWidget& widget, const SongWidget& song_widget,
+void rebuild_scene(QWidget& widget, const WindowBody& window_body,
                    PianoRollNotesScene& piano_roll_scene,
                    PianoRollAxisScene& axis_scene,
                    PianoRollLegendScene& legend_scene, QBoxLayout& row_layout,
@@ -105,7 +105,7 @@ struct PianoRollWidget : public QWidget {
   Q_OBJECT
 
  public:
-  const SongWidget& song_widget;
+  const WindowBody& window_body;
 
   PianoRollNotesScene& piano_roll_scene;
   // a second, fixed-width view pinned to the left edge, showing the pitch
@@ -145,13 +145,13 @@ struct PianoRollWidget : public QWidget {
   // dragged over in between
   int drag_start_chord_number = -1;
 
-  explicit PianoRollWidget(const SongWidget& song_widget_input);
+  explicit PianoRollWidget(const WindowBody& window_body_input);
 
   auto eventFilter(QObject* watched_pointer, QEvent* event_pointer)
       -> bool override;
 
  signals:
-  // emitted when a note in the piano roll is double-clicked; SongEditor
+  // emitted when a note in the piano roll is double-clicked; MainWindow
   // connects to this to open the pitched/unpitched notes table for the
   // note's chord, scrolled to and highlighting that note
   void note_double_clicked(int chord_number, int note_number, bool is_pitched);

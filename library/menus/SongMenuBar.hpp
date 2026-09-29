@@ -13,5 +13,5 @@ struct SongMenuBar : public QMenuBar {
   ViewMenu view_menu;
   PlayMenu play_menu;
 
-  explicit SongMenuBar(SongWidget& song_widget);
+  explicit SongMenuBar(WindowBody& window_body);
 };

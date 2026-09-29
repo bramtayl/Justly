@@ -35,12 +35,12 @@ void Tester::test_column_count() {
   QFETCH(const int, chord_number);
   QFETCH(const int, number_of_columns);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
 
-  switch_to(song_editor, row_type, chord_number);
+  switch_to(main_window, row_type, chord_number);
   QCOMPARE(get_model(switch_table).columnCount(), number_of_columns);
-  maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
+  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
 }
 
 void Tester::test_column_header_data() {
@@ -151,13 +151,13 @@ void Tester::test_column_header() {
   QFETCH(const int, column_number);
   QFETCH(const QString, column_name);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
 
-  switch_to(song_editor, row_type, chord_number);
+  switch_to(main_window, row_type, chord_number);
   QCOMPARE(get_model(switch_table).headerData(column_number, Qt::Horizontal),
            column_name);
-  maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
+  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
 }
 
 void Tester::test_copy_data() {
@@ -172,12 +172,12 @@ void Tester::test_copy() {
   QFETCH(const int, second_row_number);
   QFETCH(const int, column_number);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& edit_menu = song_editor.song_menu_bar.edit_menu;
-  auto& undo_stack = song_widget.undo_stack;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& edit_menu = main_window.song_menu_bar.edit_menu;
+  auto& undo_stack = window_body.undo_stack;
 
-  switch_to(song_editor, row_type, chord_number);
+  switch_to(main_window, row_type, chord_number);
 
   auto& model = get_model(switch_table);
   auto& selector = get_selection_model(switch_table);
@@ -212,12 +212,12 @@ void Tester::test_cut() {
   QFETCH(const int, second_row_number);
   QFETCH(const int, column_number);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& edit_menu = song_editor.song_menu_bar.edit_menu;
-  auto& undo_stack = song_widget.undo_stack;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& edit_menu = main_window.song_menu_bar.edit_menu;
+  auto& undo_stack = window_body.undo_stack;
 
-  switch_to(song_editor, row_type, chord_number);
+  switch_to(main_window, row_type, chord_number);
 
   auto& model = get_model(switch_table);
   auto& selector = get_selection_model(switch_table);
@@ -269,23 +269,23 @@ void Tester::test_delete_data() {
 }
 
 void Tester::test_delete() {
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& undo_stack = song_widget.undo_stack;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& undo_stack = window_body.undo_stack;
 
   QFETCH(const RowType, row_type);
   QFETCH(const int, chord_number);
   QFETCH(const int, row_number);
   QFETCH(const int, column_number);
 
-  switch_to(song_editor, row_type, chord_number);
+  switch_to(main_window, row_type, chord_number);
 
   const auto delete_index =
       get_model(switch_table).index(row_number, column_number);
   const auto& old_value = delete_index.data();
 
   get_selection_model(switch_table).select(delete_index, SELECT_AND_CLEAR);
-  song_editor.song_menu_bar.edit_menu.delete_cells_action.trigger();
+  main_window.song_menu_bar.edit_menu.delete_cells_action.trigger();
 
   QCOMPARE_NE(old_value, delete_index.data());
   undo_stack.undo();
@@ -305,17 +305,17 @@ void Tester::test_next_previous() {
   QFETCH(const RowType, row_type);
   QFETCH(const int, chord_number);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& view_menu = song_editor.song_menu_bar.view_menu;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& view_menu = main_window.song_menu_bar.view_menu;
 
-  switch_to(song_editor, row_type, chord_number);
+  switch_to(main_window, row_type, chord_number);
   QCOMPARE(get_parent_chord_number(switch_table), chord_number);
   view_menu.previous_chord_action.trigger();
   QCOMPARE(get_parent_chord_number(switch_table), chord_number - 1);
   view_menu.next_chord_action.trigger();
   QCOMPARE(get_parent_chord_number(switch_table), chord_number);
-  maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
+  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
 }
 
 // replace_table() (ReplaceTable.hpp) reconnects an update lambda to the
@@ -330,7 +330,7 @@ void Tester::test_next_previous() {
 // connection to that same model.
 void Tester::
     test_reconnecting_selection_model_does_not_duplicate_connections() {
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
   auto& selection_model = get_selection_model(switch_table);
 
   // control: connecting without disconnecting first (the pre-fix pattern)
@@ -369,10 +369,10 @@ void Tester::
 }
 
 void Tester::test_replace_table_combining() {
-  auto& song_widget = song_editor.song_widget;
-  switch_to(song_editor, RowType::unpitched_note_type, 0);
-  song_editor.song_menu_bar.view_menu.back_to_chords_action.trigger();
-  QVERIFY(!song_widget.undo_stack.canUndo());
+  auto& window_body = main_window.window_body;
+  switch_to(main_window, RowType::unpitched_note_type, 0);
+  main_window.song_menu_bar.view_menu.back_to_chords_action.trigger();
+  QVERIFY(!window_body.undo_stack.canUndo());
 }
 
 void Tester::test_row_count_data() {
@@ -421,12 +421,12 @@ void Tester::test_row_count() {
   QFETCH(const int, chord_number);
   QFETCH(const int, number_of_rows);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
 
-  switch_to(song_editor, row_type, chord_number);
+  switch_to(main_window, row_type, chord_number);
   QCOMPARE(get_model(switch_table).rowCount(), number_of_rows);
-  maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
+  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
 }
 
 void Tester::test_row_header_data() {
@@ -441,7 +441,7 @@ void Tester::test_row_header() {
   QFETCH(const Qt::ItemDataRole, role);
   QFETCH(const QVariant, data);
 
-  QCOMPARE(get_model(song_editor.song_widget.switch_column.switch_table)
+  QCOMPARE(get_model(main_window.window_body.switch_column.switch_table)
                .headerData(0, Qt::Vertical, role),
            data);
 }
@@ -452,9 +452,9 @@ void Tester::test_starting_control_data() {
   QTest::addColumn<double>("first_value");
   QTest::addColumn<double>("second_value");
 
-  auto& song_widget = song_editor.song_widget;
-  auto& song = song_widget.song;
-  auto& spin_boxes = song_widget.controls_column.spin_boxes;
+  auto& window_body = main_window.window_body;
+  auto& song = window_body.song;
+  auto& spin_boxes = window_body.controls_column.spin_boxes;
 
   QTest::newRow("key") << &spin_boxes.starting_key_editor << &song.starting_key
                        << STARTING_KEY_1 << STARTING_KEY_2;
@@ -484,7 +484,7 @@ void Tester::test_starting_control() {
   QCOMPARE(value, first_value);
   spin_box.setValue(second_value);
   QCOMPARE(value, second_value);
-  song_editor.song_widget.undo_stack.undo();
+  main_window.window_body.undo_stack.undo();
   QCOMPARE(value, old_value);
 }
 
@@ -509,12 +509,12 @@ void Tester::test_status() {
   QFETCH(const int, chord_number);
   QFETCH(const QString, status);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
 
-  switch_to(song_editor, row_type, chord_number);
+  switch_to(main_window, row_type, chord_number);
   QCOMPARE(get_model(switch_table).index(0, 0).data(Qt::StatusTipRole), status);
-  maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
+  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
 }
 
 void Tester::test_set_value_data() {
@@ -523,9 +523,9 @@ void Tester::test_set_value_data() {
 }
 
 void Tester::test_set_value() {
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& undo_stack = song_widget.undo_stack;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& undo_stack = window_body.undo_stack;
 
   QFETCH(const RowType, row_type);
   QFETCH(const int, chord_number);
@@ -533,7 +533,7 @@ void Tester::test_set_value() {
   QFETCH(const int, second_row_number);
   QFETCH(const int, column_number);
 
-  switch_to(song_editor, row_type, chord_number);
+  switch_to(main_window, row_type, chord_number);
 
   auto& model = get_model(switch_table);
   const auto second_index = model.index(second_row_number, column_number);
@@ -601,7 +601,7 @@ void Tester::test_to_string() {
   QFETCH(const int, column_number);
   QFETCH(const QString, text);
 
-  QCOMPARE(get_model(song_editor.song_widget.switch_column.switch_table)
+  QCOMPARE(get_model(main_window.window_body.switch_column.switch_table)
                .index(row_number, column_number)
                .data()
                .toString(),
@@ -614,15 +614,15 @@ void Tester::test_unused_role() {
   QFETCH(const RowType, row_type);
   QFETCH(const int, chord_number);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
 
-  switch_to(song_editor, row_type, chord_number);
+  switch_to(main_window, row_type, chord_number);
   auto& model = get_model(switch_table);
   const auto test_index = model.index(0, 0);
   QCOMPARE(test_index.data(Qt::DecorationRole), QVariant());
   QVERIFY(!(model.setData(test_index, QVariant(), Qt::DecorationRole)));
-  maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
+  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
 }
 
 void Tester::test_voice_cell_editors_data() {
@@ -670,8 +670,8 @@ void Tester::test_voice_cell_editors() {
   QFETCH(const int, column_number);
   QFETCH(const QString, editor_kind);
 
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
-  switch_to(song_editor, row_type, -1);
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
+  switch_to(main_window, row_type, -1);
 
   auto& delegate = get_reference(switch_table.itemDelegate());
   auto* const editor_pointer = delegate.createEditor(
@@ -695,18 +695,18 @@ void Tester::test_voice_cell_editors() {
   delete editor_pointer;  // NOLINT(cppcoreguidelines-owning-memory)
   QCOMPARE(actual_kind, editor_kind);
 
-  maybe_switch_back_to_chords(song_editor.song_widget.undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window.window_body.undo_stack, row_type);
 }
 
 // moving between chords' notes after an edit merges the moves into one undo
 // step, like it does without the edit
 void Tester::test_navigate_chords_after_edit() {
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& undo_stack = song_widget.undo_stack;
-  auto& view_menu = song_editor.song_menu_bar.view_menu;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& undo_stack = window_body.undo_stack;
+  auto& view_menu = main_window.song_menu_bar.view_menu;
 
-  switch_to(song_editor, RowType::pitched_note_type, 1);
+  switch_to(main_window, RowType::pitched_note_type, 1);
   auto& model = get_model(switch_table);
   QVERIFY(model.setData(
       model.index(0,
@@ -730,17 +730,17 @@ void Tester::test_navigate_chords_after_edit() {
 
 // double-clicking only opens notes from a chord's notes columns
 void Tester::test_double_click_outside_notes_columns() {
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
 
-  double_click_column(switch_table, 1,
-                      static_cast<int>(ChordColumn::chord_interval_column));
+  double_click_cell(switch_table, 1,
+                    static_cast<int>(ChordColumn::chord_interval_column));
   QCOMPARE(switch_table.delegate.current_row_type, RowType::chord_type);
 
-  switch_to(song_editor, RowType::pitched_note_type, 1);
-  double_click_column(switch_table, 0, 0);
+  switch_to(main_window, RowType::pitched_note_type, 1);
+  double_click_cell(switch_table, 0, 0);
   QCOMPARE(switch_table.delegate.current_row_type, RowType::pitched_note_type);
   QCOMPARE(get_parent_chord_number(switch_table), 1);
-  maybe_switch_back_to_chords(song_widget.undo_stack,
+  maybe_switch_back_to_chords(window_body.undo_stack,
                               RowType::pitched_note_type);
 }

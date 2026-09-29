@@ -8,8 +8,8 @@
 #include "widgets/SpinBoxes.hpp"
 
 void Tester::test_save() {
-  auto& song_widget = song_editor.song_widget;
-  auto& song_menu_bar = song_editor.song_menu_bar;
+  auto& window_body = main_window.window_body;
+  auto& song_menu_bar = main_window.song_menu_bar;
 
   auto original_text = get_file_text(test_dir.filePath("test_song.xml"));
 
@@ -21,17 +21,17 @@ void Tester::test_save() {
   // must not already exist -- accept() would otherwise pop up an
   // overwrite-confirmation box nobody is waiting to close
   QFile::remove(save_filename);
-  accept_file_dialog_later(song_editor, save_filename);
+  accept_file_dialog_later(main_window, save_filename);
   song_menu_bar.file_menu.save_as_action.trigger();
-  QCOMPARE(song_widget.current_file, save_filename);
+  QCOMPARE(window_body.current_file, save_filename);
 
   // compare the saved text to the original text
   QCOMPARE(original_text, get_file_text(save_filename));
 
   // now change the song and save to the same file
-  song_widget.controls_column.spin_boxes.gain_editor.setValue(NEW_GAIN_1);
+  window_body.controls_column.spin_boxes.gain_editor.setValue(NEW_GAIN_1);
   song_menu_bar.file_menu.save_action.trigger();
-  song_widget.undo_stack.undo();
+  window_body.undo_stack.undo();
 
   QCOMPARE_NE(original_text, get_file_text(save_filename));
 
@@ -39,15 +39,15 @@ void Tester::test_save() {
 }
 
 void Tester::test_save_error_does_not_lose_work() {
-  auto& song_widget = song_editor.song_widget;
-  auto& undo_stack = song_widget.undo_stack;
+  auto& window_body = main_window.window_body;
+  auto& undo_stack = window_body.undo_stack;
 
-  const auto old_current_file = song_widget.current_file;
+  const auto old_current_file = window_body.current_file;
 
-  write_recovery_file(song_widget);
+  write_recovery_file(window_body);
   QVERIFY(QFile::exists(get_recovery_file_path()));
 
-  song_widget.controls_column.spin_boxes.gain_editor.setValue(NEW_GAIN_1);
+  window_body.controls_column.spin_boxes.gain_editor.setValue(NEW_GAIN_1);
   QVERIFY(!undo_stack.isClean());
 
   // a directory can never be opened for writing as a file, so this
@@ -57,13 +57,13 @@ void Tester::test_save_error_does_not_lose_work() {
   QDir(unwritable_path).removeRecursively();
   QVERIFY(QDir().mkpath(unwritable_path));
 
-  close_message_later(song_editor, waiting_for_message, "Failed to save file");
-  save_as_file(song_widget, unwritable_path);
+  close_message_later(main_window, waiting_for_message, "Failed to save file");
+  save_as_file(window_body, unwritable_path);
 
   // a failed save must not be mistaken for a successful one: the current
   // file, dirty undo stack, and recovery file are all still what they were
   // before the failed save attempt
-  QCOMPARE(song_widget.current_file, old_current_file);
+  QCOMPARE(window_body.current_file, old_current_file);
   QVERIFY(!undo_stack.isClean());
   QVERIFY(QFile::exists(get_recovery_file_path()));
 
@@ -73,30 +73,30 @@ void Tester::test_save_error_does_not_lose_work() {
 }
 
 void Tester::test_recovery_removed_on_save_and_open() {
-  auto& song_widget = song_editor.song_widget;
+  auto& window_body = main_window.window_body;
   auto fixture_file = test_dir.filePath("test_song.xml");
 
-  write_recovery_file(song_widget);
+  write_recovery_file(window_body);
   QVERIFY(QFile::exists(get_recovery_file_path()));
 
   auto save_filename = test_dir.filePath("test_recovery_save.xml");
-  save_as_file(song_widget, save_filename);
+  save_as_file(window_body, save_filename);
   QVERIFY(!QFile::exists(get_recovery_file_path()));
   QFile(save_filename).remove();
 
-  write_recovery_file(song_widget);
+  write_recovery_file(window_body);
   QVERIFY(QFile::exists(get_recovery_file_path()));
 
   // reloading also restores current_file/song state for later tests
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget, fixture_file);
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget, fixture_file);
   QVERIFY(!QFile::exists(get_recovery_file_path()));
 }
 
 void Tester::test_recovery_timer_debounce() {
-  auto& song_widget = song_editor.song_widget;
-  auto& gain_editor = song_widget.controls_column.spin_boxes.gain_editor;
-  auto& recovery_timer = song_widget.recovery_timer;
+  auto& window_body = main_window.window_body;
+  auto& gain_editor = window_body.controls_column.spin_boxes.gain_editor;
+  auto& recovery_timer = window_body.recovery_timer;
 
   remove_recovery_file();
   // other tests' edits may still have the debounce timer counting down
@@ -104,7 +104,7 @@ void Tester::test_recovery_timer_debounce() {
   // asserting on that incidental timing
   recovery_timer.stop();
 
-  const auto old_gain = get_gain(song_widget);
+  const auto old_gain = get_gain(window_body);
   QCOMPARE_NE(old_gain, NEW_GAIN_1);
   gain_editor.setValue(NEW_GAIN_1);
   QVERIFY(recovery_timer.isActive());
@@ -116,8 +116,8 @@ void Tester::test_recovery_timer_debounce() {
   QVERIFY(timeout_spy.wait());
   QVERIFY(QFile::exists(get_recovery_file_path()));
 
-  song_widget.undo_stack.undo();
-  QCOMPARE(get_gain(song_widget), old_gain);
+  window_body.undo_stack.undo();
+  QCOMPARE(get_gain(window_body), old_gain);
   QVERIFY(recovery_timer.isActive());
 
   recovery_timer.start(0);
@@ -128,56 +128,56 @@ void Tester::test_recovery_timer_debounce() {
 }
 
 void Tester::test_recovery_restore_accepted() {
-  auto& song_widget = song_editor.song_widget;
+  auto& window_body = main_window.window_body;
   auto fixture_file = test_dir.filePath("test_song.xml");
 
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget, fixture_file);
-  const auto old_gain = get_gain(song_widget);
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget, fixture_file);
+  const auto old_gain = get_gain(window_body);
   QCOMPARE_NE(old_gain, NEW_GAIN_1);
 
-  song_widget.controls_column.spin_boxes.gain_editor.setValue(NEW_GAIN_1);
-  write_recovery_file(song_widget);
+  window_body.controls_column.spin_boxes.gain_editor.setValue(NEW_GAIN_1);
+  write_recovery_file(window_body);
   // undoing approximates relaunching without the unsaved edit -- the
   // recovery file itself is untouched, since only save/open/import/close
   // clear it, not undo
-  song_widget.undo_stack.undo();
-  QCOMPARE(get_gain(song_widget), old_gain);
+  window_body.undo_stack.undo();
+  QCOMPARE(get_gain(window_body), old_gain);
 
-  answer_question_later(song_editor, waiting_for_message, RECOVERY_PROMPT_TEXT,
+  answer_question_later(main_window, waiting_for_message, RECOVERY_PROMPT_TEXT,
                         QMessageBox::Yes);
-  QVERIFY(maybe_restore_recovery(song_widget));
+  QVERIFY(maybe_restore_recovery(window_body));
 
-  QCOMPARE(get_gain(song_widget), NEW_GAIN_1);
-  QCOMPARE(song_widget.current_file, fixture_file);
-  QVERIFY(!song_widget.undo_stack.isClean());
+  QCOMPARE(get_gain(window_body), NEW_GAIN_1);
+  QCOMPARE(window_body.current_file, fixture_file);
+  QVERIFY(!window_body.undo_stack.isClean());
   QVERIFY(!QFile::exists(get_recovery_file_path()));
   QVERIFY(!QSettings().contains("recovery/original_file"));
 
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget, fixture_file);
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget, fixture_file);
 }
 
 void Tester::test_recovery_restore_declined() {
-  auto& song_widget = song_editor.song_widget;
+  auto& window_body = main_window.window_body;
   auto fixture_file = test_dir.filePath("test_song.xml");
 
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget, fixture_file);
-  const auto old_gain = get_gain(song_widget);
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget, fixture_file);
+  const auto old_gain = get_gain(window_body);
   QCOMPARE_NE(old_gain, NEW_GAIN_1);
 
-  song_widget.controls_column.spin_boxes.gain_editor.setValue(NEW_GAIN_1);
-  write_recovery_file(song_widget);
-  song_widget.undo_stack.undo();
+  window_body.controls_column.spin_boxes.gain_editor.setValue(NEW_GAIN_1);
+  write_recovery_file(window_body);
+  window_body.undo_stack.undo();
 
-  answer_question_later(song_editor, waiting_for_message, RECOVERY_PROMPT_TEXT,
+  answer_question_later(main_window, waiting_for_message, RECOVERY_PROMPT_TEXT,
                         QMessageBox::No);
-  QVERIFY(!maybe_restore_recovery(song_widget));
+  QVERIFY(!maybe_restore_recovery(window_body));
 
-  QCOMPARE(get_gain(song_widget), old_gain);
-  QCOMPARE(song_widget.current_file, fixture_file);
-  QVERIFY(song_widget.undo_stack.isClean());
+  QCOMPARE(get_gain(window_body), old_gain);
+  QCOMPARE(window_body.current_file, fixture_file);
+  QVERIFY(window_body.undo_stack.isClean());
   QVERIFY(!QFile::exists(get_recovery_file_path()));
   QVERIFY(!QSettings().contains("recovery/original_file"));
 }
@@ -187,45 +187,45 @@ void Tester::test_recovery_no_prompt_when_missing() {
   QVERIFY(!QFile::exists(get_recovery_file_path()));
   // the class-wide unexpected_message_timer watchdog fails the test if a
   // dialog appears here
-  QVERIFY(!maybe_restore_recovery(song_editor.song_widget));
+  QVERIFY(!maybe_restore_recovery(main_window.window_body));
 }
 
 // closing with unsaved changes asks first; declining must keep the window
 // open (event ignored) and leave any recovery file in place
 void Tester::test_close_event_discard_declined() {
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
 
   select_cell(switch_table, 0, 0);
-  song_editor.song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();
-  QVERIFY(!song_widget.undo_stack.isClean());
-  write_recovery_file(song_widget);
+  main_window.song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();
+  QVERIFY(!window_body.undo_stack.isClean());
+  write_recovery_file(window_body);
 
-  answer_question_later(song_editor, waiting_for_message,
+  answer_question_later(main_window, waiting_for_message,
                         "Discard unsaved changes?", QMessageBox::No);
   QCloseEvent close_event;
-  song_editor.closeEvent(&close_event);
+  main_window.closeEvent(&close_event);
 
   QVERIFY(!close_event.isAccepted());
   QVERIFY(QFile::exists(get_recovery_file_path()));
 
   // restore the shared fixture (also removes the recovery file)
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
 // a clean shutdown must delete the crash-recovery file, since its presence
 // is what tells the next launch that the last session crashed
 void Tester::test_close_event_removes_recovery_file() {
-  auto& song_widget = song_editor.song_widget;
+  auto& window_body = main_window.window_body;
 
-  QVERIFY(song_widget.undo_stack.isClean());
-  write_recovery_file(song_widget);
+  QVERIFY(window_body.undo_stack.isClean());
+  write_recovery_file(window_body);
   QVERIFY(QFile::exists(get_recovery_file_path()));
 
   QCloseEvent close_event;
-  song_editor.closeEvent(&close_event);
+  main_window.closeEvent(&close_event);
 
   QVERIFY(close_event.isAccepted());
   QVERIFY(!QFile::exists(get_recovery_file_path()));
@@ -234,7 +234,7 @@ void Tester::test_close_event_removes_recovery_file() {
 // a recovery write that fails leaves the previous recovery state alone,
 // rather than recording an original file for content that was never written
 void Tester::test_recovery_write_failure() {
-  auto& song_widget = song_editor.song_widget;
+  auto& window_body = main_window.window_body;
 
   remove_recovery_file();
   QVERIFY(!QSettings().contains("recovery/original_file"));
@@ -242,7 +242,7 @@ void Tester::test_recovery_write_failure() {
   // a directory where recovery.xml should go makes writing it fail
   const auto recovery_path = get_recovery_file_path();
   QVERIFY(QDir().mkpath(recovery_path));
-  write_recovery_file(song_widget);
+  write_recovery_file(window_body);
   QVERIFY(!QSettings().contains("recovery/original_file"));
 
   QVERIFY(QDir(recovery_path).removeRecursively());
@@ -251,8 +251,8 @@ void Tester::test_recovery_write_failure() {
 // accepting a recovery file that can't be opened reports the error and
 // leaves the current song as it was
 void Tester::test_recovery_restore_invalid_file() {
-  auto& song_widget = song_editor.song_widget;
-  const auto old_current_file = song_widget.current_file;
+  auto& window_body = main_window.window_body;
+  const auto old_current_file = window_body.current_file;
 
   QFile recovery_file(get_recovery_file_path());
   QVERIFY(recovery_file.open(QIODevice::WriteOnly));
@@ -260,12 +260,12 @@ void Tester::test_recovery_restore_invalid_file() {
   recovery_file.close();
 
   // Enter picks the prompt's default Yes button
-  close_messages_later(song_editor, waiting_for_message,
+  close_messages_later(main_window, waiting_for_message,
                        {RECOVERY_PROMPT_TEXT, "Invalid XML file"});
-  QVERIFY(!maybe_restore_recovery(song_widget));
+  QVERIFY(!maybe_restore_recovery(window_body));
   QVERIFY(!waiting_for_message);
 
-  QCOMPARE(song_widget.current_file, old_current_file);
-  QVERIFY(song_widget.undo_stack.isClean());
+  QCOMPARE(window_body.current_file, old_current_file);
+  QVERIFY(window_body.undo_stack.isClean());
   remove_recovery_file();
 }

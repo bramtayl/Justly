@@ -6,18 +6,18 @@ void Tester::test_insert_after() {
   QFETCH(const RowType, row_type);
   QFETCH(const int, chord_number);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& undo_stack = song_widget.undo_stack;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& undo_stack = window_body.undo_stack;
 
-  switch_to(song_editor, row_type, chord_number);
+  switch_to(main_window, row_type, chord_number);
 
   auto& model = get_model(switch_table);
 
   const auto old_row_count = model.rowCount();
 
   select_cell(switch_table, 0, 0);
-  song_editor.song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();
+  main_window.song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();
 
   QCOMPARE(model.rowCount(), old_row_count + 1);
   undo_stack.undo();
@@ -32,17 +32,17 @@ void Tester::test_insert_into() {
   QFETCH(const RowType, row_type);
   QFETCH(const int, chord_number);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& undo_stack = song_widget.undo_stack;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& undo_stack = window_body.undo_stack;
 
-  switch_to(song_editor, row_type, chord_number);
+  switch_to(main_window, row_type, chord_number);
 
   auto& model = get_model(switch_table);
 
   const auto old_row_count = model.rowCount();
   select_cell(switch_table, 0, 0);
-  song_editor.song_menu_bar.edit_menu.insert_menu.insert_into_start_action
+  main_window.song_menu_bar.edit_menu.insert_menu.insert_into_start_action
       .trigger();
 
   QCOMPARE(model.rowCount(), old_row_count + 1);
@@ -87,12 +87,12 @@ void Tester::test_paste_after() {
   QFETCH(const int, row_number);
   QFETCH(const int, column_number);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& undo_stack = song_widget.undo_stack;
-  auto& edit_menu = song_editor.song_menu_bar.edit_menu;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& undo_stack = window_body.undo_stack;
+  auto& edit_menu = main_window.song_menu_bar.edit_menu;
 
-  switch_to(song_editor, row_type, chord_number);
+  switch_to(main_window, row_type, chord_number);
 
   auto& model = get_model(switch_table);
   select_cell(switch_table, row_number, column_number);
@@ -185,11 +185,11 @@ void Tester::test_paste_error() {
   QFETCH(const QString, mime_type);
   QFETCH(const QString, error_message);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& undo_stack = song_widget.undo_stack;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& undo_stack = window_body.undo_stack;
 
-  switch_to(song_editor, row_type, chord_number);
+  switch_to(main_window, row_type, chord_number);
 
   auto& new_data =
       get_reference(new QMimeData);  // NOLINT(cppcoreguidelines-owning-memory)
@@ -203,8 +203,8 @@ void Tester::test_paste_error() {
   clipboard.setMimeData(&new_data);
 
   select_cell(switch_table, 0, 0);
-  close_message_later(song_editor, waiting_for_message, error_message);
-  song_editor.song_menu_bar.edit_menu.paste_menu.paste_over_action.trigger();
+  close_message_later(main_window, waiting_for_message, error_message);
+  main_window.song_menu_bar.edit_menu.paste_menu.paste_over_action.trigger();
 
   maybe_switch_back_to_chords(undo_stack, row_type);
 }
@@ -220,11 +220,11 @@ void Tester::test_paste_after_error() {
   QFETCH(const QString, mime_type);
   QFETCH(const QString, error_message);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& undo_stack = song_widget.undo_stack;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& undo_stack = window_body.undo_stack;
 
-  switch_to(song_editor, row_type, chord_number);
+  switch_to(main_window, row_type, chord_number);
   const auto old_row_count = get_model(switch_table).rowCount(QModelIndex());
 
   auto& new_data =
@@ -235,8 +235,8 @@ void Tester::test_paste_after_error() {
   get_clipboard().setMimeData(&new_data);
 
   select_cell(switch_table, 0, 0);
-  close_message_later(song_editor, waiting_for_message, error_message);
-  song_editor.song_menu_bar.edit_menu.paste_menu.paste_after_action.trigger();
+  close_message_later(main_window, waiting_for_message, error_message);
+  main_window.song_menu_bar.edit_menu.paste_menu.paste_after_action.trigger();
   QCOMPARE(get_model(switch_table).rowCount(QModelIndex()), old_row_count);
 
   maybe_switch_back_to_chords(undo_stack, row_type);
@@ -250,12 +250,12 @@ void Tester::test_paste_into() {
   QFETCH(const int, row_number);
   QFETCH(const int, column_number);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& undo_stack = song_widget.undo_stack;
-  auto& edit_menu = song_editor.song_menu_bar.edit_menu;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& undo_stack = window_body.undo_stack;
+  auto& edit_menu = main_window.song_menu_bar.edit_menu;
 
-  switch_to(song_editor, row_type, chord_number);
+  switch_to(main_window, row_type, chord_number);
 
   auto& model = get_model(switch_table);
 
@@ -277,11 +277,11 @@ void Tester::test_remove_row() {
   QFETCH(const RowType, row_type);
   QFETCH(const int, chord_number);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& undo_stack = song_widget.undo_stack;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& undo_stack = window_body.undo_stack;
 
-  switch_to(song_editor, row_type, chord_number);
+  switch_to(main_window, row_type, chord_number);
 
   auto& model = get_model(switch_table);
 
@@ -292,15 +292,15 @@ void Tester::test_remove_row() {
   // about how many were reassigned
   if (row_type == RowType::pitched_voice_type) {
     close_message_later(
-        song_editor, waiting_for_message,
+        main_window, waiting_for_message,
         "Reassigning 7 pitched note voices to the first voice \"Guitar\"");
   } else if (row_type == RowType::unpitched_voice_type) {
     close_message_later(
-        song_editor, waiting_for_message,
+        main_window, waiting_for_message,
         "Reassigning 2 unpitched note voices to the first voice \"Room "
         "Kit\"");
   }
-  song_editor.song_menu_bar.edit_menu.remove_rows_action.trigger();
+  main_window.song_menu_bar.edit_menu.remove_rows_action.trigger();
 
   QCOMPARE(model.rowCount(), old_row_count - 1);
   undo_stack.undo();

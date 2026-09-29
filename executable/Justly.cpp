@@ -1,8 +1,8 @@
 #include <QtWidgets/QApplication>
 // #include "SDL.h"
 
-#include "widgets/SongEditor.hpp"
-#include "widgets/SongWidget.hpp"
+#include "widgets/MainWindow.hpp"
+#include "widgets/WindowBody.hpp"
 
 auto main(int number_of_arguments, char* arguments[]) -> int {
   QApplication const app(number_of_arguments, arguments);
@@ -14,11 +14,11 @@ auto main(int number_of_arguments, char* arguments[]) -> int {
       LC_NUMERIC, "C"));
 
   set_up();
-  SongEditor song_editor;
-  song_editor.show();
-  if (maybe_restore_recovery(song_editor.song_widget)) {
-    song_reloaded(song_editor.song_menu_bar, song_editor.song_widget,
-                  song_editor.piano_roll_widget);
+  MainWindow main_window;
+  main_window.show();
+  if (maybe_restore_recovery(main_window.window_body)) {
+    song_reloaded(main_window.song_menu_bar, main_window.window_body,
+                  main_window.piano_roll_widget);
   }
   return QApplication::exec();
 }

@@ -7,7 +7,7 @@
 struct Tester : public QObject {
   Q_OBJECT
  public:
-  SongEditor song_editor;
+  MainWindow main_window;
   QDir test_dir = get_share_folder();
   bool waiting_for_message = false;
   // watches for a QMessageBox that pops up while no test is expecting one
@@ -27,8 +27,8 @@ struct Tester : public QObject {
     // fail fast here instead of letting open_file's "Invalid XML file"
     // QMessageBox block forever with no user around to dismiss it
     Q_ASSERT(QFile::exists(fixture_file));
-    open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                         song_editor.piano_roll_widget, fixture_file);
+    open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                         main_window.piano_roll_widget, fixture_file);
 
     QObject::connect(
         &unexpected_message_timer, &QTimer::timeout, this, [this]() -> auto {

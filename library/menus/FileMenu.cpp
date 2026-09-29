@@ -1,9 +1,9 @@
 #include "menus/FileMenu.hpp"
 
-#include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"
+#include "widgets/WindowBody.hpp"
 
-auto make_file_dialog(SongWidget& song_widget, const char* const caption,
+auto make_file_dialog(WindowBody& window_body, const char* const caption,
                       const QString& filter,
                       const QFileDialog::AcceptMode accept_mode,
                       const QString& suffix,
@@ -11,8 +11,8 @@ auto make_file_dialog(SongWidget& song_widget, const char* const caption,
   Q_ASSERT(filter.isValidUtf16());
   Q_ASSERT(suffix.isValidUtf16());
   auto& dialog =  // NOLINT(cppcoreguidelines-owning-memory)
-      *(new QFileDialog(&song_widget, SongWidget::tr(caption),
-                        song_widget.current_folder, filter));
+      *(new QFileDialog(&window_body, WindowBody::tr(caption),
+                        window_body.current_folder, filter));
 
   dialog.setAcceptMode(accept_mode);
   dialog.setDefaultSuffix(suffix);
@@ -21,13 +21,13 @@ auto make_file_dialog(SongWidget& song_widget, const char* const caption,
   return dialog;
 }
 
-auto get_selected_file(SongWidget& song_widget, const QFileDialog& dialog)
+auto get_selected_file(WindowBody& window_body, const QFileDialog& dialog)
     -> QString {
-  song_widget.current_folder = dialog.directory().absolutePath();
+  window_body.current_folder = dialog.directory().absolutePath();
   return get_only(dialog.selectedFiles());
 }
 
-FileMenu::FileMenu(SongWidget& song_widget)
+FileMenu::FileMenu(WindowBody& window_body)
     : QMenu(FileMenu::tr("&File")),
       save_action(FileMenu::tr("&Save")),
       open_action(FileMenu::tr("&Open")),
@@ -45,55 +45,55 @@ FileMenu::FileMenu(SongWidget& song_widget)
   add_menu_action(*this, export_midi_action);
 
   QObject::connect(
-      &song_widget.undo_stack, &QUndoStack::cleanChanged, this,
-      [&save_action_ref, &song_widget]() -> auto {
-        save_action_ref.setEnabled(!song_widget.undo_stack.isClean() &&
-                                   !song_widget.current_file.isEmpty());
+      &window_body.undo_stack, &QUndoStack::cleanChanged, this,
+      [&save_action_ref, &window_body]() -> auto {
+        save_action_ref.setEnabled(!window_body.undo_stack.isClean() &&
+                                   !window_body.current_file.isEmpty());
       });
 
-  // open_action/import_action are wired externally in SongEditor.hpp,
+  // open_action/import_action are wired externally in MainWindow.hpp,
   // which is the first header up the include chain with access to both
   // SongMenuBar and this widget's PianoRollWidget, needed to refresh the
   // view menu and piano roll after replacing the song wholesale
 
   QObject::connect(&save_action, &QAction::triggered, this,
-                   [&song_widget]() -> auto {
-                     save_as_file(song_widget, song_widget.current_file);
+                   [&window_body]() -> auto {
+                     save_as_file(window_body, window_body.current_file);
                    });
 
   QObject::connect(
-      &save_as_action, &QAction::triggered, this, [&song_widget]() -> auto {
+      &save_as_action, &QAction::triggered, this, [&window_body]() -> auto {
         auto& dialog = make_file_dialog(
-            song_widget, "Save As — Justly", "XML file (*.xml)",
+            window_body, "Save As — Justly", "XML file (*.xml)",
             QFileDialog::AcceptSave, ".xml", QFileDialog::AnyFile);
 
         if (dialog.exec() != 0) {
-          save_as_file(song_widget, get_selected_file(song_widget, dialog));
+          save_as_file(window_body, get_selected_file(window_body, dialog));
         }
         dialog.deleteLater();
       });
 
   QObject::connect(
-      &export_action, &QAction::triggered, this, [&song_widget]() -> auto {
+      &export_action, &QAction::triggered, this, [&window_body]() -> auto {
         auto& dialog = make_file_dialog(
-            song_widget, "Export — Justly", "WAV file (*.wav)",
+            window_body, "Export — Justly", "WAV file (*.wav)",
             QFileDialog::AcceptSave, ".wav", QFileDialog::AnyFile);
         dialog.setLabelText(QFileDialog::Accept, "Export");
         if (dialog.exec() != 0) {
-          export_to_file(song_widget, get_selected_file(song_widget, dialog));
+          export_to_file(window_body, get_selected_file(window_body, dialog));
         }
         dialog.deleteLater();
       });
 
   QObject::connect(
-      &export_midi_action, &QAction::triggered, this, [&song_widget]() -> auto {
+      &export_midi_action, &QAction::triggered, this, [&window_body]() -> auto {
         auto& dialog = make_file_dialog(
-            song_widget, "Export MIDI — Justly", "MIDI file (*.mid)",
+            window_body, "Export MIDI — Justly", "MIDI file (*.mid)",
             QFileDialog::AcceptSave, ".mid", QFileDialog::AnyFile);
         dialog.setLabelText(QFileDialog::Accept, "Export");
         if (dialog.exec() != 0) {
-          export_midi_to_file(song_widget,
-                              get_selected_file(song_widget, dialog));
+          export_midi_to_file(window_body,
+                              get_selected_file(window_body, dialog));
         }
         dialog.deleteLater();
       });

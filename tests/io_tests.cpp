@@ -171,8 +171,8 @@ void Tester::test_open_error() {
   QFETCH(const QString, text);
   QFETCH(const QString, error_message);
 
-  close_message_later(song_editor, waiting_for_message, error_message);
-  open_text(song_editor, text);
+  close_message_later(main_window, waiting_for_message, error_message);
+  open_text(main_window, text);
 }
 
 // every file dialog leaves the song alone when cancelled -- the complement
@@ -190,21 +190,21 @@ void Tester::test_file_dialog_reject_data() {
 void Tester::test_file_dialog_reject() {
   QFETCH(const QString, action_text);
 
-  auto& song_widget = song_editor.song_widget;
-  const auto actions = song_editor.song_menu_bar.file_menu.actions();
+  auto& window_body = main_window.window_body;
+  const auto actions = main_window.song_menu_bar.file_menu.actions();
   const auto action_iterator = std::ranges::find_if(
       actions, [&action_text](const QAction* const action_pointer) -> auto {
         return action_pointer->text() == action_text;
       });
   QVERIFY(action_iterator != actions.cend());
 
-  const auto old_current_file = song_widget.current_file;
-  const auto old_number_of_chords = song_widget.song.chords.size();
+  const auto old_current_file = window_body.current_file;
+  const auto old_number_of_chords = window_body.song.chords.size();
 
   auto& timer =  // NOLINT(cppcoreguidelines-owning-memory)
-      *(new QTimer(&song_editor));
+      *(new QTimer(&main_window));
   timer.setSingleShot(true);
-  QObject::connect(&timer, &QTimer::timeout, &song_editor, []() -> auto {
+  QObject::connect(&timer, &QTimer::timeout, &main_window, []() -> auto {
     auto* const found_dialog = find_top_level_file_dialog();
     QVERIFY(found_dialog != nullptr);
     found_dialog->reject();
@@ -213,37 +213,37 @@ void Tester::test_file_dialog_reject() {
 
   get_reference(*action_iterator).trigger();
 
-  QCOMPARE(song_widget.current_file, old_current_file);
-  QCOMPARE(song_widget.song.chords.size(), old_number_of_chords);
+  QCOMPARE(window_body.current_file, old_current_file);
+  QCOMPARE(window_body.song.chords.size(), old_number_of_chords);
 }
 
 void Tester::test_open_via_dialog() {
-  auto& song_widget = song_editor.song_widget;
+  auto& window_body = main_window.window_body;
   const auto fixture_file = test_dir.filePath("test_song.xml");
 
   // start from a different song, so reopening the fixture visibly replaces it
-  open_text(song_editor, make_voice_song_xml({"A"}, {"D"}, {{{0}, {}}}));
-  QCOMPARE(song_widget.song.chords.size(), 1);
+  open_text(main_window, make_voice_song_xml({"A"}, {"D"}, {{{0}, {}}}));
+  QCOMPARE(window_body.song.chords.size(), 1);
 
-  accept_file_dialog_later(song_editor, fixture_file);
-  song_editor.song_menu_bar.file_menu.open_action.trigger();
+  accept_file_dialog_later(main_window, fixture_file);
+  main_window.song_menu_bar.file_menu.open_action.trigger();
 
-  QCOMPARE(song_widget.current_file, fixture_file);
-  QCOMPARE_NE(song_widget.song.chords.size(), 1);
+  QCOMPARE(window_body.current_file, fixture_file);
+  QCOMPARE_NE(window_body.song.chords.size(), 1);
 }
 
 void Tester::test_import_via_dialog() {
-  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+  auto& switch_table = main_window.window_body.switch_column.switch_table;
 
-  accept_file_dialog_later(song_editor,
+  accept_file_dialog_later(main_window,
                            test_dir.filePath("percussion.musicxml"));
-  song_editor.song_menu_bar.file_menu.import_action.trigger();
+  main_window.song_menu_bar.file_menu.import_action.trigger();
 
   QCOMPARE(get_model(switch_table).rowCount(QModelIndex()), PERCUSSION_ROWS);
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -263,29 +263,29 @@ void Tester::test_open_asks_to_discard_changes() {
   QFETCH(const QString, action_text);
   QFETCH(const bool, discard);
 
-  auto& song_widget = song_editor.song_widget;
-  auto& undo_stack = song_widget.undo_stack;
-  const auto actions = song_editor.song_menu_bar.file_menu.actions();
+  auto& window_body = main_window.window_body;
+  auto& undo_stack = window_body.undo_stack;
+  const auto actions = main_window.song_menu_bar.file_menu.actions();
   const auto action_iterator = std::ranges::find_if(
       actions, [&action_text](const QAction* const action_pointer) -> auto {
         return action_pointer->text() == action_text;
       });
   QVERIFY(action_iterator != actions.cend());
 
-  select_cell(song_widget.switch_column.switch_table, 0, 0);
-  song_editor.song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();
+  select_cell(window_body.switch_column.switch_table, 0, 0);
+  main_window.song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();
   QVERIFY(!undo_stack.isClean());
-  const auto number_of_chords = song_widget.song.chords.size();
+  const auto number_of_chords = window_body.song.chords.size();
 
-  answer_question_later(song_editor, waiting_for_message,
+  answer_question_later(main_window, waiting_for_message,
                         "Discard unsaved changes?",
                         discard ? QMessageBox::Yes : QMessageBox::No);
   // only shows up (and then gets cancelled) if the changes were discarded
   auto dialog_shown = false;
   auto& timer =  // NOLINT(cppcoreguidelines-owning-memory)
-      *(new QTimer(&song_editor));
+      *(new QTimer(&main_window));
   timer.setSingleShot(true);
-  QObject::connect(&timer, &QTimer::timeout, &song_editor,
+  QObject::connect(&timer, &QTimer::timeout, &main_window,
                    [&dialog_shown]() -> auto {
                      auto* const found_dialog = find_top_level_file_dialog();
                      if (found_dialog != nullptr) {
@@ -302,7 +302,7 @@ void Tester::test_open_asks_to_discard_changes() {
   }
 
   QCOMPARE(dialog_shown, discard);
-  QCOMPARE(song_widget.song.chords.size(), number_of_chords);
+  QCOMPARE(window_body.song.chords.size(), number_of_chords);
   undo_stack.undo();
   QVERIFY(undo_stack.isClean());
 }

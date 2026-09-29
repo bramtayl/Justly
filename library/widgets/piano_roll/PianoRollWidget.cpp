@@ -8,9 +8,9 @@
 #include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QScrollBar>
 
-#include "widgets/SongWidget.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchTable.hpp"
+#include "widgets/WindowBody.hpp"
 #include "widgets/piano_roll/PianoRollAxisScene.hpp"
 #include "widgets/piano_roll/PianoRollLegendScene.hpp"
 #include "widgets/piano_roll/PianoRollNotesScene.hpp"
@@ -627,7 +627,7 @@ void apply_selection_highlight(const Song& song,
   }
 }
 
-void rebuild_scene(QWidget& widget, const SongWidget& song_widget,
+void rebuild_scene(QWidget& widget, const WindowBody& window_body,
                    PianoRollNotesScene& piano_roll_scene,
                    PianoRollAxisScene& axis_scene,
                    PianoRollLegendScene& legend_scene, QBoxLayout& row_layout,
@@ -647,7 +647,7 @@ void rebuild_scene(QWidget& widget, const SongWidget& song_widget,
   static const auto PIANO_ROLL_UNPITCHED_LANE_GAP = 30.0;
   static const auto PIANO_ROLL_LEGEND_GAP = 10.0;
 
-  const auto& song = song_widget.song;
+  const auto& song = window_body.song;
 
   // repopulates the notes scene with a fresh set of note bars + the
   // pitch/time axes for the current song
@@ -684,7 +684,7 @@ void rebuild_scene(QWidget& widget, const SongWidget& song_widget,
     // time, so the piano roll should mirror that rather than keep drawing
     // every other chord's notes alongside them
     const auto notes_mode_chord_number =
-        get_parent_chord_number(song_widget.switch_column.switch_table);
+        get_parent_chord_number(window_body.switch_column.switch_table);
     if (notes_mode_chord_number != -1) {
       QList<PianoRollNoteEvent> chord_events;
       std::ranges::copy_if(
@@ -1008,8 +1008,8 @@ void update_playhead_position(PianoRollNotesScene& piano_roll_scene,
                            selecting_chord_from_playhead, current_ms);
 }
 
-PianoRollWidget::PianoRollWidget(const SongWidget& song_widget_input)
-    : song_widget(song_widget_input),
+PianoRollWidget::PianoRollWidget(const WindowBody& window_body_input)
+    : window_body(window_body_input),
       piano_roll_scene(*(new PianoRollNotesScene(*this))),
       axis_scene(*(new PianoRollAxisScene(*this))),
       legend_scene(*(new PianoRollLegendScene(*this))),
@@ -1043,7 +1043,7 @@ PianoRollWidget::PianoRollWidget(const SongWidget& song_widget_input)
                    [this]() -> auto {
                      update_playhead_position(
                          piano_roll_scene, axis_scene,
-                         song_widget.switch_column.switch_table,
+                         window_body.switch_column.switch_table,
                          selecting_chord_from_playhead);
                    });
 
@@ -1053,7 +1053,7 @@ PianoRollWidget::PianoRollWidget(const SongWidget& song_widget_input)
   // overriding QGraphicsView
   get_reference(piano_roll_scene.view.viewport()).installEventFilter(this);
 
-  rebuild_scene(*this, song_widget, piano_roll_scene, axis_scene, legend_scene,
+  rebuild_scene(*this, window_body, piano_roll_scene, axis_scene, legend_scene,
                 row_layout, selection_row_type, selection_chord_number,
                 selection_first_row_number, selection_number_of_rows,
                 selecting_chord_from_playhead);
@@ -1062,7 +1062,7 @@ PianoRollWidget::PianoRollWidget(const SongWidget& song_widget_input)
 auto PianoRollWidget::eventFilter(QObject* watched_pointer,
                                   QEvent* event_pointer) -> bool {
   auto& view = piano_roll_scene.view;
-  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& switch_table = window_body.switch_column.switch_table;
   if (get_reference(event_pointer).type() == QEvent::Wheel &&
       watched_pointer == view.viewport()) {
     auto& wheel_event =
@@ -1098,7 +1098,7 @@ auto PianoRollWidget::eventFilter(QObject* watched_pointer,
       // driven animation, the same way it takes over from a stale
       // selection-driven position in drag_playhead_to()
       if (piano_roll_scene.playhead_active) {
-        stop_playhead(piano_roll_scene, axis_scene, song_widget.song,
+        stop_playhead(piano_roll_scene, axis_scene, window_body.song,
                       selection_row_type, selection_chord_number,
                       selection_first_row_number, selection_number_of_rows,
                       selecting_chord_from_playhead);

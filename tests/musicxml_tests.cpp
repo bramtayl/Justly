@@ -19,16 +19,16 @@ void Tester::test_musicxml() {
   QFETCH(const QString, file_name);
   QFETCH(const int, number_of_chords);
 
-  auto& song_widget = song_editor.song_widget;
+  auto& window_body = main_window.window_body;
 
-  import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                             song_editor.piano_roll_widget,
+  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
+                             main_window.piano_roll_widget,
                              test_dir.filePath(file_name));
   QCOMPARE(
-      get_model(song_widget.switch_column.switch_table).rowCount(QModelIndex()),
+      get_model(window_body.switch_column.switch_table).rowCount(QModelIndex()),
       number_of_chords);
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -72,9 +72,9 @@ void Tester::test_musicxml_error() {
   QFETCH(const QString, error_message);
   QFETCH(const QString, file_name);
 
-  close_message_later(song_editor, waiting_for_message, error_message);
-  import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                             song_editor.piano_roll_widget,
+  close_message_later(main_window, waiting_for_message, error_message);
+  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
+                             main_window.piano_roll_widget,
                              test_dir.filePath(file_name));
 }
 
@@ -136,13 +136,13 @@ void Tester::test_compute_measure_expansion_lone_backward_repeat() {
 // entry at all. Keying the lookup by voice as well as pitch keeps
 // overlapping ties on the same pitch independent.
 void Tester::test_import_musicxml_ties_do_not_cross_voices() {
-  auto& song_widget = song_editor.song_widget;
+  auto& window_body = main_window.window_body;
 
-  import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                             song_editor.piano_roll_widget,
+  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
+                             main_window.piano_roll_widget,
                              test_dir.filePath("tied_voices.musicxml"));
 
-  auto& song = song_widget.song;
+  auto& song = window_body.song;
   QCOMPARE(song.chords.size(), 2);
 
   const auto& left_hand_notes = song.chords.at(0).pitched_notes;
@@ -159,8 +159,8 @@ void Tester::test_import_musicxml_ties_do_not_cross_voices() {
   QCOMPARE(right_hand_notes.at(0).beats.numerator, 8);
   QCOMPARE(right_hand_notes.at(0).beats.denominator, 1);
 
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -170,13 +170,13 @@ void Tester::test_import_musicxml_ties_do_not_cross_voices() {
 // malformed or hand-edited musicxml file could trigger undefined behavior.
 // It must now import as an ordinary, unstarted note instead.
 void Tester::test_import_musicxml_orphan_tie_stop() {
-  auto& song_widget = song_editor.song_widget;
+  auto& window_body = main_window.window_body;
 
-  import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                             song_editor.piano_roll_widget,
+  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
+                             main_window.piano_roll_widget,
                              test_dir.filePath("orphan_tie.musicxml"));
 
-  auto& song = song_widget.song;
+  auto& song = window_body.song;
   QCOMPARE(song.chords.size(), 1);
 
   const auto& notes = song.chords.at(0).pitched_notes;
@@ -184,8 +184,8 @@ void Tester::test_import_musicxml_orphan_tie_stop() {
   QCOMPARE(notes.at(0).beats.numerator, 4);
   QCOMPARE(notes.at(0).beats.denominator, 1);
 
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -194,22 +194,22 @@ void Tester::test_import_musicxml_orphan_tie_stop() {
 // that Chord's notes QList; import_musicxml/open_file must not crash even
 // though they replace song.chords wholesale while that pointer is live
 void Tester::test_import_musicxml_after_editing_chord_notes() {
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_table = song_widget.switch_column.switch_table;
-  auto& insert_menu = song_editor.song_menu_bar.edit_menu.insert_menu;
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& insert_menu = main_window.song_menu_bar.edit_menu.insert_menu;
 
   select_cell(switch_table, 0, 0);
   insert_menu.insert_after_action.trigger();
-  switch_to(song_editor, RowType::pitched_note_type, 1);
+  switch_to(main_window, RowType::pitched_note_type, 1);
   insert_menu.insert_into_start_action.trigger();
 
-  import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                             song_editor.piano_roll_widget,
+  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
+                             main_window.piano_roll_widget,
                              test_dir.filePath("prelude.musicxml"));
   QCOMPARE(get_model(switch_table).rowCount(QModelIndex()), MUSIC_XML_ROWS);
 
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -220,16 +220,16 @@ void Tester::test_import_musicxml_after_editing_chord_notes() {
 // must reapply that same reset explicitly (via song_reloaded) instead of
 // leaving the label/actions stuck showing whatever was being edited before
 void Tester::test_open_after_editing_chord_notes_resets_menu() {
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_column = song_widget.switch_column;
-  auto& view_menu = song_editor.song_menu_bar.view_menu;
+  auto& window_body = main_window.window_body;
+  auto& switch_column = window_body.switch_column;
+  auto& view_menu = main_window.song_menu_bar.view_menu;
 
-  switch_to(song_editor, RowType::pitched_note_type, 0);
+  switch_to(main_window, RowType::pitched_note_type, 0);
   QCOMPARE(switch_column.editing_text.text(), "Pitched notes for chord 1");
   QVERIFY(view_menu.back_to_chords_action.isEnabled());
 
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 
   QCOMPARE(switch_column.editing_text.text(), "Chords");
@@ -245,16 +245,16 @@ void Tester::test_open_after_editing_chord_notes_resets_menu() {
 // there's no reason opening a different file requires navigating back to
 // the chords view first
 void Tester::test_open_action_enabled_outside_chords_view() {
-  auto& undo_stack = song_editor.song_widget.undo_stack;
-  auto& open_action = song_editor.song_menu_bar.file_menu.open_action;
+  auto& undo_stack = main_window.window_body.undo_stack;
+  auto& open_action = main_window.song_menu_bar.file_menu.open_action;
 
   QVERIFY(open_action.isEnabled());
 
-  switch_to(song_editor, RowType::pitched_voice_type, -1);
+  switch_to(main_window, RowType::pitched_voice_type, -1);
   QVERIFY(open_action.isEnabled());
   maybe_switch_back_to_chords(undo_stack, RowType::pitched_voice_type);
 
-  switch_to(song_editor, RowType::pitched_note_type, 0);
+  switch_to(main_window, RowType::pitched_note_type, 0);
   QVERIFY(open_action.isEnabled());
   maybe_switch_back_to_chords(undo_stack, RowType::pitched_note_type);
 }
@@ -265,40 +265,40 @@ void Tester::test_open_action_enabled_outside_chords_view() {
 // view the user was on (including mid-note-editing) completely alone
 // rather than silently bouncing them back to the chords view
 void Tester::test_failed_import_does_not_reset_notes_view() {
-  auto& song_widget = song_editor.song_widget;
-  auto& switch_column = song_widget.switch_column;
+  auto& window_body = main_window.window_body;
+  auto& switch_column = window_body.switch_column;
 
-  switch_to(song_editor, RowType::pitched_note_type, 0);
+  switch_to(main_window, RowType::pitched_note_type, 0);
   QCOMPARE(switch_column.editing_text.text(), "Pitched notes for chord 1");
 
-  close_message_later(song_editor, waiting_for_message,
+  close_message_later(main_window, waiting_for_message,
                       "Invalid musicxml file");
-  import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                             song_editor.piano_roll_widget,
+  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
+                             main_window.piano_roll_widget,
                              test_dir.filePath("not_musicxml.xml"));
 
   QCOMPARE(switch_column.editing_text.text(), "Pitched notes for chord 1");
 
-  maybe_switch_back_to_chords(song_widget.undo_stack,
+  maybe_switch_back_to_chords(window_body.undo_stack,
                               RowType::pitched_note_type);
 }
 
 // an imported voice whose name exactly matches a built-in program (here, the
 // part is named "Marimba") should use that program instead of the default
 void Tester::test_import_musicxml_voice_named_like_program() {
-  auto& song_widget = song_editor.song_widget;
+  auto& window_body = main_window.window_body;
 
-  import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                             song_editor.piano_roll_widget,
+  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
+                             main_window.piano_roll_widget,
                              test_dir.filePath("program_named_part.musicxml"));
 
-  const auto& pitched_voices = song_widget.song.pitched_voices;
+  const auto& pitched_voices = window_body.song.pitched_voices;
   QCOMPARE(pitched_voices.size(), 1);
   QCOMPARE(pitched_voices.at(0).name, QString("Marimba"));
   QCOMPARE(pitched_voices.at(0).program, QString("Marimba"));
 
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -438,9 +438,9 @@ void Tester::test_musicxml_inline_error() {
   temp_file.write(make_musicxml(attributes, body).toStdString().c_str());
   temp_file.close();
 
-  close_message_later(song_editor, waiting_for_message, error_message);
-  import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                             song_editor.piano_roll_widget,
+  close_message_later(main_window, waiting_for_message, error_message);
+  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
+                             main_window.piano_roll_widget,
                              temp_file.fileName());
 }
 
@@ -458,23 +458,23 @@ void Tester::test_musicxml_repeat_times() {
           .c_str());
   temp_file.close();
 
-  auto& song_widget = song_editor.song_widget;
-  import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                             song_editor.piano_roll_widget,
+  auto& window_body = main_window.window_body;
+  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
+                             main_window.piano_roll_widget,
                              temp_file.fileName());
-  QCOMPARE(song_widget.song.chords.size(), 3);
+  QCOMPARE(window_body.song.chords.size(), 3);
 
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
 // a transposing part's <octave-change> shifts every pitched note by that many
 // octaves, on top of its chromatic transposition
 void Tester::test_musicxml_octave_change() {
-  auto& song_widget = song_editor.song_widget;
+  auto& window_body = main_window.window_body;
 
-  auto import_first_note_octave = [this, &song_widget](const QString& transpose,
+  auto import_first_note_octave = [this, &window_body](const QString& transpose,
                                                        int& octave) -> void {
     QTemporaryFile temp_file;
     QVERIFY(temp_file.open());
@@ -486,9 +486,9 @@ void Tester::test_musicxml_octave_change() {
                         .c_str());
     temp_file.close();
     import_musicxml_and_reload(
-        song_editor.song_menu_bar, song_editor.song_widget,
-        song_editor.piano_roll_widget, temp_file.fileName());
-    octave = song_widget.song.chords.at(0).pitched_notes.at(0).interval.octave;
+        main_window.song_menu_bar, main_window.window_body,
+        main_window.piano_roll_widget, temp_file.fileName());
+    octave = window_body.song.chords.at(0).pitched_notes.at(0).interval.octave;
   };
 
   auto plain_octave = 0;
@@ -497,8 +497,8 @@ void Tester::test_musicxml_octave_change() {
   import_first_note_octave("<octave-change>1</octave-change>", shifted_octave);
   QCOMPARE(shifted_octave, plain_octave + 1);
 
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -603,11 +603,11 @@ void Tester::test_musicxml_accidentals() {
   temp_file.write(make_musicxml(attributes, body).toStdString().c_str());
   temp_file.close();
 
-  auto& song_widget = song_editor.song_widget;
-  import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                             song_editor.piano_roll_widget,
+  auto& window_body = main_window.window_body;
+  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
+                             main_window.piano_roll_widget,
                              temp_file.fileName());
-  const auto& chords = song_widget.song.chords;
+  const auto& chords = window_body.song.chords;
   QVERIFY(!chords.isEmpty());
   const auto& pitched_notes = chords.last().pitched_notes;
   QVERIFY(!pitched_notes.isEmpty());
@@ -616,8 +616,8 @@ void Tester::test_musicxml_accidentals() {
   QCOMPARE(interval.ratio.denominator, expected_interval.ratio.denominator);
   QCOMPARE(interval.octave, expected_interval.octave);
 
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -656,18 +656,18 @@ void Tester::test_import_musicxml_voice_names_deduplicated() {
                       .c_str());
   temp_file.close();
 
-  import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                             song_editor.piano_roll_widget,
+  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
+                             main_window.piano_roll_widget,
                              temp_file.fileName());
 
-  const auto& pitched_voices = song_editor.song_widget.song.pitched_voices;
+  const auto& pitched_voices = main_window.window_body.song.pitched_voices;
   QCOMPARE(pitched_voices.size(), 3);
   QCOMPARE(pitched_voices.at(0).name, QString("Unnamed instrument"));
   QCOMPARE(pitched_voices.at(1).name, QString("Flute"));
   QCOMPARE(pitched_voices.at(2).name, QString("Flute (2)"));
 
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -707,13 +707,13 @@ void Tester::test_musicxml_endings() {
   temp_file.write(make_musicxml(get_divisions(), body).toStdString().c_str());
   temp_file.close();
 
-  import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                             song_editor.piano_roll_widget,
+  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
+                             main_window.piano_roll_widget,
                              temp_file.fileName());
   // measures 1, 2 (first ending), 1, 3 (second ending), 4
-  QCOMPARE(song_editor.song_widget.song.chords.size(), 5);
+  QCOMPARE(main_window.window_body.song.chords.size(), 5);
 
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }

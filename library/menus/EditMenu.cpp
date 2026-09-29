@@ -7,9 +7,9 @@
 
 namespace {
 
-void add_delete_cells(SongWidget& song_widget) {
-  auto& undo_stack = song_widget.undo_stack;
-  auto& switch_table = song_widget.switch_column.switch_table;
+void add_delete_cells(WindowBody& window_body) {
+  auto& undo_stack = window_body.undo_stack;
+  auto& switch_table = window_body.switch_column.switch_table;
 
   const auto& range = get_only_range(switch_table);
 
@@ -34,16 +34,16 @@ void copy_selection(const SwitchTable& switch_table) {
 
 }  // namespace
 
-EditMenu::EditMenu(SongWidget& song_widget)
+EditMenu::EditMenu(WindowBody& window_body)
     : QMenu(EditMenu::tr("&Edit")),
       cut_action(EditMenu::tr("&Cut")),
       copy_action(EditMenu::tr("&Copy")),
-      paste_menu(PasteMenu(song_widget)),
-      insert_menu(InsertMenu(song_widget)),
+      paste_menu(PasteMenu(window_body)),
+      insert_menu(InsertMenu(window_body)),
       delete_cells_action(EditMenu::tr("&Delete cells")),
       remove_rows_action(EditMenu::tr("&Remove rows")) {
-  auto& undo_stack = song_widget.undo_stack;
-  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& undo_stack = window_body.undo_stack;
+  auto& switch_table = window_body.switch_column.switch_table;
 
   auto& undo_action = get_reference(undo_stack.createUndoAction(this));
   undo_action.setShortcuts(QKeySequence::Undo);
@@ -67,21 +67,21 @@ EditMenu::EditMenu(SongWidget& song_widget)
   addSeparator();
 
   QObject::connect(&cut_action, &QAction::triggered, this,
-                   [&song_widget]() -> auto {
-                     copy_selection(song_widget.switch_column.switch_table);
-                     add_delete_cells(song_widget);
+                   [&window_body]() -> auto {
+                     copy_selection(window_body.switch_column.switch_table);
+                     add_delete_cells(window_body);
                    });
 
   QObject::connect(&copy_action, &QAction::triggered, &switch_table,
                    [&switch_table]() -> auto { copy_selection(switch_table); });
 
   QObject::connect(&delete_cells_action, &QAction::triggered, this,
-                   [&song_widget]() -> auto { add_delete_cells(song_widget); });
+                   [&window_body]() -> auto { add_delete_cells(window_body); });
 
   QObject::connect(
-      &remove_rows_action, &QAction::triggered, this, [&song_widget]() -> auto {
-        auto& switch_table = song_widget.switch_column.switch_table;
-        auto& undo_stack = song_widget.undo_stack;
+      &remove_rows_action, &QAction::triggered, this, [&window_body]() -> auto {
+        auto& switch_table = window_body.switch_column.switch_table;
+        auto& undo_stack = window_body.undo_stack;
 
         const auto& range = get_only_range(switch_table);
         const auto first_row_number = range.top();

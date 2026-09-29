@@ -3,7 +3,7 @@
 #include <QtWidgets/QMenu>
 
 enum class RowType : std::uint8_t;
-struct SongWidget;
+struct WindowBody;
 
 struct PlaySelection {
   RowType row_type;
@@ -12,7 +12,7 @@ struct PlaySelection {
   int number_of_rows;
 };
 
-[[nodiscard]] auto get_play_selection(const SongWidget& song_widget)
+[[nodiscard]] auto get_play_selection(const WindowBody& window_body)
     -> PlaySelection;
 
 struct PlayMenu : public QMenu {
@@ -20,5 +20,5 @@ struct PlayMenu : public QMenu {
   QAction play_to_end_action;
   QAction stop_playing_action;
 
-  explicit PlayMenu(SongWidget& song_widget);
+  explicit PlayMenu(WindowBody& window_body);
 };

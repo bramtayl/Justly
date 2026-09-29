@@ -8,16 +8,16 @@
 #include "other/MidiTrackEvent.hpp"
 
 void Tester::test_export() {
-  auto& song_widget = song_editor.song_widget;
+  auto& window_body = main_window.window_body;
 
   QTemporaryFile temp_export_file;
   QVERIFY(temp_export_file.open());
   temp_export_file.close();
-  export_to_file(song_widget, temp_export_file.fileName());
+  export_to_file(window_body, temp_export_file.fileName());
 }
 
 void Tester::test_export_midi() {
-  auto& song_widget = song_editor.song_widget;
+  auto& window_body = main_window.window_body;
 
   QTemporaryFile temp_export_file;
   QVERIFY(temp_export_file.open());
@@ -28,11 +28,11 @@ void Tester::test_export_midi() {
   // rather than silently writing a file missing notes the user didn't
   // ask to drop
   close_message_later(
-      song_editor, waiting_for_message,
+      main_window, waiting_for_message,
       "Percussion instrument Room for chord 2, unpitched note 2 starts "
       "at the same time as a different percussion instrument on the "
       "shared MIDI percussion channel");
-  export_midi_to_file(song_widget, temp_export_file.fileName());
+  export_midi_to_file(window_body, temp_export_file.fileName());
 
   QFile written_file(temp_export_file.fileName());
   QVERIFY(written_file.open(QIODevice::ReadOnly));
@@ -44,7 +44,7 @@ void Tester::test_export_midi() {
 // get_selected_file, and the call to export_to_file itself) -- drive it
 // through the actual dialog instead
 void Tester::test_export_via_dialog() {
-  auto& song_menu_bar = song_editor.song_menu_bar;
+  auto& song_menu_bar = main_window.song_menu_bar;
 
   // a path that doesn't exist yet -- unlike QTemporaryFile, which
   // pre-creates the file and would make QFileDialog::accept() pop up an
@@ -54,7 +54,7 @@ void Tester::test_export_via_dialog() {
   QVERIFY(temp_export_dir.isValid());
   auto export_filename = temp_export_dir.filePath("export.wav");
 
-  accept_file_dialog_later(song_editor, export_filename);
+  accept_file_dialog_later(main_window, export_filename);
   song_menu_bar.file_menu.export_action.trigger();
 
   QFile written_file(export_filename);
@@ -69,7 +69,7 @@ void Tester::test_export_via_dialog() {
 // dialog is accepted after a short delay, and the resulting message box
 // is closed by a separately-armed timer that fires later
 void Tester::test_export_midi_via_dialog() {
-  auto& song_menu_bar = song_editor.song_menu_bar;
+  auto& song_menu_bar = main_window.song_menu_bar;
 
   // see test_export_via_dialog: a path that doesn't exist yet, so
   // accept() doesn't pop up an overwrite-confirmation box on top of the
@@ -79,15 +79,15 @@ void Tester::test_export_midi_via_dialog() {
   auto export_filename = temp_export_dir.filePath("export.mid");
 
   close_message_later(
-      song_editor, waiting_for_message,
+      main_window, waiting_for_message,
       "Percussion instrument Room for chord 2, unpitched note 2 starts "
       "at the same time as a different percussion instrument on the "
       "shared MIDI percussion channel");
 
   auto& dialog_timer =  // NOLINT(cppcoreguidelines-owning-memory)
-      *(new QTimer(&song_editor));
+      *(new QTimer(&main_window));
   dialog_timer.setSingleShot(true);
-  QObject::connect(&dialog_timer, &QTimer::timeout, &song_editor,
+  QObject::connect(&dialog_timer, &QTimer::timeout, &main_window,
                    [export_filename]() -> auto {
                      auto* const found_dialog = find_top_level_file_dialog();
                      QVERIFY(found_dialog != nullptr);
@@ -115,15 +115,15 @@ void Tester::test_export_midi_via_dialog() {
 // should still restore playback state (synth.lock-memory, audio driver)
 // afterward rather than leaving the app stuck with realtime audio off
 void Tester::test_export_unwritable_path() {
-  auto& song_widget = song_editor.song_widget;
+  auto& window_body = main_window.window_body;
 
   const QTemporaryDir temp_export_dir;
   QVERIFY(temp_export_dir.isValid());
   auto unwritable_path =
       temp_export_dir.filePath("nonexistent_subdir/export.wav");
 
-  close_message_later(song_editor, waiting_for_message, "Cannot write to file");
-  export_to_file(song_widget, unwritable_path);
+  close_message_later(main_window, waiting_for_message, "Cannot write to file");
+  export_to_file(window_body, unwritable_path);
 
   QVERIFY(!QFile::exists(unwritable_path));
 
@@ -132,7 +132,7 @@ void Tester::test_export_unwritable_path() {
   QTemporaryFile temp_export_file;
   QVERIFY(temp_export_file.open());
   temp_export_file.close();
-  export_to_file(song_widget, temp_export_file.fileName());
+  export_to_file(window_body, temp_export_file.fileName());
 }
 
 // a file size limit lets the renderer open its output file and then fails
@@ -152,8 +152,8 @@ void Tester::test_export_write_error() {
   new_limit.rlim_cur = SMALL_FILE_SIZE_LIMIT;
   QCOMPARE(setrlimit(RLIMIT_FSIZE, &new_limit), 0);
 
-  close_message_later(song_editor, waiting_for_message, "Error writing file");
-  export_to_file(song_editor.song_widget, export_filename);
+  close_message_later(main_window, waiting_for_message, "Error writing file");
+  export_to_file(main_window.window_body, export_filename);
 
   QCOMPARE(setrlimit(RLIMIT_FSIZE, &old_limit), 0);
   static_cast<void>(std::signal(SIGXFSZ, old_handler));
@@ -165,15 +165,15 @@ void Tester::test_export_write_error() {
 // regression test: FileMenu's dialogs (make_file_dialog) must not leak --
 // Open/Import/Save As/Export/Export MIDI used to create a new QFileDialog
 // with no matching deleteLater(), so every use of a file dialog left a
-// live QFileDialog parented to song_widget for the rest of the process
+// live QFileDialog parented to window_body for the rest of the process
 void Tester::test_file_dialog_cleanup() {
-  auto& file_menu = song_editor.song_menu_bar.file_menu;
+  auto& file_menu = main_window.song_menu_bar.file_menu;
 
   QPointer<QFileDialog> dialog_pointer;
   auto& timer =  // NOLINT(cppcoreguidelines-owning-memory)
-      *(new QTimer(&song_editor));
+      *(new QTimer(&main_window));
   timer.setSingleShot(true);
-  QObject::connect(&timer, &QTimer::timeout, &song_editor,
+  QObject::connect(&timer, &QTimer::timeout, &main_window,
                    [&dialog_pointer]() -> auto {
                      auto* const found_dialog = find_top_level_file_dialog();
                      QVERIFY(found_dialog != nullptr);
@@ -408,13 +408,13 @@ void Tester::test_export_midi_error() {
   QVERIFY(temp_export_file.open());
   temp_export_file.close();
 
-  open_text(song_editor, text);
-  close_message_later(song_editor, waiting_for_message, error_message);
-  export_midi_to_file(song_editor.song_widget, temp_export_file.fileName());
+  open_text(main_window, text);
+  close_message_later(main_window, waiting_for_message, error_message);
+  export_midi_to_file(main_window.window_body, temp_export_file.fileName());
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -423,9 +423,9 @@ void Tester::test_export_midi_success() {
   QVERIFY(temp_export_dir.isValid());
   const auto export_filename = temp_export_dir.filePath("export.mid");
 
-  open_text(song_editor,
+  open_text(main_window,
             make_export_song_xml(10, get_plain_words(), get_plain_words()));
-  export_midi_to_file(song_editor.song_widget, export_filename);
+  export_midi_to_file(main_window.window_body, export_filename);
 
   QFile written_file(export_filename);
   QVERIFY(written_file.open(QIODevice::ReadOnly));
@@ -434,8 +434,8 @@ void Tester::test_export_midi_success() {
   QCOMPARE(QString::fromLatin1(written_file.readAll()).count("MTrk"), 3);
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -445,16 +445,16 @@ void Tester::test_export_midi_unwritable_path() {
   const auto unwritable_path =
       temp_export_dir.filePath("nonexistent_subdir/export.mid");
 
-  open_text(song_editor,
+  open_text(main_window,
             make_export_song_xml(10, get_plain_words(), get_plain_words()));
-  close_message_later(song_editor, waiting_for_message,
+  close_message_later(main_window, waiting_for_message,
                       "Cannot open file for writing");
-  export_midi_to_file(song_editor.song_widget, unwritable_path);
+  export_midi_to_file(main_window.window_body, unwritable_path);
   QVERIFY(!QFile::exists(unwritable_path));
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -466,10 +466,10 @@ void Tester::test_export_midi_shared_percussion_set() {
   QVERIFY(temp_export_dir.isValid());
   const auto export_filename = temp_export_dir.filePath("export.mid");
 
-  open_text(song_editor,
+  open_text(main_window,
             make_voice_song_xml({"A"}, {"D", "E"},
                                           {{{}, {0, 1}}, {{}, {0}}}));
-  export_midi_to_file(song_editor.song_widget, export_filename);
+  export_midi_to_file(main_window.window_body, export_filename);
 
   QFile written_file(export_filename);
   QVERIFY(written_file.open(QIODevice::ReadOnly));
@@ -478,8 +478,8 @@ void Tester::test_export_midi_shared_percussion_set() {
   QCOMPARE(QString::fromLatin1(written_file.readAll()).count("MTrk"), 4);
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
 
@@ -492,16 +492,16 @@ void Tester::test_export_midi_channel_exhausted() {
   QVERIFY(temp_export_file.open());
   temp_export_file.close();
 
-  open_text(song_editor,
+  open_text(main_window,
             make_voice_song_xml({"A"}, {"D"},
                                 {{QList<int>(TOO_MANY_PITCHED_NOTES, 0), {}}}));
-  close_message_later(song_editor, waiting_for_message,
+  close_message_later(main_window, waiting_for_message,
                       "More notes are sounding at once than there are "
                       "available MIDI channels");
-  export_midi_to_file(song_editor.song_widget, temp_export_file.fileName());
+  export_midi_to_file(main_window.window_body, temp_export_file.fileName());
 
   // restore the shared fixture
-  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
-                       song_editor.piano_roll_widget,
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }

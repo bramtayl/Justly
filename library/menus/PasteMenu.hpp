@@ -7,7 +7,7 @@
 #include "actions/InsertRemoveRows.hpp"
 #include "actions/SetCells.hpp"
 #include "other/Cells.hpp"
-#include "widgets/SongWidget.hpp"
+#include "widgets/WindowBody.hpp"
 #include "xml/XMLDocument.hpp"
 #include "xml/XMLValidator.hpp"
 
@@ -134,5 +134,5 @@ struct PasteMenu : public QMenu {
   QAction paste_into_start_action;
   QAction paste_after_action;
 
-  explicit PasteMenu(SongWidget& song_widget);
+  explicit PasteMenu(WindowBody& window_body);
 };

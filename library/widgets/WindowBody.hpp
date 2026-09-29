@@ -19,7 +19,7 @@ struct SwitchColumn;
 
 [[nodiscard]] auto get_property(xmlNode& node, const char* name) -> std::string;
 
-struct SongWidget : public QWidget {
+struct WindowBody : public QWidget {
   Song song;
   Player player;
   QUndoStack undo_stack;
@@ -35,16 +35,16 @@ struct SongWidget : public QWidget {
   ControlsColumn& controls_column;
   QBoxLayout& row_layout;
 
-  explicit SongWidget();
+  explicit WindowBody();
 
-  ~SongWidget() override;
+  ~WindowBody() override;
 
-  NO_MOVE_COPY(SongWidget)
+  NO_MOVE_COPY(WindowBody)
 };
 
-[[nodiscard]] auto get_next_row(const SongWidget& song_widget) -> int;
+[[nodiscard]] auto get_next_row(const WindowBody& window_body) -> int;
 
-void initialize_play(SongWidget& song_widget);
+void initialize_play(WindowBody& window_body);
 
 // pitched notes always pick from the shared least-recently-free pool, since
 // each one may need its own pitch bend and must wait out the previous
@@ -181,27 +181,27 @@ template <NoteInterface SubNote>
 
 void update_final_time(Player& player, double new_final_time);
 
-void play_chords(SongWidget& song_widget, int first_chord_number,
+void play_chords(WindowBody& window_body, int first_chord_number,
                  int number_of_chords, int wait_frames = 0);
 
-[[nodiscard]] auto can_discard_changes(SongWidget& song_widget) -> bool;
+[[nodiscard]] auto can_discard_changes(WindowBody& window_body) -> bool;
 
-[[nodiscard]] auto get_gain(const SongWidget& song_widget) -> double;
+[[nodiscard]] auto get_gain(const WindowBody& window_body) -> double;
 
-void export_to_file(SongWidget& song_widget, const QString& output_file);
+void export_to_file(WindowBody& window_body, const QString& output_file);
 
-void export_midi_to_file(SongWidget& song_widget, const QString& output_file);
+void export_midi_to_file(WindowBody& window_body, const QString& output_file);
 
 // recovery.xml's presence means the app didn't reach a clean shutdown last
-// time (see connect_recovery_timer and SongEditor::closeEvent); its content
+// time (see connect_recovery_timer and MainWindow::closeEvent); its content
 // mirrors save_as_file's format so it can be reloaded via open_file
 [[nodiscard]] auto get_recovery_file_path() -> QString;
 
 void remove_recovery_file();
 
-void write_recovery_file(SongWidget& song_widget);
+void write_recovery_file(WindowBody& window_body);
 
-void save_as_file(SongWidget& song_widget, const QString& filename);
+void save_as_file(WindowBody& window_body, const QString& filename);
 
 // some musicxml fields (e.g. fifths, octave-change, repeat times) are
 // unbounded xs:integer with no schema-enforced range, so a malformed or
@@ -265,16 +265,16 @@ template <NoteInterface SubNote>
   return true;
 }
 
-[[nodiscard]] auto open_file(SongWidget& song_widget, const QString& filename)
+[[nodiscard]] auto open_file(WindowBody& window_body, const QString& filename)
     -> bool;
 
-// call after SongEditor is constructed and shown: recovery.xml only exists
+// call after MainWindow is constructed and shown: recovery.xml only exists
 // if the previous session didn't reach a clean shutdown (see
-// connect_recovery_timer and SongEditor::closeEvent). Returns whether a
+// connect_recovery_timer and MainWindow::closeEvent). Returns whether a
 // recovery was actually loaded, so callers know whether to refresh
-[[nodiscard]] auto maybe_restore_recovery(SongWidget& song_widget) -> bool;
+[[nodiscard]] auto maybe_restore_recovery(WindowBody& window_body) -> bool;
 
-void connect_recovery_timer(SongWidget& song_widget);
+void connect_recovery_timer(WindowBody& window_body);
 
 void reset(TimeIterator& iterator);
 
@@ -323,7 +323,7 @@ static void add_imported_voices(RowsModel<SubVoice>& voices_model,
   }
 }
 
-[[nodiscard]] auto import_musicxml(SongWidget& song_widget,
+[[nodiscard]] auto import_musicxml(WindowBody& window_body,
                                    const QString& filename) -> bool;
 
 void add_menu_action(

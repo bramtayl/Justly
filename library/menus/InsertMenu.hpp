@@ -6,7 +6,7 @@
 #include "actions/InsertVoiceRow.hpp"
 
 enum class RowType : std::uint8_t;
-struct SongWidget;
+struct WindowBody;
 
 template <VoiceInterface SubVoice, NoteInterface SubNote>
 [[nodiscard]] static auto make_insert_note(RowsModel<SubNote>& notes_model,
@@ -32,12 +32,12 @@ template <VoiceInterface SubVoice, NoteInterface SubNote>
       SubVoice, SubNote>(voices_model, row_number, std::move(sub_voice));
 }
 
-void add_insert_row(SongWidget& song_widget, int row_number,
+void add_insert_row(WindowBody& window_body, int row_number,
                     RowType new_row_type);
 
 struct InsertMenu : public QMenu {
   QAction insert_after_action;
   QAction insert_into_start_action;
 
-  explicit InsertMenu(SongWidget& song_widget);
+  explicit InsertMenu(WindowBody& window_body);
 };
