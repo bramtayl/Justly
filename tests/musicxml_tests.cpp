@@ -353,13 +353,15 @@ auto make_key(const QString& fifths) -> QString {
   return "<key><fifths>" + fifths + "</fifths></key>";
 }
 
-const QString NEXT_MEASURE = R"(
+auto get_next_measure() -> QString {
+  return R"(
     </measure>
     <measure number="2">)";
+}
 
-const QString DIVISIONS = "<divisions>1</divisions>";
+auto get_divisions() -> QString { return "<divisions>1</divisions>"; }
 // too big for a 32-bit int, but still valid for the schema's unbounded types
-const QString HUGE_NUMBER = "99999999999";
+auto get_huge_number() -> QString { return "99999999999"; }
 
 }  // namespace
 
@@ -374,53 +376,55 @@ void Tester::test_musicxml_inline_error_data() {
   const auto plain_note = make_pitch_note("", "1");
 
   QTest::newRow("fifths out of range")
-      << DIVISIONS + "<key><fifths>" + HUGE_NUMBER + "</fifths></key>"
+      << get_divisions() + "<key><fifths>" + get_huge_number() +
+             "</fifths></key>"
       << plain_note << "Fifths value is out of range";
   QTest::newRow("microtonal transpose")
-      << DIVISIONS + "<transpose><chromatic>1.5</chromatic></transpose>"
+      << get_divisions() + "<transpose><chromatic>1.5</chromatic></transpose>"
       << plain_note << "Microtonal transpositions are not supported";
   QTest::newRow("chromatic out of range")
-      << DIVISIONS + "<transpose><chromatic>" + HUGE_NUMBER +
+      << get_divisions() + "<transpose><chromatic>" + get_huge_number() +
              "</chromatic></transpose>"
       << plain_note << "Chromatic value is out of range";
   QTest::newRow("octave change out of range")
-      << DIVISIONS + "<transpose><chromatic>0</chromatic><octave-change>" +
-             HUGE_NUMBER + "</octave-change></transpose>"
+      << get_divisions() +
+             "<transpose><chromatic>0</chromatic><octave-change>" +
+             get_huge_number() + "</octave-change></transpose>"
       << plain_note << "Octave change value is out of range";
   // only arrows are read as septimal quartertones, since a bare quartertone
   // accidental doesn't say which chromatic accidental it modifies
   QTest::newRow("quartertone accidental")
-      << DIVISIONS << make_pitch_note("quarter-flat", "1")
+      << get_divisions() << make_pitch_note("quarter-flat", "1")
       << "Accidental quarter-flat is not supported";
   QTest::newRow("other accidental")
-      << DIVISIONS << make_pitch_note("other", "1")
+      << get_divisions() << make_pitch_note("other", "1")
       << "Accidental other is not supported";
   QTest::newRow("fractional note duration")
-      << DIVISIONS << make_pitch_note("", "1.5")
+      << get_divisions() << make_pitch_note("", "1.5")
       << "Fractional note durations are not supported";
   QTest::newRow("note duration out of range")
-      << DIVISIONS << make_pitch_note("", HUGE_NUMBER)
+      << get_divisions() << make_pitch_note("", get_huge_number())
       << "Note duration is out of range";
   QTest::newRow("fractional backup")
-      << DIVISIONS << "<backup><duration>1.5</duration></backup>"
+      << get_divisions() << "<backup><duration>1.5</duration></backup>"
       << "Fractional durations are not supported";
   QTest::newRow("fractional forward")
-      << DIVISIONS << "<forward><duration>1.5</duration></forward>"
+      << get_divisions() << "<forward><duration>1.5</duration></forward>"
       << "Fractional durations are not supported";
   QTest::newRow("backup duration out of range")
-      << DIVISIONS
-      << "<backup><duration>" + HUGE_NUMBER + "</duration></backup>"
+      << get_divisions()
+      << "<backup><duration>" + get_huge_number() + "</duration></backup>"
       << "Duration is out of range";
   QTest::newRow("forward duration out of range")
-      << DIVISIONS
-      << "<forward><duration>" + HUGE_NUMBER + "</duration></forward>"
+      << get_divisions()
+      << "<forward><duration>" + get_huge_number() + "</duration></forward>"
       << "Duration is out of range";
   QTest::newRow("repeat times out of range")
-      << DIVISIONS
+      << get_divisions()
       << plain_note +
              QString(
                  R"(<barline><repeat direction="backward" times="%1"/></barline>)")
-                 .arg(HUGE_NUMBER)
+                 .arg(get_huge_number())
       << "Repeat times is out of range";
 }
 
@@ -447,7 +451,7 @@ void Tester::test_musicxml_repeat_times() {
   QVERIFY(temp_file.open());
   temp_file.write(
       make_musicxml(
-          DIVISIONS,
+          get_divisions(),
           make_pitch_note("", "1") +
               R"(<barline><repeat direction="backward" times="3"/></barline>)")
           .toStdString()
@@ -474,7 +478,7 @@ void Tester::test_musicxml_octave_change() {
                                                        int& octave) -> void {
     QTemporaryFile temp_file;
     QVERIFY(temp_file.open());
-    temp_file.write(make_musicxml(DIVISIONS +
+    temp_file.write(make_musicxml(get_divisions() +
                                       "<transpose><chromatic>0</chromatic>" +
                                       transpose + "</transpose>",
                                   make_pitch_note("", "1"))
@@ -506,7 +510,7 @@ void Tester::test_musicxml_accidentals_data() {
   QTest::addColumn<QString>("body");
   QTest::addColumn<Interval>("expected_interval");
 
-  const auto c_major = DIVISIONS + make_key("0");
+  const auto c_major = get_divisions() + make_key("0");
 
   QTest::newRow("minor seventh")
       << c_major << make_spelled_note("B", "4", "flat")
@@ -541,11 +545,11 @@ void Tester::test_musicxml_accidentals_data() {
       </note>)" << Interval(Rational(15, 8));
   // F major: B is flat, and the key is F
   QTest::newRow("key signature flat")
-      << DIVISIONS + make_key("-1") << make_spelled_note("B", "4")
+      << get_divisions() + make_key("-1") << make_spelled_note("B", "4")
       << Interval(Rational(4, 3));
   // G# major: the eighth sharp doubles F, and the key is G#
   QTest::newRow("key signature double sharp")
-      << DIVISIONS + make_key("8") << make_spelled_note("F", "4")
+      << get_divisions() + make_key("8") << make_spelled_note("F", "4")
       << Interval(Rational(15, 8), -1);
   QTest::newRow("accidental lasts through the measure")
       << c_major
@@ -567,25 +571,25 @@ void Tester::test_musicxml_accidentals_data() {
       << Interval(Rational(15, 8));
   QTest::newRow("accidental ends with the measure")
       << c_major
-      << make_spelled_note("B", "4", "flat-down") + NEXT_MEASURE +
+      << make_spelled_note("B", "4", "flat-down") + get_next_measure() +
              make_spelled_note("B", "4")
       << Interval(Rational(15, 8));
   // once an accidental stops applying, the note falls back to the key
   // signature, not to natural
   QTest::newRow("key signature after the accidental's measure")
-      << DIVISIONS + make_key("-1")
-      << make_spelled_note("B", "4", "natural") + NEXT_MEASURE +
+      << get_divisions() + make_key("-1")
+      << make_spelled_note("B", "4", "natural") + get_next_measure() +
              make_spelled_note("B", "4")
       << Interval(Rational(4, 3));
   QTest::newRow("key signature outside the accidental's octave")
-      << DIVISIONS + make_key("-1")
+      << get_divisions() + make_key("-1")
       << make_spelled_note("B", "4", "natural") + make_spelled_note("B", "3")
       << Interval(Rational(4, 3), -1);
   // a tied-over note keeps the pitch it was tied from, without an accidental
   QTest::newRow("tie continues across the barline")
       << c_major
-      << make_spelled_note("B", "4", "flat-down", "start") + NEXT_MEASURE +
-             make_spelled_note("B", "4", "", "stop")
+      << make_spelled_note("B", "4", "flat-down", "start") +
+             get_next_measure() + make_spelled_note("B", "4", "", "stop")
       << Interval(Rational(7, 4));
 }
 
@@ -637,7 +641,7 @@ void Tester::test_import_musicxml_voice_names_deduplicated() {
       %3
     </measure>
   </part>)")
-                 .arg(part_id, DIVISIONS, make_pitch_note("", "1"));
+                 .arg(part_id, get_divisions(), make_pitch_note("", "1"));
   }
 
   QTemporaryFile temp_file;
@@ -700,7 +704,7 @@ void Tester::test_musicxml_endings() {
 
   QTemporaryFile temp_file;
   QVERIFY(temp_file.open());
-  temp_file.write(make_musicxml(DIVISIONS, body).toStdString().c_str());
+  temp_file.write(make_musicxml(get_divisions(), body).toStdString().c_str());
   temp_file.close();
 
   import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,

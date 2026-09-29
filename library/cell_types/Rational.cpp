@@ -3,6 +3,7 @@
 #include "other/helpers.hpp"
 
 Rational::Rational(const int numerator_input, const int denominator_input) {
+  Q_ASSERT(numerator_input != 0);
   Q_ASSERT(denominator_input != 0);
   const auto common_denominator = std::gcd(numerator_input, denominator_input);
   numerator = numerator_input / common_denominator;

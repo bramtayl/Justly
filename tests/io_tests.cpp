@@ -10,13 +10,13 @@
 void Tester::test_fluid_driver_move_assign() {
   // the "file" audio driver renders to a file instead of a sound card, so
   // this doesn't depend on the environment having an audio backend
-  QTemporaryDir temp_dir;
+  const QTemporaryDir temp_dir;
   QVERIFY(temp_dir.isValid());
   FluidSettings settings;
   set_fluid_string(settings, "audio.driver", "file");
   set_fluid_string(settings, "audio.file.name",
                    temp_dir.filePath("driver.wav").toStdString().c_str());
-  FluidSynth synth(settings);
+  const FluidSynth synth(settings);
   auto* const audio_driver_pointer =
       new_fluid_audio_driver(settings.internal_pointer, synth.internal_pointer);
   if (audio_driver_pointer == nullptr) {
@@ -28,6 +28,8 @@ void Tester::test_fluid_driver_move_assign() {
   FluidDriver source_driver(audio_driver_pointer);
   FluidDriver driver(std::move(source_driver));
   QCOMPARE(driver.internal_pointer, audio_driver_pointer);
+  // checking the moved-from state is the point of this test
+  // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved)
   QCOMPARE(source_driver.internal_pointer,
            static_cast<fluid_audio_driver_t*>(nullptr));
 
@@ -42,6 +44,7 @@ void Tester::test_fluid_driver_move_assign() {
   driver = std::move(empty_driver);
   QCOMPARE(driver.internal_pointer,
            static_cast<fluid_audio_driver_t*>(nullptr));
+  // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved)
   QCOMPARE(empty_driver.internal_pointer,
            static_cast<fluid_audio_driver_t*>(nullptr));
 }

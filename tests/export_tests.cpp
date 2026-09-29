@@ -50,7 +50,7 @@ void Tester::test_export_via_dialog() {
   // pre-creates the file and would make QFileDialog::accept() pop up an
   // "already exists" overwrite-confirmation box nobody is waiting to
   // close
-  QTemporaryDir temp_export_dir;
+  const QTemporaryDir temp_export_dir;
   QVERIFY(temp_export_dir.isValid());
   auto export_filename = temp_export_dir.filePath("export.wav");
 
@@ -74,7 +74,7 @@ void Tester::test_export_midi_via_dialog() {
   // see test_export_via_dialog: a path that doesn't exist yet, so
   // accept() doesn't pop up an overwrite-confirmation box on top of the
   // percussion-conflict warning this test already expects
-  QTemporaryDir temp_export_dir;
+  const QTemporaryDir temp_export_dir;
   QVERIFY(temp_export_dir.isValid());
   auto export_filename = temp_export_dir.filePath("export.mid");
 
@@ -117,7 +117,7 @@ void Tester::test_export_midi_via_dialog() {
 void Tester::test_export_unwritable_path() {
   auto& song_widget = song_editor.song_widget;
 
-  QTemporaryDir temp_export_dir;
+  const QTemporaryDir temp_export_dir;
   QVERIFY(temp_export_dir.isValid());
   auto unwritable_path =
       temp_export_dir.filePath("nonexistent_subdir/export.wav");
@@ -141,7 +141,7 @@ void Tester::test_export_write_error() {
 #ifdef __linux__
   static const rlim_t SMALL_FILE_SIZE_LIMIT = 4096;
 
-  QTemporaryDir temp_export_dir;
+  const QTemporaryDir temp_export_dir;
   QVERIFY(temp_export_dir.isValid());
   const auto export_filename = temp_export_dir.filePath("export.wav");
 
@@ -156,7 +156,7 @@ void Tester::test_export_write_error() {
   export_to_file(song_editor.song_widget, export_filename);
 
   QCOMPARE(setrlimit(RLIMIT_FSIZE, &old_limit), 0);
-  std::signal(SIGXFSZ, old_handler);
+  static_cast<void>(std::signal(SIGXFSZ, old_handler));
 #else
   QSKIP("file size limits are Linux-specific");
 #endif
@@ -371,10 +371,11 @@ auto make_export_song_xml(const int starting_velocity,
   return make_song_xml(starting_velocity, body);
 }
 
-const QString PLAIN_WORDS = "<words>n</words>";
+auto get_plain_words() -> QString { return "<words>n</words>"; }
 
-const QString DOUBLE_VELOCITY =
-    "<velocity_ratio><numerator>2</numerator></velocity_ratio>";
+auto get_double_velocity() -> QString {
+  return "<velocity_ratio><numerator>2</numerator></velocity_ratio>";
+}
 
 }  // namespace
 
@@ -383,10 +384,10 @@ void Tester::test_export_midi_error_data() {
   QTest::addColumn<QString>("error_message");
 
   QTest::newRow("pitched velocity too high")
-      << make_export_song_xml(100, DOUBLE_VELOCITY, "")
+      << make_export_song_xml(100, get_double_velocity(), "")
       << "Velocity 200 exceeds 127 for chord 1, pitched note 1";
   QTest::newRow("unpitched velocity too high")
-      << make_export_song_xml(100, "", DOUBLE_VELOCITY)
+      << make_export_song_xml(100, "", get_double_velocity())
       << "Velocity 200 exceeds 127 for chord 1, unpitched note 1";
   QTest::newRow("frequency too high")
       << make_export_song_xml(10, "<interval><octave>9</octave></interval>", "")
@@ -418,11 +419,12 @@ void Tester::test_export_midi_error() {
 }
 
 void Tester::test_export_midi_success() {
-  QTemporaryDir temp_export_dir;
+  const QTemporaryDir temp_export_dir;
   QVERIFY(temp_export_dir.isValid());
   const auto export_filename = temp_export_dir.filePath("export.mid");
 
-  open_text(song_editor, make_export_song_xml(10, PLAIN_WORDS, PLAIN_WORDS));
+  open_text(song_editor,
+            make_export_song_xml(10, get_plain_words(), get_plain_words()));
   export_midi_to_file(song_editor.song_widget, export_filename);
 
   QFile written_file(export_filename);
@@ -438,12 +440,13 @@ void Tester::test_export_midi_success() {
 }
 
 void Tester::test_export_midi_unwritable_path() {
-  QTemporaryDir temp_export_dir;
+  const QTemporaryDir temp_export_dir;
   QVERIFY(temp_export_dir.isValid());
   const auto unwritable_path =
       temp_export_dir.filePath("nonexistent_subdir/export.mid");
 
-  open_text(song_editor, make_export_song_xml(10, PLAIN_WORDS, PLAIN_WORDS));
+  open_text(song_editor,
+            make_export_song_xml(10, get_plain_words(), get_plain_words()));
   close_message_later(song_editor, waiting_for_message,
                       "Cannot open file for writing");
   export_midi_to_file(song_editor.song_widget, unwritable_path);
@@ -459,7 +462,7 @@ void Tester::test_export_midi_unwritable_path() {
 // channel, so they can start together without a conflict, and any percussion
 // can follow later on
 void Tester::test_export_midi_shared_percussion_set() {
-  QTemporaryDir temp_export_dir;
+  const QTemporaryDir temp_export_dir;
   QVERIFY(temp_export_dir.isValid());
   const auto export_filename = temp_export_dir.filePath("export.mid");
 

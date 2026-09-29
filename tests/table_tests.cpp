@@ -337,7 +337,7 @@ void Tester::
   // really does accumulate one call per reconnect
   {
     select_cell(switch_table, 0, 1);
-    QObject receiver;
+    const QObject receiver;
     auto call_count = 0;
     for (auto attempt = 0; attempt < 5; attempt = attempt + 1) {
       QObject::connect(
@@ -353,7 +353,7 @@ void Tester::
   // against the same selection model
   {
     select_cell(switch_table, 0, 1);
-    QObject receiver;
+    const QObject receiver;
     auto call_count = 0;
     for (auto attempt = 0; attempt < 5; attempt = attempt + 1) {
       QObject::disconnect(&selection_model,

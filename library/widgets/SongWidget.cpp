@@ -1371,26 +1371,29 @@ auto import_musicxml(SongWidget& song_widget, const QString& filename) -> bool {
                 0, 2, 4, 5, 7, 9, 11};
             // arrows mark Johnston's 7 (down) and el (up)
             static const QMap<std::string, Spelling> accidental_spellings = {
-                {"triple-flat", {-3, 0}},
-                {"flat-flat", {-2, 0}},
-                {"flat-flat-down", {-2, -1}},
-                {"flat-flat-up", {-2, 1}},
-                {"flat", {-1, 0}},
-                {"natural-flat", {-1, 0}},
-                {"flat-down", {-1, -1}},
-                {"flat-up", {-1, 1}},
-                {"natural", {0, 0}},
-                {"natural-down", {0, -1}},
-                {"natural-up", {0, 1}},
-                {"sharp", {1, 0}},
-                {"natural-sharp", {1, 0}},
-                {"sharp-down", {1, -1}},
-                {"sharp-up", {1, 1}},
-                {"double-sharp", {2, 0}},
-                {"sharp-sharp", {2, 0}},
-                {"double-sharp-down", {2, -1}},
-                {"double-sharp-up", {2, 1}},
-                {"triple-sharp", {3, 0}}};
+                {"triple-flat", {.chromatic = -3, .septimal_quartertones = 0}},
+                {"flat-flat", {.chromatic = -2, .septimal_quartertones = 0}},
+                {"flat-flat-down",
+                 {.chromatic = -2, .septimal_quartertones = -1}},
+                {"flat-flat-up", {.chromatic = -2, .septimal_quartertones = 1}},
+                {"flat", {.chromatic = -1, .septimal_quartertones = 0}},
+                {"natural-flat", {.chromatic = -1, .septimal_quartertones = 0}},
+                {"flat-down", {.chromatic = -1, .septimal_quartertones = -1}},
+                {"flat-up", {.chromatic = -1, .septimal_quartertones = 1}},
+                {"natural", {.chromatic = 0, .septimal_quartertones = 0}},
+                {"natural-down", {.chromatic = 0, .septimal_quartertones = -1}},
+                {"natural-up", {.chromatic = 0, .septimal_quartertones = 1}},
+                {"sharp", {.chromatic = 1, .septimal_quartertones = 0}},
+                {"natural-sharp", {.chromatic = 1, .septimal_quartertones = 0}},
+                {"sharp-down", {.chromatic = 1, .septimal_quartertones = -1}},
+                {"sharp-up", {.chromatic = 1, .septimal_quartertones = 1}},
+                {"double-sharp", {.chromatic = 2, .septimal_quartertones = 0}},
+                {"sharp-sharp", {.chromatic = 2, .septimal_quartertones = 0}},
+                {"double-sharp-down",
+                 {.chromatic = 2, .septimal_quartertones = -1}},
+                {"double-sharp-up",
+                 {.chromatic = 2, .septimal_quartertones = 1}},
+                {"triple-sharp", {.chromatic = 3, .septimal_quartertones = 0}}};
 
             auto* note_field_pointer =
                 xmlFirstElementChild(measure_element_pointer);
@@ -1459,9 +1462,9 @@ auto import_musicxml(SongWidget& song_widget, const QString& filename) -> bool {
               // the schema only allows steps A through G
               Q_ASSERT(step_indices.contains(step));
               const auto step_index = step_indices[step];
-              const auto spelling_key =
-                  QString::fromStdString(staff + ":" + step) + ":" +
-                  QString::number(octave_number);
+              const auto spelling_key = QString::fromStdString(staff) + ":" +
+                                        QString::fromStdString(step) + ":" +
+                                        QString::number(octave_number);
               Spelling spelling;
               if (maybe_accidental.has_value()) {
                 spelling = maybe_accidental.value();

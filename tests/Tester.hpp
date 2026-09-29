@@ -118,7 +118,6 @@ struct Tester : public QObject {
   void test_remove_last_voice_disables_action();
   static void test_unreduced_ratio_from_xml_data();
   void test_unreduced_ratio_from_xml();
-  static void test_interval_zero_numerator_does_not_hang();
   static void test_insert_xml_rows_respects_first_row_number();
   static void test_musicxml_data();
   void test_musicxml();

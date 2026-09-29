@@ -783,7 +783,9 @@ void Tester::test_piano_roll_click_bar_in_chords_mode() {
   select_cell(switch_table, 1, 0);
   const auto maybe_bar_center =
       get_note_bar_center(piano_roll_widget, 1, note_number, is_pitched);
-  QVERIFY(maybe_bar_center.has_value());
+  if (!maybe_bar_center.has_value()) {
+    QFAIL("no note bar to click");
+  }
   QVERIFY(send_piano_roll_mouse_event(piano_roll_widget,
                                       QEvent::MouseButtonPress,
                                       *maybe_bar_center, Qt::LeftButton));
@@ -955,7 +957,9 @@ void Tester::test_piano_roll_click_replaces_note_row() {
                   QItemSelectionModel::Rows);
 
   const auto maybe_bar_center = get_note_bar_center(piano_roll_widget, 1, 2, true);
-  QVERIFY(maybe_bar_center.has_value());
+  if (!maybe_bar_center.has_value()) {
+    QFAIL("no note bar to click");
+  }
   QVERIFY(send_piano_roll_mouse_event(piano_roll_widget,
                                       QEvent::MouseButtonPress,
                                       *maybe_bar_center, Qt::LeftButton));
