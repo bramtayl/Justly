@@ -70,11 +70,17 @@ struct Tester : public QObject {
   void test_export_midi_error();
   void test_export_midi_success();
   void test_export_midi_unwritable_path();
+  void test_export_midi_shared_percussion_set();
+  void test_export_midi_channel_exhausted();
   void test_export_via_dialog();
   void test_export_midi_via_dialog();
   void test_export_unwritable_path();
   void test_export_write_error();
   void test_file_dialog_cleanup();
+  static void test_file_dialog_reject_data();
+  void test_file_dialog_reject();
+  void test_open_via_dialog();
+  void test_import_via_dialog();
   static void test_midi_append_variable_length_data();
   static void test_midi_append_variable_length();
   static void test_midi_byte_encoding();
@@ -101,6 +107,8 @@ struct Tester : public QObject {
   static void test_remove_voice_reassigns_notes_data();
   void test_remove_voice_reassigns_notes();
   void test_remove_voice_row_consistent_during_warning();
+  static void test_remove_voice_leaves_clipboard_data();
+  void test_remove_voice_leaves_clipboard();
   static void test_remove_last_voice_disables_action_data();
   void test_remove_last_voice_disables_action();
   static void test_unreduced_ratio_from_xml_data();
@@ -121,6 +129,8 @@ struct Tester : public QObject {
   void test_import_musicxml_ties_do_not_cross_voices();
   void test_import_musicxml_orphan_tie_stop();
   void test_import_musicxml_voice_named_like_program();
+  void test_import_musicxml_voice_names_deduplicated();
+  void test_musicxml_endings();
   static void test_zip_entry_size_is_safe_data();
   static void test_zip_entry_size_is_safe();
   void test_read_zip_entry_null_archive() const;
@@ -130,6 +140,7 @@ struct Tester : public QObject {
   static void test_xml_bytes_size_is_safe();
   static void test_string_to_maybe_int_data();
   static void test_string_to_maybe_int();
+  static void test_program_latin1_name();
   void test_get_share_file_existing() const;
   void test_import_musicxml_after_editing_chord_notes();
   void test_open_after_editing_chord_notes_resets_menu();
@@ -146,6 +157,8 @@ struct Tester : public QObject {
   void test_paste_after();
   static void test_paste_error_data();
   void test_paste_error();
+  static void test_paste_after_error_data();
+  void test_paste_after_error();
   static void test_paste_into_data();
   void test_paste_into();
   static void test_paste_stale_voice_data();
@@ -164,6 +177,8 @@ struct Tester : public QObject {
   static void test_play_velocity_error_data();
   void test_play_velocity_error();
   void test_play_channel_exhausted();
+  static void test_play_chord_error_data();
+  void test_play_chord_error();
   void test_ratio_bound_data();
   void test_ratio_bound();
   static void test_remove_row_data();
@@ -180,6 +195,8 @@ struct Tester : public QObject {
   void test_recovery_restore_accepted();
   void test_recovery_restore_declined();
   void test_recovery_no_prompt_when_missing();
+  void test_recovery_write_failure();
+  void test_recovery_restore_invalid_file();
   void test_close_event_discard_declined();
   void test_close_event_removes_recovery_file();
   void test_starting_control_data();
@@ -223,4 +240,10 @@ struct Tester : public QObject {
   void test_piano_roll_zoom();
   void test_piano_roll_zoom_actions();
   void test_piano_roll_playhead_starts_past_center();
+  void test_piano_roll_playhead_transitions();
+  void test_piano_roll_ctrl_wheel_zoom();
+  void test_piano_roll_click_stops_playhead();
+  void test_piano_roll_right_click_ignored();
+  static void test_piano_roll_click_bar_in_chords_mode_data();
+  void test_piano_roll_click_bar_in_chords_mode();
 };

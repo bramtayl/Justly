@@ -271,6 +271,63 @@ void Tester::test_remove_voice_row_consistent_during_warning() {
                        test_dir.filePath("test_song.xml"));
 }
 
+// removing a voice only rewrites a copied note's voice_number when the copy
+// actually holds one -- a copy that starts after the voice column, or a
+// clipboard that doesn't parse, is left exactly as it was, with no extra
+// clipboard warning
+void Tester::test_remove_voice_leaves_clipboard_data() {
+  QTest::addColumn<QString>("clipboard_text");
+
+  // empty means copy a live note's interval cell instead
+  QTest::newRow("copy after voice column") << "";
+  QTest::newRow("invalid clipboard") << "<";
+}
+
+void Tester::test_remove_voice_leaves_clipboard() {
+  QFETCH(const QString, clipboard_text);
+
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& edit_menu = song_editor.song_menu_bar.edit_menu;
+  const auto* const mime_type = PitchedNote::get_cells_mime();
+
+  open_text(song_editor, make_voice_song_xml({"A", "B"}, {"D"}, {{{0, 1}, {}}}));
+
+  if (clipboard_text.isEmpty()) {
+    switch_to(song_editor, RowType::pitched_note_type, 0);
+    select_cell(
+        switch_table, 1,
+        static_cast<int>(PitchedNoteColumn::pitched_note_interval_column));
+    edit_menu.copy_action.trigger();
+    song_editor.song_menu_bar.view_menu.back_to_chords_action.trigger();
+  } else {
+    auto& new_data = get_reference(
+        new QMimeData);  // NOLINT(cppcoreguidelines-owning-memory)
+    new_data.setData(mime_type, clipboard_text.toStdString().c_str());
+    get_clipboard().setMimeData(&new_data);
+  }
+  const auto old_clipboard =
+      get_reference(get_clipboard().mimeData()).data(mime_type);
+
+  // only the live note gets a warning
+  switch_to(song_editor, RowType::pitched_voice_type, -1);
+  select_cell(switch_table, 1, 0);
+  close_message_later(song_editor, waiting_for_message,
+                      "Reassigning 1 pitched note voice to the first voice "
+                      "\"A\"");
+  edit_menu.remove_rows_action.trigger();
+  QVERIFY(!waiting_for_message);
+
+  QCOMPARE(get_reference(get_clipboard().mimeData()).data(mime_type),
+           old_clipboard);
+  song_editor.song_menu_bar.view_menu.back_to_chords_action.trigger();
+
+  // restore the shared fixture
+  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}
+
 void Tester::test_remove_last_voice_disables_action_data() {
   QTest::addColumn<QString>("text");
   QTest::addColumn<bool>("is_pitched");

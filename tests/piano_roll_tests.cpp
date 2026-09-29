@@ -31,6 +31,46 @@ void check_piano_roll_highlight(PianoRollWidget& piano_roll_widget,
         is_highlighted);
   }
 }
+
+// sends a mouse event at a scene position through the production event
+// filter, the same way the click/drag tests below do, and returns whether
+// the filter consumed it
+auto send_piano_roll_mouse_event(PianoRollWidget& piano_roll_widget,
+                                 const QEvent::Type event_type,
+                                 const QPointF& scene_pos,
+                                 const Qt::MouseButton button) -> bool {
+  auto& view = piano_roll_widget.piano_roll_scene.view;
+  const auto view_pos = view.mapFromScene(scene_pos);
+  const auto global_pos = get_reference(view.viewport()).mapToGlobal(view_pos);
+  QMouseEvent mouse_event(event_type, QPointF(view_pos), QPointF(global_pos),
+                          button, button, Qt::NoModifier);
+  return piano_roll_widget.eventFilter(view.viewport(), &mouse_event);
+}
+
+// the scene-space center of the bar drawn for the given note
+auto get_note_bar_center(const PianoRollWidget& piano_roll_widget,
+                         const int chord_number, const int note_number,
+                         const bool is_pitched) -> std::optional<QPointF> {
+  const auto& piano_roll_scene = piano_roll_widget.piano_roll_scene;
+  const auto& events = piano_roll_scene.events;
+  const auto event_iterator = std::ranges::find_if(
+      events, [=](const PianoRollNoteEvent& event) -> auto {
+        return event.chord_number == chord_number &&
+               event.note_number == note_number &&
+               event.is_pitched == is_pitched;
+      });
+  if (event_iterator == events.cend()) {
+    return std::nullopt;
+  }
+  const auto event_index = static_cast<int>(event_iterator - events.cbegin());
+  for (auto* const item_pointer : piano_roll_scene.items()) {
+    const auto item_data = get_reference(item_pointer).data(0);
+    if (item_data.isValid() && item_data.toInt() == event_index) {
+      return item_pointer->sceneBoundingRect().center();
+    }
+  }
+  return std::nullopt;
+}
 }  // namespace
 
 void Tester::test_piano_roll_events_data() {
@@ -148,19 +188,32 @@ void Tester::test_piano_roll_double_click_selects_note() {
   }
   QVERIFY(note_item_pointer != nullptr);
 
-  // drives the actual production event filter with a real QMouseEvent,
+  // drives the actual production event filter with real QMouseEvents,
   // rather than calling add_replace_table directly, so this exercises the
-  // full click-to-scene-item-to-callback path
+  // full click-to-scene-item-to-callback path. Qt delivers a double-click
+  // as press, release, double-click -- and the press moves the playhead
+  // line (drawn in front of the bars) right under the cursor, so the
+  // double-click has to see past it to the bar
   const auto view_pos = piano_roll_widget.piano_roll_scene.view.mapFromScene(
       note_item_pointer->sceneBoundingRect().center());
   const auto global_pos =
       get_reference(piano_roll_widget.piano_roll_scene.view.viewport())
           .mapToGlobal(view_pos);
+  auto* const viewport_pointer =
+      piano_roll_widget.piano_roll_scene.view.viewport();
+  QMouseEvent press_event(QEvent::MouseButtonPress, QPointF(view_pos),
+                          QPointF(global_pos), Qt::LeftButton, Qt::LeftButton,
+                          Qt::NoModifier);
+  piano_roll_widget.eventFilter(viewport_pointer, &press_event);
+  QMouseEvent release_event(QEvent::MouseButtonRelease, QPointF(view_pos),
+                            QPointF(global_pos), Qt::LeftButton, Qt::NoButton,
+                            Qt::NoModifier);
+  piano_roll_widget.eventFilter(viewport_pointer, &release_event);
   QMouseEvent double_click_event(QEvent::MouseButtonDblClick, QPointF(view_pos),
                                  QPointF(global_pos), Qt::LeftButton,
                                  Qt::LeftButton, Qt::NoModifier);
-  piano_roll_widget.eventFilter(
-      piano_roll_widget.piano_roll_scene.view.viewport(), &double_click_event);
+  piano_roll_widget.eventFilter(viewport_pointer, &double_click_event);
+  piano_roll_widget.eventFilter(viewport_pointer, &release_event);
 
   QCOMPARE(switch_table.delegate.current_row_type, expected_row_type);
   QCOMPARE(get_parent_chord_number(switch_table), 1);
@@ -236,6 +289,13 @@ void Tester::test_piano_roll_click_selects_note() {
   QMouseEvent release_event(QEvent::MouseButtonRelease, QPointF(view_pos),
                             QPointF(global_pos), Qt::NoButton, Qt::NoButton,
                             Qt::NoModifier);
+  piano_roll_widget.eventFilter(
+      piano_roll_widget.piano_roll_scene.view.viewport(), &release_event);
+
+  // clicking the already-selected note again leaves the selection alone
+  piano_roll_widget.eventFilter(
+      piano_roll_widget.piano_roll_scene.view.viewport(), &press_event);
+  QCOMPARE(get_only_range(switch_table).top(), note_number);
   piano_roll_widget.eventFilter(
       piano_roll_widget.piano_roll_scene.view.viewport(), &release_event);
 
@@ -601,4 +661,127 @@ void Tester::test_piano_roll_zoom_actions() {
            PIANO_ROLL_TIME_ZOOM_STEP);
   view_menu.zoom_out_action.trigger();
   QCOMPARE(piano_roll_widget.piano_roll_scene.view.transform().m11(), 1.0);
+}
+
+// a playhead starting left of center holds the view still until it reaches
+// the center, and one starting right of center eases the view over for the
+// catch-up window -- either way it then just follows the playhead
+void Tester::test_piano_roll_playhead_transitions() {
+  static const auto FAR_RIGHT_MS = 1000000.0;
+  static const auto PAST_CATCHUP_WAIT_MS = 500;
+
+  auto& piano_roll_widget = song_editor.piano_roll_widget;
+  auto& piano_roll_scene = piano_roll_widget.piano_roll_scene;
+
+  start_piano_roll_playhead(piano_roll_widget, 0.0, FAR_RIGHT_MS);
+  QCOMPARE(piano_roll_scene.playhead_transition,
+           PlayheadTransition::waiting_to_reach_center);
+  position_playhead(piano_roll_scene, FAR_RIGHT_MS);
+  QCOMPARE(piano_roll_scene.playhead_transition, PlayheadTransition::none);
+  stop_piano_roll_playhead(piano_roll_widget);
+
+  start_piano_roll_playhead(piano_roll_widget, FAR_RIGHT_MS,
+                            FAR_RIGHT_MS + PAST_CATCHUP_WAIT_MS * 2);
+  QCOMPARE(piano_roll_scene.playhead_transition,
+           PlayheadTransition::catching_up);
+  QTest::qWait(PAST_CATCHUP_WAIT_MS);
+  position_playhead(piano_roll_scene, FAR_RIGHT_MS + PAST_CATCHUP_WAIT_MS);
+  QCOMPARE(piano_roll_scene.playhead_transition, PlayheadTransition::none);
+  stop_piano_roll_playhead(piano_roll_widget);
+}
+
+void Tester::test_piano_roll_ctrl_wheel_zoom() {
+  auto& piano_roll_widget = song_editor.piano_roll_widget;
+  auto& piano_roll_scene = piano_roll_widget.piano_roll_scene;
+  auto* const viewport_pointer = piano_roll_scene.view.viewport();
+
+  const auto send_wheel = [&piano_roll_widget](
+                              QObject* const watched_pointer,
+                              const int angle_delta_y,
+                              const Qt::KeyboardModifiers modifiers) -> bool {
+    QWheelEvent wheel_event(QPointF(), QPointF(), QPoint(),
+                            QPoint(0, angle_delta_y), Qt::NoButton, modifiers,
+                            Qt::NoScrollPhase, false);
+    return piano_roll_widget.eventFilter(watched_pointer, &wheel_event);
+  };
+
+  QVERIFY(send_wheel(viewport_pointer, 1, Qt::ControlModifier));
+  QCOMPARE(piano_roll_scene.time_zoom_factor, PIANO_ROLL_TIME_ZOOM_STEP);
+  QVERIFY(send_wheel(viewport_pointer, -1, Qt::ControlModifier));
+  QCOMPARE(piano_roll_scene.time_zoom_factor, 1.0);
+  // a purely horizontal ctrl+scroll is still swallowed, but doesn't zoom
+  QVERIFY(send_wheel(viewport_pointer, 0, Qt::ControlModifier));
+  QCOMPARE(piano_roll_scene.time_zoom_factor, 1.0);
+
+  // without ctrl, or outside the notes viewport, the wheel scrolls as usual
+  QVERIFY(!send_wheel(viewport_pointer, 1, Qt::NoModifier));
+  QVERIFY(!send_wheel(&piano_roll_widget, 1, Qt::ControlModifier));
+  QCOMPARE(piano_roll_scene.time_zoom_factor, 1.0);
+}
+
+// clicking takes the playhead over from playback, the same as dragging it
+void Tester::test_piano_roll_click_stops_playhead() {
+  auto& piano_roll_widget = song_editor.piano_roll_widget;
+  auto& piano_roll_scene = piano_roll_widget.piano_roll_scene;
+  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+
+  select_cell(switch_table, 0, 0);
+  start_piano_roll_playhead(piano_roll_widget, 0.0, 1800.0);
+  QVERIFY(piano_roll_scene.playhead_active);
+
+  // chord 1 starts at 600ms, per test_piano_roll_time_bounds() above
+  const QPointF chord_1_pos(600.0 * PIANO_ROLL_PIXELS_PER_MS, 0);
+  QVERIFY(send_piano_roll_mouse_event(piano_roll_widget,
+                                      QEvent::MouseButtonPress, chord_1_pos,
+                                      Qt::LeftButton));
+  QVERIFY(!piano_roll_scene.playhead_active);
+  QCOMPARE(get_only_range(switch_table).top(), 1);
+  QVERIFY(send_piano_roll_mouse_event(piano_roll_widget,
+                                      QEvent::MouseButtonRelease, chord_1_pos,
+                                      Qt::NoButton));
+}
+
+void Tester::test_piano_roll_right_click_ignored() {
+  auto& piano_roll_widget = song_editor.piano_roll_widget;
+  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+
+  select_cell(switch_table, 0, 0);
+  QVERIFY(!send_piano_roll_mouse_event(
+      piano_roll_widget, QEvent::MouseButtonPress,
+      QPointF(1200.0 * PIANO_ROLL_PIXELS_PER_MS, 0), Qt::RightButton));
+  QVERIFY(!piano_roll_widget.piano_roll_scene.playhead_dragging);
+  QCOMPARE(get_only_range(switch_table).top(), 0);
+}
+
+void Tester::test_piano_roll_click_bar_in_chords_mode_data() {
+  QTest::addColumn<bool>("is_pitched");
+  QTest::addColumn<int>("note_number");
+
+  QTest::newRow("pitched") << true << 2;
+  QTest::newRow("unpitched") << false << 1;
+}
+
+// while the table shows chords, clicking a note bar selects its chord
+// rather than switching the table over to that note's row
+void Tester::test_piano_roll_click_bar_in_chords_mode() {
+  QFETCH(const bool, is_pitched);
+  QFETCH(const int, note_number);
+
+  auto& piano_roll_widget = song_editor.piano_roll_widget;
+  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+
+  // already on the bar's chord, so the chord selection is left alone too
+  select_cell(switch_table, 1, 0);
+  const auto maybe_bar_center =
+      get_note_bar_center(piano_roll_widget, 1, note_number, is_pitched);
+  QVERIFY(maybe_bar_center.has_value());
+  QVERIFY(send_piano_roll_mouse_event(piano_roll_widget,
+                                      QEvent::MouseButtonPress,
+                                      *maybe_bar_center, Qt::LeftButton));
+  QCOMPARE(switch_table.delegate.current_row_type, RowType::chord_type);
+  QCOMPARE(get_only_range(switch_table).top(), 1);
+  QCOMPARE(get_only_range(switch_table).bottom(), 1);
+  QVERIFY(send_piano_roll_mouse_event(piano_roll_widget,
+                                      QEvent::MouseButtonRelease,
+                                      *maybe_bar_center, Qt::NoButton));
 }

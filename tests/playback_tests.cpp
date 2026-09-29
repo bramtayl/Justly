@@ -237,3 +237,38 @@ void Tester::test_play_channel_exhausted() {
                        song_editor.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
+
+// playing chords stops at the first note that can't get a MIDI channel,
+// whether it's pitched or unpitched
+void Tester::test_play_chord_error_data() {
+  QTest::addColumn<int>("number_of_pitched_notes");
+  QTest::addColumn<int>("number_of_unpitched_notes");
+
+  QTest::newRow("pitched") << NUMBER_OF_MIDI_CHANNELS + 1 << 0;
+  QTest::newRow("unpitched") << NUMBER_OF_MIDI_CHANNELS << 1;
+}
+
+void Tester::test_play_chord_error() {
+  QFETCH(const int, number_of_pitched_notes);
+  QFETCH(const int, number_of_unpitched_notes);
+
+  auto& song_widget = song_editor.song_widget;
+  auto& play_menu = song_editor.song_menu_bar.play_menu;
+
+  open_text(song_editor,
+            make_voice_song_xml({"A"}, {"D"},
+                                {{QList<int>(number_of_pitched_notes, 0),
+                                  QList<int>(number_of_unpitched_notes, 0)}}));
+  select_cell(song_widget.switch_column.switch_table, 0, 0);
+
+  close_message_later(song_editor, waiting_for_message,
+                      "More notes are sounding at once than there are "
+                      "available MIDI channels");
+  play_menu.play_action.trigger();
+  play_menu.stop_playing_action.trigger();
+
+  // restore the shared fixture
+  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}

@@ -171,3 +171,75 @@ void Tester::test_open_error() {
   close_message_later(song_editor, waiting_for_message, error_message);
   open_text(song_editor, text);
 }
+
+// every file dialog leaves the song alone when cancelled -- the complement
+// of the accept paths driven by test_open_via_dialog, test_import_via_dialog
+// and test_export_via_dialog
+void Tester::test_file_dialog_reject_data() {
+  QTest::addColumn<QString>("action_text");
+
+  QTest::newRow("open") << "&Open";
+  QTest::newRow("import") << "&Import MusicXML";
+  QTest::newRow("export") << "&Export recording";
+  QTest::newRow("export MIDI") << "Export &MIDI";
+}
+
+void Tester::test_file_dialog_reject() {
+  QFETCH(const QString, action_text);
+
+  auto& song_widget = song_editor.song_widget;
+  const auto actions = song_editor.song_menu_bar.file_menu.actions();
+  const auto action_iterator = std::ranges::find_if(
+      actions, [&action_text](const QAction* const action_pointer) -> auto {
+        return action_pointer->text() == action_text;
+      });
+  QVERIFY(action_iterator != actions.cend());
+
+  const auto old_current_file = song_widget.current_file;
+  const auto old_number_of_chords = song_widget.song.chords.size();
+
+  auto& timer =  // NOLINT(cppcoreguidelines-owning-memory)
+      *(new QTimer(&song_editor));
+  timer.setSingleShot(true);
+  QObject::connect(&timer, &QTimer::timeout, &song_editor, []() -> auto {
+    auto* const found_dialog = find_top_level_file_dialog();
+    QVERIFY(found_dialog != nullptr);
+    found_dialog->reject();
+  });
+  timer.start(WAIT_TIME);
+
+  get_reference(*action_iterator).trigger();
+
+  QCOMPARE(song_widget.current_file, old_current_file);
+  QCOMPARE(song_widget.song.chords.size(), old_number_of_chords);
+}
+
+void Tester::test_open_via_dialog() {
+  auto& song_widget = song_editor.song_widget;
+  const auto fixture_file = test_dir.filePath("test_song.xml");
+
+  // start from a different song, so reopening the fixture visibly replaces it
+  open_text(song_editor, make_voice_song_xml({"A"}, {"D"}, {{{0}, {}}}));
+  QCOMPARE(song_widget.song.chords.size(), 1);
+
+  accept_file_dialog_later(song_editor, fixture_file);
+  song_editor.song_menu_bar.file_menu.open_action.trigger();
+
+  QCOMPARE(song_widget.current_file, fixture_file);
+  QCOMPARE_NE(song_widget.song.chords.size(), 1);
+}
+
+void Tester::test_import_via_dialog() {
+  auto& switch_table = song_editor.song_widget.switch_column.switch_table;
+
+  accept_file_dialog_later(song_editor,
+                           test_dir.filePath("percussion.musicxml"));
+  song_editor.song_menu_bar.file_menu.import_action.trigger();
+
+  QCOMPARE(get_model(switch_table).rowCount(QModelIndex()), PERCUSSION_ROWS);
+
+  // restore the shared fixture
+  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}

@@ -558,6 +558,17 @@ void Tester::test_musicxml_accidentals_data() {
       << make_spelled_note("B", "4", "flat-down") + NEXT_MEASURE +
              make_spelled_note("B", "4")
       << Interval(Rational(15, 8));
+  // once an accidental stops applying, the note falls back to the key
+  // signature, not to natural
+  QTest::newRow("key signature after the accidental's measure")
+      << DIVISIONS + make_key("-1")
+      << make_spelled_note("B", "4", "natural") + NEXT_MEASURE +
+             make_spelled_note("B", "4")
+      << Interval(Rational(4, 3));
+  QTest::newRow("key signature outside the accidental's octave")
+      << DIVISIONS + make_key("-1")
+      << make_spelled_note("B", "4", "natural") + make_spelled_note("B", "3")
+      << Interval(Rational(4, 3), -1);
   // a tied-over note keeps the pitch it was tied from, without an accidental
   QTest::newRow("tie continues across the barline")
       << c_major
@@ -588,6 +599,89 @@ void Tester::test_musicxml_accidentals() {
   QCOMPARE(interval.ratio.numerator, expected_interval.ratio.numerator);
   QCOMPARE(interval.ratio.denominator, expected_interval.ratio.denominator);
   QCOMPARE(interval.octave, expected_interval.octave);
+
+  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}
+
+// every imported voice needs a unique, non-empty name, so an unnamed part
+// gets a placeholder and a repeated part name gets a numbered suffix
+void Tester::test_import_musicxml_voice_names_deduplicated() {
+  static const QList<QString> part_names = {"", "Flute", "Flute"};
+
+  QString part_list;
+  QString parts;
+  for (auto part_number = 1; part_number <= part_names.size();
+       part_number = part_number + 1) {
+    const auto part_id = QString("P%1").arg(part_number);
+    part_list += "<score-part id=\"" + part_id + "\"><part-name>" +
+                 part_names.at(part_number - 1) + "</part-name></score-part>";
+    parts += "<part id=\"" + part_id +
+             "\"><measure number=\"1\"><attributes>" + DIVISIONS +
+             "</attributes>" + make_pitch_note("", "1") + "</measure></part>";
+  }
+
+  QTemporaryFile temp_file;
+  QVERIFY(temp_file.open());
+  temp_file.write(("<score-partwise version=\"4.0\"><part-list>" + part_list +
+                   "</part-list>" + parts + "</score-partwise>")
+                      .toStdString()
+                      .c_str());
+  temp_file.close();
+
+  import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                             song_editor.piano_roll_widget,
+                             temp_file.fileName());
+
+  const auto& pitched_voices = song_editor.song_widget.song.pitched_voices;
+  QCOMPARE(pitched_voices.size(), 3);
+  QCOMPARE(pitched_voices.at(0).name, QString("Unnamed instrument"));
+  QCOMPARE(pitched_voices.at(1).name, QString("Flute"));
+  QCOMPARE(pitched_voices.at(2).name, QString("Flute (2)"));
+
+  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}
+
+// a first ending plays only on the first pass and a second ending only on
+// the second; a repeated ending number counts once, and a blank ending
+// number (allowed by the schema for an ending of unknown type) marks no
+// passes, so its measure just plays once after the repeat
+void Tester::test_musicxml_endings() {
+  const auto note = make_pitch_note("", "1");
+  const auto body =
+      "<barline location=\"left\"><repeat direction=\"forward\"/></barline>" +
+      note + NEXT_MEASURE +
+      "<barline location=\"left\"><ending number=\"1, 1\" "
+      "type=\"start\"/></barline>" +
+      note +
+      "<barline location=\"right\"><ending number=\"1\" type=\"stop\"/>"
+      "<repeat direction=\"backward\"/></barline>"
+      "</measure><measure number=\"3\">"
+      "<barline location=\"left\"><ending number=\"2\" "
+      "type=\"start\"/></barline>" +
+      note +
+      "<barline location=\"right\"><ending number=\"2\" "
+      "type=\"discontinue\"/></barline>"
+      "</measure><measure number=\"4\">"
+      "<barline location=\"left\"><ending number=\" \" "
+      "type=\"start\"/></barline>" +
+      note +
+      "<barline location=\"right\"><ending number=\" \" "
+      "type=\"stop\"/></barline>";
+
+  QTemporaryFile temp_file;
+  QVERIFY(temp_file.open());
+  temp_file.write(make_musicxml(DIVISIONS, body).toStdString().c_str());
+  temp_file.close();
+
+  import_musicxml_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                             song_editor.piano_roll_widget,
+                             temp_file.fileName());
+  // measures 1, 2 (first ending), 1, 3 (second ending), 4
+  QCOMPARE(song_editor.song_widget.song.chords.size(), 5);
 
   open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
                        song_editor.piano_roll_widget,

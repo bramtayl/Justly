@@ -230,3 +230,42 @@ void Tester::test_close_event_removes_recovery_file() {
   QVERIFY(close_event.isAccepted());
   QVERIFY(!QFile::exists(get_recovery_file_path()));
 }
+
+// a recovery write that fails leaves the previous recovery state alone,
+// rather than recording an original file for content that was never written
+void Tester::test_recovery_write_failure() {
+  auto& song_widget = song_editor.song_widget;
+
+  remove_recovery_file();
+  QVERIFY(!QSettings().contains("recovery/original_file"));
+
+  // a directory where recovery.xml should go makes writing it fail
+  const auto recovery_path = get_recovery_file_path();
+  QVERIFY(QDir().mkpath(recovery_path));
+  write_recovery_file(song_widget);
+  QVERIFY(!QSettings().contains("recovery/original_file"));
+
+  QVERIFY(QDir(recovery_path).removeRecursively());
+}
+
+// accepting a recovery file that can't be opened reports the error and
+// leaves the current song as it was
+void Tester::test_recovery_restore_invalid_file() {
+  auto& song_widget = song_editor.song_widget;
+  const auto old_current_file = song_widget.current_file;
+
+  QFile recovery_file(get_recovery_file_path());
+  QVERIFY(recovery_file.open(QIODevice::WriteOnly));
+  recovery_file.write("<");
+  recovery_file.close();
+
+  // Enter picks the prompt's default Yes button
+  close_messages_later(song_editor, waiting_for_message,
+                       {RECOVERY_PROMPT_TEXT, "Invalid XML file"});
+  QVERIFY(!maybe_restore_recovery(song_widget));
+  QVERIFY(!waiting_for_message);
+
+  QCOMPARE(song_widget.current_file, old_current_file);
+  QVERIFY(song_widget.undo_stack.isClean());
+  remove_recovery_file();
+}

@@ -432,3 +432,48 @@ void Tester::test_export_midi_unwritable_path() {
                        song_editor.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
+
+// unpitched notes from the same percussion set share the percussion
+// channel, so they can start together without a conflict
+void Tester::test_export_midi_shared_percussion_set() {
+  QTemporaryDir temp_export_dir;
+  QVERIFY(temp_export_dir.isValid());
+  const auto export_filename = temp_export_dir.filePath("export.mid");
+
+  open_text(song_editor, make_voice_song_xml({"A"}, {"D", "E"}, {{{}, {0, 1}}}));
+  export_midi_to_file(song_editor.song_widget, export_filename);
+
+  QFile written_file(export_filename);
+  QVERIFY(written_file.open(QIODevice::ReadOnly));
+  QCOMPARE(written_file.read(4), QByteArray("MThd"));
+  // one tempo track plus one track per voice
+  QCOMPARE(QString::fromLatin1(written_file.readAll()).count("MTrk"), 4);
+
+  // restore the shared fixture
+  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}
+
+// a MIDI file only has 15 non-percussion channels, so a 16th pitched note
+// sounding at once can't be exported
+void Tester::test_export_midi_channel_exhausted() {
+  static const auto TOO_MANY_PITCHED_NOTES = 16;
+
+  QTemporaryFile temp_export_file;
+  QVERIFY(temp_export_file.open());
+  temp_export_file.close();
+
+  open_text(song_editor,
+            make_voice_song_xml({"A"}, {"D"},
+                                {{QList<int>(TOO_MANY_PITCHED_NOTES, 0), {}}}));
+  close_message_later(song_editor, waiting_for_message,
+                      "More notes are sounding at once than there are "
+                      "available MIDI channels");
+  export_midi_to_file(song_editor.song_widget, temp_export_file.fileName());
+
+  // restore the shared fixture
+  open_file_and_reload(song_editor.song_menu_bar, song_editor.song_widget,
+                       song_editor.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}

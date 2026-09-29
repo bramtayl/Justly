@@ -153,6 +153,21 @@ void Tester::test_paste_error_data() {
   QTest::newRow("unpitched note not Justly")
       << RowType::unpitched_note_type << 1 << "<song/>"
       << UnpitchedNote::get_cells_mime() << "Invalid clipboard";
+  // well-formed notes whose voice the song doesn't have
+  QTest::newRow("pitched note missing voice")
+      << RowType::pitched_note_type << 1
+      << "<clipboard><left_column>0</left_column><right_column>0</"
+         "right_column><rows><pitched_note><voice_number>99</voice_number>"
+         "</pitched_note></rows></clipboard>"
+      << PitchedNote::get_cells_mime()
+      << "Voice 99 for chord 2, pitched note 1 has no corresponding voice";
+  QTest::newRow("unpitched note missing voice")
+      << RowType::unpitched_note_type << 1
+      << "<clipboard><left_column>0</left_column><right_column>0</"
+         "right_column><rows><unpitched_note><voice_number>99</voice_number>"
+         "</unpitched_note></rows></clipboard>"
+      << UnpitchedNote::get_cells_mime()
+      << "Voice 99 for chord 2, unpitched note 1 has no corresponding voice";
 }
 
 void Tester::test_paste_error() {
@@ -182,6 +197,39 @@ void Tester::test_paste_error() {
   select_cell(switch_table, 0, 0);
   close_message_later(song_editor, waiting_for_message, error_message);
   song_editor.song_menu_bar.edit_menu.paste_menu.paste_over_action.trigger();
+
+  maybe_switch_back_to_chords(undo_stack, row_type);
+}
+
+// inserting pasted rows rejects the same clipboards that pasting over does,
+// without inserting anything
+void Tester::test_paste_after_error_data() { test_paste_error_data(); }
+
+void Tester::test_paste_after_error() {
+  QFETCH(const RowType, row_type);
+  QFETCH(const int, chord_number);
+  QFETCH(const QString, copied);
+  QFETCH(const QString, mime_type);
+  QFETCH(const QString, error_message);
+
+  auto& song_widget = song_editor.song_widget;
+  auto& switch_table = song_widget.switch_column.switch_table;
+  auto& undo_stack = song_widget.undo_stack;
+
+  switch_to(song_editor, row_type, chord_number);
+  const auto old_row_count = get_model(switch_table).rowCount(QModelIndex());
+
+  auto& new_data =
+      get_reference(new QMimeData);  // NOLINT(cppcoreguidelines-owning-memory)
+  if (!mime_type.isEmpty()) {
+    new_data.setData(mime_type, copied.toStdString().c_str());
+  }
+  get_clipboard().setMimeData(&new_data);
+
+  select_cell(switch_table, 0, 0);
+  close_message_later(song_editor, waiting_for_message, error_message);
+  song_editor.song_menu_bar.edit_menu.paste_menu.paste_after_action.trigger();
+  QCOMPARE(get_model(switch_table).rowCount(QModelIndex()), old_row_count);
 
   maybe_switch_back_to_chords(undo_stack, row_type);
 }

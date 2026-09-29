@@ -45,9 +45,6 @@ void redraw_time_axis_ticks(PianoRollNotesScene& notes_scene) {
   // all
   static const auto PIANO_ROLL_TARGET_TICK_PIXEL_SPACING = 80.0;
   static const auto PIANO_ROLL_MS_PER_SECOND = 1000.0;
-  static const auto PIANO_ROLL_MS_PER_MINUTE = 60000.0;
-  static const auto PIANO_ROLL_SECONDS_PER_MINUTE = 60LL;
-  static const auto PIANO_ROLL_LABEL_DECIMAL_BASE = 10;
   static const auto PIANO_ROLL_NICE_STEP_ROLLOVER = 10.0;
 
   auto& scene = notes_scene;
@@ -103,28 +100,20 @@ void redraw_time_axis_ticks(PianoRollNotesScene& notes_scene) {
 
     // formats a time-axis tick label in whichever unit best suits the
     // current tick spacing (step_ms) -- milliseconds when ticks are
-    // sub-second, seconds (with a decimal only when the step itself needs
-    // one) once ticks are a second or more apart, and minutes:seconds
-    // once they're a minute or more apart -- so labels stay round and
-    // readable at every zoom level rather than always being expressed in
-    // one fixed unit
+    // sub-second, and seconds (with a decimal only when the step itself
+    // needs one) once ticks are a second or more apart -- so labels stay
+    // round and readable at every zoom level rather than always being
+    // expressed in one fixed unit. PIANO_ROLL_MIN_TIME_ZOOM caps the step
+    // at a few seconds, so ticks never get far enough apart to need minutes
     auto& label = get_reference(scene.addSimpleText([&]() -> QString {
       if (step_ms < PIANO_ROLL_MS_PER_SECOND) {
         return QString::number(std::llround(time_ms)) + "ms";
       }
-      if (step_ms < PIANO_ROLL_MS_PER_MINUTE) {
-        const auto has_sub_second_step =
-            std::fmod(step_ms, PIANO_ROLL_MS_PER_SECOND) != 0.0;
-        return QString::number(time_ms / PIANO_ROLL_MS_PER_SECOND, 'f',
-                               has_sub_second_step ? 1 : 0) +
-               "s";
-      }
-      const auto total_seconds =
-          std::llround(time_ms / PIANO_ROLL_MS_PER_SECOND);
-      const auto minutes = total_seconds / PIANO_ROLL_SECONDS_PER_MINUTE;
-      const auto seconds = total_seconds % PIANO_ROLL_SECONDS_PER_MINUTE;
-      return QString("%1:%2").arg(minutes).arg(
-          seconds, 2, PIANO_ROLL_LABEL_DECIMAL_BASE, QChar('0'));
+      const auto has_sub_second_step =
+          std::fmod(step_ms, PIANO_ROLL_MS_PER_SECOND) != 0.0;
+      return QString::number(time_ms / PIANO_ROLL_MS_PER_SECOND, 'f',
+                             has_sub_second_step ? 1 : 0) +
+             "s";
     }()));
     // keeps the label's on-screen size constant across zoom levels --
     // without this, since the label lives in the same scene as the notes
@@ -341,18 +330,34 @@ auto get_chord_number_at_time(const QList<double>& chord_start_times,
   return static_cast<int>(first_later_iterator - chord_start_times.begin()) - 1;
 }
 
+// the index (into piano_roll_scene.events) of the frontmost note bar under
+// viewport_pos -- skipping anything else drawn over the bars, like the
+// playhead line (z=1), so a click right where the playhead already sits
+// still lands on the bar underneath it
+auto get_event_index_at_viewport_pos(
+    const PianoRollNotesScene& piano_roll_scene, const QPoint& viewport_pos)
+    -> std::optional<int> {
+  const auto& view = piano_roll_scene.view;
+  for (auto* const item_pointer : piano_roll_scene.items(
+           view.mapToScene(viewport_pos), Qt::IntersectsItemShape,
+           Qt::DescendingOrder, view.transform())) {
+    const auto event_index_data = get_reference(item_pointer).data(0);
+    if (event_index_data.isValid()) {
+      return event_index_data.toInt();
+    }
+  }
+  return std::nullopt;
+}
+
 auto get_chord_number_at_viewport_pos(
     const PianoRollNotesScene& piano_roll_scene, const QPoint& viewport_pos)
     -> int {
-  const auto scene_pos = piano_roll_scene.view.mapToScene(viewport_pos);
-  auto* const item_pointer =
-      piano_roll_scene.itemAt(scene_pos, piano_roll_scene.view.transform());
-  if (item_pointer != nullptr) {
-    const auto event_index_data = item_pointer->data(0);
-    if (event_index_data.isValid()) {
-      return piano_roll_scene.events.at(event_index_data.toInt()).chord_number;
-    }
+  const auto maybe_event_index =
+      get_event_index_at_viewport_pos(piano_roll_scene, viewport_pos);
+  if (maybe_event_index.has_value()) {
+    return piano_roll_scene.events.at(*maybe_event_index).chord_number;
   }
+  const auto scene_pos = piano_roll_scene.view.mapToScene(viewport_pos);
   return get_chord_number_at_time(
       piano_roll_scene.chord_start_times,
       std::max(0.0, scene_pos.x()) / PIANO_ROLL_PIXELS_PER_MS);
@@ -1075,16 +1080,12 @@ auto PianoRollWidget::eventFilter(QObject* watched_pointer,
       watched_pointer == view.viewport()) {
     const auto& mouse_event =
         get_reference(dynamic_cast<QMouseEvent*>(event_pointer));
-    auto* const item_pointer = piano_roll_scene.itemAt(
-        view.mapToScene(mouse_event.pos()), view.transform());
-    if (item_pointer != nullptr) {
-      const auto event_index_data = item_pointer->data(0);
-      if (event_index_data.isValid()) {
-        const auto& event =
-            piano_roll_scene.events.at(event_index_data.toInt());
-        emit note_double_clicked(event.chord_number, event.note_number,
-                                 event.is_pitched);
-      }
+    const auto maybe_event_index =
+        get_event_index_at_viewport_pos(piano_roll_scene, mouse_event.pos());
+    if (maybe_event_index.has_value()) {
+      const auto& event = piano_roll_scene.events.at(*maybe_event_index);
+      emit note_double_clicked(event.chord_number, event.note_number,
+                               event.is_pitched);
     }
   }
   if (get_reference(event_pointer).type() == QEvent::MouseButtonPress &&
@@ -1102,17 +1103,10 @@ auto PianoRollWidget::eventFilter(QObject* watched_pointer,
                       selecting_chord_from_playhead);
       }
       piano_roll_scene.playhead_dragging = true;
-      // resolved before drag_playhead_to() moves the playhead line onto
-      // this exact click position -- that line sits in front of the note
-      // bars (z=1 vs their z=0), so running the hit-test after would have
-      // it hit the playhead line itself instead of whatever note bar is
-      // actually drawn under the click
       drag_start_chord_number =
           get_chord_number_at_viewport_pos(piano_roll_scene, mouse_event.pos());
-      auto* const item_pointer = piano_roll_scene.itemAt(
-          view.mapToScene(mouse_event.pos()), view.transform());
-      const auto event_index_data =
-          item_pointer == nullptr ? QVariant() : item_pointer->data(0);
+      const auto maybe_event_index =
+          get_event_index_at_viewport_pos(piano_roll_scene, mouse_event.pos());
       static_cast<void>(drag_playhead_to(piano_roll_scene, mouse_event.pos()));
       select_chord_range_at_playhead(
           switch_table,
@@ -1125,9 +1119,9 @@ auto PianoRollWidget::eventFilter(QObject* watched_pointer,
       // clicked (via the same item hit-test note_double_clicked uses)
       // rather than nearest-chord-by-time, since a click that misses
       // every bar has no single note row to select
-      if (event_index_data.isValid()) {
-        select_note_at_bar(
-            switch_table, piano_roll_scene.events.at(event_index_data.toInt()));
+      if (maybe_event_index.has_value()) {
+        select_note_at_bar(switch_table,
+                           piano_roll_scene.events.at(*maybe_event_index));
       }
       return true;
     }
