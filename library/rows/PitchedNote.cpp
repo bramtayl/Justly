@@ -46,10 +46,9 @@ void PitchedNote::from_xml(xmlNode& node) {
       words = get_qstring_content(field_node);
     } else if (name == "interval") {
       set_interval_from_xml(interval, field_node);
-    } else if (name == "voice_number") {
-      voice_number = xml_to_int(field_node);
     } else {
-      Q_UNREACHABLE();
+      Q_ASSERT(name == "voice_number");
+      voice_number = xml_to_int(field_node);
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }
@@ -67,10 +66,8 @@ auto PitchedNote::get_number_of_columns() -> int {
 
 auto PitchedNote::get_column_name(int column_number) -> const char* {
   switch (static_cast<PitchedNoteColumn>(column_number)) {
-    // GCOVR_EXCL_START
     case PitchedNoteColumn::number_of_pitched_note_columns:
       Q_UNREACHABLE();
-    // GCOVR_EXCL_STOP
     case PitchedNoteColumn::pitched_note_voice_number_column:
       return "Voice";
     case PitchedNoteColumn::pitched_note_interval_column:
@@ -155,10 +152,8 @@ auto PitchedNote::get_voice_velocity_ratio(
 
 auto PitchedNote::get_data(const int column_number) const -> QVariant {
   switch (static_cast<PitchedNoteColumn>(column_number)) {
-    // GCOVR_EXCL_START
     case PitchedNoteColumn::number_of_pitched_note_columns:
       Q_UNREACHABLE();
-    // GCOVR_EXCL_STOP
     case PitchedNoteColumn::pitched_note_voice_number_column:
       return voice_number;
     case PitchedNoteColumn::pitched_note_interval_column:
@@ -175,10 +170,8 @@ auto PitchedNote::get_data(const int column_number) const -> QVariant {
 
 void PitchedNote::set_data(const int column_number, const QVariant& new_value) {
   switch (static_cast<PitchedNoteColumn>(column_number)) {
-    // GCOVR_EXCL_START
     case PitchedNoteColumn::number_of_pitched_note_columns:
       Q_UNREACHABLE();
-    // GCOVR_EXCL_STOP
     case PitchedNoteColumn::pitched_note_voice_number_column:
       voice_number = variant_to<int>(new_value);
       break;
@@ -200,10 +193,8 @@ void PitchedNote::set_data(const int column_number, const QVariant& new_value) {
 void PitchedNote::copy_column_from(const PitchedNote& template_row,
                                    const int column_number) {
   switch (static_cast<PitchedNoteColumn>(column_number)) {
-    // GCOVR_EXCL_START
     case PitchedNoteColumn::number_of_pitched_note_columns:
       Q_UNREACHABLE();
-    // GCOVR_EXCL_STOP
     case PitchedNoteColumn::pitched_note_voice_number_column:
       voice_number = template_row.voice_number;
       break;
@@ -224,10 +215,8 @@ void PitchedNote::copy_column_from(const PitchedNote& template_row,
 
 void PitchedNote::column_to_xml(xmlNode& node, const int column_number) const {
   switch (static_cast<PitchedNoteColumn>(column_number)) {
-    // GCOVR_EXCL_START
     case PitchedNoteColumn::number_of_pitched_note_columns:
       Q_UNREACHABLE();
-    // GCOVR_EXCL_STOP
     case PitchedNoteColumn::pitched_note_voice_number_column:
       set_xml_int(node, "voice_number", voice_number);
       break;

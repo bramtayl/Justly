@@ -171,11 +171,10 @@ auto drag_playhead_to(PianoRollNotesScene& notes_scene,
 
 void show_selection_rect(PianoRollNotesScene& notes_scene, const double start_x,
                          const double end_x) {
+  Q_ASSERT(start_x <= end_x);
   const auto& scene_rect = notes_scene.sceneRect();
-  const auto left_x = std::min(start_x, end_x);
-  const auto right_x = std::max(start_x, end_x);
   auto& selection_rect_item = notes_scene.selection_rect_item;
-  selection_rect_item.setRect(left_x, scene_rect.top(), right_x - left_x,
+  selection_rect_item.setRect(start_x, scene_rect.top(), end_x - start_x,
                               scene_rect.height());
   selection_rect_item.show();
 }
@@ -266,7 +265,8 @@ auto get_voice_color(const int global_voice_index) -> QColor {
       QColor("#eda100"), QColor("#e87ba4"), QColor("#008300"),
       QColor("#4a3aa7"), QColor("#e34948"),
   };
-  if (global_voice_index >= 0 && global_voice_index < voice_colors.size()) {
+  Q_ASSERT(global_voice_index >= 0);
+  if (global_voice_index < voice_colors.size()) {
     return voice_colors.at(global_voice_index);
   }
   static const auto other_voice_color = QColor("#898781");
@@ -385,9 +385,8 @@ void select_chord_at_playhead(SwitchTable& switch_table,
   }
   const auto chord_number =
       get_chord_number_at_time(chord_start_times, time_ms);
-  if (chord_number < 0) {
-    return;
-  }
+  // playback only runs over chords, starting at the first one
+  Q_ASSERT(chord_number >= 0);
   auto& selection_model = get_selection_model(switch_table);
   const auto selected_rows = selection_model.selectedRows();
   if (selected_rows.size() == 1 && selected_rows.at(0).row() == chord_number) {
@@ -407,21 +406,23 @@ void select_chord_at_playhead(SwitchTable& switch_table,
 // a note bar clicked directly in the piano roll -- the notes-mode
 // counterpart to select_chord_at_playhead/select_chord_range_at_playhead,
 // which only act while the table is in chord mode. A no-op unless the
-// switch table is already showing that exact chord's notes of that exact
-// kind (e.g. clicking a pitched note's bar while the table shows unpitched
-// notes, or another chord's notes, has no row to select).
+// switch table is already showing notes of that exact kind (e.g. clicking a
+// pitched note's bar while the table shows unpitched notes has no row to
+// select); in notes mode the piano roll only draws that chord's notes, so
+// the bar is always from the table's own chord.
 void select_note_at_bar(SwitchTable& switch_table,
                         const PianoRollNoteEvent& event) {
   const auto current_row_type = switch_table.delegate.current_row_type;
   const auto is_pitched = event.is_pitched;
-  if (is_pitched ? (current_row_type != RowType::pitched_note_type ||
-                    switch_table.pitched_notes_model.parent_chord_number !=
-                        event.chord_number)
-                 : (current_row_type != RowType::unpitched_note_type ||
-                    switch_table.unpitched_notes_model.parent_chord_number !=
-                        event.chord_number)) {
+  if (current_row_type != (is_pitched ? RowType::pitched_note_type
+                                      : RowType::unpitched_note_type)) {
     return;
   }
+  // in notes mode the piano roll only draws the table's own chord
+  Q_ASSERT((is_pitched
+                ? switch_table.pitched_notes_model.parent_chord_number
+                : switch_table.unpitched_notes_model.parent_chord_number) ==
+           event.chord_number);
 
   auto& selection_model = get_selection_model(switch_table);
   const auto note_index =
@@ -449,12 +450,15 @@ void select_chord_range_at_playhead(SwitchTable& switch_table,
   if (number_of_chords == 0) {
     return;
   }
+  // both come from get_chord_number_at_viewport_pos, which only ever
+  // returns an existing chord
+  Q_ASSERT(anchor_chord_number >= 0 && anchor_chord_number < number_of_chords);
+  Q_ASSERT(current_chord_number >= 0 &&
+           current_chord_number < number_of_chords);
   const auto first_chord_number =
-      std::clamp(std::min(anchor_chord_number, current_chord_number), 0,
-                 number_of_chords - 1);
+      std::min(anchor_chord_number, current_chord_number);
   const auto last_chord_number =
-      std::clamp(std::max(anchor_chord_number, current_chord_number), 0,
-                 number_of_chords - 1);
+      std::max(anchor_chord_number, current_chord_number);
 
   auto& selection_model = get_selection_model(switch_table);
   const auto& selection = selection_model.selection();
@@ -474,8 +478,7 @@ void select_chord_range_at_playhead(SwitchTable& switch_table,
       QItemSelectionModel::Select | QItemSelectionModel::Clear |
           QItemSelectionModel::Rows);
   selecting_chord_from_playhead = false;
-  switch_table.scrollTo(chords_model.index(
-      std::clamp(current_chord_number, 0, number_of_chords - 1), 0));
+  switch_table.scrollTo(chords_model.index(current_chord_number, 0));
 }
 
 }  // namespace
@@ -712,10 +715,10 @@ void rebuild_scene(QWidget& widget, const SongWidget& song_widget,
     // began -- so rebase time 0 to the chord's own start time (0 outside
     // notes mode, leaving the axis as the whole song's timeline)
     const auto& chord_start_times = notes_scene.chord_start_times;
+    Q_ASSERT(notes_mode_chord_number <
+             static_cast<int>(chord_start_times.size()));
     const auto time_axis_baseline_ms =
-        notes_mode_chord_number != -1 &&
-                notes_mode_chord_number <
-                    static_cast<int>(chord_start_times.size())
+        notes_mode_chord_number != -1
             ? chord_start_times.at(notes_mode_chord_number)
             : 0.0;
     notes_scene.time_axis_baseline_ms = time_axis_baseline_ms;

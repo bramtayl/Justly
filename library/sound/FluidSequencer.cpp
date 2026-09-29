@@ -10,8 +10,9 @@ auto register_fluidsynth_client(fluid_sequencer_t* const sequencer_pointer,
 }
 
 FluidSequencer::~FluidSequencer() {
-  if (internal_pointer != nullptr) {
-    fluid_sequencer_unregister_client(internal_pointer, sequencer_id);
-    delete_fluid_sequencer(internal_pointer);
-  }
+  // set once in the constructor (see register_fluidsynth_client), and never
+  // moved out of
+  Q_ASSERT(internal_pointer != nullptr);
+  fluid_sequencer_unregister_client(internal_pointer, sequencer_id);
+  delete_fluid_sequencer(internal_pointer);
 }

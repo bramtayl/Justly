@@ -21,10 +21,9 @@ void Chord::from_xml(xmlNode& node) {
       set_interval_from_xml(interval, field_node);
     } else if (name == "pitched_notes") {
       xml_to_rows(pitched_notes, field_node);
-    } else if (name == "unpitched_notes") {
-      xml_to_rows(unpitched_notes, field_node);
     } else {
-      Q_UNREACHABLE();
+      Q_ASSERT(name == "unpitched_notes");
+      xml_to_rows(unpitched_notes, field_node);
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }
@@ -42,10 +41,8 @@ auto Chord::get_number_of_columns() -> int {
 
 auto Chord::get_column_name(int column_number) -> const char* {
   switch (static_cast<ChordColumn>(column_number)) {
-    // GCOVR_EXCL_START
     case ChordColumn::number_of_chord_columns:
       Q_UNREACHABLE();
-    // GCOVR_EXCL_STOP
     case ChordColumn::chord_interval_column:
       return "Interval";
     case ChordColumn::chord_beats_column:
@@ -77,10 +74,8 @@ auto Chord::is_column_editable(int column_number) -> bool {
 
 auto Chord::get_data(const int column_number) const -> QVariant {
   switch (static_cast<ChordColumn>(column_number)) {
-    // GCOVR_EXCL_START
     case ChordColumn::number_of_chord_columns:
       Q_UNREACHABLE();
-    // GCOVR_EXCL_STOP
     case ChordColumn::chord_interval_column:
       return QVariant::fromValue(interval);
     case ChordColumn::chord_beats_column:
@@ -101,10 +96,8 @@ auto Chord::get_data(const int column_number) const -> QVariant {
 
 void Chord::set_data(const int column_number, const QVariant& new_value) {
   switch (static_cast<ChordColumn>(column_number)) {
-    // GCOVR_EXCL_START
     case ChordColumn::number_of_chord_columns:
       Q_UNREACHABLE();
-    // GCOVR_EXCL_STOP
     case ChordColumn::chord_interval_column:
       interval = variant_to<Interval>(new_value);
       break;
@@ -120,22 +113,18 @@ void Chord::set_data(const int column_number, const QVariant& new_value) {
     case ChordColumn::chord_words_column:
       words = variant_to<QString>(new_value);
       break;
-    // GCOVR_EXCL_START
     case ChordColumn::chord_pitched_notes_column:
     case ChordColumn::chord_unpitched_notes_column:
       // not editable; see is_column_editable
       Q_UNREACHABLE();
-      // GCOVR_EXCL_STOP
   }
 }
 
 void Chord::copy_column_from(const Chord& template_row,
                              const int column_number) {
   switch (static_cast<ChordColumn>(column_number)) {
-    // GCOVR_EXCL_START
     case ChordColumn::number_of_chord_columns:
       Q_UNREACHABLE();
-    // GCOVR_EXCL_STOP
     case ChordColumn::chord_interval_column:
       interval = template_row.interval;
       break;
@@ -162,10 +151,8 @@ void Chord::copy_column_from(const Chord& template_row,
 
 void Chord::column_to_xml(xmlNode& chord_node, const int column_number) const {
   switch (static_cast<ChordColumn>(column_number)) {
-    // GCOVR_EXCL_START
     case ChordColumn::number_of_chord_columns:
       Q_UNREACHABLE();
-    // GCOVR_EXCL_STOP
     case ChordColumn::chord_pitched_notes_column:
       maybe_set_xml_rows(chord_node, "pitched_notes", pitched_notes);
       break;

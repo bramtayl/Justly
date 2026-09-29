@@ -54,10 +54,9 @@ void set_interval_from_xml(Interval& interval, xmlNode& node) {
     const auto name = get_xml_name(field_node);
     if (name == "ratio") {
       set_rational_from_xml(interval.ratio, field_node);
-    } else if (name == "octave") {
-      interval.octave = xml_to_int(field_node);
     } else {
-      Q_UNREACHABLE();
+      Q_ASSERT(name == "octave");
+      interval.octave = xml_to_int(field_node);
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }

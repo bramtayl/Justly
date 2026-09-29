@@ -152,13 +152,11 @@ PlayMenu::PlayMenu(SongWidget& song_widget)
                         number_of_chords - chord_number - 1);
             break;
           }
-          // GCOVR_EXCL_START
           case RowType::pitched_voice_type:
           case RowType::unpitched_voice_type:
             // play_to_end_action is disabled for voice rows; see
             // ReplaceTable.hpp's update_actions/get_is_voice
             Q_UNREACHABLE();
-            // GCOVR_EXCL_STOP
         }
       });
 

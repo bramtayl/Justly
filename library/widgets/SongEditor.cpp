@@ -313,12 +313,10 @@ SongEditor::SongEditor()
       [&piano_roll_widget_ref, &song_widget_ref]() -> auto {
         const auto& song = song_widget_ref.song;
         const auto selection = get_play_selection(song_widget_ref);
-        if (selection.row_type == RowType::pitched_voice_type ||
-            selection.row_type == RowType::unpitched_voice_type) {
-          // play_to_end_action is disabled for voice rows; see
-          // ReplaceTable.cpp's update_actions
-          Q_UNREACHABLE();
-        }
+        // play_to_end_action is disabled for voice rows; see
+        // ReplaceTable.cpp's update_actions
+        Q_ASSERT(selection.row_type != RowType::pitched_voice_type &&
+                 selection.row_type != RowType::unpitched_voice_type);
         const auto is_chord_selection =
             selection.row_type == RowType::chord_type;
         const auto first_chord_number = is_chord_selection

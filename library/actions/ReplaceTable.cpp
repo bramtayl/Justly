@@ -111,7 +111,7 @@ void update_actions(SongMenuBar& song_menu_bar, SongWidget& song_widget,
                    : static_cast<int>(
                          UnpitchedVoiceColumn::unpitched_voice_name_column)](
               const QItemSelectionRange& range) -> auto {
-            return range.left() <= name_column && name_column <= range.right();
+            return range.contains(range.top(), name_column, range.parent());
           });
   const auto can_copy_paste = anything_selected && !name_column_selected;
 
@@ -309,7 +309,8 @@ void replace_table(SongMenuBar& song_menu_bar, SongWidget& song_widget,
                                     QItemSelectionModel::Rows);
         switch_table.scrollTo(note_index);
       }
-    } else if (new_row_type == RowType::unpitched_note_type) {
+    } else {
+      Q_ASSERT(new_row_type == RowType::unpitched_note_type);
       auto& new_model = switch_table.unpitched_notes_model;
       stream << SongMenuBar::tr("Unpitched notes for chord ")
              << new_chord_number + 1;

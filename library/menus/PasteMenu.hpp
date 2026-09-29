@@ -61,7 +61,8 @@ template <RowInterface SubRow>
       left_column = xml_to_int(field_node);
     } else if (name == "right_column") {
       right_column = xml_to_int(field_node);
-    } else if (name == "rows") {
+    } else {
+      Q_ASSERT(name == "rows");
       auto counter = 1;
       auto* xml_row_pointer = xmlFirstElementChild(&field_node);
       while (xml_row_pointer != nullptr && counter <= max_rows) {
@@ -71,8 +72,6 @@ template <RowInterface SubRow>
         xml_row_pointer = xmlNextElementSibling(xml_row_pointer);
         counter++;
       }
-    } else {
-      Q_UNREACHABLE();
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }

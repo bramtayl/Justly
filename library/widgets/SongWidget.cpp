@@ -789,10 +789,9 @@ auto open_file(SongWidget& song_widget, const QString& filename) -> bool {
       chords_model.insert_xml_rows(0, field_node);
     } else if (name == "pitched_voices") {
       pitched_voices_model.insert_xml_rows(0, field_node);
-    } else if (name == "unpitched_voices") {
-      unpitched_voices_model.insert_xml_rows(0, field_node);
     } else {
-      Q_UNREACHABLE();
+      Q_ASSERT(name == "unpitched_voices");
+      unpitched_voices_model.insert_xml_rows(0, field_node);
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }
@@ -922,15 +921,17 @@ auto get_key_alterations(const int fifths) -> std::array<int, STEPS_PER_OCTAVE> 
   const auto number_of_accidentals = std::abs(static_cast<long long>(fifths));
   const auto direction = fifths > 0 ? 1 : -1;
   for (auto position = 0; position < STEPS_PER_OCTAVE; position = position + 1) {
-    const auto step_index =
-        fifths > 0 ? SHARP_ORDER.at(position)
-                   : SHARP_ORDER.at(STEPS_PER_OCTAVE - 1 - position);
+    const auto order_index =
+        fifths > 0 ? position : STEPS_PER_OCTAVE - 1 - position;
+    Q_ASSERT(order_index >= 0 && order_index < STEPS_PER_OCTAVE);
+    const auto step_index = SHARP_ORDER.at(order_index);
     // past seven accidentals, the cycle wraps around into double accidentals
     const auto times = number_of_accidentals > position
                            ? (number_of_accidentals - 1 - position) /
                                      STEPS_PER_OCTAVE +
                                  1
                            : 0;
+    Q_ASSERT(step_index >= 0 && step_index < STEPS_PER_OCTAVE);
     alterations.at(step_index) = direction * static_cast<int>(times);
   }
   return alterations;
@@ -1438,7 +1439,8 @@ auto import_musicxml(SongWidget& song_widget, const QString& filename) -> bool {
                 const auto tie_type = get_property(note_field, "type");
                 if (tie_type == "stop") {
                   tie_end = true;
-                } else if (tie_type == "start") {
+                } else {
+                  Q_ASSERT(tie_type == "start");
                   tie_start = true;
                 }
               } else if (name == "chord") {
@@ -1454,6 +1456,8 @@ auto import_musicxml(SongWidget& song_widget, const QString& filename) -> bool {
 
             const auto has_pitch = !step.empty();
             if (has_pitch) {
+              // the schema only allows steps A through G
+              Q_ASSERT(step_indices.contains(step));
               const auto step_index = step_indices[step];
               const auto spelling_key =
                   QString::fromStdString(staff + ":" + step) + ":" +
@@ -1577,7 +1581,8 @@ auto import_musicxml(SongWidget& song_widget, const QString& filename) -> bool {
                 const auto direction = get_property(child, "direction");
                 if (direction == "forward") {
                   measure_info.has_forward_repeat = true;
-                } else if (direction == "backward") {
+                } else {
+                  Q_ASSERT(direction == "backward");
                   measure_info.has_backward_repeat = true;
                   auto* const times_property =
                       xmlGetProp(&child, c_string_to_xml_string("times"));

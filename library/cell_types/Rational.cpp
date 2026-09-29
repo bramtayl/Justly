@@ -44,10 +44,9 @@ void set_rational_from_xml(Rational& rational, xmlNode& node) {
     const auto& name = get_xml_name(field_node);
     if (name == "numerator") {
       numerator = xml_to_int(field_node);
-    } else if (name == "denominator") {
-      denominator = xml_to_int(field_node);
     } else {
-      Q_UNREACHABLE();
+      Q_ASSERT(name == "denominator");
+      denominator = xml_to_int(field_node);
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }

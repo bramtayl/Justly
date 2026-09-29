@@ -93,14 +93,12 @@ void update_interval(QUndoStack& undo_stack, SwitchTable& switch_table,
           std::move(new_pitched_notes));
       break;
     }
-    // GCOVR_EXCL_START
     case RowType::unpitched_note_type:
     case RowType::pitched_voice_type:
     case RowType::unpitched_voice_type:
       // interval rows are disabled for these row types; see
       // ReplaceTable.hpp's update_actions/set_interval_rows_are_enabled
       Q_UNREACHABLE();
-      // GCOVR_EXCL_STOP
   }
   undo_stack.push(undo_command);
 }
