@@ -144,7 +144,6 @@ struct Tester : public QObject {
   static void test_xml_bytes_size_is_safe();
   static void test_string_to_maybe_int_data();
   static void test_string_to_maybe_int();
-  static void test_program_latin1_name();
   void test_get_share_file_existing() const;
   void test_import_musicxml_after_editing_chord_notes();
   void test_open_after_editing_chord_notes_resets_menu();

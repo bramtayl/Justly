@@ -477,9 +477,3 @@ void Tester::test_ratio_bound() {
 
   maybe_switch_back_to_chords(undo_stack, RowType::pitched_note_type);
 }
-
-// older soundfonts can store preset names in Latin-1, which isn't valid UTF-8
-void Tester::test_program_latin1_name() {
-  const Program program("Caf\xe9", 0, 0, 0);
-  QCOMPARE(program.name, QString("Café"));
-}

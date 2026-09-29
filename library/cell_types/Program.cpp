@@ -20,13 +20,13 @@ auto get_soundfont_id(FluidSynth& synth) -> int {
 Program::Program(const char* const name_input, const short bank_number_input,
                  const short preset_number_input,
                  const double release_milliseconds_input)
-    // sf2 preset names have no guaranteed encoding: modern soundfonts are
-    // UTF-8, but older ones sometimes use Latin-1, so fall back rather
-    // than mis-decode
+    // the bundled soundfont's preset names are all UTF-8. sf2 preset names
+    // have no guaranteed encoding, so if loading custom soundfonts is ever
+    // supported, show a QMessageBox::warning for invalid UTF-8 instead
     : name([&]() -> QString {
         const QByteArray bytes(name_input);
-        return bytes.isValidUtf8() ? QString::fromUtf8(bytes)
-                                   : QString::fromLatin1(bytes);
+        Q_ASSERT(bytes.isValidUtf8());
+        return QString::fromUtf8(bytes);
       }()),
       bank_number(bank_number_input),
       preset_number(preset_number_input),
