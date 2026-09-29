@@ -6,61 +6,22 @@ void Tester::test_voice_error_data() {
   QTest::addColumn<QString>("text");
   QTest::addColumn<QString>("error_message");
 
-  static const QString header =
-      "<song><gain>1</gain><starting_key>220</starting_key>"
-      "<starting_tempo>100</starting_tempo><starting_velocity>10</"
-      "starting_velocity>";
-  static const QString one_pitched_voice =
-      "<pitched_voices><pitched_voice><name>A</name>"
-      "<instrument>Marimba</instrument></pitched_voice></pitched_voices>";
-  static const QString one_unpitched_voice =
-      "<unpitched_voices><unpitched_voice><name>B</name>"
-      "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
-      "midi_number></unpitched_voice></unpitched_voices>";
-
   QTest::newRow("pitched voice number out of range")
-      << header + one_pitched_voice + one_unpitched_voice +
-             "<chords><chord><pitched_notes><pitched_note>"
-             "<voice_number>5</voice_number></pitched_note></"
-             "pitched_notes></chord></chords></song>"
+      << make_voice_song_xml({"A"}, {"B"}, {{{5}, {}}})
       << "Voice 5 for chord 1, pitched note 1 has no corresponding voice";
   QTest::newRow("unpitched voice number out of range")
-      << header + one_pitched_voice + one_unpitched_voice +
-             "<chords><chord><unpitched_notes><unpitched_note>"
-             "<voice_number>5</voice_number></unpitched_note></"
-             "unpitched_notes></chord></chords></song>"
+      << make_voice_song_xml({"A"}, {"B"}, {{{}, {5}}})
       << "Voice 5 for chord 1, unpitched note 1 has no corresponding voice";
   QTest::newRow("duplicate pitched voice name")
-      << header +
-             "<pitched_voices><pitched_voice><name>A</name>"
-             "<instrument>Marimba</instrument></pitched_voice>"
-             "<pitched_voice><name>A</name><instrument>Grand Piano</"
-             "instrument></pitched_voice></pitched_voices>" +
-             one_unpitched_voice + "</song>"
+      << make_voice_song_xml({"A", "A"}, {"B"})
       << "Duplicate voice name \"A\"!";
   QTest::newRow("duplicate unpitched voice name")
-      << header + one_pitched_voice +
-             "<unpitched_voices><unpitched_voice><name>B</name>"
-             "<percussion_set_pointer>Room</percussion_set_pointer>"
-             "<midi_number>36</midi_number></unpitched_voice>"
-             "<unpitched_voice><name>B</name><percussion_set_pointer>Power</"
-             "percussion_set_pointer><midi_number>37</midi_number></"
-             "unpitched_voice></unpitched_voices></song>"
+      << make_voice_song_xml({"A"}, {"B", "B"})
       << "Duplicate voice name \"B\"!";
   QTest::newRow("empty pitched voice name")
-      << header +
-             "<pitched_voices><pitched_voice><name></name>"
-             "<instrument>Marimba</instrument></pitched_voice></"
-             "pitched_voices>" +
-             one_unpitched_voice + "</song>"
-      << "Voice name is empty!";
+      << make_voice_song_xml({""}, {"B"}) << "Voice name is empty!";
   QTest::newRow("empty unpitched voice name")
-      << header + one_pitched_voice +
-             "<unpitched_voices><unpitched_voice><name></name>"
-             "<percussion_set_pointer>Room</percussion_set_pointer>"
-             "<midi_number>36</midi_number></unpitched_voice></"
-             "unpitched_voices></song>"
-      << "Voice name is empty!";
+      << make_voice_song_xml({"A"}, {""}) << "Voice name is empty!";
 }
 
 void Tester::test_voice_error() {
@@ -291,7 +252,8 @@ void Tester::test_remove_voice_leaves_clipboard() {
   auto& edit_menu = song_editor.song_menu_bar.edit_menu;
   const auto* const mime_type = PitchedNote::get_cells_mime();
 
-  open_text(song_editor, make_voice_song_xml({"A", "B"}, {"D"}, {{{0, 1}, {}}}));
+  open_text(song_editor,
+            make_voice_song_xml({"A", "B"}, {"D"}, {{{0, 1}, {}}}));
 
   if (clipboard_text.isEmpty()) {
     switch_to(song_editor, RowType::pitched_note_type, 0);
@@ -598,33 +560,53 @@ void Tester::test_voice_velocity_ratio_data() {
   QTest::addColumn<QString>("status");
 
   QTest::newRow("pitched voice velocity ratio")
-      << QString(
-             "<song><gain>1</gain><starting_key>220</starting_key>"
-             "<starting_tempo>100</starting_tempo><starting_velocity>10</"
-             "starting_velocity><pitched_voices><pitched_voice><name>A</"
-             "name><instrument>Marimba</instrument><velocity_ratio>"
-             "<numerator>2</numerator></velocity_ratio></pitched_voice></"
-             "pitched_voices><unpitched_voices><unpitched_voice><name>D</"
-             "name><percussion_set_pointer>Room</percussion_set_pointer>"
-             "<midi_number>36</midi_number></unpitched_voice></"
-             "unpitched_voices><chords><chord><pitched_notes>"
-             "<pitched_note><voice_number>0</voice_number></pitched_note>"
-             "</pitched_notes></chord></chords></song>")
+      << make_song_xml(R"(
+  <pitched_voices>
+    <pitched_voice>
+      <name>A</name>
+      <instrument>Marimba</instrument>
+      <velocity_ratio><numerator>2</numerator></velocity_ratio>
+    </pitched_voice>
+  </pitched_voices>
+  <unpitched_voices>
+    <unpitched_voice>
+      <name>D</name>
+      <percussion_set_pointer>Room</percussion_set_pointer>
+      <midi_number>36</midi_number>
+    </unpitched_voice>
+  </unpitched_voices>
+  <chords>
+    <chord>
+      <pitched_notes>
+        <pitched_note><voice_number>0</voice_number></pitched_note>
+      </pitched_notes>
+    </chord>
+  </chords>)")
       << RowType::pitched_note_type
       << "220 Hz ≈ A3; Velocity 20; 100 bpm; Start at 0 ms; Duration 600 ms";
   QTest::newRow("unpitched voice velocity ratio")
-      << QString(
-             "<song><gain>1</gain><starting_key>220</starting_key>"
-             "<starting_tempo>100</starting_tempo><starting_velocity>10</"
-             "starting_velocity><pitched_voices><pitched_voice><name>A</"
-             "name><instrument>Marimba</instrument></pitched_voice></"
-             "pitched_voices><unpitched_voices><unpitched_voice><name>D</"
-             "name><percussion_set_pointer>Room</percussion_set_pointer>"
-             "<midi_number>36</midi_number><velocity_ratio><numerator>2</"
-             "numerator></velocity_ratio></unpitched_voice></"
-             "unpitched_voices><chords><chord><unpitched_notes>"
-             "<unpitched_note><voice_number>0</voice_number>"
-             "</unpitched_note></unpitched_notes></chord></chords></song>")
+      << make_song_xml(R"(
+  <pitched_voices>
+    <pitched_voice>
+      <name>A</name>
+      <instrument>Marimba</instrument>
+    </pitched_voice>
+  </pitched_voices>
+  <unpitched_voices>
+    <unpitched_voice>
+      <name>D</name>
+      <percussion_set_pointer>Room</percussion_set_pointer>
+      <midi_number>36</midi_number>
+      <velocity_ratio><numerator>2</numerator></velocity_ratio>
+    </unpitched_voice>
+  </unpitched_voices>
+  <chords>
+    <chord>
+      <unpitched_notes>
+        <unpitched_note><voice_number>0</voice_number></unpitched_note>
+      </unpitched_notes>
+    </chord>
+  </chords>)")
       << RowType::unpitched_note_type
       << "Velocity 20; 100 bpm; Start at 0 ms; Duration 600 ms";
 }

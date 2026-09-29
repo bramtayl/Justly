@@ -327,26 +327,48 @@ namespace {
 auto make_export_song_xml(const int starting_velocity,
                           const QString& pitched_note_fields,
                           const QString& unpitched_note_fields) -> QString {
-  QString xml =
-      "<song><gain>1</gain><starting_key>220</starting_key>"
-      "<starting_tempo>100</starting_tempo><starting_velocity>" +
-      QString::number(starting_velocity) +
-      "</starting_velocity><pitched_voices><pitched_voice><name>A</name>"
-      "<instrument>Marimba</instrument></pitched_voice></pitched_voices>"
-      "<unpitched_voices><unpitched_voice><name>D</name>"
-      "<percussion_set_pointer>Room</percussion_set_pointer>"
-      "<midi_number>36</midi_number></unpitched_voice></unpitched_voices>"
-      "<chords><chord>";
+  QString body = R"(
+  <pitched_voices>
+    <pitched_voice>
+      <name>A</name>
+      <instrument>Marimba</instrument>
+    </pitched_voice>
+  </pitched_voices>
+  <unpitched_voices>
+    <unpitched_voice>
+      <name>D</name>
+      <percussion_set_pointer>Room</percussion_set_pointer>
+      <midi_number>36</midi_number>
+    </unpitched_voice>
+  </unpitched_voices>
+  <chords>
+    <chord>)";
   if (!pitched_note_fields.isEmpty()) {
-    xml += "<pitched_notes><pitched_note><voice_number>0</voice_number>" +
-           pitched_note_fields + "</pitched_note></pitched_notes>";
+    body += R"(
+      <pitched_notes>
+        <pitched_note>
+          <voice_number>0</voice_number>
+          )" +
+            pitched_note_fields +
+            R"(
+        </pitched_note>
+      </pitched_notes>)";
   }
   if (!unpitched_note_fields.isEmpty()) {
-    xml += "<unpitched_notes><unpitched_note><voice_number>0</voice_number>" +
-           unpitched_note_fields + "</unpitched_note></unpitched_notes>";
+    body += R"(
+      <unpitched_notes>
+        <unpitched_note>
+          <voice_number>0</voice_number>
+          )" +
+            unpitched_note_fields +
+            R"(
+        </unpitched_note>
+      </unpitched_notes>)";
   }
-  xml += "</chord></chords></song>";
-  return xml;
+  body += R"(
+    </chord>
+  </chords>)";
+  return make_song_xml(starting_velocity, body);
 }
 
 const QString PLAIN_WORDS = "<words>n</words>";
@@ -440,7 +462,8 @@ void Tester::test_export_midi_shared_percussion_set() {
   QVERIFY(temp_export_dir.isValid());
   const auto export_filename = temp_export_dir.filePath("export.mid");
 
-  open_text(song_editor, make_voice_song_xml({"A"}, {"D", "E"}, {{{}, {0, 1}}}));
+  open_text(song_editor,
+            make_voice_song_xml({"A"}, {"D", "E"}, {{{}, {0, 1}}}));
   export_midi_to_file(song_editor.song_widget, export_filename);
 
   QFile written_file(export_filename);

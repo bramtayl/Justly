@@ -7,8 +7,11 @@
 #include "widgets/CustomIntervalRow.hpp"
 #include "widgets/IntervalRow.hpp"
 #include "widgets/SpinBoxes.hpp"
+#include "widgets/SwitchTable.hpp"
 
-void Tester::test_flag_data() {
+static const auto OCTAVE_SHIFT_TIMES = 9;
+
+void Tester::test_editable_data() {
   add_table_columns();
   QTest::addColumn<int>("column_number");
   QTest::addColumn<bool>("is_editable");
@@ -31,7 +34,7 @@ void Tester::test_flag_data() {
       << RowType::unpitched_voice_type << -1 << 0 << true;
 }
 
-void Tester::test_flag() {
+void Tester::test_editable() {
   QFETCH(const RowType, row_type);
   QFETCH(const int, chord_number);
   QFETCH(const int, column_number);
@@ -296,32 +299,48 @@ void Tester::test_unreduced_ratio_from_xml_data() {
   QTest::addColumn<int>("column_number");
   QTest::addColumn<QString>("expected_text");
 
-  static const QString header =
-      "<song><gain>1</gain><starting_key>220</starting_key>"
-      "<starting_tempo>100</starting_tempo><starting_velocity>10</"
-      "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
-      "<instrument>Marimba</instrument></pitched_voice></pitched_voices>"
-      "<unpitched_voices><unpitched_voice><name>B</name>"
-      "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
-      "midi_number></unpitched_voice></unpitched_voices><chords><chord>";
-  static const QString footer = "</chord></chords></song>";
+  // a song with one chord holding the given fields
+  const auto make_chord_song_xml = [](const QString& chord_fields) -> QString {
+    return make_song_xml(R"(
+  <pitched_voices>
+    <pitched_voice>
+      <name>A</name>
+      <instrument>Marimba</instrument>
+    </pitched_voice>
+  </pitched_voices>
+  <unpitched_voices>
+    <unpitched_voice>
+      <name>B</name>
+      <percussion_set_pointer>Room</percussion_set_pointer>
+      <midi_number>36</midi_number>
+    </unpitched_voice>
+  </unpitched_voices>
+  <chords>
+    <chord>)" + chord_fields +
+                         R"(
+    </chord>
+  </chords>)");
+  };
 
   QTest::newRow("unreduced ratio folds to default")
-      << header +
-             "<velocity_ratio><numerator>2</numerator><denominator>2</"
-             "denominator></velocity_ratio>" +
-             footer
+      << make_chord_song_xml(R"(
+      <velocity_ratio>
+        <numerator>2</numerator>
+        <denominator>2</denominator>
+      </velocity_ratio>)")
       << static_cast<int>(ChordColumn::chord_velocity_ratio_column) << "";
   QTest::newRow("unreduced ratio folds by gcd")
-      << header +
-             "<velocity_ratio><numerator>4</numerator><denominator>6</"
-             "denominator></velocity_ratio>" +
-             footer
+      << make_chord_song_xml(R"(
+      <velocity_ratio>
+        <numerator>4</numerator>
+        <denominator>6</denominator>
+      </velocity_ratio>)")
       << static_cast<int>(ChordColumn::chord_velocity_ratio_column) << "2/3";
   QTest::newRow("unreduced interval ratio folds into octave")
-      << header +
-             "<interval><ratio><numerator>4</numerator></ratio></interval>" +
-             footer
+      << make_chord_song_xml(R"(
+      <interval>
+        <ratio><numerator>4</numerator></ratio>
+      </interval>)")
       << static_cast<int>(ChordColumn::chord_interval_column) << "o2";
 }
 

@@ -166,20 +166,32 @@ void Tester::test_play_velocity_error() {
   QFETCH(const bool, play_to_end);
   QFETCH(const QString, error_message);
 
-  static const QString song_text =
-      "<song><gain>1</gain><starting_key>220</starting_key>"
-      "<starting_tempo>100</starting_tempo><starting_velocity>100</"
-      "starting_velocity><pitched_voices><pitched_voice><name>A</name>"
-      "<instrument>Marimba</instrument><velocity_ratio><numerator>2</"
-      "numerator></velocity_ratio></pitched_voice></pitched_voices>"
-      "<unpitched_voices><unpitched_voice><name>D</name>"
-      "<percussion_set_pointer>Room</percussion_set_pointer>"
-      "<midi_number>36</midi_number><velocity_ratio><numerator>2</numerator>"
-      "</velocity_ratio></unpitched_voice></unpitched_voices><chords><chord>"
-      "<pitched_notes><pitched_note><voice_number>0</voice_number>"
-      "</pitched_note></pitched_notes><unpitched_notes><unpitched_note>"
-      "<voice_number>0</voice_number></unpitched_note></unpitched_notes>"
-      "</chord></chords></song>";
+  static const auto song_text = make_song_xml(100, R"(
+  <pitched_voices>
+    <pitched_voice>
+      <name>A</name>
+      <instrument>Marimba</instrument>
+      <velocity_ratio><numerator>2</numerator></velocity_ratio>
+    </pitched_voice>
+  </pitched_voices>
+  <unpitched_voices>
+    <unpitched_voice>
+      <name>D</name>
+      <percussion_set_pointer>Room</percussion_set_pointer>
+      <midi_number>36</midi_number>
+      <velocity_ratio><numerator>2</numerator></velocity_ratio>
+    </unpitched_voice>
+  </unpitched_voices>
+  <chords>
+    <chord>
+      <pitched_notes>
+        <pitched_note><voice_number>0</voice_number></pitched_note>
+      </pitched_notes>
+      <unpitched_notes>
+        <unpitched_note><voice_number>0</voice_number></unpitched_note>
+      </unpitched_notes>
+    </chord>
+  </chords>)");
 
   auto& song_widget = song_editor.song_widget;
   auto& switch_table = song_widget.switch_column.switch_table;

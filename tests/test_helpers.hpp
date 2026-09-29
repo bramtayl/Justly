@@ -24,7 +24,7 @@ static const auto MUSIC_XML_ROWS = 545;
 static const auto NEW_GAIN_1 = 2;
 static const auto NEW_GAIN_2 = 3;
 static const auto RATIO_SHIFT_TIMES = 6;
-static const auto OCTAVE_SHIFT_TIMES = 9;
+
 static const auto SELECT_AND_CLEAR =
     QItemSelectionModel::Select | QItemSelectionModel::Clear;
 static const auto STARTING_KEY_1 = 401.0;
@@ -117,6 +117,24 @@ inline void open_text(SongEditor& song_editor, const QString& song_text) {
                        song_editor.piano_roll_widget, temp_file.fileName());
 }
 
+// wraps the given voices and chords in a <song> with a fixed gain, key, and
+// tempo, so each fixture only spells out the parts its test cares about
+inline auto make_song_xml(const int starting_velocity, const QString& body)
+    -> QString {
+  return QString(R"(
+<song>
+  <gain>1</gain>
+  <starting_key>220</starting_key>
+  <starting_tempo>100</starting_tempo>
+  <starting_velocity>%1</starting_velocity>)")
+             .arg(starting_velocity) +
+         body + "\n</song>";
+}
+
+inline auto make_song_xml(const QString& body) -> QString {
+  return make_song_xml(10, body);
+}
+
 // builds a minimal <song> fixture with one pitched/unpitched voice per given
 // name and, optionally, one <chord> per entry in chord_voice_numbers whose
 // pitched/unpitched notes reference voices by number (first/second of the
@@ -128,53 +146,69 @@ inline auto make_voice_song_xml(
     const QList<QString>& unpitched_voice_names,
     const QList<std::pair<QList<int>, QList<int>>>& chord_voice_numbers = {})
     -> QString {
-  QString xml =
-      "<song><gain>1</gain><starting_key>220</starting_key>"
-      "<starting_tempo>100</starting_tempo><starting_velocity>10</"
-      "starting_velocity><pitched_voices>";
+  QString body = R"(
+  <pitched_voices>)";
   for (const auto& name : pitched_voice_names) {
-    xml += "<pitched_voice><name>" + name +
-           "</name><instrument>Marimba</instrument></pitched_voice>";
+    body += QString(R"(
+    <pitched_voice>
+      <name>%1</name>
+      <instrument>Marimba</instrument>
+    </pitched_voice>)")
+                .arg(name);
   }
-  xml += "</pitched_voices><unpitched_voices>";
+  body += R"(
+  </pitched_voices>
+  <unpitched_voices>)";
   auto midi_number = 36;
   for (const auto& name : unpitched_voice_names) {
-    xml += "<unpitched_voice><name>" + name +
-           "</name><percussion_set_pointer>Room</percussion_set_pointer>"
-           "<midi_number>" +
-           QString::number(midi_number) + "</midi_number></unpitched_voice>";
+    body += QString(R"(
+    <unpitched_voice>
+      <name>%1</name>
+      <percussion_set_pointer>Room</percussion_set_pointer>
+      <midi_number>%2</midi_number>
+    </unpitched_voice>)")
+                .arg(name)
+                .arg(midi_number);
     midi_number += 1;
   }
-  xml += "</unpitched_voices>";
+  body += R"(
+  </unpitched_voices>)";
   if (!chord_voice_numbers.isEmpty()) {
-    xml += "<chords>";
+    body += R"(
+  <chords>)";
     for (const auto& [pitched_numbers, unpitched_numbers] :
          chord_voice_numbers) {
-      xml += "<chord>";
+      body += R"(
+    <chord>)";
       if (!pitched_numbers.isEmpty()) {
-        xml += "<pitched_notes>";
+        body += R"(
+      <pitched_notes>)";
         for (const auto voice_number : pitched_numbers) {
-          xml += "<pitched_note><voice_number>" +
-                 QString::number(voice_number) +
-                 "</voice_number></pitched_note>";
+          body += QString(R"(
+        <pitched_note><voice_number>%1</voice_number></pitched_note>)")
+                      .arg(voice_number);
         }
-        xml += "</pitched_notes>";
+        body += R"(
+      </pitched_notes>)";
       }
       if (!unpitched_numbers.isEmpty()) {
-        xml += "<unpitched_notes>";
+        body += R"(
+      <unpitched_notes>)";
         for (const auto voice_number : unpitched_numbers) {
-          xml += "<unpitched_note><voice_number>" +
-                 QString::number(voice_number) +
-                 "</voice_number></unpitched_note>";
+          body += QString(R"(
+        <unpitched_note><voice_number>%1</voice_number></unpitched_note>)")
+                      .arg(voice_number);
         }
-        xml += "</unpitched_notes>";
+        body += R"(
+      </unpitched_notes>)";
       }
-      xml += "</chord>";
+      body += R"(
+    </chord>)";
     }
-    xml += "</chords>";
+    body += R"(
+  </chords>)";
   }
-  xml += "</song>";
-  return xml;
+  return make_song_xml(body);
 }
 
 [[nodiscard]] inline auto find_top_level_message_box() -> QMessageBox* {

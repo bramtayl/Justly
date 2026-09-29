@@ -155,17 +155,25 @@ void Tester::test_paste_error_data() {
       << UnpitchedNote::get_cells_mime() << "Invalid clipboard";
   // well-formed notes whose voice the song doesn't have
   QTest::newRow("pitched note missing voice")
-      << RowType::pitched_note_type << 1
-      << "<clipboard><left_column>0</left_column><right_column>0</"
-         "right_column><rows><pitched_note><voice_number>99</voice_number>"
-         "</pitched_note></rows></clipboard>"
+      << RowType::pitched_note_type << 1 << R"(
+<clipboard>
+  <left_column>0</left_column>
+  <right_column>0</right_column>
+  <rows>
+    <pitched_note><voice_number>99</voice_number></pitched_note>
+  </rows>
+</clipboard>)"
       << PitchedNote::get_cells_mime()
       << "Voice 99 for chord 2, pitched note 1 has no corresponding voice";
   QTest::newRow("unpitched note missing voice")
-      << RowType::unpitched_note_type << 1
-      << "<clipboard><left_column>0</left_column><right_column>0</"
-         "right_column><rows><unpitched_note><voice_number>99</voice_number>"
-         "</unpitched_note></rows></clipboard>"
+      << RowType::unpitched_note_type << 1 << R"(
+<clipboard>
+  <left_column>0</left_column>
+  <right_column>0</right_column>
+  <rows>
+    <unpitched_note><voice_number>99</voice_number></unpitched_note>
+  </rows>
+</clipboard>)"
       << UnpitchedNote::get_cells_mime()
       << "Voice 99 for chord 2, unpitched note 1 has no corresponding voice";
 }

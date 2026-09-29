@@ -307,18 +307,28 @@ namespace {
 // wraps one measure of the given <attributes> children and body elements in
 // a minimal single-part score
 auto make_musicxml(const QString& attributes, const QString& body) -> QString {
-  return "<score-partwise version=\"4.0\"><part-list><score-part id=\"P1\">"
-         "<part-name>P</part-name></score-part></part-list><part id=\"P1\">"
-         "<measure number=\"1\"><attributes>" +
-         attributes + "</attributes>" + body + "</measure></part></score-partwise>";
+  return QString(R"(
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1"><part-name>P</part-name></score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>%1</attributes>
+      %2
+    </measure>
+  </part>
+</score-partwise>)")
+      .arg(attributes, body);
 }
 
 auto make_pitch_note(const QString& accidental, const QString& duration)
     -> QString {
   return "<note><pitch><step>C</step><octave>4</octave></pitch><duration>" +
          duration + "</duration>" +
-         (accidental.isEmpty() ? QString()
-                               : "<accidental>" + accidental + "</accidental>") +
+         (accidental.isEmpty()
+              ? QString()
+              : "<accidental>" + accidental + "</accidental>") +
          "</note>";
 }
 
@@ -326,14 +336,15 @@ auto make_pitch_note(const QString& accidental, const QString& duration)
 // accidental, or on a given staff
 auto make_spelled_note(const QString& step, const QString& octave,
                        const QString& accidental = "",
-                       const QString& tie_type = "",
-                       const QString& staff = "") -> QString {
+                       const QString& tie_type = "", const QString& staff = "")
+    -> QString {
   return "<note><pitch><step>" + step + "</step><octave>" + octave +
          "</octave></pitch><duration>1</duration>" +
          (tie_type.isEmpty() ? QString()
-                             : "<tie type=\"" + tie_type + "\"/>") +
-         (accidental.isEmpty() ? QString()
-                               : "<accidental>" + accidental + "</accidental>") +
+                             : QString(R"(<tie type="%1"/>)").arg(tie_type)) +
+         (accidental.isEmpty()
+              ? QString()
+              : "<accidental>" + accidental + "</accidental>") +
          (staff.isEmpty() ? QString() : "<staff>" + staff + "</staff>") +
          "</note>";
 }
@@ -342,7 +353,9 @@ auto make_key(const QString& fifths) -> QString {
   return "<key><fifths>" + fifths + "</fifths></key>";
 }
 
-const QString NEXT_MEASURE = "</measure><measure number=\"2\">";
+const QString NEXT_MEASURE = R"(
+    </measure>
+    <measure number="2">)";
 
 const QString DIVISIONS = "<divisions>1</divisions>";
 // too big for a 32-bit int, but still valid for the schema's unbounded types
@@ -404,8 +417,10 @@ void Tester::test_musicxml_inline_error_data() {
       << "Duration is out of range";
   QTest::newRow("repeat times out of range")
       << DIVISIONS
-      << plain_note + "<barline><repeat direction=\"backward\" times=\"" +
-             HUGE_NUMBER + "\"/></barline>"
+      << plain_note +
+             QString(
+                 R"(<barline><repeat direction="backward" times="%1"/></barline>)")
+                 .arg(HUGE_NUMBER)
       << "Repeat times is out of range";
 }
 
@@ -431,10 +446,10 @@ void Tester::test_musicxml_repeat_times() {
   QTemporaryFile temp_file;
   QVERIFY(temp_file.open());
   temp_file.write(
-      make_musicxml(DIVISIONS,
-                    make_pitch_note("", "1") +
-                        "<barline><repeat direction=\"backward\" "
-                        "times=\"3\"/></barline>")
+      make_musicxml(
+          DIVISIONS,
+          make_pitch_note("", "1") +
+              R"(<barline><repeat direction="backward" times="3"/></barline>)")
           .toStdString()
           .c_str());
   temp_file.close();
@@ -455,22 +470,20 @@ void Tester::test_musicxml_repeat_times() {
 void Tester::test_musicxml_octave_change() {
   auto& song_widget = song_editor.song_widget;
 
-  auto import_first_note_octave = [this, &song_widget](
-                                      const QString& transpose,
-                                      int& octave) -> void {
+  auto import_first_note_octave = [this, &song_widget](const QString& transpose,
+                                                       int& octave) -> void {
     QTemporaryFile temp_file;
     QVERIFY(temp_file.open());
-    temp_file.write(
-        make_musicxml(DIVISIONS + "<transpose><chromatic>0</chromatic>" +
-                          transpose + "</transpose>",
-                      make_pitch_note("", "1"))
-            .toStdString()
-            .c_str());
+    temp_file.write(make_musicxml(DIVISIONS +
+                                      "<transpose><chromatic>0</chromatic>" +
+                                      transpose + "</transpose>",
+                                  make_pitch_note("", "1"))
+                        .toStdString()
+                        .c_str());
     temp_file.close();
-    import_musicxml_and_reload(song_editor.song_menu_bar,
-                               song_editor.song_widget,
-                               song_editor.piano_roll_widget,
-                               temp_file.fileName());
+    import_musicxml_and_reload(
+        song_editor.song_menu_bar, song_editor.song_widget,
+        song_editor.piano_roll_widget, temp_file.fileName());
     octave = song_widget.song.chords.at(0).pitched_notes.at(0).interval.octave;
   };
 
@@ -501,9 +514,8 @@ void Tester::test_musicxml_accidentals_data() {
   QTest::newRow("harmonic seventh")
       << c_major << make_spelled_note("B", "4", "flat-down")
       << Interval(Rational(7, 4));
-  QTest::newRow("el")
-      << c_major << make_spelled_note("B", "4", "flat-up")
-      << Interval(Rational(324, 175));
+  QTest::newRow("el") << c_major << make_spelled_note("B", "4", "flat-up")
+                      << Interval(Rational(324, 175));
   QTest::newRow("natural with 7")
       << c_major << make_spelled_note("B", "4", "natural-down")
       << Interval(Rational(175, 96));
@@ -522,11 +534,11 @@ void Tester::test_musicxml_accidentals_data() {
       << c_major << make_spelled_note("C", "4", "double-sharp-up")
       << Interval(Rational(81, 70));
   // <alter> is ignored in favor of the accidental
-  QTest::newRow("alter ignored")
-      << c_major
-      << "<note><pitch><step>B</step><alter>-1</alter><octave>4</octave>"
-         "</pitch><duration>1</duration></note>"
-      << Interval(Rational(15, 8));
+  QTest::newRow("alter ignored") << c_major << R"(
+      <note>
+        <pitch><step>B</step><alter>-1</alter><octave>4</octave></pitch>
+        <duration>1</duration>
+      </note>)" << Interval(Rational(15, 8));
   // F major: B is flat, and the key is F
   QTest::newRow("key signature flat")
       << DIVISIONS + make_key("-1") << make_spelled_note("B", "4")
@@ -615,17 +627,27 @@ void Tester::test_import_musicxml_voice_names_deduplicated() {
   for (auto part_number = 1; part_number <= part_names.size();
        part_number = part_number + 1) {
     const auto part_id = QString("P%1").arg(part_number);
-    part_list += "<score-part id=\"" + part_id + "\"><part-name>" +
-                 part_names.at(part_number - 1) + "</part-name></score-part>";
-    parts += "<part id=\"" + part_id +
-             "\"><measure number=\"1\"><attributes>" + DIVISIONS +
-             "</attributes>" + make_pitch_note("", "1") + "</measure></part>";
+    part_list += QString(R"(
+    <score-part id="%1"><part-name>%2</part-name></score-part>)")
+                     .arg(part_id, part_names.at(part_number - 1));
+    parts += QString(R"(
+  <part id="%1">
+    <measure number="1">
+      <attributes>%2</attributes>
+      %3
+    </measure>
+  </part>)")
+                 .arg(part_id, DIVISIONS, make_pitch_note("", "1"));
   }
 
   QTemporaryFile temp_file;
   QVERIFY(temp_file.open());
-  temp_file.write(("<score-partwise version=\"4.0\"><part-list>" + part_list +
-                   "</part-list>" + parts + "</score-partwise>")
+  temp_file.write(QString(R"(
+<score-partwise version="4.0">
+  <part-list>%1
+  </part-list>%2
+</score-partwise>)")
+                      .arg(part_list, parts)
                       .toStdString()
                       .c_str());
   temp_file.close();
@@ -650,27 +672,31 @@ void Tester::test_import_musicxml_voice_names_deduplicated() {
 // number (allowed by the schema for an ending of unknown type) marks no
 // passes, so its measure just plays once after the repeat
 void Tester::test_musicxml_endings() {
-  const auto note = make_pitch_note("", "1");
-  const auto body =
-      "<barline location=\"left\"><repeat direction=\"forward\"/></barline>" +
-      note + NEXT_MEASURE +
-      "<barline location=\"left\"><ending number=\"1, 1\" "
-      "type=\"start\"/></barline>" +
-      note +
-      "<barline location=\"right\"><ending number=\"1\" type=\"stop\"/>"
-      "<repeat direction=\"backward\"/></barline>"
-      "</measure><measure number=\"3\">"
-      "<barline location=\"left\"><ending number=\"2\" "
-      "type=\"start\"/></barline>" +
-      note +
-      "<barline location=\"right\"><ending number=\"2\" "
-      "type=\"discontinue\"/></barline>"
-      "</measure><measure number=\"4\">"
-      "<barline location=\"left\"><ending number=\" \" "
-      "type=\"start\"/></barline>" +
-      note +
-      "<barline location=\"right\"><ending number=\" \" "
-      "type=\"stop\"/></barline>";
+  // every %1 is the same plain note
+  const auto body = QString(R"(
+      <barline location="left"><repeat direction="forward"/></barline>
+      %1
+    </measure>
+    <measure number="2">
+      <barline location="left"><ending number="1, 1" type="start"/></barline>
+      %1
+      <barline location="right">
+        <ending number="1" type="stop"/>
+        <repeat direction="backward"/>
+      </barline>
+    </measure>
+    <measure number="3">
+      <barline location="left"><ending number="2" type="start"/></barline>
+      %1
+      <barline location="right">
+        <ending number="2" type="discontinue"/>
+      </barline>
+    </measure>
+    <measure number="4">
+      <barline location="left"><ending number=" " type="start"/></barline>
+      %1
+      <barline location="right"><ending number=" " type="stop"/></barline>)")
+                        .arg(make_pitch_note("", "1"));
 
   QTemporaryFile temp_file;
   QVERIFY(temp_file.open());
