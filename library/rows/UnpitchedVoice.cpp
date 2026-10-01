@@ -15,9 +15,7 @@ auto UnpitchedVoice::get_preview_midi_number() const -> short {
 void UnpitchedVoice::from_xml(
     xmlNode& node, const QList<PitchedVoice>& /*pitched_voices*/,
     const QList<UnpitchedVoice>& /*unpitched_voices*/) {
-  auto* field_pointer = xmlFirstElementChild(&node);
-  while (field_pointer != nullptr) {
-    auto& field_node = get_reference(field_pointer);
+  for (auto& field_node : get_xml_children(node)) {
     const auto field_name = get_xml_name(field_node);
     if (field_name == "name") {
       name = get_qstring_content(field_node);
@@ -29,7 +27,6 @@ void UnpitchedVoice::from_xml(
       Q_ASSERT(field_name == "velocity_ratio");
       set_rational_from_xml(velocity_ratio, field_node);
     }
-    field_pointer = xmlNextElementSibling(field_pointer);
   }
 }
 

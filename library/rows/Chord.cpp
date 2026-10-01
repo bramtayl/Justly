@@ -5,9 +5,7 @@
 
 void Chord::from_xml(xmlNode& node, const QList<PitchedVoice>& pitched_voices,
                      const QList<UnpitchedVoice>& unpitched_voices) {
-  auto* field_pointer = xmlFirstElementChild(&node);
-  while (field_pointer != nullptr) {
-    auto& field_node = get_reference(field_pointer);
+  for (auto& field_node : get_xml_children(node)) {
     const auto name = get_xml_name(field_node);
     if (name == "beats") {
       set_rational_from_xml(beats, field_node);
@@ -26,7 +24,6 @@ void Chord::from_xml(xmlNode& node, const QList<PitchedVoice>& pitched_voices,
       xml_to_rows(unpitched_notes, field_node, pitched_voices,
                   unpitched_voices);
     }
-    field_pointer = xmlNextElementSibling(field_pointer);
   }
 }
 

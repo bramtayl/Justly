@@ -1,6 +1,7 @@
 #include "cell_types/Interval.hpp"
 
 #include "other/helpers.hpp"
+#include "xml/XMLChildren.hpp"
 
 Interval::Interval(Rational ratio_input, const int octave_input)
     : ratio(ratio_input), octave(octave_input) {
@@ -52,9 +53,7 @@ auto interval_to_double(const Interval& interval) -> double {
 }
 
 void set_interval_from_xml(Interval& interval, xmlNode& node) {
-  auto* field_pointer = xmlFirstElementChild(&node);
-  while (field_pointer != nullptr) {
-    auto& field_node = get_reference(field_pointer);
+  for (auto& field_node : get_xml_children(node)) {
     const auto name = get_xml_name(field_node);
     if (name == "ratio") {
       set_rational_from_xml(interval.ratio, field_node);
@@ -62,7 +61,6 @@ void set_interval_from_xml(Interval& interval, xmlNode& node) {
       Q_ASSERT(name == "octave");
       interval.octave = xml_to_int(field_node);
     }
-    field_pointer = xmlNextElementSibling(field_pointer);
   }
   // route through the normalizing constructor so an XML ratio with even
   // numerator/denominator factors folds into octave, matching the canonical

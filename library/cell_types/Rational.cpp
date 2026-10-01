@@ -1,6 +1,7 @@
 #include "cell_types/Rational.hpp"
 
 #include "other/helpers.hpp"
+#include "xml/XMLChildren.hpp"
 
 Rational::Rational(const int numerator_input, const int denominator_input) {
   Q_ASSERT(numerator_input != 0);
@@ -39,9 +40,7 @@ auto rational_is_default(const Rational& rational) -> bool {
 void set_rational_from_xml(Rational& rational, xmlNode& node) {
   auto numerator = rational.numerator;
   auto denominator = rational.denominator;
-  auto* field_pointer = xmlFirstElementChild(&node);
-  while (field_pointer != nullptr) {
-    auto& field_node = get_reference(field_pointer);
+  for (auto& field_node : get_xml_children(node)) {
     const auto& name = get_xml_name(field_node);
     if (name == "numerator") {
       numerator = xml_to_int(field_node);
@@ -49,7 +48,6 @@ void set_rational_from_xml(Rational& rational, xmlNode& node) {
       Q_ASSERT(name == "denominator");
       denominator = xml_to_int(field_node);
     }
-    field_pointer = xmlNextElementSibling(field_pointer);
   }
   // the schema only bounds numerator/denominator to [1, 999], not that
   // they're coprime, so route through the reducing constructor to match the

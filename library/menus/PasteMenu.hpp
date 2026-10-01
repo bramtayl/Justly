@@ -11,6 +11,7 @@
 #include "column_numbers/UnpitchedVoiceColumn.hpp"
 #include "other/Cells.hpp"
 #include "widgets/WindowBody.hpp"
+#include "xml/XMLChildren.hpp"
 #include "xml/XMLDocument.hpp"
 #include "xml/XMLValidator.hpp"
 
@@ -119,9 +120,7 @@ template <RowInterface SubRow>
   auto left_column = 0;
   auto right_column = 0;
 
-  auto* field_pointer = xmlFirstElementChild(&get_root(document));
-  while (field_pointer != nullptr) {
-    auto& field_node = get_reference(field_pointer);
+  for (auto& field_node : get_xml_children(get_root(document))) {
     const auto name = get_xml_name(field_node);
     if (name == "left_column") {
       left_column = xml_to_int(field_node);
@@ -129,18 +128,13 @@ template <RowInterface SubRow>
       right_column = xml_to_int(field_node);
     } else {
       Q_ASSERT(name == "rows");
-      auto counter = 1;
-      auto* xml_row_pointer = xmlFirstElementChild(&field_node);
-      while (xml_row_pointer != nullptr && counter <= max_rows) {
+      for (auto& xml_row :
+           get_xml_children(field_node) | std::views::take(max_rows)) {
         SubRow child_row;
-        child_row.from_xml(get_reference(xml_row_pointer), song.pitched_voices,
-                           song.unpitched_voices);
+        child_row.from_xml(xml_row, song.pitched_voices, song.unpitched_voices);
         new_rows.push_back(std::move(child_row));
-        xml_row_pointer = xmlNextElementSibling(xml_row_pointer);
-        counter++;
       }
     }
-    field_pointer = xmlNextElementSibling(field_pointer);
   }
   reassign_unknown_pasted_voices(parent, song, new_rows);
   return Cells(left_column, right_column, std::move(new_rows));

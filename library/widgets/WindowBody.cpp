@@ -17,6 +17,7 @@
 #include "widgets/SpinBoxes.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchTable.hpp"
+#include "xml/XMLChildren.hpp"
 #include "xml/XMLDocument.hpp"
 #include "xml/XMLValidator.hpp"
 #include "xml/ZipArchive.hpp"
@@ -426,13 +427,10 @@ auto open_file(WindowBody& window_body, const QString& filename) -> bool {
   QList<UnpitchedVoice> new_unpitched_voices;
   // notes refer to voices by name, so parse every voice before any chord
   xmlNode* chords_pointer = nullptr;
-  for (auto* field_pointer = xmlFirstElementChild(&song_node);
-       field_pointer != nullptr;
-       field_pointer = xmlNextElementSibling(field_pointer)) {
-    auto& field_node = get_reference(field_pointer);
+  for (auto& field_node : get_xml_children(song_node)) {
     const auto name = get_xml_name(field_node);
     if (name == "chords") {
-      chords_pointer = field_pointer;
+      chords_pointer = &field_node;
     } else if (name == "pitched_voices") {
       xml_to_rows(new_pitched_voices, field_node, new_pitched_voices,
                   new_unpitched_voices);
@@ -472,9 +470,7 @@ auto open_file(WindowBody& window_body, const QString& filename) -> bool {
   clear_rows(pitched_voices_model);
   clear_rows(unpitched_voices_model);
 
-  auto* field_pointer = xmlFirstElementChild(&song_node);
-  while (field_pointer != nullptr) {
-    auto& field_node = get_reference(field_pointer);
+  for (auto& field_node : get_xml_children(song_node)) {
     const auto name = get_xml_name(field_node);
     if (name == "gain") {
       spin_boxes.gain_editor.setValue(xml_to_double(field_node));
@@ -495,7 +491,6 @@ auto open_file(WindowBody& window_body, const QString& filename) -> bool {
       unpitched_voices_model.insert_xml_rows(0, field_node, new_pitched_voices,
                                              new_unpitched_voices);
     }
-    field_pointer = xmlNextElementSibling(field_pointer);
   }
 
   window_body.current_file = filename;
@@ -565,12 +560,10 @@ auto node_is(const xmlNode& node, const char* name) -> bool {
 }
 
 auto maybe_get_xml_child(xmlNode& node, const char* name) -> xmlNode* {
-  auto* child_pointer = xmlFirstElementChild(&node);
-  while (child_pointer != nullptr) {
-    if (node_is(get_reference(child_pointer), name)) {
-      return child_pointer;
+  for (auto& child : get_xml_children(node)) {
+    if (node_is(child, name)) {
+      return &child;
     }
-    child_pointer = xmlNextElementSibling(child_pointer);
   }
   return nullptr;
 }
@@ -913,20 +906,14 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
   QMap<QString, int> unpitched_voice_numbers;
   QList<QString> unpitched_voice_names;
 
-  auto* part_node_pointer = xmlFirstElementChild(&score_partwise);
-  while (part_node_pointer != nullptr) {
-    auto& part_node = get_reference(part_node_pointer);
+  for (auto& part_node : get_xml_children(score_partwise)) {
     const auto part_node_name = get_xml_name(part_node);
     if (part_node_name == "part-list") {
-      auto* score_part_pointer = xmlFirstElementChild(&part_node);
-      while (score_part_pointer != nullptr) {
-        auto& score_part = get_reference(score_part_pointer);
+      for (auto& score_part : get_xml_children(part_node)) {
         if (node_is(score_part, "score-part")) {
           PartInfo part_info;
           auto& instrument_map = part_info.instrument_map;
-          auto* field_pointer = xmlFirstElementChild(score_part_pointer);
-          while (field_pointer != nullptr) {
-            auto& field_node = get_reference(field_pointer);
+          for (auto& field_node : get_xml_children(score_part)) {
             const auto child_name = get_xml_name(field_node);
             if (child_name == "part-name") {
               part_info.part_name = get_qstring_content(field_node);
@@ -935,11 +922,9 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
                   get_qstring_content(
                       get_xml_child(field_node, "instrument-name"));
             }
-            field_pointer = xmlNextElementSibling(field_pointer);
           }
           part_info_dict[get_property(score_part, "id")] = std::move(part_info);
         }
-        score_part_pointer = xmlNextElementSibling(score_part_pointer);
       }
     } else if (part_node_name == "part") {
       const auto part_id = get_property(part_node, "id");
@@ -960,9 +945,7 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
       QList<MeasureRepeatInfo> measure_infos;
       QList<int> active_ending_numbers;
 
-      auto* measure_pointer = xmlFirstElementChild(&part_node);
-      while (measure_pointer != nullptr) {
-        auto& measure = get_reference(measure_pointer);
+      for (auto& measure : get_xml_children(part_node)) {
         part_measure_number_dict[current_time] = measure_number;
         MeasureRepeatInfo measure_info;
         measure_info.start_time = current_time;
@@ -970,16 +953,10 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
         // an accidental lasts until the end of its measure, for notes on the
         // same staff, step, and octave
         QMap<QString, Spelling> measure_spellings;
-        auto* measure_element_pointer = xmlFirstElementChild(&measure);
-        while (measure_element_pointer != nullptr) {
-          auto& measure_element = get_reference(measure_element_pointer);
+        for (auto& measure_element : get_xml_children(measure)) {
           const auto measure_element_name = get_xml_name(measure_element);
           if (measure_element_name == "attributes") {
-            auto* attribute_element_pointer =
-                xmlFirstElementChild(&measure_element);
-            while (attribute_element_pointer != nullptr) {
-              auto& attribute_element =
-                  get_reference(attribute_element_pointer);
+            for (auto& attribute_element : get_xml_children(measure_element)) {
               const auto attribute_name = get_xml_name(attribute_element);
               if (attribute_name == "key") {
                 const auto maybe_fifths = get_int_or_warn(
@@ -1030,11 +1007,8 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
                 }
                 const auto chromatic_semitones = maybe_chromatic.value();
                 auto octave_change_octaves = 0;
-                auto* transpose_field_pointer =
-                    xmlFirstElementChild(&attribute_element);
-                while (transpose_field_pointer != nullptr) {
-                  auto& transpose_field =
-                      get_reference(transpose_field_pointer);
+                for (auto& transpose_field :
+                     get_xml_children(attribute_element)) {
                   if (node_is(transpose_field, "octave-change")) {
                     const auto maybe_octave_change = get_int_or_warn(
                         window_body, transpose_field,
@@ -1045,15 +1019,11 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
                     }
                     octave_change_octaves = maybe_octave_change.value();
                   }
-                  transpose_field_pointer =
-                      xmlNextElementSibling(transpose_field_pointer);
                 }
                 current_transpose_semitones =
                     chromatic_semitones +
                     octave_change_octaves * HALFSTEPS_PER_OCTAVE;
               }
-              attribute_element_pointer =
-                  xmlNextElementSibling(attribute_element_pointer);
             }
           } else if (measure_element_name == "note") {
             auto note_duration = 0;
@@ -1102,10 +1072,7 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
                  {.chromatic = 2, .septimal_quartertones = 1}},
                 {"triple-sharp", {.chromatic = 3, .septimal_quartertones = 0}}};
 
-            auto* note_field_pointer =
-                xmlFirstElementChild(measure_element_pointer);
-            while ((note_field_pointer != nullptr)) {
-              auto& note_field = get_reference(note_field_pointer);
+            for (auto& note_field : get_xml_children(measure_element)) {
               const auto& name = get_xml_name(note_field);
               if (name == "pitch") {
                 // <alter> is ignored: it can't tell apart e.g. an F raised by
@@ -1160,7 +1127,6 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
                 instrument_id = get_property(note_field, "id");
                 instrument_name = part_info.instrument_map[instrument_id];
               }
-              note_field_pointer = xmlNextElementSibling(note_field_pointer);
             }
 
             const auto has_pitch = !step.empty();
@@ -1281,10 +1247,7 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
             // records forward/backward repeats and first/second-ending
             // brackets onto the current measure, so the raw per-part
             // timeline can be unrolled below
-            auto* barline_child_pointer =
-                xmlFirstElementChild(&measure_element);
-            while (barline_child_pointer != nullptr) {
-              auto& child = get_reference(barline_child_pointer);
+            for (auto& child : get_xml_children(measure_element)) {
               if (node_is(child, "repeat")) {
                 const auto direction = get_property(child, "direction");
                 if (direction == "forward") {
@@ -1335,17 +1298,12 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
                   active_ending_numbers.clear();
                 }
               }
-              barline_child_pointer =
-                  xmlNextElementSibling(barline_child_pointer);
             }
           }
-          measure_element_pointer =
-              xmlNextElementSibling(measure_element_pointer);
         }
         measure_info.end_time = current_time;
         measure_infos.push_back(std::move(measure_info));
         measure_number++;
-        measure_pointer = xmlNextElementSibling(&measure);
       }
       const auto expansion = compute_measure_expansion(measure_infos);
       part_info.part_chords_dict =
@@ -1357,7 +1315,6 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
       part_info.part_measure_number_dict =
           remap_by_expansion(part_info.part_measure_number_dict, expansion);
     }
-    part_node_pointer = xmlNextElementSibling(part_node_pointer);
   }
 
   QMap<int, MusicXMLChord> chords_dict;

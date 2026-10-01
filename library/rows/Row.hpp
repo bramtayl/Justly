@@ -1,6 +1,7 @@
 #pragma once
 
 #include "other/helpers.hpp"
+#include "xml/XMLChildren.hpp"
 
 struct PitchedVoice;
 struct UnpitchedVoice;
@@ -45,13 +46,10 @@ template <RowInterface SubRow>
 static void xml_to_rows(QList<SubRow>& new_rows, xmlNode& node,
                         const QList<PitchedVoice>& pitched_voices,
                         const QList<UnpitchedVoice>& unpitched_voices) {
-  auto* xml_row_pointer = xmlFirstElementChild(&node);
-  while (xml_row_pointer != nullptr) {
+  for (auto& xml_row : get_xml_children(node)) {
     SubRow child_row;
-    child_row.from_xml(get_reference(xml_row_pointer), pitched_voices,
-                       unpitched_voices);
+    child_row.from_xml(xml_row, pitched_voices, unpitched_voices);
     new_rows.push_back(std::move(child_row));
-    xml_row_pointer = xmlNextElementSibling(xml_row_pointer);
   }
 }
 
