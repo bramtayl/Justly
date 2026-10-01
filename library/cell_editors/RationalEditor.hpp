@@ -4,8 +4,6 @@
 
 #include "cell_types/Rational.hpp"
 
-class QBoxLayout;
-class QLabel;
 class QSpinBox;
 
 struct RationalEditor : QFrame {
@@ -14,9 +12,7 @@ struct RationalEditor : QFrame {
 
  public:
   QSpinBox& numerator_box;
-  QLabel& slash_text;
   QSpinBox& denominator_box;
-  QBoxLayout& row_layout;
 
   explicit RationalEditor(QWidget* parent_pointer);
 

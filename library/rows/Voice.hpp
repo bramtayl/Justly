@@ -48,6 +48,9 @@ template <VoiceInterface SubVoice>
                                     const int name_column_number,
                                     const int cell_column_number,
                                     const QVariant& new_value) -> bool {
+  if (name_column_number != cell_column_number) {
+    return true;
+  }
   const auto new_string = variant_to<QString>(new_value);
   if (new_string.isEmpty()) {
     QString message;
@@ -56,15 +59,12 @@ template <VoiceInterface SubVoice>
     QMessageBox::warning(&parent, QObject::tr("Voice name error"), message);
     return false;
   }
-  if (name_column_number == cell_column_number) {
-    const auto result_index = get_named_index(voices, new_string);
-    if (result_index != voices.cend()) {
-      QString message;
-      QTextStream stream(&message);
-      stream << "Voice \"" << new_string << QObject::tr("\" already exists!");
-      QMessageBox::warning(&parent, QObject::tr("Voice name error"), message);
-      return false;
-    }
+  if (get_named_index(voices, new_string) != voices.cend()) {
+    QString message;
+    QTextStream stream(&message);
+    stream << "Voice \"" << new_string << QObject::tr("\" already exists!");
+    QMessageBox::warning(&parent, QObject::tr("Voice name error"), message);
+    return false;
   }
   return true;
 }

@@ -98,8 +98,8 @@ void update_actions(SongMenuBar& song_menu_bar, WindowBody& window_body,
   song_menu_bar.play_menu.play_to_end_action.setEnabled(anything_selected &&
                                                         !is_voice);
 
-  // voice names must be typed, not copy/pasted, since every voice name must
-  // stay unique and non-empty
+  // voice names must be typed, not copy/pasted or deleted, since every voice
+  // name must stay unique and non-empty
   const auto name_column_selected =
       is_voice &&
       std::ranges::any_of(
@@ -122,10 +122,10 @@ void update_actions(SongMenuBar& song_menu_bar, WindowBody& window_body,
   // pasting after/into always inserts a brand new row built only from the
   // pasted column(s), so for voices it would create one with an empty
   // (invalid) name -- unlike paste_over, which only ever touches existing,
-  // already-named rows
+  // already-named rows, and rejects pasted names
   paste_menu.paste_after_action.setEnabled(can_copy_paste && !is_voice);
   paste_menu.paste_into_start_action.setEnabled(!is_voice);
-  edit_menu.delete_cells_action.setEnabled(anything_selected);
+  edit_menu.delete_cells_action.setEnabled(can_copy_paste);
   // removing every remaining voice row would leave no voice for a note to
   // reference, so disable rather than let RemoveVoiceRows warn and cancel;
   // selection.size() can transiently be 0 or >1 while a model change (e.g.

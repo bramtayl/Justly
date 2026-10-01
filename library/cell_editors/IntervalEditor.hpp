@@ -4,7 +4,6 @@
 
 #include "cell_types/Interval.hpp"
 
-class QBoxLayout;
 class QSpinBox;
 struct RationalEditor;
 
@@ -16,10 +15,7 @@ struct IntervalEditor : QFrame {
 
  public:
   RationalEditor& rational_editor;
-
-  QWidget& o_text;
   QSpinBox& octave_box;
-  QBoxLayout& row_layout;
 
   explicit IntervalEditor(QWidget* parent_pointer);
 

@@ -7,9 +7,7 @@
 RationalEditor::RationalEditor(QWidget* const parent_pointer)
     : QFrame(parent_pointer),
       numerator_box(*(new QSpinBox)),
-      slash_text(*(new QLabel("/"))),
-      denominator_box(*(new QSpinBox)),
-      row_layout(*(new QHBoxLayout(this))) {
+      denominator_box(*(new QSpinBox)) {
   setFrameStyle(QFrame::StyledPanel);
   setAutoFillBackground(true);
 
@@ -19,8 +17,11 @@ RationalEditor::RationalEditor(QWidget* const parent_pointer)
   denominator_box.setMinimum(1);
   denominator_box.setMaximum(MAX_DENOMINATOR);
 
+  auto& row_layout =  // NOLINT(cppcoreguidelines-owning-memory)
+      *(new QHBoxLayout(this));
   row_layout.addWidget(&numerator_box);
-  row_layout.addWidget(&slash_text);
+  row_layout.addWidget(
+      new QLabel("/"));  // NOLINT(cppcoreguidelines-owning-memory)
   row_layout.addWidget(&denominator_box);
   row_layout.setContentsMargins(1, 0, 1, 0);
 }

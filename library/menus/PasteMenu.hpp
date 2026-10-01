@@ -7,6 +7,8 @@
 #include "actions/InsertRemoveRows.hpp"
 #include "actions/OrphanedVoiceNumberLocation.hpp"
 #include "actions/SetCells.hpp"
+#include "column_numbers/PitchedVoiceColumn.hpp"
+#include "column_numbers/UnpitchedVoiceColumn.hpp"
 #include "other/Cells.hpp"
 #include "widgets/WindowBody.hpp"
 #include "xml/XMLDocument.hpp"
@@ -149,6 +151,15 @@ template <RowInterface SubRow>
       cells.right_column, false);
 }
 
+template <VoiceInterface SubVoice>
+[[nodiscard]] static auto get_voice_name_column() -> int {
+  if constexpr (std::same_as<SubVoice, PitchedVoice>) {
+    return static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column);
+  } else {
+    return static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column);
+  }
+}
+
 template <RowInterface SubRow>
 [[nodiscard]] static auto make_paste_cells_command(
     QWidget& parent, const int first_row_number, RowsModel<SubRow>& rows_model)
@@ -161,6 +172,16 @@ template <RowInterface SubRow>
     return nullptr;
   }
   auto& cells = maybe_cells.value();
+  // Justly never copies voice names, but another program could put them on
+  // the clipboard, and pasted names could be empty or duplicated
+  if constexpr (VoiceInterface<SubRow>) {
+    const auto name_column = get_voice_name_column<SubRow>();
+    if (cells.left_column <= name_column && name_column <= cells.right_column) {
+      QMessageBox::warning(&parent, QObject::tr("Paste error"),
+                           QObject::tr("Cannot paste voice names!"));
+      return nullptr;
+    }
+  }
   auto& copy_rows = cells.rows;
   return new SetCells(  // NOLINT(cppcoreguidelines-owning-memory)
       rows_model, first_row_number, static_cast<int>(copy_rows.size()),

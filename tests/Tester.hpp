@@ -173,6 +173,12 @@ struct Tester : public QObject {
   void test_paste_chord_voice_after_insert();
   static void test_paste_unknown_voice_data();
   void test_paste_unknown_voice();
+  static void test_voice_name_delete_disabled_data();
+  void test_voice_name_delete_disabled();
+  static void test_insert_voice_unique_name_data();
+  void test_insert_voice_unique_name();
+  static void test_paste_voice_name_rejected_data();
+  void test_paste_voice_name_rejected();
   static void test_play_data();
   void test_play();
   void test_play_to_end_starts_playhead();

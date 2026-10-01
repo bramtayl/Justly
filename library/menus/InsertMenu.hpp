@@ -24,10 +24,14 @@ template <VoiceInterface SubVoice, NoteInterface SubNote>
                                             const int row_number)
     -> QUndoCommand* {
   auto& created_voices = voices_model.created_voices;
-  created_voices = created_voices + 1;
+  const auto& voices = voices_model.get_rows();
   SubVoice sub_voice;
-  QTextStream stream(&sub_voice.name);
-  stream << SubVoice::get_pitched() << " voice " << created_voices;
+  // skip names already taken, e.g. by a voice loaded from a file
+  do {
+    created_voices = created_voices + 1;
+    sub_voice.name =
+        QString("%1 voice %2").arg(SubVoice::get_pitched()).arg(created_voices);
+  } while (get_named_index(voices, sub_voice.name) != voices.cend());
   return new InsertVoiceRow<  // NOLINT(cppcoreguidelines-owning-memory)
       SubVoice, SubNote>(voices_model, row_number, std::move(sub_voice));
 }

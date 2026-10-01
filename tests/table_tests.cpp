@@ -249,15 +249,10 @@ void Tester::test_cut() {
 
 void Tester::test_delete_data() {
   add_cells();
-  QTest::newRow("pitched voice name")
-      << RowType::pitched_voice_type << -1 << 0
-      << static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column);
+  // voice names can't be deleted; see test_voice_name_delete_disabled
   QTest::newRow("pitched voice instrument")
       << RowType::pitched_voice_type << -1 << 0
       << static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column);
-  QTest::newRow("unpitched voice name")
-      << RowType::unpitched_voice_type << -1 << 0
-      << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column);
   QTest::newRow("unpitched voice percussion set")
       << RowType::unpitched_voice_type << -1 << 0
       << static_cast<int>(

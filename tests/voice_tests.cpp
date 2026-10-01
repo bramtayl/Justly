@@ -714,6 +714,12 @@ void Tester::test_voice_velocity_ratio_cells() {
   edit_menu.paste_menu.paste_over_action.trigger();
   QCOMPARE(second_index.data(Qt::EditRole), new_ratio);
 
+  // the default ratio displays as an empty string, which isn't an empty
+  // voice name
+  const auto default_ratio = QVariant::fromValue(Rational());
+  QVERIFY(model.setData(second_index, default_ratio, Qt::EditRole));
+  QCOMPARE(second_index.data(Qt::EditRole), default_ratio);
+
   // restore the shared fixture
   open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
                        main_window.piano_roll_widget,
@@ -868,4 +874,126 @@ void Tester::test_paste_unknown_voice() {
   open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
                        main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
+}
+
+void Tester::test_voice_name_delete_disabled_data() {
+  QTest::addColumn<RowType>("row_type");
+  QTest::addColumn<int>("column_number");
+
+  QTest::newRow("pitched voice name")
+      << RowType::pitched_voice_type
+      << static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column);
+  QTest::newRow("unpitched voice name")
+      << RowType::unpitched_voice_type
+      << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column);
+}
+
+// deleting a voice name would leave it empty
+void Tester::test_voice_name_delete_disabled() {
+  QFETCH(const RowType, row_type);
+  QFETCH(const int, column_number);
+
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& delete_cells_action =
+      main_window.song_menu_bar.edit_menu.delete_cells_action;
+
+  switch_to(main_window, row_type, -1);
+  select_cell(switch_table, 0, 0);
+  QVERIFY(delete_cells_action.isEnabled());
+  select_cell(switch_table, 0, column_number);
+  QVERIFY(!delete_cells_action.isEnabled());
+
+  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
+}
+
+void Tester::test_insert_voice_unique_name_data() {
+  QTest::addColumn<bool>("is_pitched");
+
+  QTest::newRow("pitched voice") << true;
+  QTest::newRow("unpitched voice") << false;
+}
+
+// a new voice skips generated names that are already taken, e.g. by a voice
+// loaded from a file
+void Tester::test_insert_voice_unique_name() {
+  QFETCH(const bool, is_pitched);
+
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& song = window_body.song;
+  const auto row_type =
+      is_pitched ? RowType::pitched_voice_type : RowType::unpitched_voice_type;
+
+  open_text(main_window,
+            make_voice_song_xml({"pitched voice 1"}, {"unpitched voice 1"}));
+  // the counter otherwise depends on how many voices earlier tests inserted
+  switch_table.pitched_voices_model.created_voices = 0;
+  switch_table.unpitched_voices_model.created_voices = 0;
+
+  switch_to(main_window, row_type, -1);
+  select_cell(switch_table, 0, 0);
+  main_window.song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();
+
+  QCOMPARE(
+      is_pitched ? song.pitched_voices.at(1).name
+                 : song.unpitched_voices.at(1).name,
+      is_pitched ? QString("pitched voice 2") : QString("unpitched voice 2"));
+  main_window.song_menu_bar.view_menu.back_to_chords_action.trigger();
+
+  // restore the shared fixture
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}
+
+void Tester::test_paste_voice_name_rejected_data() {
+  QTest::addColumn<RowType>("row_type");
+  QTest::addColumn<QString>("copied");
+  QTest::addColumn<QString>("mime_type");
+
+  // Justly never copies voice names, but another program could
+  QTest::newRow("pitched voice")
+      << RowType::pitched_voice_type
+      << "<clipboard><left_column>0</left_column><right_column>2</"
+         "right_column><rows><pitched_voice><name>Z</name></pitched_voice>"
+         "</rows></clipboard>"
+      << PitchedVoice::get_cells_mime();
+  QTest::newRow("unpitched voice")
+      << RowType::unpitched_voice_type
+      << "<clipboard><left_column>0</left_column><right_column>3</"
+         "right_column><rows><unpitched_voice><name>Z</name>"
+         "<midi_number>36</midi_number></unpitched_voice></rows></clipboard>"
+      << UnpitchedVoice::get_cells_mime();
+}
+
+// pasting voice names could leave them empty or duplicated
+void Tester::test_paste_voice_name_rejected() {
+  QFETCH(const RowType, row_type);
+  QFETCH(const QString, copied);
+  QFETCH(const QString, mime_type);
+
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& song = window_body.song;
+
+  switch_to(main_window, row_type, -1);
+  const auto old_pitched_voices = get_names(song.pitched_voices);
+  const auto old_unpitched_voices = get_names(song.unpitched_voices);
+
+  auto& new_data =
+      get_reference(new QMimeData);  // NOLINT(cppcoreguidelines-owning-memory)
+  new_data.setData(mime_type, copied.toUtf8());
+  get_clipboard().setMimeData(&new_data);
+
+  select_cell(switch_table, 0, 0);
+  close_message_later(main_window, waiting_for_message,
+                      "Cannot paste voice names!");
+  main_window.song_menu_bar.edit_menu.paste_menu.paste_over_action.trigger();
+  QVERIFY(!waiting_for_message);
+
+  QCOMPARE(get_names(song.pitched_voices), old_pitched_voices);
+  QCOMPARE(get_names(song.unpitched_voices), old_unpitched_voices);
+
+  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
 }
