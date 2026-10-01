@@ -21,7 +21,6 @@ struct FileMenu : public QMenu {
   QAction save_as_action;
   QAction import_action;
   QAction export_action;
-  QAction export_midi_action;
 
   explicit FileMenu(WindowBody& window_body);
 };

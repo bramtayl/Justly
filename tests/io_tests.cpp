@@ -180,7 +180,6 @@ void Tester::test_file_dialog_reject_data() {
   QTest::newRow("open") << "&Open";
   QTest::newRow("import") << "&Import MusicXML";
   QTest::newRow("export") << "&Export recording";
-  QTest::newRow("export MIDI") << "Export &MIDI";
 }
 
 void Tester::test_file_dialog_reject() {

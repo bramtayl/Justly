@@ -190,8 +190,6 @@ void play_chords(WindowBody& window_body, int first_chord_number,
 
 void export_to_file(WindowBody& window_body, const QString& output_file);
 
-void export_midi_to_file(WindowBody& window_body, const QString& output_file);
-
 // recovery.xml's presence means the app didn't reach a clean shutdown last
 // time (see connect_recovery_timer and MainWindow::closeEvent); its content
 // mirrors save_as_file's format so it can be reloaded via open_file

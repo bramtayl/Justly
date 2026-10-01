@@ -234,7 +234,6 @@ In the "File" menu, you can choose among the following options:
 - "Save" to save the song in the previous location.
 - "Save As" to save the song in a new location.
 - "Export recording" to export a recording of the song as a wav file.
-- "Export MIDI" to export the song as a MIDI file.
 
 ### Edit Menu
 
@@ -301,7 +300,7 @@ In the play menu, you can choose among the following options:
 | Play to end | Shift+Space | Play |
 | Stop playing | Escape | Play |
 
-"Import MusicXML", "Export recording", "Export MIDI", Paste "Into start", "Pitched voices", "Unpitched voices", and "Piano roll" have no keyboard shortcut; use the menus above instead.
+"Import MusicXML", "Export recording", Paste "Into start", "Pitched voices", "Unpitched voices", and "Piano roll" have no keyboard shortcut; use the menus above instead.
 
 On macOS, Ctrl in the table above is usually Cmd; a few navigation shortcuts (Back to chords, Previous chord, Next chord) use different key combinations on macOS, shown in the menu itself.
 

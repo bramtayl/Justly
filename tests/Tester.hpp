@@ -64,15 +64,7 @@ struct Tester : public QObject {
   static void test_delete_data();
   void test_delete();
   void test_export();
-  void test_export_midi();
-  static void test_export_midi_error_data();
-  void test_export_midi_error();
-  void test_export_midi_success();
-  void test_export_midi_unwritable_path();
-  void test_export_midi_shared_percussion_set();
-  void test_export_midi_channel_exhausted();
   void test_export_via_dialog();
-  void test_export_midi_via_dialog();
   void test_export_unwritable_path();
   void test_export_write_error();
   void test_file_dialog_cleanup();
@@ -83,8 +75,6 @@ struct Tester : public QObject {
   void test_import_via_dialog();
   static void test_open_asks_to_discard_changes_data();
   void test_open_asks_to_discard_changes();
-  static void test_midi_append_variable_length_data();
-  static void test_midi_append_variable_length();
   static void test_editable_data();
   void test_editable();
   void test_frequency_bound_data();

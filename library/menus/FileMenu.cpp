@@ -33,8 +33,7 @@ FileMenu::FileMenu(WindowBody& window_body)
       open_action(FileMenu::tr("&Open")),
       save_as_action(FileMenu::tr("&Save As...")),
       import_action(FileMenu::tr("&Import MusicXML")),
-      export_action(FileMenu::tr("&Export recording")),
-      export_midi_action(FileMenu::tr("Export &MIDI")) {
+      export_action(FileMenu::tr("&Export recording")) {
   auto& save_action_ref = this->save_action;
   add_menu_action(*this, open_action, QKeySequence::Open);
   add_menu_action(*this, import_action, QKeySequence::UnknownKey, true);
@@ -42,7 +41,6 @@ FileMenu::FileMenu(WindowBody& window_body)
   add_menu_action(*this, save_action, QKeySequence::Save, false);
   add_menu_action(*this, save_as_action, QKeySequence::SaveAs);
   add_menu_action(*this, export_action);
-  add_menu_action(*this, export_midi_action);
 
   QObject::connect(
       &window_body.undo_stack, &QUndoStack::cleanChanged, this,
@@ -81,19 +79,6 @@ FileMenu::FileMenu(WindowBody& window_body)
         dialog.setLabelText(QFileDialog::Accept, "Export");
         if (dialog.exec() != 0) {
           export_to_file(window_body, get_selected_file(window_body, dialog));
-        }
-        dialog.deleteLater();
-      });
-
-  QObject::connect(
-      &export_midi_action, &QAction::triggered, this, [&window_body]() -> auto {
-        auto& dialog = make_file_dialog(
-            window_body, "Export MIDI — Justly", "MIDI file (*.mid)",
-            QFileDialog::AcceptSave, ".mid", QFileDialog::AnyFile);
-        dialog.setLabelText(QFileDialog::Accept, "Export");
-        if (dialog.exec() != 0) {
-          export_midi_to_file(window_body,
-                              get_selected_file(window_body, dialog));
         }
         dialog.deleteLater();
       });
