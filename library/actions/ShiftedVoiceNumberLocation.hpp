@@ -33,19 +33,19 @@ static void for_each_voice_note(QList<Chord>& chords, Function function) {
 // where that delta is known at both redo and undo, so there's no need to
 // separately store the old voice number
 template <VoiceInterface SubVoice>
-struct RenumberedVoiceNote {
+struct ShiftedVoiceNumberLocation {
   int chord_number;
   int note_number;
 };
 
 template <VoiceInterface SubVoice, NoteInterface SubNote>
-static void offset_voice_numbers(
+static void shift_voice_numbers(
     QList<Chord>& chords,
-    const QList<RenumberedVoiceNote<SubVoice>>& affected_notes,
+    const QList<ShiftedVoiceNumberLocation<SubVoice>>& shifted_locations,
     const int delta) {
-  for (const auto& affected_note : affected_notes) {
+  for (const auto& shifted_location : shifted_locations) {
     get_voice_notes<SubVoice, SubNote>(
-        chords[affected_note.chord_number])[affected_note.note_number]
+        chords[shifted_location.chord_number])[shifted_location.note_number]
         .voice_number += delta;
   }
 }

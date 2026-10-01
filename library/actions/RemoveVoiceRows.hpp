@@ -2,8 +2,8 @@
 
 #include <QtGui/QUndoStack>
 
-#include "actions/AffectedVoiceNote.hpp"
-#include "actions/RenumberedVoiceNote.hpp"
+#include "actions/OrphanedVoiceNumberLocation.hpp"
+#include "actions/ShiftedVoiceNumberLocation.hpp"
 
 template <VoiceInterface SubVoice>
 struct VoicesModel;
@@ -19,8 +19,8 @@ struct RemoveVoiceRows : public QUndoCommand {
   const int first_row_number;
   const QList<SubVoice> old_voice_rows;
   const int last_removed_row;
-  QList<RenumberedVoiceNote<SubVoice>> renumbered_notes;
-  QList<AffectedVoiceNote<SubVoice>> reassigned_notes;
+  QList<ShiftedVoiceNumberLocation<SubVoice>> shifted_locations;
+  QList<OrphanedVoiceNumberLocation<SubVoice>> orphaned_locations;
   const QString first_voice_name;
 
   RemoveVoiceRows(VoicesModel<SubVoice>& voices_model_input,
@@ -39,8 +39,8 @@ struct RemoveVoiceRows : public QUndoCommand {
                 .at(first_row_number == 0 ? last_removed_row + 1 : 0)
                 .name) {
     // walks every note once, sorting each one referencing a voice at or
-    // after first_row_number into renumbered_notes (voice after the removed
-    // range, just shifts down to follow it) or reassigned_notes (voice
+    // after first_row_number into shifted_locations (voice after the removed
+    // range, just shifts down to follow it) or orphaned_locations (voice
     // within the removed range, needs reassigning to the first remaining
     // voice)
     for_each_voice_note<SubVoice, SubNote>(
@@ -51,9 +51,9 @@ struct RemoveVoiceRows : public QUndoCommand {
             return;
           }
           if (voice_number > last_removed_row) {
-            renumbered_notes.push_back({chord_number, note_number});
+            shifted_locations.push_back({chord_number, note_number});
           } else {
-            reassigned_notes.push_back(
+            orphaned_locations.push_back(
                 {chord_number, note_number, voice_number});
           }
         });
@@ -63,12 +63,12 @@ struct RemoveVoiceRows : public QUndoCommand {
     voices_model.insert_rows(first_row_number, old_voice_rows, 0,
                              SubVoice::get_number_of_columns() - 1);
     auto& chords = voices_model.song.chords;
-    offset_voice_numbers<SubVoice, SubNote>(
-        chords, renumbered_notes, static_cast<int>(old_voice_rows.size()));
-    for (const auto& affected_note : reassigned_notes) {
+    shift_voice_numbers<SubVoice, SubNote>(
+        chords, shifted_locations, static_cast<int>(old_voice_rows.size()));
+    for (const auto& orphaned_location : orphaned_locations) {
       get_voice_notes<SubVoice, SubNote>(
-          chords[affected_note.chord_number])[affected_note.note_number]
-          .voice_number = affected_note.old_voice_number;
+          chords[orphaned_location.chord_number])[orphaned_location.note_number]
+          .voice_number = orphaned_location.old_voice_number;
     }
     renumber_clipboard_voice_numbers<SubNote>(
         first_row_number, static_cast<int>(old_voice_rows.size()),
@@ -84,19 +84,19 @@ struct RemoveVoiceRows : public QUndoCommand {
     // loop, and anything that repaints while it's up (e.g. the notes table)
     // must never see a note's voice_number pointing at a voice list that
     // hasn't been shrunk to match yet
-    offset_voice_numbers<SubVoice, SubNote>(chords, renumbered_notes,
-                                            -number_of_rows);
-    for (const auto& affected_note : reassigned_notes) {
+    shift_voice_numbers<SubVoice, SubNote>(chords, shifted_locations,
+                                           -number_of_rows);
+    for (const auto& orphaned_location : orphaned_locations) {
       get_voice_notes<SubVoice, SubNote>(
-          chords[affected_note.chord_number])[affected_note.note_number]
+          chords[orphaned_location.chord_number])[orphaned_location.note_number]
           .voice_number = 0;
     }
     voices_model.remove_rows(first_row_number, number_of_rows);
 
-    if (!reassigned_notes.empty()) {
-      warn_reassigned_voices<SubNote>(voices_model.parent,
-                                      static_cast<int>(reassigned_notes.size()),
-                                      first_voice_name);
+    if (!orphaned_locations.empty()) {
+      warn_reassigned_voices<SubNote>(
+          voices_model.parent, static_cast<int>(orphaned_locations.size()),
+          first_voice_name);
     }
 
     renumber_clipboard_voice_numbers<SubNote>(

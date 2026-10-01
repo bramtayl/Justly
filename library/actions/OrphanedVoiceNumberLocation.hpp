@@ -11,7 +11,7 @@
 // the original (e.g. reassigned to the first remaining voice), so the old
 // voice number must be stored to be restorable on undo
 template <VoiceInterface SubVoice>
-struct AffectedVoiceNote {
+struct OrphanedVoiceNumberLocation {
   int chord_number;
   int note_number;
   int old_voice_number;
