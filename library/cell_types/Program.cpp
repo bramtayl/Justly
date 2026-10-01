@@ -112,14 +112,6 @@ auto get_actual_release_milliseconds(FluidSynth& synth,
 
 auto get_some_programs(const bool is_pitched) -> const QList<Program>& {
   static const auto all_programs = []() -> QList<Program> {
-    static const auto GENERAL_BANK_NUMBER = 0;
-    static const auto GENERAL_EXPRESSIVE_BANK_NUMBER = 17;
-    static const auto EXTRA_BANK_NUMBER = 8;
-    static const auto EXTRA_EXPRESSIVE_BANK_NUMBER = 18;
-    static const auto MAX_PITCHED_BANK_NUMBER =
-        18;  // banks numbers above 18 are duplicates except for detuned saw,
-             // special cased below
-
     FluidSettings settings;
     // fluid_synth_stop() releases a voice but doesn't reclaim its slot until
     // the engine actually renders past its release tail -- this synth never
@@ -147,25 +139,18 @@ auto get_some_programs(const bool is_pitched) -> const QList<Program>& {
     auto* preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
 
     QList<Program> programs;
-    std::set<int> expressive_preset_numbers;
-    std::set<int> extra_expressive_preset_numbers;
     while (preset_pointer != nullptr) {
       const auto* const name = fluid_preset_get_name(preset_pointer);
       const auto bank_number =
           static_cast<short>(fluid_preset_get_banknum(preset_pointer));
       const auto preset_number =
           static_cast<short>(fluid_preset_get_num(preset_pointer));
-      if (bank_number == GENERAL_EXPRESSIVE_BANK_NUMBER) {
-        expressive_preset_numbers.insert(preset_number);
-      }
-      if (bank_number == EXTRA_EXPRESSIVE_BANK_NUMBER) {
-        extra_expressive_preset_numbers.insert(preset_number);
-      }
-      // detuned saw expr. is the only non-duplicate instrument on a bank above
-      // the max pitched bank number
-      if (bank_number <= MAX_PITCHED_BANK_NUMBER ||
-          bank_number == UNPITCHED_BANK_NUMBER ||
-          std::string(name) == "Detuned Saw Expr.") {
+      // "Expr." presets only differ from their plain siblings (same preset
+      // number, lower bank) in reading volume from the breath controller
+      // instead of velocity, to allow dynamics changes mid-note -- Justly
+      // never changes dynamics mid-note, so skip them. MS_Basic's readme
+      // marks every expressive preset with this suffix
+      if (!std::string_view(name).ends_with("Expr.")) {
         const auto release_milliseconds =
             is_pitched_bank_number(bank_number)
                 ? get_actual_release_milliseconds(synth, preset_pointer)
@@ -175,22 +160,6 @@ auto get_some_programs(const bool is_pitched) -> const QList<Program>& {
       }
       preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
     }
-
-    const auto non_expressive_indices = std::ranges::remove_if(
-        programs,
-        [&expressive_preset_numbers,
-         &extra_expressive_preset_numbers](const auto& program) -> auto {
-          const auto bank_number = program.bank_number;
-          const auto preset_number = program.preset_number;
-          return (bank_number == GENERAL_BANK_NUMBER &&
-                  expressive_preset_numbers.find(preset_number) !=
-                      expressive_preset_numbers.end()) ||
-                 (bank_number == EXTRA_BANK_NUMBER &&
-                  extra_expressive_preset_numbers.find(preset_number) !=
-                      extra_expressive_preset_numbers.end());
-        });
-    programs.erase(non_expressive_indices.begin(),
-                   non_expressive_indices.end());
 
     std::ranges::sort(
         programs,

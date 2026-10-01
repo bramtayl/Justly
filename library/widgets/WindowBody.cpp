@@ -23,7 +23,6 @@
 #include "xml/ZipArchive.hpp"
 
 namespace {
-const auto BREATH_ID = 2;
 const auto MIDI_PERCUSSION_CHANNEL = 9;
 }  // namespace
 
@@ -123,10 +122,6 @@ void play_note(Player& player, const int channel_number, const Program& program,
   fluid_event_program_select(event.internal_pointer, channel_number,
                              soundfont_id, program.bank_number,
                              program.preset_number);
-  send_event_at(sequencer, event, current_time);
-
-  fluid_event_control_change(event.internal_pointer, channel_number, BREATH_ID,
-                             velocity);
   send_event_at(sequencer, event, current_time);
 
   fluid_event_noteon(event.internal_pointer, channel_number, midi_number,
@@ -319,7 +314,6 @@ void export_midi_to_file(WindowBody& window_body, const QString& output_file) {
   static const auto MIDI_EXPORT_BANK_SELECT_TIE_BREAK = 1;
   static const auto MIDI_EXPORT_PROGRAM_CHANGE_TIE_BREAK = 2;
   static const auto MIDI_EXPORT_PITCH_BEND_TIE_BREAK = 3;
-  static const auto MIDI_EXPORT_BREATH_TIE_BREAK = 4;
   static const auto MIDI_BANK_SELECT_MSB_CONTROLLER = 0x00U;
   // GM2's standard bank-select value for the percussion bank -- distinct
   // from this soundfont's own internal SF2 bank number (128, which doesn't
@@ -431,11 +425,11 @@ void export_midi_to_file(WindowBody& window_body, const QString& output_file) {
 
       auto& track = tracks[1 + event.voice_number];
       // no bank-select here: program.bank_number is this soundfont's own
-      // private numbering (e.g. 17 for "Expr." variants), not a portable GM2
+      // private numbering (e.g. 40 for "Celli" variants), not a portable GM2
       // bank -- an unrecognized bank-select MSB is undefined behavior on
       // generic GM2 hardware, so the exported instrument intentionally falls
-      // back to the plain bank-0 sibling everywhere except when reopened with
-      // this exact soundfont
+      // back to the plain bank-0 sibling (the soundfont gives every variant
+      // its bank-0 sibling's preset number for exactly this fallback)
       track.push_back(MidiTrackEvent{
           .tick = start_tick,
           .tie_break = MIDI_EXPORT_PROGRAM_CHANGE_TIE_BREAK,
@@ -451,18 +445,6 @@ void export_midi_to_file(WindowBody& window_body, const QString& output_file) {
           .info = PitchBendEventInfo{
               .channel_number = static_cast<unsigned int>(channel_number),
               .bend_14_bit = bend_14_bit}});
-
-      // mirrors play_note's live-playback behavior: single note dynamics
-      // (see MS_Basic.sf3's "Expr." presets) read note volume from
-      // the breath controller, not note-on velocity, so both must carry the
-      // same value for expressive instruments to have correct dynamics
-      track.push_back(MidiTrackEvent{
-          .tick = start_tick,
-          .tie_break = MIDI_EXPORT_BREATH_TIE_BREAK,
-          .info = ControlChangeEventInfo{
-              .channel_number = static_cast<unsigned int>(channel_number),
-              .controller = BREATH_ID,
-              .value = static_cast<unsigned int>(velocity)}});
 
       emit_note_events(track, static_cast<unsigned int>(channel_number),
                        static_cast<unsigned int>(closest_midi),
