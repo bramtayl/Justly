@@ -190,12 +190,8 @@ void Tester::test_file_dialog_cleanup() {
   QTRY_VERIFY(dialog_pointer.isNull());
 }
 
-// MidiTrackEvent.hpp's byte-encoding helpers are only reachable through
-// export_midi_to_file's happy path, which every export test above avoids
-// -- the fixture's chord 2 always hits the percussion-channel conflict
-// and returns before any bytes are written. Exercise the encoding
-// directly instead of depending on fixture content that isn't meant to
-// support a conflict-free export.
+// test_export_midi_success only writes small values, so exercise the
+// multi-byte variable-length encoding directly
 void Tester::test_midi_append_variable_length_data() {
   QTest::addColumn<unsigned int>("value");
   QTest::addColumn<QByteArray>("expected_hex");
@@ -216,108 +212,6 @@ void Tester::test_midi_append_variable_length() {
   QByteArray bytes;
   append_variable_length(bytes, value);
   QCOMPARE(bytes, QByteArray::fromHex(expected_hex));
-}
-
-void Tester::test_midi_byte_encoding() {
-  QByteArray bytes;
-
-  append_meta_event(bytes, MIDI_TEMPO_META_TYPE, QByteArray::fromHex("07A120"));
-  QCOMPARE(bytes, QByteArray::fromHex("FF510307A120"));
-
-  bytes.clear();
-  append_track_name_meta(bytes, "Hi");
-  QCOMPARE(bytes, QByteArray::fromHex("FF0302") + QByteArray("Hi"));
-
-  bytes.clear();
-  append_control_change(bytes, 3, 7, 100);
-  QCOMPARE(bytes, QByteArray::fromHex("B30764"));
-
-  bytes.clear();
-  append_program_change(bytes, 2, 5);
-  QCOMPARE(bytes, QByteArray::fromHex("C205"));
-
-  bytes.clear();
-  append_note_on(bytes, 1, 60, 100);
-  QCOMPARE(bytes, QByteArray::fromHex("913C64"));
-
-  bytes.clear();
-  append_note_off(bytes, 1, 60);
-  QCOMPARE(bytes, QByteArray::fromHex("813C00"));
-
-  bytes.clear();
-  // 8192 is the centered (zero-bend) 14-bit value
-  append_pitch_bend(bytes, 0, 8192);
-  QCOMPARE(bytes, QByteArray::fromHex("E00040"));
-
-  bytes.clear();
-  append_be16(bytes, 300);
-  QCOMPARE(bytes, QByteArray::fromHex("012C"));
-
-  bytes.clear();
-  append_chunk(bytes, "MThd", QByteArray("XY"));
-  QCOMPARE(bytes, QByteArray("MThd") + QByteArray::fromHex("00000002") +
-                      QByteArray("XY"));
-}
-
-// exercises MidiTrackEvent::write's std::visit dispatch (and each
-// *EventInfo::write member) directly, rather than only through the
-// free encoding functions above
-void Tester::test_midi_track_event_write_dispatch() {
-  QByteArray bytes;
-
-  MidiTrackEvent{.tick = 0,
-                 .tie_break = 0,
-                 .info = TempoEventInfo{.microseconds_per_quarter = 500000}}
-      .write(bytes);
-  QCOMPARE(bytes, QByteArray::fromHex("FF510307A120"));
-
-  bytes.clear();
-  MidiTrackEvent{
-      .tick = 0, .tie_break = 0, .info = TrackNameEventInfo{.name = "Hi"}}
-      .write(bytes);
-  QCOMPARE(bytes, QByteArray::fromHex("FF0302") + QByteArray("Hi"));
-
-  bytes.clear();
-  MidiTrackEvent{
-      .tick = 0,
-      .tie_break = 0,
-      .info = ProgramChangeEventInfo{.channel_number = 2, .program_number = 5}}
-      .write(bytes);
-  QCOMPARE(bytes, QByteArray::fromHex("C205"));
-
-  bytes.clear();
-  MidiTrackEvent{
-      .tick = 0,
-      .tie_break = 0,
-      .info = PitchBendEventInfo{.channel_number = 0, .bend_14_bit = 8192}}
-      .write(bytes);
-  QCOMPARE(bytes, QByteArray::fromHex("E00040"));
-
-  bytes.clear();
-  MidiTrackEvent{.tick = 0,
-                 .tie_break = 0,
-                 .info =
-                     ControlChangeEventInfo{
-                         .channel_number = 3, .controller = 7, .value = 100}}
-      .write(bytes);
-  QCOMPARE(bytes, QByteArray::fromHex("B30764"));
-
-  bytes.clear();
-  MidiTrackEvent{.tick = 0,
-                 .tie_break = 0,
-                 .info = NoteOnEventInfo{.channel_number = 1,
-                                         .midi_number = 60,
-                                         .velocity = 100}}
-      .write(bytes);
-  QCOMPARE(bytes, QByteArray::fromHex("913C64"));
-
-  bytes.clear();
-  MidiTrackEvent{
-      .tick = 0,
-      .tie_break = 0,
-      .info = NoteOffEventInfo{.channel_number = 1, .midi_number = 60}}
-      .write(bytes);
-  QCOMPARE(bytes, QByteArray::fromHex("813C00"));
 }
 
 namespace {
@@ -423,15 +317,51 @@ void Tester::test_export_midi_success() {
   QVERIFY(temp_export_dir.isValid());
   const auto export_filename = temp_export_dir.filePath("export.mid");
 
+  // a 5/4 interval off the 220 Hz starting key lands between MIDI notes,
+  // so the pitched note needs a pitch bend
   open_text(main_window,
-            make_export_song_xml(10, get_plain_words(), get_plain_words()));
+            make_export_song_xml(
+                10,
+                "<interval><ratio><numerator>5</numerator><denominator>4"
+                "</denominator></ratio></interval>",
+                get_plain_words()));
   export_midi_to_file(main_window.window_body, export_filename);
 
   QFile written_file(export_filename);
   QVERIFY(written_file.open(QIODevice::ReadOnly));
-  QCOMPARE(written_file.read(4), QByteArray("MThd"));
-  // one tempo track plus one track per voice
-  QCOMPARE(QString::fromLatin1(written_file.readAll()).count("MTrk"), 3);
+  QCOMPARE(written_file.readAll(),
+           QByteArray::fromHex(
+               // header: format 1, 3 tracks, 500 ticks per quarter
+               "4D546864"
+               "00000006"
+               "0001"
+               "0003"
+               "01F4"
+               // tempo track
+               "4D54726B"
+               "0000000B"
+               "00FF510307A120"  // 500000 microseconds per quarter
+               "00FF2F00"        // end of track
+               // pitched voice track
+               "4D54726B"
+               "00000019"
+               "00FF030141"  // track name "A"
+               "00C00C"      // channel 0: Marimba
+               // 5/4 above 220 Hz is MIDI 60.86, so MIDI 61 bent down to
+               // (60.86 - 61 + 2) * 4096 = 7631
+               "00E04F3B"
+               "00903D0A"    // note on, velocity 10
+               "8458803D00"  // note off 600 ticks (1 beat at 100 bpm) later
+               "00FF2F00"
+               // unpitched voice track
+               "4D54726B"
+               "00000019"
+               "00FF030144"  // track name "D"
+               "00B90078"    // percussion channel 9: GM2 percussion bank
+               "00C908"      // Room
+               "0099240A"    // note on, MIDI 36, velocity 10
+               "8458892400"
+               "00FF2F00"));
 
   // restore the shared fixture
   open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
@@ -467,8 +397,7 @@ void Tester::test_export_midi_shared_percussion_set() {
   const auto export_filename = temp_export_dir.filePath("export.mid");
 
   open_text(main_window,
-            make_voice_song_xml({"A"}, {"D", "E"},
-                                          {{{}, {0, 1}}, {{}, {0}}}));
+            make_voice_song_xml({"A"}, {"D", "E"}, {{{}, {0, 1}}, {{}, {0}}}));
   export_midi_to_file(main_window.window_body, export_filename);
 
   QFile written_file(export_filename);

@@ -38,63 +38,32 @@ void append_variable_length(QByteArray& bytes, unsigned int value) {
   }
 }
 
-void append_meta_event(QByteArray& bytes, unsigned int type,
-                       const QByteArray& payload) {
+namespace {
+const auto MIDI_TEMPO_META_TYPE = 0x51U;
+
+void append_meta_header(QByteArray& bytes, unsigned int type,
+                        unsigned int length) {
   static const auto MIDI_META_EVENT_PREFIX = 0xFFU;
   bytes.append(static_cast<char>(MIDI_META_EVENT_PREFIX));
   bytes.append(static_cast<char>(type));
-  append_variable_length(bytes, static_cast<unsigned int>(payload.size()));
-  bytes.append(payload);
+  append_variable_length(bytes, length);
 }
 
-void append_track_name_meta(QByteArray& bytes, const QString& name) {
-  static const auto MIDI_TRACK_NAME_META_TYPE = 0x03U;
-  append_meta_event(bytes, MIDI_TRACK_NAME_META_TYPE, name.toUtf8());
+void append_status(QByteArray& bytes, unsigned int status,
+                   unsigned int channel_number) {
+  bytes.append(
+      static_cast<char>(status | (channel_number & MIDI_CHANNEL_MASK)));
 }
 
-void append_control_change(QByteArray& bytes, unsigned int channel_number,
-                           unsigned int controller, unsigned int value) {
-  static const auto MIDI_CONTROL_CHANGE_STATUS = 0xB0U;
-  bytes.append(static_cast<char>(MIDI_CONTROL_CHANGE_STATUS |
-                                 (channel_number & MIDI_CHANNEL_MASK)));
-  bytes.append(static_cast<char>(controller & MIDI_DATA_BYTE_MASK));
+void append_data_byte(QByteArray& bytes, unsigned int value) {
   bytes.append(static_cast<char>(value & MIDI_DATA_BYTE_MASK));
 }
+}  // namespace
 
-void append_program_change(QByteArray& bytes, unsigned int channel_number,
-                           unsigned int program_number) {
-  static const auto MIDI_PROGRAM_CHANGE_STATUS = 0xC0U;
-  bytes.append(static_cast<char>(MIDI_PROGRAM_CHANGE_STATUS |
-                                 (channel_number & MIDI_CHANNEL_MASK)));
-  bytes.append(static_cast<char>(program_number & MIDI_DATA_BYTE_MASK));
-}
-
-void append_note_on(QByteArray& bytes, unsigned int channel_number,
-                    unsigned int midi_number, unsigned int velocity) {
-  static const auto MIDI_NOTE_ON_STATUS = 0x90U;
-  bytes.append(static_cast<char>(MIDI_NOTE_ON_STATUS |
-                                 (channel_number & MIDI_CHANNEL_MASK)));
-  bytes.append(static_cast<char>(midi_number & MIDI_DATA_BYTE_MASK));
-  bytes.append(static_cast<char>(velocity & MIDI_DATA_BYTE_MASK));
-}
-
-void append_note_off(QByteArray& bytes, unsigned int channel_number,
-                     unsigned int midi_number) {
-  static const auto MIDI_NOTE_OFF_STATUS = 0x80U;
-  bytes.append(static_cast<char>(MIDI_NOTE_OFF_STATUS |
-                                 (channel_number & MIDI_CHANNEL_MASK)));
-  bytes.append(static_cast<char>(midi_number & MIDI_DATA_BYTE_MASK));
-  bytes.append(static_cast<char>(0));
-}
-
-void append_pitch_bend(QByteArray& bytes, unsigned int channel_number,
-                       unsigned int bend_14_bit) {
-  static const auto MIDI_PITCH_BEND_STATUS = 0xE0U;
-  bytes.append(static_cast<char>(MIDI_PITCH_BEND_STATUS |
-                                 (channel_number & MIDI_CHANNEL_MASK)));
-  bytes.append(static_cast<char>(bend_14_bit & MIDI_DATA_BYTE_MASK));
-  bytes.append(static_cast<char>((bend_14_bit >> MIDI_SEPTET_BITS) &
-                                 MIDI_DATA_BYTE_MASK));
+void append_meta_event(QByteArray& bytes, unsigned int type,
+                       const QByteArray& payload) {
+  append_meta_header(bytes, type, static_cast<unsigned int>(payload.size()));
+  bytes.append(payload);
 }
 
 void append_be16(QByteArray& bytes, unsigned int value) {
@@ -119,37 +88,54 @@ void append_chunk(QByteArray& output, const char* const chunk_id,
 }
 
 void TempoEventInfo::write(QByteArray& track_data) const {
-  QByteArray payload;
-  payload.append(static_cast<char>(
+  static const auto MIDI_TEMPO_PAYLOAD_LENGTH = 3U;
+  append_meta_header(track_data, MIDI_TEMPO_META_TYPE,
+                     MIDI_TEMPO_PAYLOAD_LENGTH);
+  track_data.append(static_cast<char>(
       (microseconds_per_quarter >> (2 * MIDI_BITS_PER_BYTE)) & MIDI_BYTE_MASK));
-  payload.append(static_cast<char>(
+  track_data.append(static_cast<char>(
       (microseconds_per_quarter >> MIDI_BITS_PER_BYTE) & MIDI_BYTE_MASK));
-  payload.append(static_cast<char>(microseconds_per_quarter & MIDI_BYTE_MASK));
-  append_meta_event(track_data, MIDI_TEMPO_META_TYPE, payload);
+  track_data.append(
+      static_cast<char>(microseconds_per_quarter & MIDI_BYTE_MASK));
 }
 
 void TrackNameEventInfo::write(QByteArray& track_data) const {
-  append_track_name_meta(track_data, name);
+  static const auto MIDI_TRACK_NAME_META_TYPE = 0x03U;
+  append_meta_event(track_data, MIDI_TRACK_NAME_META_TYPE, name.toUtf8());
 }
 
 void ProgramChangeEventInfo::write(QByteArray& track_data) const {
-  append_program_change(track_data, channel_number, program_number);
+  static const auto MIDI_PROGRAM_CHANGE_STATUS = 0xC0U;
+  append_status(track_data, MIDI_PROGRAM_CHANGE_STATUS, channel_number);
+  append_data_byte(track_data, program_number);
 }
 
 void PitchBendEventInfo::write(QByteArray& track_data) const {
-  append_pitch_bend(track_data, channel_number, bend_14_bit);
+  static const auto MIDI_PITCH_BEND_STATUS = 0xE0U;
+  append_status(track_data, MIDI_PITCH_BEND_STATUS, channel_number);
+  append_data_byte(track_data, bend_14_bit);
+  append_data_byte(track_data, bend_14_bit >> MIDI_SEPTET_BITS);
 }
 
 void ControlChangeEventInfo::write(QByteArray& track_data) const {
-  append_control_change(track_data, channel_number, controller, value);
+  static const auto MIDI_CONTROL_CHANGE_STATUS = 0xB0U;
+  append_status(track_data, MIDI_CONTROL_CHANGE_STATUS, channel_number);
+  append_data_byte(track_data, controller);
+  append_data_byte(track_data, value);
 }
 
 void NoteOnEventInfo::write(QByteArray& track_data) const {
-  append_note_on(track_data, channel_number, midi_number, velocity);
+  static const auto MIDI_NOTE_ON_STATUS = 0x90U;
+  append_status(track_data, MIDI_NOTE_ON_STATUS, channel_number);
+  append_data_byte(track_data, midi_number);
+  append_data_byte(track_data, velocity);
 }
 
 void NoteOffEventInfo::write(QByteArray& track_data) const {
-  append_note_off(track_data, channel_number, midi_number);
+  static const auto MIDI_NOTE_OFF_STATUS = 0x80U;
+  append_status(track_data, MIDI_NOTE_OFF_STATUS, channel_number);
+  append_data_byte(track_data, midi_number);
+  append_data_byte(track_data, 0);
 }
 
 void MidiTrackEvent::write(QByteArray& track_data) const {

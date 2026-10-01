@@ -2,29 +2,10 @@
 
 #include <QtCore/QString>
 
-static const auto MIDI_TEMPO_META_TYPE = 0x51U;
-
 void append_variable_length(QByteArray& bytes, unsigned int value);
 
 void append_meta_event(QByteArray& bytes, unsigned int type,
                        const QByteArray& payload);
-
-void append_track_name_meta(QByteArray& bytes, const QString& name);
-
-void append_control_change(QByteArray& bytes, unsigned int channel_number,
-                           unsigned int controller, unsigned int value);
-
-void append_program_change(QByteArray& bytes, unsigned int channel_number,
-                           unsigned int program_number);
-
-void append_note_on(QByteArray& bytes, unsigned int channel_number,
-                    unsigned int midi_number, unsigned int velocity);
-
-void append_note_off(QByteArray& bytes, unsigned int channel_number,
-                     unsigned int midi_number);
-
-void append_pitch_bend(QByteArray& bytes, unsigned int channel_number,
-                       unsigned int bend_14_bit);
 
 void append_be16(QByteArray& bytes, unsigned int value);
 

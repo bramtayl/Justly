@@ -85,8 +85,6 @@ struct Tester : public QObject {
   void test_open_asks_to_discard_changes();
   static void test_midi_append_variable_length_data();
   static void test_midi_append_variable_length();
-  static void test_midi_byte_encoding();
-  static void test_midi_track_event_write_dispatch();
   static void test_editable_data();
   void test_editable();
   void test_frequency_bound_data();
