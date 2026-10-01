@@ -1,7 +1,10 @@
+#include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QLabel>
 
 #include "Tester.hpp"
-#include "musicxml/MeasureRepeatInfo.hpp"
+#include "musicxml/MusicXMLPart.hpp"
+#include "widgets/ControlsColumn.hpp"
+#include "widgets/SpinBoxes.hpp"
 
 void Tester::test_musicxml_data() {
   QTest::addColumn<QString>("file_name");
@@ -85,45 +88,19 @@ void Tester::test_musicxml_error() {
 // already-consumed repeated section gets incorrectly replayed again, and
 // the plain measures between the two sections get silently dropped
 // instead of flushed
-void Tester::test_compute_measure_expansion_lone_backward_repeat() {
-  QList<MeasureRepeatInfo> measure_infos;
-
-  MeasureRepeatInfo measure_0;
-  measure_0.start_time = 0;
-  measure_0.end_time = 10;
-  measure_0.has_forward_repeat = true;
-  measure_infos.push_back(measure_0);
-
-  MeasureRepeatInfo measure_1;
-  measure_1.start_time = 10;
-  measure_1.end_time = 20;
-  measure_1.has_backward_repeat = true;
-  measure_infos.push_back(measure_1);
-
-  MeasureRepeatInfo measure_2;
-  measure_2.start_time = 20;
-  measure_2.end_time = 30;
-  measure_infos.push_back(measure_2);
-
-  MeasureRepeatInfo measure_3;
-  measure_3.start_time = 30;
-  measure_3.end_time = 40;
-  measure_infos.push_back(measure_3);
-
+void Tester::test_playback_order_lone_backward_repeat() {
+  QList<MusicXMLMeasure> measures(5);
+  measures[0].has_forward_repeat = true;
+  measures[1].has_backward_repeat = true;
   // a lone backward repeat: no forward repeat since measure 2
-  MeasureRepeatInfo measure_4;
-  measure_4.start_time = 40;
-  measure_4.end_time = 50;
-  measure_4.has_backward_repeat = true;
-  measure_infos.push_back(measure_4);
+  measures[4].has_backward_repeat = true;
 
-  const QList<std::pair<int, int>> expected_expansion = {
-      {0, 10},  {10, 20}, {0, 10},  {10, 20},  // measures 0-1, twice
-      {20, 30}, {30, 40}, {40, 50},            // measures 2-4, ...
-      {20, 30}, {30, 40}, {40, 50},            // ...twice
+  const QList<int> expected_order = {
+      0, 1, 0, 1,        // measures 0-1, twice
+      2, 3, 4, 2, 3, 4,  // measures 2-4, twice
   };
 
-  QCOMPARE(compute_measure_expansion(measure_infos), expected_expansion);
+  QCOMPARE(get_playback_order(measures), expected_order);
 }
 
 // regression test: the musicxml importer's in-progress-tie lookup used to
@@ -496,6 +473,37 @@ void Tester::test_musicxml_octave_change() {
   auto shifted_octave = 0;
   import_first_note_octave("<octave-change>1</octave-change>", shifted_octave);
   QCOMPARE(shifted_octave, plain_octave + 1);
+
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}
+
+// a transposing part's key sounds transposed, like its notes: an A clarinet
+// written in C plays in A
+void Tester::test_musicxml_transposed_key() {
+  QTemporaryFile temp_file;
+  QVERIFY(temp_file.open());
+  temp_file.write(
+      make_musicxml(get_divisions() + make_key("0") +
+                        "<transpose><chromatic>-3</chromatic></transpose>",
+                    make_pitch_note("", "1"))
+          .toStdString()
+          .c_str());
+  temp_file.close();
+
+  auto& window_body = main_window.window_body;
+  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
+                             main_window.piano_roll_widget,
+                             temp_file.fileName());
+  QCOMPARE(window_body.controls_column.spin_boxes.starting_key_editor.value(),
+           midi_number_to_frequency(MIDDLE_C_MIDI + 9));
+  // so the written tonic is the tonic
+  const auto& interval =
+      window_body.song.chords.at(0).pitched_notes.at(0).interval;
+  QCOMPARE(interval.ratio.numerator, 1);
+  QCOMPARE(interval.ratio.denominator, 1);
+  QCOMPARE(interval.octave, -1);
 
   open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
                        main_window.piano_roll_widget,

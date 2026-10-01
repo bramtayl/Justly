@@ -4,6 +4,8 @@
 #include <QtGui/QGuiApplication>
 #include <QtWidgets/QMessageBox>
 
+#include "xml/XMLChildren.hpp"
+
 XMLString::~XMLString() { xmlFree(internal_pointer); }
 
 auto get_clipboard() -> QClipboard& {
@@ -43,6 +45,27 @@ auto get_xml_name(const xmlNode& node) -> std::string {
 auto get_content(const xmlNode& node) -> std::string {
   const XMLString content{xmlNodeGetContent(&node)};
   return xml_string_to_string(content.internal_pointer);
+}
+
+auto get_property(xmlNode& node, const char* name) -> std::string {
+  return xml_string_to_string(xmlGetProp(&node, c_string_to_xml_string(name)));
+}
+
+auto node_is(const xmlNode& node, const char* name) -> bool {
+  return get_xml_name(node) == name;
+}
+
+auto maybe_get_xml_child(xmlNode& node, const char* name) -> xmlNode* {
+  for (auto& child : get_xml_children(node)) {
+    if (node_is(child, name)) {
+      return &child;
+    }
+  }
+  return nullptr;
+}
+
+auto get_xml_child(xmlNode& node, const char* name) -> xmlNode& {
+  return get_reference(maybe_get_xml_child(node, name));
 }
 
 auto string_to_maybe_int(const std::string& content) -> std::optional<int> {

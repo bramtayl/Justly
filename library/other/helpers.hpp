@@ -77,6 +77,15 @@ template <typename SubType>
 
 [[nodiscard]] auto get_content(const xmlNode& node) -> std::string;
 
+[[nodiscard]] auto get_property(xmlNode& node, const char* name) -> std::string;
+
+[[nodiscard]] auto node_is(const xmlNode& node, const char* name) -> bool;
+
+[[nodiscard]] auto maybe_get_xml_child(xmlNode& node, const char* name)
+    -> xmlNode*;
+
+[[nodiscard]] auto get_xml_child(xmlNode& node, const char* name) -> xmlNode&;
+
 // some musicxml fields (e.g. fifths, octave-change, repeat times) are
 // unbounded xs:integer with no schema-enforced range, so a malformed or
 // hostile file can contain a magnitude that overflows int; callers that

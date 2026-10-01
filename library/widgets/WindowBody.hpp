@@ -10,14 +10,10 @@
 template <RowInterface SubRow>
 struct RowsModel;
 class XMLDocument;
-struct MeasureRepeatInfo;
-struct TimeIterator;
 struct XMLValidator;
 class QBoxLayout;
 struct ControlsColumn;
 struct SwitchColumn;
-
-[[nodiscard]] auto get_property(xmlNode& node, const char* name) -> std::string;
 
 struct WindowBody : public QWidget {
   Song song;
@@ -272,37 +268,6 @@ template <NoteInterface SubNote, VoiceInterface SubVoice>
 [[nodiscard]] auto maybe_restore_recovery(WindowBody& window_body) -> bool;
 
 void connect_recovery_timer(WindowBody& window_body);
-
-void reset(TimeIterator& iterator);
-
-// turns a linear list of measures (each optionally tagged with a
-// forward/backward repeat and/or first-/second-ending numbers) into an
-// ordered list of (start_time, end_time) spans describing the actual
-// playback order, unrolling repeated sections and picking the ending that
-// belongs to each pass
-[[nodiscard]] auto compute_measure_expansion(
-    const QList<MeasureRepeatInfo>& measure_infos)
-    -> QList<std::pair<int, int>>;
-
-// replays a raw per-part dict (keyed by the original, un-repeated division
-// time) onto the unrolled timeline described by an expansion computed by
-// compute_measure_expansion
-template <typename Value>
-[[nodiscard]] static auto remap_by_expansion(
-    const QMap<int, Value>& raw_dict,
-    const QList<std::pair<int, int>>& expansion) {
-  QMap<int, Value> expanded_dict;
-  auto new_cursor = 0;
-  for (const auto& [raw_start, raw_end] : expansion) {
-    for (auto iterator = raw_dict.lowerBound(raw_start);
-         iterator != raw_dict.end() && iterator.key() < raw_end; ++iterator) {
-      expanded_dict[new_cursor + (iterator.key() - raw_start)] =
-          iterator.value();
-    }
-    new_cursor = new_cursor + (raw_end - raw_start);
-  }
-  return expanded_dict;
-}
 
 template <VoiceInterface SubVoice>
 static void add_imported_voices(RowsModel<SubVoice>& voices_model,

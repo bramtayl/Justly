@@ -8,10 +8,7 @@
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QMenu>
 
-#include "iterators/MostRecentIterator.hpp"
-#include "iterators/TimeIterator.hpp"
-#include "musicxml/MeasureRepeatInfo.hpp"
-#include "musicxml/PartInfo.hpp"
+#include "musicxml/MusicXMLPart.hpp"
 #include "other/PianoRollNoteEvent.hpp"
 #include "widgets/ControlsColumn.hpp"
 #include "widgets/SpinBoxes.hpp"
@@ -21,10 +18,6 @@
 #include "xml/XMLDocument.hpp"
 #include "xml/XMLValidator.hpp"
 #include "xml/ZipArchive.hpp"
-
-auto get_property(xmlNode& node, const char* name) -> std::string {
-  return xml_string_to_string(xmlGetProp(&node, c_string_to_xml_string(name)));
-}
 
 WindowBody::WindowBody()
     : player(Player(*this)),
@@ -346,22 +339,6 @@ auto maybe_read_xml_file(const QString& filename) -> XMLDocument {
   return XMLDocument(xmlReadFile(filename.toStdString().c_str(), nullptr, 0));
 }
 
-auto get_int_or_warn(QWidget& parent, const std::string& content,
-                     const QString& title, const QString& message)
-    -> std::optional<int> {
-  auto maybe_int = string_to_maybe_int(content);
-  if (!maybe_int.has_value()) {
-    QMessageBox::warning(&parent, title, message);
-  }
-  return maybe_int;
-}
-
-auto get_int_or_warn(QWidget& parent, const xmlNode& element,
-                     const QString& title, const QString& message)
-    -> std::optional<int> {
-  return get_int_or_warn(parent, get_content(element), title, message);
-}
-
 // loading a file replaces song.chords wholesale, which would leave
 // pitched_notes_model/unpitched_notes_model pointing at destroyed Chord
 // members if the switch table was drilled into a chord's notes (mirrors the
@@ -555,36 +532,6 @@ void connect_recovery_timer(WindowBody& window_body) {
 
 namespace {
 
-auto node_is(const xmlNode& node, const char* name) -> bool {
-  return get_xml_name(node) == name;
-}
-
-auto maybe_get_xml_child(xmlNode& node, const char* name) -> xmlNode* {
-  for (auto& child : get_xml_children(node)) {
-    if (node_is(child, name)) {
-      return &child;
-    }
-  }
-  return nullptr;
-}
-
-auto get_xml_child(xmlNode& node, const char* name) -> xmlNode& {
-  return get_reference(maybe_get_xml_child(node, name));
-}
-
-auto get_duration(QWidget& parent, xmlNode& measure_element)
-    -> std::optional<int> {
-  auto& duration_element = get_xml_child(measure_element, "duration");
-  if (!xml_content_is_integer(duration_element)) {
-    QMessageBox::warning(&parent, QObject::tr("Duration error"),
-                         QObject::tr("Fractional durations are not supported"));
-    return std::nullopt;
-  }
-  return get_int_or_warn(parent, duration_element,
-                         QObject::tr("Duration error"),
-                         QObject::tr("Duration is out of range"));
-}
-
 auto get_interval(const int midi_interval, const int septimal_quartertones = 0)
     -> Interval {
   // Johnston's 7 lowers by 36/35, taking a 9/5 minor seventh to a 7/4
@@ -598,39 +545,6 @@ auto get_interval(const int midi_interval, const int septimal_quartertones = 0)
     ratio = ratio / SEPTIMAL_QUARTERTONE;
   }
   return Interval(ratio, octave);
-}
-
-const auto STEPS_PER_OCTAVE = 7;
-
-struct Spelling {
-  int chromatic = 0;
-  int septimal_quartertones = 0;
-};
-
-// the key signature's alteration for each step, indexed C through B
-auto get_key_alterations(const int fifths)
-    -> std::array<int, STEPS_PER_OCTAVE> {
-  // step indices in the order sharps (or, reversed, flats) are added
-  static const std::array<int, STEPS_PER_OCTAVE> SHARP_ORDER = {3, 0, 4, 1,
-                                                                5, 2, 6};
-  std::array<int, STEPS_PER_OCTAVE> alterations = {};
-  const auto number_of_accidentals = std::abs(static_cast<long long>(fifths));
-  const auto direction = fifths > 0 ? 1 : -1;
-  for (auto position = 0; position < STEPS_PER_OCTAVE;
-       position = position + 1) {
-    const auto order_index =
-        fifths > 0 ? position : STEPS_PER_OCTAVE - 1 - position;
-    Q_ASSERT(order_index >= 0 && order_index < STEPS_PER_OCTAVE);
-    const auto step_index = SHARP_ORDER.at(order_index);
-    // past seven accidentals, the cycle wraps around into double accidentals
-    const auto times =
-        number_of_accidentals > position
-            ? (number_of_accidentals - 1 - position) / STEPS_PER_OCTAVE + 1
-            : 0;
-    Q_ASSERT(step_index >= 0 && step_index < STEPS_PER_OCTAVE);
-    alterations.at(step_index) = direction * static_cast<int>(times);
-  }
-  return alterations;
 }
 
 auto get_max_duration(const QList<MusicXMLNote>& notes) -> int {
@@ -677,131 +591,6 @@ void add_chord(ChordsModel& chords_model, const MusicXMLChord& parse_chord,
   }
   chords_model.insert_row(chords_model.rowCount(QModelIndex()),
                           std::move(new_chord));
-}
-
-void add_note(MusicXMLChord& chord, MusicXMLNote note, bool is_pitched) {
-  (is_pitched ? chord.pitched_notes : chord.unpitched_notes)
-      .push_back(std::move(note));
-}
-
-void add_note_and_maybe_chord(QMap<int, MusicXMLChord>& chords_dict,
-                              MusicXMLNote note, bool is_pitched) {
-  const auto start_time = note.start_time;
-  if (chords_dict.contains(start_time)) {
-    add_note(chords_dict[start_time], std::move(note), is_pitched);
-  } else {
-    MusicXMLChord new_chord;
-    add_note(new_chord, std::move(note), is_pitched);
-    chords_dict[start_time] = std::move(new_chord);
-  }
-}
-
-auto get_most_recent(MostRecentIterator& iterator, const int time) -> int {
-  auto& iterator_state = iterator.state;
-  auto& iterator_value = iterator.value;
-  const auto& iterator_end = iterator.end;
-  while (iterator_state != iterator_end && iterator_state.key() <= time) {
-    iterator_value = iterator_state.value();
-    ++iterator_state;
-  }
-  return iterator_value;
-}
-
-}  // namespace
-
-void reset(TimeIterator& iterator) {
-  iterator.state = iterator.dict.begin();
-  iterator.last_change_time = 0;
-  iterator.next_change_divisions_time = 0;
-  iterator.time_per_division = 1;
-}
-
-auto compute_measure_expansion(const QList<MeasureRepeatInfo>& measure_infos)
-    -> QList<std::pair<int, int>> {
-  QList<std::pair<int, int>> expansion;
-  const auto number_of_measures = static_cast<int>(measure_infos.size());
-  auto repeat_start_index = -1;
-  auto block_start_index = 0;
-
-  const auto flush = [&](const int first_index, const int last_index) -> auto {
-    for (auto index = first_index; index <= last_index; index = index + 1) {
-      const auto& measure_info = measure_infos.at(index);
-      expansion.push_back({measure_info.start_time, measure_info.end_time});
-    }
-  };
-
-  auto measure_index = 0;
-  while (measure_index < number_of_measures) {
-    const auto& measure_info = measure_infos.at(measure_index);
-    if (measure_info.has_forward_repeat) {
-      flush(block_start_index, measure_index - 1);
-      repeat_start_index = measure_index;
-      block_start_index = measure_index;
-    }
-    if (measure_info.has_backward_repeat) {
-      const auto start_index =
-          repeat_start_index == -1 ? block_start_index : repeat_start_index;
-      // a later ending (e.g. the second ending) has no repeat barline of
-      // its own; it just continues on directly after the measure with the
-      // backward repeat, so absorb any immediately-following ending measures
-      auto block_end_index = measure_index;
-      while (block_end_index + 1 < number_of_measures &&
-             !measure_infos.at(block_end_index + 1).ending_numbers.isEmpty()) {
-        block_end_index = block_end_index + 1;
-      }
-      for (auto pass_number = 1; pass_number <= measure_info.repeat_times;
-           pass_number = pass_number + 1) {
-        for (auto inner_index = start_index; inner_index <= block_end_index;
-             inner_index = inner_index + 1) {
-          const auto& inner_measure = measure_infos.at(inner_index);
-          if (inner_measure.ending_numbers.isEmpty() ||
-              inner_measure.ending_numbers.contains(pass_number)) {
-            expansion.push_back(
-                {inner_measure.start_time, inner_measure.end_time});
-          }
-        }
-      }
-      measure_index = block_end_index;
-      block_start_index = block_end_index + 1;
-      repeat_start_index = -1;
-    }
-    measure_index = measure_index + 1;
-  }
-  flush(block_start_index, number_of_measures - 1);
-  return expansion;
-}
-
-namespace {
-
-auto get_time_and_time_per_division(TimeIterator& iterator,
-                                    const int check_divisions_time)
-    -> std::tuple<int, int> {
-  auto& iterator_state = iterator.state;
-  const auto song_divisions = iterator.song_divisions;
-  const auto& iterator_end = iterator.end;
-  while (iterator_state != iterator_end) {
-    const auto next_change_divisions_time = iterator_state.key();
-    if (next_change_divisions_time > check_divisions_time) {
-      break;
-    }
-    const auto divisions_delta =
-        next_change_divisions_time - iterator.next_change_divisions_time;
-    iterator.next_change_divisions_time = next_change_divisions_time;
-    const auto next_divisions = iterator_state.value();
-    Q_ASSERT(next_divisions > 0);
-    const auto time_per_division = song_divisions / next_divisions;
-    iterator.time_per_division = time_per_division;
-    iterator.last_change_time =
-        iterator.last_change_time + time_per_division * divisions_delta;
-    iterator.next_change_divisions_time = next_change_divisions_time;
-    iterator_state++;
-  }
-  const auto time_per_division = iterator.time_per_division;
-  return std::make_tuple(
-      iterator.last_change_time +
-          (time_per_division *
-           (check_divisions_time - iterator.next_change_divisions_time)),
-      time_per_division);
 }
 
 auto deduplicate_voice_names(QList<QString> voice_names) -> QList<QString> {
@@ -865,9 +654,6 @@ auto maybe_read_musicxml_document(const QString& filename) -> XMLDocument {
 }  // namespace
 
 auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
-  static const auto DEFAULT_REPEAT_TIMES = 2;
-  static const auto FIFTH_HALFSTEPS = 7;
-
   auto& undo_stack = window_body.undo_stack;
   auto& spin_boxes = window_body.controls_column.spin_boxes;
   auto& switch_table = window_body.switch_column.switch_table;
@@ -887,496 +673,47 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
     return false;
   }
 
-  // Get root_pointer element
   auto& score_partwise = get_root(document);
   if (!node_is(score_partwise, "score-partwise")) {
     QMessageBox::warning(
         &window_body, QObject::tr("Partwise error"),
         QObject::tr("Justly only supports partwise musicxml scores"));
-    return false;  // endpoint
+    return false;
   }
 
-  // Get part-list
-  QMap<std::string, PartInfo> part_info_dict;
-
-  auto song_divisions = 1;
-
-  QMap<QString, int> pitched_voice_numbers;
-  QList<QString> pitched_voice_names;
-  QMap<QString, int> unpitched_voice_numbers;
-  QList<QString> unpitched_voice_names;
-
-  for (auto& part_node : get_xml_children(score_partwise)) {
-    const auto part_node_name = get_xml_name(part_node);
-    if (part_node_name == "part-list") {
-      for (auto& score_part : get_xml_children(part_node)) {
-        if (node_is(score_part, "score-part")) {
-          PartInfo part_info;
-          auto& instrument_map = part_info.instrument_map;
-          for (auto& field_node : get_xml_children(score_part)) {
-            const auto child_name = get_xml_name(field_node);
-            if (child_name == "part-name") {
-              part_info.part_name = get_qstring_content(field_node);
-            } else if (child_name == "score-instrument") {
-              instrument_map[get_property(field_node, "id")] =
-                  get_qstring_content(
-                      get_xml_child(field_node, "instrument-name"));
-            }
-          }
-          part_info_dict[get_property(score_part, "id")] = std::move(part_info);
-        }
-      }
-    } else if (part_node_name == "part") {
-      const auto part_id = get_property(part_node, "id");
-      auto& part_info = part_info_dict[part_id];
-
-      auto& part_chords_dict = part_info.part_chords_dict;
-      auto& part_divisions_dict = part_info.part_divisions_dict;
-      auto& part_measure_number_dict = part_info.part_measure_number_dict;
-      auto& part_midi_keys_dict = part_info.part_midi_keys_dict;
-
-      auto current_time = 0;
-      auto chord_start_time = current_time;
-      auto measure_number = 1;
-      auto current_transpose_semitones = 0;
-      std::array<int, STEPS_PER_OCTAVE> key_alterations = {};
-
-      QMap<QString, MusicXMLNote> tied_notes;
-      QList<MeasureRepeatInfo> measure_infos;
-      QList<int> active_ending_numbers;
-
-      for (auto& measure : get_xml_children(part_node)) {
-        part_measure_number_dict[current_time] = measure_number;
-        MeasureRepeatInfo measure_info;
-        measure_info.start_time = current_time;
-        measure_info.ending_numbers = active_ending_numbers;
-        // an accidental lasts until the end of its measure, for notes on the
-        // same staff, step, and octave
-        QMap<QString, Spelling> measure_spellings;
-        for (auto& measure_element : get_xml_children(measure)) {
-          const auto measure_element_name = get_xml_name(measure_element);
-          if (measure_element_name == "attributes") {
-            for (auto& attribute_element : get_xml_children(measure_element)) {
-              const auto attribute_name = get_xml_name(attribute_element);
-              if (attribute_name == "key") {
-                const auto maybe_fifths = get_int_or_warn(
-                    window_body, get_xml_child(attribute_element, "fifths"),
-                    QObject::tr("Key error"),
-                    QObject::tr("Fifths value is out of range"));
-                if (!maybe_fifths.has_value()) {
-                  return false;  // endpoint
-                }
-                key_alterations = get_key_alterations(maybe_fifths.value());
-                const auto [octave, degree] =
-                    get_octave_degree(FIFTH_HALFSTEPS * maybe_fifths.value());
-                part_midi_keys_dict[current_time] = MIDDLE_C_MIDI + degree;
-              } else if (attribute_name == "divisions") {
-                if (!xml_content_is_integer(attribute_element)) {
-                  QMessageBox::warning(
-                      &window_body, QObject::tr("Divisions error"),
-                      QObject::tr("Fractional divisions are not supported"));
-                  return false;  // endpoint
-                }
-                const auto maybe_divisions = get_int_or_warn(
-                    window_body, attribute_element,
-                    QObject::tr("Divisions error"),
-                    QObject::tr("Divisions value is out of range"));
-                if (!maybe_divisions.has_value()) {
-                  return false;  // endpoint
-                }
-                const auto new_divisions = maybe_divisions.value();
-                Q_ASSERT(new_divisions > 0);
-                song_divisions = std::lcm(song_divisions, new_divisions);
-                part_divisions_dict[current_time] = new_divisions;
-              } else if (attribute_name == "transpose") {
-                auto& chromatic_element =
-                    get_xml_child(attribute_element, "chromatic");
-                if (!xml_content_is_integer(chromatic_element)) {
-                  QMessageBox::warning(
-                      &window_body, QObject::tr("Transpose error"),
-                      QObject::tr(
-                          "Microtonal transpositions are not supported"));
-                  return false;  // endpoint
-                }
-                const auto maybe_chromatic = get_int_or_warn(
-                    window_body, chromatic_element,
-                    QObject::tr("Transpose error"),
-                    QObject::tr("Chromatic value is out of range"));
-                if (!maybe_chromatic.has_value()) {
-                  return false;  // endpoint
-                }
-                const auto chromatic_semitones = maybe_chromatic.value();
-                auto octave_change_octaves = 0;
-                for (auto& transpose_field :
-                     get_xml_children(attribute_element)) {
-                  if (node_is(transpose_field, "octave-change")) {
-                    const auto maybe_octave_change = get_int_or_warn(
-                        window_body, transpose_field,
-                        QObject::tr("Transpose error"),
-                        QObject::tr("Octave change value is out of range"));
-                    if (!maybe_octave_change.has_value()) {
-                      return false;  // endpoint
-                    }
-                    octave_change_octaves = maybe_octave_change.value();
-                  }
-                }
-                current_transpose_semitones =
-                    chromatic_semitones +
-                    octave_change_octaves * HALFSTEPS_PER_OCTAVE;
-              }
-            }
-          } else if (measure_element_name == "note") {
-            auto note_duration = 0;
-            auto midi_number = -1;
-            auto septimal_quartertones = 0;
-            std::string step;
-            auto octave_number = 0;
-            std::optional<Spelling> maybe_accidental;
-            std::string staff = "1";
-            bool is_pitched = true;
-            bool tie_start = false;
-            bool tie_end = false;
-            bool new_chord = true;
-            bool is_rest = false;
-            QString instrument_name = "";
-            std::string instrument_id;
-
-            static const QMap<std::string, int> step_indices = {
-                {"C", 0}, {"D", 1}, {"E", 2}, {"F", 3},
-                {"G", 4}, {"A", 5}, {"B", 6}};
-            static const std::array<int, STEPS_PER_OCTAVE> step_halfsteps = {
-                0, 2, 4, 5, 7, 9, 11};
-            // arrows mark Johnston's 7 (down) and el (up)
-            static const QMap<std::string, Spelling> accidental_spellings = {
-                {"triple-flat", {.chromatic = -3, .septimal_quartertones = 0}},
-                {"flat-flat", {.chromatic = -2, .septimal_quartertones = 0}},
-                {"flat-flat-down",
-                 {.chromatic = -2, .septimal_quartertones = -1}},
-                {"flat-flat-up", {.chromatic = -2, .septimal_quartertones = 1}},
-                {"flat", {.chromatic = -1, .septimal_quartertones = 0}},
-                {"natural-flat", {.chromatic = -1, .septimal_quartertones = 0}},
-                {"flat-down", {.chromatic = -1, .septimal_quartertones = -1}},
-                {"flat-up", {.chromatic = -1, .septimal_quartertones = 1}},
-                {"natural", {.chromatic = 0, .septimal_quartertones = 0}},
-                {"natural-down", {.chromatic = 0, .septimal_quartertones = -1}},
-                {"natural-up", {.chromatic = 0, .septimal_quartertones = 1}},
-                {"sharp", {.chromatic = 1, .septimal_quartertones = 0}},
-                {"natural-sharp", {.chromatic = 1, .septimal_quartertones = 0}},
-                {"sharp-down", {.chromatic = 1, .septimal_quartertones = -1}},
-                {"sharp-up", {.chromatic = 1, .septimal_quartertones = 1}},
-                {"double-sharp", {.chromatic = 2, .septimal_quartertones = 0}},
-                {"sharp-sharp", {.chromatic = 2, .septimal_quartertones = 0}},
-                {"double-sharp-down",
-                 {.chromatic = 2, .septimal_quartertones = -1}},
-                {"double-sharp-up",
-                 {.chromatic = 2, .septimal_quartertones = 1}},
-                {"triple-sharp", {.chromatic = 3, .septimal_quartertones = 0}}};
-
-            for (auto& note_field : get_xml_children(measure_element)) {
-              const auto& name = get_xml_name(note_field);
-              if (name == "pitch") {
-                // <alter> is ignored: it can't tell apart e.g. an F raised by
-                // an el from an F# lowered by a 7, so pitches are spelled
-                // from the accidentals as they would be read
-                step = get_content(get_xml_child(note_field, "step"));
-                octave_number = xml_to_int(get_xml_child(note_field, "octave"));
-              } else if (name == "accidental") {
-                const auto accidental_name = get_content(note_field);
-                const auto found_spelling =
-                    accidental_spellings.find(accidental_name);
-                if (found_spelling == accidental_spellings.end()) {
-                  QMessageBox::warning(
-                      &window_body, QObject::tr("Pitch error"),
-                      QObject::tr("Accidental %1 is not supported")
-                          .arg(QString::fromStdString(accidental_name)));
-                  return false;  // endpoint
-                }
-                maybe_accidental = found_spelling.value();
-              } else if (name == "staff") {
-                staff = get_content(note_field);
-              } else if (name == "duration") {
-                if (!xml_content_is_integer(note_field)) {
-                  QMessageBox::warning(
-                      &window_body, QObject::tr("Note duration error"),
-                      QObject::tr(
-                          "Fractional note durations are not supported"));
-                  return false;  // endpoint
-                }
-                const auto maybe_duration = get_int_or_warn(
-                    window_body, note_field, QObject::tr("Note duration error"),
-                    QObject::tr("Note duration is out of range"));
-                if (!maybe_duration.has_value()) {
-                  return false;  // endpoint
-                }
-                note_duration = maybe_duration.value();
-              } else if (name == "unpitched") {
-                is_pitched = false;
-              } else if (name == "tie") {
-                const auto tie_type = get_property(note_field, "type");
-                if (tie_type == "stop") {
-                  tie_end = true;
-                } else {
-                  Q_ASSERT(tie_type == "start");
-                  tie_start = true;
-                }
-              } else if (name == "chord") {
-                new_chord = false;
-              } else if (name == "rest") {
-                is_rest = true;
-              } else if (name == "instrument") {
-                instrument_id = get_property(note_field, "id");
-                instrument_name = part_info.instrument_map[instrument_id];
-              }
-            }
-
-            const auto has_pitch = !step.empty();
-            if (has_pitch) {
-              // the schema only allows steps A through G
-              Q_ASSERT(step_indices.contains(step));
-              const auto step_index = step_indices[step];
-              const auto spelling_key = QString::fromStdString(staff) + ":" +
-                                        QString::fromStdString(step) + ":" +
-                                        QString::number(octave_number);
-              Spelling spelling;
-              if (maybe_accidental.has_value()) {
-                spelling = maybe_accidental.value();
-                measure_spellings[spelling_key] = spelling;
-              } else if (measure_spellings.contains(spelling_key)) {
-                spelling = measure_spellings[spelling_key];
-              } else {
-                spelling.chromatic = key_alterations.at(step_index);
-              }
-              midi_number = step_halfsteps.at(step_index) + spelling.chromatic +
-                            octave_number * HALFSTEPS_PER_OCTAVE + C_0_MIDI +
-                            current_transpose_semitones;
-              septimal_quartertones = spelling.septimal_quartertones;
-            }
-
-            if (note_duration == 0) {
-              QMessageBox::warning(
-                  &window_body, QObject::tr("Note duration error"),
-                  QObject::tr("Notes without durations not supported"));
-              return false;  // endpoint
-            }
-            if (new_chord) {
-              chord_start_time = current_time;
-              current_time += note_duration;
-            }
-            if (!is_rest) {
-              QString voice_key;
-              QTextStream voice_key_stream(&voice_key);
-              voice_key_stream << QString::fromStdString(part_id) << ":"
-                               << QString::fromStdString(instrument_id);
-              // a tie only ever connects notes within the same voice, so an
-              // in-progress tie must be looked up by voice as well as pitch
-              // -- otherwise two simultaneous voices (e.g. two instruments
-              // in one part, or an unresolved tie carried over from an
-              // earlier part) tying the same pitch clobber each other's
-              // still-open note
-              // keyed by written step and octave rather than pitch, since a
-              // note tied across a barline usually drops its accidental,
-              // but still continues the pitch it was tied from
-              const auto tied_note_key = voice_key + ":" +
-                                         QString::fromStdString(step) + ":" +
-                                         QString::number(octave_number);
-              if (tie_end && !tied_notes.contains(tied_note_key)) {
-                // no matching tie-start -- the schema doesn't require ties
-                // to be well-formed, so a malformed or hand-edited file can
-                // have an orphan tie-stop; fall back to treating this as an
-                // unstarted note rather than dereferencing a missing entry
-                tie_end = false;
-              }
-              if (tie_end) {
-                const auto tied_notes_iterator = tied_notes.find(tied_note_key);
-                auto& previous_note = tied_notes_iterator.value();
-                previous_note.duration = previous_note.duration + note_duration;
-                if (!tie_start) {
-                  add_note_and_maybe_chord(part_chords_dict, previous_note,
-                                           is_pitched);
-                  tied_notes.erase(tied_notes_iterator);
-                }
-              } else {
-                MusicXMLNote new_note;
-                new_note.duration = note_duration;
-                QTextStream stream(&new_note.words);
-                stream << QObject::tr("Part ") << part_info.part_name;
-                if (instrument_name != "") {
-                  stream << QObject::tr(" instrument ") << instrument_name;
-                }
-                new_note.midi_number = midi_number;
-                new_note.septimal_quartertones = septimal_quartertones;
-                new_note.start_time = chord_start_time;
-                auto& voice_numbers = is_pitched ? pitched_voice_numbers
-                                                 : unpitched_voice_numbers;
-                auto& voice_names =
-                    is_pitched ? pitched_voice_names : unpitched_voice_names;
-                const auto voice_name = instrument_name.isEmpty()
-                                            ? part_info.part_name
-                                            : instrument_name;
-                const auto found_voice_number = voice_numbers.find(voice_key);
-                if (found_voice_number != voice_numbers.end()) {
-                  new_note.voice_number = found_voice_number.value();
-                } else {
-                  new_note.voice_number = static_cast<int>(voice_names.size());
-                  voice_numbers[voice_key] = new_note.voice_number;
-                  voice_names.push_back(voice_name);
-                }
-                if (tie_start) {  // also not tie end
-                  tied_notes[tied_note_key] = std::move(new_note);
-                } else {  // not tie start or end
-                  add_note_and_maybe_chord(part_chords_dict,
-                                           std::move(new_note), is_pitched);
-                }
-              }
-            }
-          } else if (measure_element_name == "backup") {
-            const auto duration = get_duration(window_body, measure_element);
-            if (!duration.has_value()) {
-              return false;  // endpoint
-            }
-            current_time -= duration.value();
-            chord_start_time = current_time;
-          } else if (measure_element_name == "forward") {
-            const auto duration = get_duration(window_body, measure_element);
-            if (!duration.has_value()) {
-              return false;  // endpoint
-            }
-            current_time += duration.value();
-            chord_start_time = current_time;
-          } else if (measure_element_name == "barline") {
-            // records forward/backward repeats and first/second-ending
-            // brackets onto the current measure, so the raw per-part
-            // timeline can be unrolled below
-            for (auto& child : get_xml_children(measure_element)) {
-              if (node_is(child, "repeat")) {
-                const auto direction = get_property(child, "direction");
-                if (direction == "forward") {
-                  measure_info.has_forward_repeat = true;
-                } else {
-                  Q_ASSERT(direction == "backward");
-                  measure_info.has_backward_repeat = true;
-                  auto* const times_property =
-                      xmlGetProp(&child, c_string_to_xml_string("times"));
-                  const auto times_text =
-                      times_property == nullptr
-                          ? std::string()
-                          : xml_string_to_string(times_property);
-                  if (times_text.empty()) {
-                    measure_info.repeat_times = DEFAULT_REPEAT_TIMES;
-                  } else {
-                    const auto maybe_times = get_int_or_warn(
-                        window_body, times_text, QObject::tr("Repeat error"),
-                        QObject::tr("Repeat times is out of range"));
-                    if (!maybe_times.has_value()) {
-                      return false;  // endpoint
-                    }
-                    measure_info.repeat_times = maybe_times.value();
-                  }
-                }
-              } else if (node_is(child, "ending")) {
-                if (get_property(child, "type") == "start") {
-                  QList<int> ending_numbers;
-                  const auto numbers_text =
-                      QString::fromStdString(get_property(child, "number"));
-                  for (const auto& token :
-                       numbers_text.split(',', Qt::SkipEmptyParts)) {
-                    bool is_number = false;
-                    const auto number = token.trimmed().toInt(&is_number);
-                    if (is_number) {
-                      ending_numbers.push_back(number);
-                    }
-                  }
-                  for (const auto number : ending_numbers) {
-                    if (!active_ending_numbers.contains(number)) {
-                      active_ending_numbers.push_back(number);
-                    }
-                    if (!measure_info.ending_numbers.contains(number)) {
-                      measure_info.ending_numbers.push_back(number);
-                    }
-                  }
-                } else {  // "stop" or "discontinue"
-                  active_ending_numbers.clear();
-                }
-              }
-            }
-          }
-        }
-        measure_info.end_time = current_time;
-        measure_infos.push_back(std::move(measure_info));
-        measure_number++;
-      }
-      const auto expansion = compute_measure_expansion(measure_infos);
-      part_info.part_chords_dict =
-          remap_by_expansion(part_info.part_chords_dict, expansion);
-      part_info.part_divisions_dict =
-          remap_by_expansion(part_info.part_divisions_dict, expansion);
-      part_info.part_midi_keys_dict =
-          remap_by_expansion(part_info.part_midi_keys_dict, expansion);
-      part_info.part_measure_number_dict =
-          remap_by_expansion(part_info.part_measure_number_dict, expansion);
-    }
+  auto maybe_parts = parse_musicxml(window_body, score_partwise);
+  if (!maybe_parts.has_value()) {
+    return false;
   }
+  auto& parts = maybe_parts.value();
 
-  QMap<int, MusicXMLChord> chords_dict;
-  QMap<int, int> midi_keys_dict;
-  QMap<int, int> measure_number_dict;
-
-  for (auto [part_id, part_info] : part_info_dict.asKeyValueRange()) {
-    TimeIterator time_iterator(part_info.part_divisions_dict, song_divisions);
-    for (auto [divisions_time, chord] :
-         part_info.part_chords_dict.asKeyValueRange()) {
-      auto [time, time_per_division] =
-          get_time_and_time_per_division(time_iterator, divisions_time);
-      auto& new_pitched_notes = chord.pitched_notes;
-      auto& new_unpitched_notes = chord.unpitched_notes;
-      for (auto& pitched_note : new_pitched_notes) {
-        pitched_note.duration = pitched_note.duration * time_per_division;
-      }
-      for (auto& unpitched_note : new_unpitched_notes) {
-        unpitched_note.duration = unpitched_note.duration * time_per_division;
-      }
-      if (chords_dict.contains(time)) {
-        auto& old_chord = chords_dict[time];
-
-        old_chord.pitched_notes.append(std::move(new_pitched_notes));
-        old_chord.unpitched_notes.append(std::move(new_unpitched_notes));
-      } else {
-        chords_dict[time] = std::move(chord);
-      }
-    }
-
-    reset(time_iterator);
-    for (const auto [divisions_time, measure_number] :
-         part_info.part_measure_number_dict.asKeyValueRange()) {
-      auto [time, time_per_division] =
-          get_time_and_time_per_division(time_iterator, divisions_time);
-      measure_number_dict[time] = measure_number;
-    }
-
-    reset(time_iterator);
-    for (const auto [divisions_time, midi_key] :
-         part_info.part_midi_keys_dict.asKeyValueRange()) {
-      auto [time, time_per_division] =
-          get_time_and_time_per_division(time_iterator, divisions_time);
-      midi_keys_dict[time] = midi_key;
-    }
+  for (auto& part : parts) {
+    fill_in_accidentals(part);
+    untranspose(part);
+    combine_ties(part);
   }
+  const auto song_divisions = get_song_divisions(parts);
+  for (auto& part : parts) {
+    normalize_divisions(part, song_divisions);
+    unroll_repeats(part);
+  }
+  auto voice_names = assign_voices(parts);
 
-  auto chord_state = chords_dict.begin();
-  const auto chord_dict_end = chords_dict.end();
-
-  if (chord_state == chord_dict_end) {
+  const auto chords_dict = get_chords(parts);
+  if (chords_dict.empty()) {
     QMessageBox::warning(&window_body, QObject::tr("Empty MusicXML error"),
                          QObject::tr("No chords"));
-    return false;  // endpoint
+    return false;
   }
+  const auto midi_keys = get_midi_keys(parts);
+  const auto measure_numbers = get_measure_numbers(parts);
 
-  if (unpitched_voice_names.empty()) {
+  if (voice_names.unpitched.empty()) {
     // a file with no percussion/unpitched notes would otherwise leave
     // song.unpitched_voices completely empty, so manually inserting any
     // unpitched note afterward (which defaults to the first voice) would
     // reference a voice that doesn't exist
-    unpitched_voice_names.push_back(QObject::tr("unpitched voice 1"));
+    voice_names.unpitched.push_back(QObject::tr("unpitched voice 1"));
   }
 
   reset_switch_table_to_chords(window_body.switch_column);
@@ -1384,43 +721,30 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
   clear_rows(pitched_voices_model);
   clear_rows(unpitched_voices_model);
   add_imported_voices(pitched_voices_model,
-                      deduplicate_voice_names(pitched_voice_names));
+                      deduplicate_voice_names(voice_names.pitched));
   add_imported_voices(unpitched_voices_model,
-                      deduplicate_voice_names(unpitched_voice_names));
+                      deduplicate_voice_names(voice_names.unpitched));
 
-  MostRecentIterator measure_number_iterator(measure_number_dict, 1);
-  MostRecentIterator midi_key_iterator(midi_keys_dict, DEFAULT_STARTING_MIDI);
+  auto last_midi_key = get_most_recent(midi_keys, chords_dict.firstKey(),
+                                       DEFAULT_STARTING_MIDI);
+  spin_boxes.starting_key_editor.setValue(
+      midi_number_to_frequency(last_midi_key));
 
-  auto time = chord_state.key();
-
-  auto parse_chord = std::move(chord_state.value());
-
-  auto midi_key = get_most_recent(midi_key_iterator, time);
-
-  spin_boxes.starting_key_editor.setValue(midi_number_to_frequency(midi_key));
-
-  auto last_midi_key = midi_key;
-
-  ++chord_state;
-  while (chord_state != chord_dict_end) {
-    const auto next_time = chord_state.key();
-    add_chord(chords_model, parse_chord,
-              get_most_recent(measure_number_iterator, time), midi_key,
-              last_midi_key, song_divisions, next_time - time);
-
-    time = next_time;
-    parse_chord = std::move(chord_state.value());
-
+  for (auto iterator = chords_dict.cbegin(); iterator != chords_dict.cend();
+       ++iterator) {
+    const auto time = iterator.key();
+    const auto& chord = iterator.value();
+    const auto next_iterator = std::next(iterator);
+    const auto midi_key =
+        get_most_recent(midi_keys, time, DEFAULT_STARTING_MIDI);
+    add_chord(chords_model, chord, get_most_recent(measure_numbers, time, 1),
+              midi_key, last_midi_key, song_divisions,
+              next_iterator == chords_dict.cend()
+                  ? std::max(get_max_duration(chord.pitched_notes),
+                             get_max_duration(chord.unpitched_notes))
+                  : next_iterator.key() - time);
     last_midi_key = midi_key;
-    midi_key = get_most_recent(midi_key_iterator, time);
-
-    ++chord_state;
   }
-  add_chord(chords_model, parse_chord,
-            get_most_recent(measure_number_iterator, time), midi_key,
-            last_midi_key, song_divisions,
-            std::max(get_max_duration(parse_chord.pitched_notes),
-                     get_max_duration(parse_chord.unpitched_notes)));
 
   clear_and_clean(undo_stack);
   remove_recovery_file();
