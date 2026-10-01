@@ -20,26 +20,39 @@ concept VoiceInterface = std::derived_from<SubVoice, Voice> && requires() {
   { SubVoice::is_pitched() } -> std::same_as<bool>;
 };
 
-template <VoiceInterface SubVoice>
-[[nodiscard]] auto get_voice_program(const QList<Program>& programs,
-                                     const QList<SubVoice>& voices,
-                                     int voice_number) -> const auto& {
-  const auto result_index =
-      get_named_index(programs, voices.at(voice_number).program);
+[[nodiscard]] inline auto get_voice_program(const QList<Program>& programs,
+                                            const Voice& voice)
+    -> const Program& {
+  const auto result_index = get_named_index(programs, voice.program);
   Q_ASSERT(result_index != programs.cend());
   return *result_index;
 }
 
-// -1 if no voice has that name, e.g. a note pasted from another song, or
-// copied before its voice was renamed or removed
+// every note in a song names an existing voice, so only call this for notes
+// already in the song, not ones freshly parsed from XML
+template <VoiceInterface SubVoice>
+[[nodiscard]] auto get_voice(const QList<SubVoice>& voices, const QString& name)
+    -> const SubVoice& {
+  const auto result_index = get_named_index(voices, name);
+  Q_ASSERT(result_index != voices.cend());
+  return *result_index;
+}
+
+// the voice's position, e.g. for its MIDI track or piano roll color
 template <VoiceInterface SubVoice>
 [[nodiscard]] auto get_voice_number(const QList<SubVoice>& voices,
                                     const QString& name) -> int {
   const auto result_index = get_named_index(voices, name);
-  if (result_index == voices.cend()) {
-    return -1;
-  }
+  Q_ASSERT(result_index != voices.cend());
   return static_cast<int>(result_index - voices.cbegin());
+}
+
+// false if no voice has that name, e.g. a note pasted from another song, or
+// copied before its voice was renamed or removed
+template <VoiceInterface SubVoice>
+[[nodiscard]] auto has_voice(const QList<SubVoice>& voices, const QString& name)
+    -> bool {
+  return get_named_index(voices, name) != voices.cend();
 }
 
 template <VoiceInterface SubVoice>

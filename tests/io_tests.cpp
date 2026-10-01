@@ -103,18 +103,14 @@ void Tester::test_read_zip_entry_error_data() {
   QTest::addColumn<QString>("archive_name");
   QTest::addColumn<QString>("entry_name");
 
-  QTest::newRow("missing entry")
-      << "prelude.mxl" << "does_not_exist.xml";
+  QTest::newRow("missing entry") << "prelude.mxl" << "does_not_exist.xml";
   // the central directory claims a size that doesn't fit in an int
-  QTest::newRow("oversized entry")
-      << "zip_oversized_entry.zip" << "a.txt";
+  QTest::newRow("oversized entry") << "zip_oversized_entry.zip" << "a.txt";
   // the entry is flagged as encrypted and no password is available, so it
   // shows up in the archive but can't be opened
-  QTest::newRow("encrypted entry")
-      << "zip_encrypted_entry.zip" << "a.txt";
+  QTest::newRow("encrypted entry") << "zip_encrypted_entry.zip" << "a.txt";
   // the entry's data ends before the size the central directory claims
-  QTest::newRow("short entry")
-      << "zip_short_entry.zip" << "a.txt";
+  QTest::newRow("short entry") << "zip_short_entry.zip" << "a.txt";
 }
 
 void Tester::test_read_zip_entry_error() const {
@@ -252,7 +248,7 @@ void Tester::test_save_escapes_text() {
 
   QCOMPARE(song.pitched_voices.at(0).name, QString("R&B <1>"));
   const auto& note = song.chords.at(0).pitched_notes.at(0);
-  QCOMPARE(note.voice_number, 0);
+  QCOMPARE(note.voice_name, QString("R&B <1>"));
   QCOMPARE(note.words, QString("a & b < c"));
 
   // restore the shared fixture

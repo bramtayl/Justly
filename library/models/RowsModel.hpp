@@ -100,6 +100,10 @@ struct RowsModel : public QAbstractTableModel {
     return {};
   }
 
+  // what a new row, or a deleted cell, starts as; notes override this so
+  // they always name an existing voice
+  [[nodiscard]] virtual auto make_empty_row() const -> SubRow { return {}; }
+
   [[nodiscard]] virtual auto check_cell(const int /*column_number*/,
                                         const QVariant& /*new_value*/) const
       -> bool {
@@ -162,7 +166,7 @@ struct RowsModel : public QAbstractTableModel {
     for (auto replace_number = 0; replace_number < number_of_rows;
          replace_number++) {
       auto& row = rows[first_row_number + replace_number];
-      const SubRow empty_row;
+      const auto empty_row = make_empty_row();
       for (auto column_number = left_column; column_number <= right_column;
            column_number++) {
         row.copy_column_from(empty_row, column_number);

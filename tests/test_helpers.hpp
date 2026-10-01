@@ -403,7 +403,7 @@ inline void add_cells() {
       << static_cast<int>(ChordColumn::chord_words_column);
   QTest::newRow("pitched note voice")
       << RowType::pitched_note_type << 1 << 1
-      << static_cast<int>(PitchedNoteColumn::pitched_note_voice_number_column);
+      << static_cast<int>(PitchedNoteColumn::pitched_note_voice_name_column);
   QTest::newRow("pitched note interval")
       << RowType::pitched_note_type << 1 << 1
       << static_cast<int>(PitchedNoteColumn::pitched_note_interval_column);
@@ -420,7 +420,7 @@ inline void add_cells() {
   QTest::newRow("unpitched note voice")
       << RowType::unpitched_note_type << 1 << 1
       << static_cast<int>(
-             UnpitchedNoteColumn::unpitched_note_voice_number_column);
+             UnpitchedNoteColumn::unpitched_note_voice_name_column);
   QTest::newRow("unpitched note beats")
       << RowType::unpitched_note_type << 1 << 1
       << static_cast<int>(UnpitchedNoteColumn::unpitched_note_beats_column);
@@ -461,7 +461,7 @@ inline void add_editable_cell_pairs() {
       << static_cast<int>(ChordColumn::chord_words_column);
   QTest::newRow("pitched note voice")
       << RowType::pitched_note_type << 1 << 0 << 1
-      << static_cast<int>(PitchedNoteColumn::pitched_note_voice_number_column);
+      << static_cast<int>(PitchedNoteColumn::pitched_note_voice_name_column);
   QTest::newRow("pitched note interval")
       << RowType::pitched_note_type << 1 << 0 << 1
       << static_cast<int>(PitchedNoteColumn::pitched_note_interval_column);
@@ -478,7 +478,7 @@ inline void add_editable_cell_pairs() {
   QTest::newRow("unpitched note voice")
       << RowType::unpitched_note_type << 1 << 0 << 1
       << static_cast<int>(
-             UnpitchedNoteColumn::unpitched_note_voice_number_column);
+             UnpitchedNoteColumn::unpitched_note_voice_name_column);
   QTest::newRow("unpitched note beats")
       << RowType::unpitched_note_type << 1 << 0 << 1
       << static_cast<int>(UnpitchedNoteColumn::unpitched_note_beats_column);

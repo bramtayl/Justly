@@ -34,7 +34,7 @@ void send_event_at(FluidSequencer& sequencer, FluidEvent& event,
 }
 
 void PitchedNote::from_xml(xmlNode& node,
-                           const QList<PitchedVoice>& pitched_voices,
+                           const QList<PitchedVoice>& /*pitched_voices*/,
                            const QList<UnpitchedVoice>& /*unpitched_voices*/) {
   auto* field_pointer = xmlFirstElementChild(&node);
   while (field_pointer != nullptr) {
@@ -50,8 +50,7 @@ void PitchedNote::from_xml(xmlNode& node,
       set_interval_from_xml(interval, field_node);
     } else {
       Q_ASSERT(name == "voice_name");
-      voice_number =
-          get_voice_number(pitched_voices, get_qstring_content(field_node));
+      voice_name = get_qstring_content(field_node);
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }
@@ -71,7 +70,7 @@ auto PitchedNote::get_column_name(int column_number) -> const char* {
   switch (static_cast<PitchedNoteColumn>(column_number)) {
     case PitchedNoteColumn::number_of_pitched_note_columns:
       Q_UNREACHABLE();
-    case PitchedNoteColumn::pitched_note_voice_number_column:
+    case PitchedNoteColumn::pitched_note_voice_name_column:
       return "Voice";
     case PitchedNoteColumn::pitched_note_interval_column:
       return "Interval";
@@ -142,23 +141,23 @@ auto PitchedNote::get_closest_midi(
 auto PitchedNote::get_program(
     const QList<PitchedVoice>& pitched_voices,
     const QList<UnpitchedVoice>& /*unpitched_voices*/) const -> const Program& {
-  return get_voice_program(get_some_programs(true), pitched_voices,
-                           voice_number);
+  return get_voice_program(get_some_programs(true),
+                           get_voice(pitched_voices, voice_name));
 }
 
 auto PitchedNote::get_voice_velocity_ratio(
     const QList<PitchedVoice>& pitched_voices,
     const QList<UnpitchedVoice>& /*unpitched_voices*/) const
     -> const Rational& {
-  return pitched_voices.at(voice_number).velocity_ratio;
+  return get_voice(pitched_voices, voice_name).velocity_ratio;
 }
 
 auto PitchedNote::get_data(const int column_number) const -> QVariant {
   switch (static_cast<PitchedNoteColumn>(column_number)) {
     case PitchedNoteColumn::number_of_pitched_note_columns:
       Q_UNREACHABLE();
-    case PitchedNoteColumn::pitched_note_voice_number_column:
-      return voice_number;
+    case PitchedNoteColumn::pitched_note_voice_name_column:
+      return voice_name;
     case PitchedNoteColumn::pitched_note_interval_column:
       return QVariant::fromValue(interval);
     case PitchedNoteColumn::pitched_note_beats_column:
@@ -175,8 +174,8 @@ void PitchedNote::set_data(const int column_number, const QVariant& new_value) {
   switch (static_cast<PitchedNoteColumn>(column_number)) {
     case PitchedNoteColumn::number_of_pitched_note_columns:
       Q_UNREACHABLE();
-    case PitchedNoteColumn::pitched_note_voice_number_column:
-      voice_number = variant_to<int>(new_value);
+    case PitchedNoteColumn::pitched_note_voice_name_column:
+      voice_name = variant_to<QString>(new_value);
       break;
     case PitchedNoteColumn::pitched_note_interval_column:
       interval = variant_to<Interval>(new_value);
@@ -198,8 +197,8 @@ void PitchedNote::copy_column_from(const PitchedNote& template_row,
   switch (static_cast<PitchedNoteColumn>(column_number)) {
     case PitchedNoteColumn::number_of_pitched_note_columns:
       Q_UNREACHABLE();
-    case PitchedNoteColumn::pitched_note_voice_number_column:
-      voice_number = template_row.voice_number;
+    case PitchedNoteColumn::pitched_note_voice_name_column:
+      voice_name = template_row.voice_name;
       break;
     case PitchedNoteColumn::pitched_note_interval_column:
       interval = template_row.interval;
@@ -218,14 +217,13 @@ void PitchedNote::copy_column_from(const PitchedNote& template_row,
 
 void PitchedNote::column_to_xml(
     xmlNode& node, const int column_number,
-    const QList<PitchedVoice>& pitched_voices,
+    const QList<PitchedVoice>& /*pitched_voices*/,
     const QList<UnpitchedVoice>& /*unpitched_voices*/) const {
   switch (static_cast<PitchedNoteColumn>(column_number)) {
     case PitchedNoteColumn::number_of_pitched_note_columns:
       Q_UNREACHABLE();
-    case PitchedNoteColumn::pitched_note_voice_number_column:
-      set_xml_string(node, "voice_name",
-                     pitched_voices.at(voice_number).name.toStdString());
+    case PitchedNoteColumn::pitched_note_voice_name_column:
+      set_xml_string(node, "voice_name", voice_name.toStdString());
       break;
     case PitchedNoteColumn::pitched_note_interval_column:
       maybe_add_interval_to_xml(node, "interval", interval);
@@ -243,10 +241,9 @@ void PitchedNote::column_to_xml(
 }
 
 void PitchedNote::to_xml(
-    xmlNode& node, const QList<PitchedVoice>& pitched_voices,
+    xmlNode& node, const QList<PitchedVoice>& /*pitched_voices*/,
     const QList<UnpitchedVoice>& /*unpitched_voices*/) const {
-  set_xml_string(node, "voice_name",
-                 pitched_voices.at(voice_number).name.toStdString());
+  set_xml_string(node, "voice_name", voice_name.toStdString());
   maybe_add_interval_to_xml(node, "interval", interval);
   maybe_add_rational_to_xml(node, "beats", beats);
   maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);

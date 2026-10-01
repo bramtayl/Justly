@@ -221,6 +221,8 @@ struct Tester : public QObject {
   void test_set_value();
   static void test_set_voice_name_data();
   void test_set_voice_name();
+  static void test_rename_voice_renames_notes_data();
+  void test_rename_voice_renames_notes();
   static void test_voice_paste_insert_disabled_data();
   void test_voice_paste_insert_disabled();
   static void test_to_string_data();

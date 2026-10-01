@@ -11,7 +11,7 @@ struct UnpitchedVoice;
 static const auto MAX_VELOCITY = 127;
 
 struct Note : Row {
-  int voice_number = 0;
+  QString voice_name;
   Rational beats;
   Rational velocity_ratio;
   QString words;

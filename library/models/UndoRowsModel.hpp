@@ -22,9 +22,14 @@ struct UndoRowsModel : public RowsModel<SubRow> {
     if (!this->check_cell(index.column(), new_value)) {
       return false;
     };
-    undo_stack.push(
-        new SetCell<SubRow>(  // NOLINT(cppcoreguidelines-owning-memory)
-            *this, index, new_value));
+    undo_stack.push(make_set_cell(index, new_value));
     return true;
+  }
+
+  [[nodiscard]] virtual auto make_set_cell(const QModelIndex& index,
+                                           const QVariant& new_value)
+      -> QUndoCommand* {
+    return new SetCell<SubRow>(  // NOLINT(cppcoreguidelines-owning-memory)
+        *this, index, new_value);
   }
 };

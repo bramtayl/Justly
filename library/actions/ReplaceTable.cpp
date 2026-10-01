@@ -280,8 +280,7 @@ void replace_table(SongMenuBar& song_menu_bar, WindowBody& window_body,
 
         set_minimum_column_size(
             switch_table,
-            static_cast<int>(
-                PitchedNoteColumn::pitched_note_voice_number_column),
+            static_cast<int>(PitchedNoteColumn::pitched_note_voice_name_column),
             get_string_picker_width(get_names(song.pitched_voices)));
         set_minimum_column_size(
             switch_table,
@@ -321,7 +320,7 @@ void replace_table(SongMenuBar& song_menu_bar, WindowBody& window_body,
         set_minimum_column_size(
             switch_table,
             static_cast<int>(
-                UnpitchedNoteColumn::unpitched_note_voice_number_column),
+                UnpitchedNoteColumn::unpitched_note_voice_name_column),
             get_string_picker_width(get_names(song.unpitched_voices)));
         set_minimum_column_size(
             switch_table,

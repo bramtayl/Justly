@@ -147,14 +147,14 @@ void Tester::test_import_musicxml_ties_do_not_cross_voices() {
 
   const auto& left_hand_notes = song.chords.at(0).pitched_notes;
   QCOMPARE(left_hand_notes.size(), 1);
-  QCOMPARE(left_hand_notes.at(0).voice_number, 0);
+  QCOMPARE(left_hand_notes.at(0).voice_name, song.pitched_voices.at(0).name);
   QVERIFY(left_hand_notes.at(0).words.contains("Left Hand"));
   QCOMPARE(left_hand_notes.at(0).beats.numerator, 8);
   QCOMPARE(left_hand_notes.at(0).beats.denominator, 1);
 
   const auto& right_hand_notes = song.chords.at(1).pitched_notes;
   QCOMPARE(right_hand_notes.size(), 1);
-  QCOMPARE(right_hand_notes.at(0).voice_number, 1);
+  QCOMPARE(right_hand_notes.at(0).voice_name, song.pitched_voices.at(1).name);
   QVERIFY(right_hand_notes.at(0).words.contains("Right Hand"));
   QCOMPARE(right_hand_notes.at(0).beats.numerator, 8);
   QCOMPARE(right_hand_notes.at(0).beats.denominator, 1);

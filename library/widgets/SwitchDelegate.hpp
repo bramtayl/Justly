@@ -2,25 +2,9 @@
 
 #include <QtWidgets/QStyledItemDelegate>
 
-#include "cell_editors/VoiceNumberPicker.hpp"
 #include "rows/RowType.hpp"
-#include "rows/Voice.hpp"
 
 struct Song;
-
-template <VoiceInterface SubVoice>
-static auto create_voice_number_picker(QWidget* parent_pointer,
-                                       const QList<SubVoice>& voices) -> auto& {
-  QList<QString> voice_names;
-  voice_names.reserve(voices.size());
-  std::ranges::transform(voices, std::back_inserter(voice_names),
-                         &SubVoice::name);
-  auto& specific_result = get_reference(
-      new VoiceNumberPicker(  // NOLINT(cppcoreguidelines-owning-memory)
-          parent_pointer, voice_names));
-  specific_result.setFrame(false);
-  return specific_result;
-}
 
 struct SwitchDelegate : public QStyledItemDelegate {
   Song& song;

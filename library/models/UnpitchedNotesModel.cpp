@@ -3,17 +3,10 @@
 #include "column_numbers/UnpitchedNoteColumn.hpp"
 #include "other/Song.hpp"
 
-auto UnpitchedNotesModel::get_display_data(const int row_number,
-                                           const int column_number) const
-    -> QVariant {
-  if (column_number ==
-      static_cast<int>(
-          UnpitchedNoteColumn::unpitched_note_voice_number_column)) {
-    return song.unpitched_voices.at(get_rows().at(row_number).voice_number)
-        .name;
-  }
-  return UndoRowsModel<UnpitchedNote>::get_display_data(row_number,
-                                                        column_number);
+auto UnpitchedNotesModel::make_empty_row() const -> UnpitchedNote {
+  UnpitchedNote unpitched_note;
+  unpitched_note.voice_name = song.unpitched_voices.at(0).name;
+  return unpitched_note;
 }
 
 void UnpitchedNotesModel::add_to_status(
@@ -25,7 +18,7 @@ void UnpitchedNotesModel::add_to_status(
       play_state.current_velocity *
           rational_to_double(unpitched_note.velocity_ratio) *
           rational_to_double(
-              song.unpitched_voices.at(unpitched_note.voice_number)
+              get_voice(song.unpitched_voices, unpitched_note.voice_name)
                   .velocity_ratio),
       rational_to_double(unpitched_note.beats));
 }

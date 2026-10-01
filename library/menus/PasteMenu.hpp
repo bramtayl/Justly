@@ -5,7 +5,7 @@
 #include <QtWidgets/QMenu>
 
 #include "actions/InsertRemoveRows.hpp"
-#include "actions/OrphanedVoiceNumberLocation.hpp"
+#include "actions/OrphanedVoiceNameLocation.hpp"
 #include "actions/SetCells.hpp"
 #include "column_numbers/PitchedVoiceColumn.hpp"
 #include "column_numbers/UnpitchedVoiceColumn.hpp"
@@ -16,16 +16,21 @@
 
 [[nodiscard]] auto get_mime_description(const QString& mime_type) -> QString;
 
-// returns how many notes had a voice_name matching no voice (from_xml leaves
-// those at -1), e.g. copied from another song, or before their voice was
-// renamed or removed, after moving them to the first voice
-template <NoteInterface SubNote>
-[[nodiscard]] static auto reassign_unknown_voices(QList<SubNote>& notes)
+// moves notes onto the first voice if their voice_name is empty (the voice
+// column wasn't copied) or matches no voice, e.g. copied from another song,
+// or before their voice was renamed or removed; returns how many were the
+// latter, so the caller can warn about them
+template <NoteInterface SubNote, VoiceInterface SubVoice>
+[[nodiscard]] static auto reassign_unknown_voices(QList<SubNote>& notes,
+                                                  const QList<SubVoice>& voices)
     -> int {
   auto reassigned_count = 0;
   for (auto& note : notes) {
-    if (note.voice_number < 0) {
-      note.voice_number = 0;
+    auto& voice_name = note.voice_name;
+    if (voice_name.isEmpty()) {
+      voice_name = voices.at(0).name;
+    } else if (!has_voice(voices, voice_name)) {
+      voice_name = voices.at(0).name;
       reassigned_count = reassigned_count + 1;
     }
   }
@@ -47,25 +52,29 @@ static void maybe_warn_reassigned_voices(QWidget& parent,
 template <RowInterface SubRow>
 static void reassign_unknown_pasted_voices(QWidget& parent, const Song& song,
                                            QList<SubRow>& rows) {
+  const auto& pitched_voices = song.pitched_voices;
+  const auto& unpitched_voices = song.unpitched_voices;
   if constexpr (std::same_as<SubRow, PitchedNote>) {
     maybe_warn_reassigned_voices<PitchedNote>(
-        parent, reassign_unknown_voices(rows), song.pitched_voices);
+        parent, reassign_unknown_voices(rows, pitched_voices), pitched_voices);
   } else if constexpr (std::same_as<SubRow, UnpitchedNote>) {
     maybe_warn_reassigned_voices<UnpitchedNote>(
-        parent, reassign_unknown_voices(rows), song.unpitched_voices);
+        parent, reassign_unknown_voices(rows, unpitched_voices),
+        unpitched_voices);
   } else if constexpr (std::same_as<SubRow, Chord>) {
     auto pitched_count = 0;
     auto unpitched_count = 0;
     for (auto& chord : rows) {
-      pitched_count =
-          pitched_count + reassign_unknown_voices(chord.pitched_notes);
+      pitched_count = pitched_count + reassign_unknown_voices(
+                                          chord.pitched_notes, pitched_voices);
       unpitched_count =
-          unpitched_count + reassign_unknown_voices(chord.unpitched_notes);
+          unpitched_count +
+          reassign_unknown_voices(chord.unpitched_notes, unpitched_voices);
     }
     maybe_warn_reassigned_voices<PitchedNote>(parent, pitched_count,
-                                              song.pitched_voices);
+                                              pitched_voices);
     maybe_warn_reassigned_voices<UnpitchedNote>(parent, unpitched_count,
-                                                song.unpitched_voices);
+                                                unpitched_voices);
   }
 }
 

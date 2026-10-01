@@ -3,15 +3,10 @@
 #include "column_numbers/PitchedNoteColumn.hpp"
 #include "other/Song.hpp"
 
-auto PitchedNotesModel::get_display_data(const int row_number,
-                                         const int column_number) const
-    -> QVariant {
-  if (column_number ==
-      static_cast<int>(PitchedNoteColumn::pitched_note_voice_number_column)) {
-    return song.pitched_voices.at(get_rows().at(row_number).voice_number).name;
-  }
-  return UndoRowsModel<PitchedNote>::get_display_data(row_number,
-                                                      column_number);
+auto PitchedNotesModel::make_empty_row() const -> PitchedNote {
+  PitchedNote pitched_note;
+  pitched_note.voice_name = song.pitched_voices.at(0).name;
+  return pitched_note;
 }
 
 void PitchedNotesModel::add_to_status(QTextStream& stream,
@@ -21,11 +16,11 @@ void PitchedNotesModel::add_to_status(QTextStream& stream,
   add_frequency_to_stream(
       stream,
       play_state.current_key * interval_to_double(pitched_note.interval));
-  add_timing_to_stream(
-      stream, play_state,
-      play_state.current_velocity *
-          rational_to_double(pitched_note.velocity_ratio) *
-          rational_to_double(
-              song.pitched_voices.at(pitched_note.voice_number).velocity_ratio),
-      rational_to_double(pitched_note.beats));
+  add_timing_to_stream(stream, play_state,
+                       play_state.current_velocity *
+                           rational_to_double(pitched_note.velocity_ratio) *
+                           rational_to_double(get_voice(song.pitched_voices,
+                                                        pitched_note.voice_name)
+                                                  .velocity_ratio),
+                       rational_to_double(pitched_note.beats));
 }

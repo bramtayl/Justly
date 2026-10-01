@@ -23,12 +23,12 @@ void add_insert_row(WindowBody& window_body, const int row_number,
           switch_table.unpitched_notes_model, chords, row_number);
       break;
     case RowType::pitched_voice_type:
-      undo_command = make_insert_voice<PitchedVoice, PitchedNote>(
-          switch_table.pitched_voices_model, row_number);
+      undo_command =
+          make_insert_voice(switch_table.pitched_voices_model, row_number);
       break;
     case RowType::unpitched_voice_type:
-      undo_command = make_insert_voice<UnpitchedVoice, UnpitchedNote>(
-          switch_table.unpitched_voices_model, row_number);
+      undo_command =
+          make_insert_voice(switch_table.unpitched_voices_model, row_number);
       break;
   }
   window_body.undo_stack.push(undo_command);

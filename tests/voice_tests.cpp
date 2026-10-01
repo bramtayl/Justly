@@ -121,9 +121,8 @@ void Tester::test_remove_voice_reassigns_notes_data() {
 }
 
 void Tester::test_remove_voice_reassigns_notes() {
-  // removing voice 1 of 3 should: leave notes on voice 0 alone, reassign
-  // (and warn about the first) note on the removed voice 1 to voice 0, and
-  // shift notes on voice 2 down to voice 1
+  // removing voice 1 of 3 should: leave notes on voice 0 or 2 alone, and
+  // reassign (and warn about) the note on the removed voice 1 to voice 0
   QFETCH(const QString, text);
   QFETCH(const bool, is_pitched);
   QFETCH(const QString, warning_message);
@@ -147,15 +146,15 @@ void Tester::test_remove_voice_reassigns_notes() {
   if (is_pitched) {
     const auto& notes = song.chords.at(0).pitched_notes;
     QCOMPARE(song.pitched_voices.size(), 2);
-    QCOMPARE(notes.at(0).voice_number, 0);
-    QCOMPARE(notes.at(1).voice_number, 0);
-    QCOMPARE(notes.at(2).voice_number, 1);
+    QCOMPARE(notes.at(0).voice_name, QString("A"));
+    QCOMPARE(notes.at(1).voice_name, QString("A"));
+    QCOMPARE(notes.at(2).voice_name, QString("C"));
   } else {
     const auto& notes = song.chords.at(0).unpitched_notes;
     QCOMPARE(song.unpitched_voices.size(), 2);
-    QCOMPARE(notes.at(0).voice_number, 0);
-    QCOMPARE(notes.at(1).voice_number, 0);
-    QCOMPARE(notes.at(2).voice_number, 1);
+    QCOMPARE(notes.at(0).voice_name, QString("D"));
+    QCOMPARE(notes.at(1).voice_name, QString("D"));
+    QCOMPARE(notes.at(2).voice_name, QString("F"));
   }
 
   undo_stack.undo();  // undo the voice removal
@@ -163,15 +162,15 @@ void Tester::test_remove_voice_reassigns_notes() {
   if (is_pitched) {
     const auto& notes = song.chords.at(0).pitched_notes;
     QCOMPARE(song.pitched_voices.size(), 3);
-    QCOMPARE(notes.at(0).voice_number, 0);
-    QCOMPARE(notes.at(1).voice_number, 1);
-    QCOMPARE(notes.at(2).voice_number, 2);
+    QCOMPARE(notes.at(0).voice_name, QString("A"));
+    QCOMPARE(notes.at(1).voice_name, QString("B"));
+    QCOMPARE(notes.at(2).voice_name, QString("C"));
   } else {
     const auto& notes = song.chords.at(0).unpitched_notes;
     QCOMPARE(song.unpitched_voices.size(), 3);
-    QCOMPARE(notes.at(0).voice_number, 0);
-    QCOMPARE(notes.at(1).voice_number, 1);
-    QCOMPARE(notes.at(2).voice_number, 2);
+    QCOMPARE(notes.at(0).voice_name, QString("D"));
+    QCOMPARE(notes.at(1).voice_name, QString("E"));
+    QCOMPARE(notes.at(2).voice_name, QString("F"));
   }
 
   maybe_switch_back_to_chords(undo_stack, voice_row_type);
@@ -182,14 +181,13 @@ void Tester::test_remove_voice_reassigns_notes() {
                        test_dir.filePath("test_song.xml"));
 }
 
-// regression test: RemoveVoiceRows::redo() used to shift note voice_numbers
-// and remove the voice rows only *after* showing the "reassigned" warning
-// dialog. QMessageBox::warning runs a nested event loop, so anything that
-// repainted while that dialog was up would see a voices list that hadn't
-// shrunk yet alongside notes already (or not yet) renumbered to match the
-// post-removal state -- a transient mismatch. This checks that by the time
-// the warning dialog appears, song.pitched_voices and every note's
-// voice_number already agree with each other.
+// regression test: RemoveVoiceRows::redo() used to reassign notes and remove
+// the voice rows only *after* showing the "reassigned" warning dialog.
+// QMessageBox::warning runs a nested event loop, so anything that repainted
+// while that dialog was up would see notes naming a voice that's already
+// gone (or about to be) -- a transient mismatch. This checks that by the
+// time the warning dialog appears, song.pitched_voices and every note's
+// voice_name already agree with each other.
 void Tester::test_remove_voice_row_consistent_during_warning() {
   auto& window_body = main_window.window_body;
   auto& switch_table = window_body.switch_column.switch_table;
@@ -214,8 +212,7 @@ void Tester::test_remove_voice_row_consistent_during_warning() {
           waiting_for_message = false;
           QCOMPARE(song.pitched_voices.size(), 2);
           for (const auto& note : song.chords.at(0).pitched_notes) {
-            QVERIFY(note.voice_number >= 0 &&
-                    note.voice_number < song.pitched_voices.size());
+            QVERIFY(has_voice(song.pitched_voices, note.voice_name));
           }
           QTest::keyEvent(QTest::Press, box_pointer, Qt::Key_Enter);
         }
@@ -228,9 +225,9 @@ void Tester::test_remove_voice_row_consistent_during_warning() {
 
   QCOMPARE(song.pitched_voices.size(), 2);
   const auto& notes = song.chords.at(0).pitched_notes;
-  QCOMPARE(notes.at(0).voice_number, 0);
-  QCOMPARE(notes.at(1).voice_number, 0);
-  QCOMPARE(notes.at(2).voice_number, 1);
+  QCOMPARE(notes.at(0).voice_name, QString("A"));
+  QCOMPARE(notes.at(1).voice_name, QString("A"));
+  QCOMPARE(notes.at(2).voice_name, QString("C"));
 
   undo_stack.undo();  // undo the voice removal
   maybe_switch_back_to_chords(undo_stack, RowType::pitched_voice_type);
@@ -313,10 +310,10 @@ void Tester::test_paste_stale_voice() {
   const auto voice_row_type =
       is_pitched ? RowType::pitched_voice_type : RowType::unpitched_voice_type;
   const auto voice_column =
-      is_pitched ? static_cast<int>(
-                       PitchedNoteColumn::pitched_note_voice_number_column)
-                 : static_cast<int>(
-                       UnpitchedNoteColumn::unpitched_note_voice_number_column);
+      is_pitched
+          ? static_cast<int>(PitchedNoteColumn::pitched_note_voice_name_column)
+          : static_cast<int>(
+                UnpitchedNoteColumn::unpitched_note_voice_name_column);
   const auto* const remove_warning =
       is_pitched ? "Reassigning 1 pitched note voice to the first voice \"A\""
                  : "Reassigning 1 unpitched note voice to the first voice "
@@ -351,9 +348,9 @@ void Tester::test_paste_stale_voice() {
   close_message_later(main_window, waiting_for_message, paste_warning);
   edit_menu.paste_menu.paste_over_action.trigger();
   QVERIFY(!waiting_for_message);
-  QCOMPARE(is_pitched ? song.chords.at(0).pitched_notes.at(0).voice_number
-                      : song.chords.at(0).unpitched_notes.at(0).voice_number,
-           0);
+  QCOMPARE(is_pitched ? song.chords.at(0).pitched_notes.at(0).voice_name
+                      : song.chords.at(0).unpitched_notes.at(0).voice_name,
+           QString(is_pitched ? "A" : "D"));
   back_to_chords_action.trigger();
 
   // restore the shared fixture
@@ -377,7 +374,7 @@ void Tester::test_paste_voice_after_insert_data() {
 
 void Tester::test_paste_voice_after_insert() {
   // copied notes name their voice, so inserting a voice before it doesn't
-  // change which voice pasting lands on, even though its number shifts
+  // change which voice pasting lands on
   QFETCH(const QString, text);
   QFETCH(const bool, is_pitched);
 
@@ -393,10 +390,10 @@ void Tester::test_paste_voice_after_insert() {
   const auto voice_row_type =
       is_pitched ? RowType::pitched_voice_type : RowType::unpitched_voice_type;
   const auto voice_column =
-      is_pitched ? static_cast<int>(
-                       PitchedNoteColumn::pitched_note_voice_number_column)
-                 : static_cast<int>(
-                       UnpitchedNoteColumn::unpitched_note_voice_number_column);
+      is_pitched
+          ? static_cast<int>(PitchedNoteColumn::pitched_note_voice_name_column)
+          : static_cast<int>(
+                UnpitchedNoteColumn::unpitched_note_voice_name_column);
 
   open_text(main_window, text);
 
@@ -406,19 +403,19 @@ void Tester::test_paste_voice_after_insert() {
   edit_menu.copy_action.trigger();
   back_to_chords_action.trigger();
 
-  // insert a new voice before both existing voices, shifting their numbers
+  // insert a new voice before both existing voices
   switch_to(main_window, voice_row_type, -1);
   select_cell(switch_table, 0, 0);
   edit_menu.insert_menu.insert_into_start_action.trigger();
   back_to_chords_action.trigger();
 
-  // pasting should land on the second voice's new number
+  // pasting should still land on the second voice
   switch_to(main_window, note_row_type, 0);
   select_cell(switch_table, 0, voice_column);
   edit_menu.paste_menu.paste_over_action.trigger();
-  QCOMPARE(is_pitched ? song.chords.at(0).pitched_notes.at(0).voice_number
-                      : song.chords.at(0).unpitched_notes.at(0).voice_number,
-           2);
+  QCOMPARE(is_pitched ? song.chords.at(0).pitched_notes.at(0).voice_name
+                      : song.chords.at(0).unpitched_notes.at(0).voice_name,
+           QString(is_pitched ? "B" : "E"));
   back_to_chords_action.trigger();
 
   // restore the shared fixture
@@ -467,26 +464,25 @@ void Tester::test_paste_chord_voice_after_insert() {
               SELECT_AND_CLEAR);
   edit_menu.copy_action.trigger();
 
-  // insert a new voice before both existing voices, shifting their numbers
+  // insert a new voice before both existing voices
   switch_to(main_window, voice_row_type, -1);
   select_cell(switch_table, 0, 0);
   edit_menu.insert_menu.insert_into_start_action.trigger();
   back_to_chords_action.trigger();
 
-  // pasting the chord back should restore both notes at their voices' new
-  // numbers
+  // pasting the chord back should restore both notes to their voices
   get_selection_model(switch_table)
       .select(QItemSelection(get_model(switch_table).index(0, 0),
                              get_model(switch_table).index(0, last_column)),
               SELECT_AND_CLEAR);
   edit_menu.paste_menu.paste_over_action.trigger();
 
-  QCOMPARE(is_pitched ? song.chords.at(0).pitched_notes.at(0).voice_number
-                      : song.chords.at(0).unpitched_notes.at(0).voice_number,
-           1);
-  QCOMPARE(is_pitched ? song.chords.at(0).pitched_notes.at(1).voice_number
-                      : song.chords.at(0).unpitched_notes.at(1).voice_number,
-           2);
+  QCOMPARE(is_pitched ? song.chords.at(0).pitched_notes.at(0).voice_name
+                      : song.chords.at(0).unpitched_notes.at(0).voice_name,
+           QString(is_pitched ? "A" : "D"));
+  QCOMPARE(is_pitched ? song.chords.at(0).pitched_notes.at(1).voice_name
+                      : song.chords.at(0).unpitched_notes.at(1).voice_name,
+           QString(is_pitched ? "B" : "E"));
 
   // restore the shared fixture
   open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
@@ -635,6 +631,72 @@ void Tester::test_set_voice_name() {
   maybe_switch_back_to_chords(undo_stack, row_type);
 }
 
+void Tester::test_rename_voice_renames_notes_data() {
+  QTest::addColumn<bool>("is_pitched");
+
+  QTest::newRow("pitched voice") << true;
+  QTest::newRow("unpitched voice") << false;
+}
+
+void Tester::test_rename_voice_renames_notes() {
+  // notes name their voice, so renaming a voice must rename its notes too,
+  // and undo must rename them back
+  QFETCH(const bool, is_pitched);
+
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& undo_stack = window_body.undo_stack;
+  auto& song = window_body.song;
+
+  const auto voice_row_type =
+      is_pitched ? RowType::pitched_voice_type : RowType::unpitched_voice_type;
+  const auto name_column =
+      is_pitched
+          ? static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column)
+          : static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column);
+
+  open_text(main_window,
+            make_voice_song_xml({"A", "B"}, {"D", "E"}, {{{0, 1}, {0, 1}}}));
+
+  const auto get_note_voice_names = [&song, is_pitched]() -> QList<QString> {
+    QList<QString> names;
+    const auto& chord = song.chords.at(0);
+    if (is_pitched) {
+      for (const auto& note : chord.pitched_notes) {
+        names.push_back(note.voice_name);
+      }
+    } else {
+      for (const auto& note : chord.unpitched_notes) {
+        names.push_back(note.voice_name);
+      }
+    }
+    return names;
+  };
+  const auto old_names = get_note_voice_names();
+
+  switch_to(main_window, voice_row_type, -1);
+  auto& model = get_model(switch_table);
+  QVERIFY(
+      model.setData(model.index(0, name_column), QString("Z"), Qt::EditRole));
+  QCOMPARE(get_note_voice_names(),
+           (QList<QString>{"Z", is_pitched ? "B" : "E"}));
+
+  undo_stack.undo();
+  QCOMPARE(get_note_voice_names(), old_names);
+
+  undo_stack.redo();
+  QCOMPARE(get_note_voice_names(),
+           (QList<QString>{"Z", is_pitched ? "B" : "E"}));
+  undo_stack.undo();
+
+  maybe_switch_back_to_chords(undo_stack, voice_row_type);
+
+  // restore the shared fixture
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}
+
 void Tester::test_voice_paste_insert_disabled_data() {
   QTest::addColumn<RowType>("row_type");
   QTest::addColumn<int>("column_number");
@@ -741,7 +803,7 @@ void Tester::test_paste_voice_after_remove_data() {
 
 void Tester::test_paste_voice_after_remove() {
   // copied notes name their voice, so removing an earlier voice doesn't
-  // change which voice pasting lands on, even though its number shifts
+  // change which voice pasting lands on
   QFETCH(const QString, text);
   QFETCH(const bool, is_pitched);
 
@@ -757,10 +819,10 @@ void Tester::test_paste_voice_after_remove() {
   const auto voice_row_type =
       is_pitched ? RowType::pitched_voice_type : RowType::unpitched_voice_type;
   const auto voice_column =
-      is_pitched ? static_cast<int>(
-                       PitchedNoteColumn::pitched_note_voice_number_column)
-                 : static_cast<int>(
-                       UnpitchedNoteColumn::unpitched_note_voice_number_column);
+      is_pitched
+          ? static_cast<int>(PitchedNoteColumn::pitched_note_voice_name_column)
+          : static_cast<int>(
+                UnpitchedNoteColumn::unpitched_note_voice_name_column);
 
   open_text(main_window, text);
 
@@ -780,9 +842,9 @@ void Tester::test_paste_voice_after_remove() {
   switch_to(main_window, note_row_type, 0);
   select_cell(switch_table, 1, voice_column);
   edit_menu.paste_menu.paste_over_action.trigger();
-  QCOMPARE(is_pitched ? song.chords.at(0).pitched_notes.at(1).voice_number
-                      : song.chords.at(0).unpitched_notes.at(1).voice_number,
-           0);
+  QCOMPARE(is_pitched ? song.chords.at(0).pitched_notes.at(1).voice_name
+                      : song.chords.at(0).unpitched_notes.at(1).voice_name,
+           QString(is_pitched ? "B" : "E"));
   back_to_chords_action.trigger();
 
   // restore the shared fixture
@@ -861,10 +923,10 @@ void Tester::test_paste_unknown_voice() {
 
   const auto& chord = song.chords.at(0);
   if (row_type != RowType::unpitched_note_type) {
-    QCOMPARE(chord.pitched_notes.at(0).voice_number, 0);
+    QCOMPARE(chord.pitched_notes.at(0).voice_name, QString("A"));
   }
   if (row_type != RowType::pitched_note_type) {
-    QCOMPARE(chord.unpitched_notes.at(0).voice_number, 0);
+    QCOMPARE(chord.unpitched_notes.at(0).voice_name, QString("D"));
   }
   if (row_type != RowType::chord_type) {
     main_window.song_menu_bar.view_menu.back_to_chords_action.trigger();

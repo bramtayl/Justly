@@ -11,4 +11,8 @@ struct PitchedVoicesModel : public VoicesModel<PitchedVoice> {
   [[nodiscard]] auto check_cell(int column_number,
                                 const QVariant& new_value) const
       -> bool override;
+
+  [[nodiscard]] auto make_set_cell(const QModelIndex& index,
+                                   const QVariant& new_value)
+      -> QUndoCommand* override;
 };

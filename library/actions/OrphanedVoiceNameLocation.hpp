@@ -5,14 +5,12 @@
 #include "rows/Chord.hpp"
 #include "rows/Voice.hpp"
 
-// a note whose voice_number was overwritten with a value that doesn't encode
-// the original (e.g. reassigned to the first remaining voice), so the old
-// voice number must be stored to be restorable on undo
-template <VoiceInterface SubVoice>
-struct OrphanedVoiceNumberLocation {
+// a note reassigned from a removed voice to the first remaining voice, so the
+// old voice name must be stored to be restorable on undo
+struct OrphanedVoiceNameLocation {
   int chord_number;
   int note_number;
-  int old_voice_number;
+  QString old_voice_name;
 };
 
 // shared by RemoveVoiceRows and pasting so a live note reassignment and a

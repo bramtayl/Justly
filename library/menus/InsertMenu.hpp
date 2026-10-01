@@ -3,7 +3,8 @@
 #include <QtWidgets/QMenu>
 
 #include "actions/InsertRow.hpp"
-#include "actions/InsertVoiceRow.hpp"
+#include "models/VoicesModel.hpp"
+#include "rows/Chord.hpp"
 
 enum class RowType : std::uint8_t;
 struct WindowBody;
@@ -13,13 +14,13 @@ template <VoiceInterface SubVoice, NoteInterface SubNote>
                                            const QList<Chord>& chords,
                                            const int row_number)
     -> QUndoCommand* {
-  SubNote sub_note;
+  auto sub_note = notes_model.make_empty_row();
   sub_note.beats = chords[notes_model.parent_chord_number].beats;
   return new InsertRow(  // NOLINT(cppcoreguidelines-owning-memory)
       notes_model, row_number, std::move(sub_note));
 }
 
-template <VoiceInterface SubVoice, NoteInterface SubNote>
+template <VoiceInterface SubVoice>
 [[nodiscard]] static auto make_insert_voice(VoicesModel<SubVoice>& voices_model,
                                             const int row_number)
     -> QUndoCommand* {
@@ -32,8 +33,8 @@ template <VoiceInterface SubVoice, NoteInterface SubNote>
     sub_voice.name =
         QString("%1 voice %2").arg(SubVoice::get_pitched()).arg(created_voices);
   } while (get_named_index(voices, sub_voice.name) != voices.cend());
-  return new InsertVoiceRow<  // NOLINT(cppcoreguidelines-owning-memory)
-      SubVoice, SubNote>(voices_model, row_number, std::move(sub_voice));
+  return new InsertRow(  // NOLINT(cppcoreguidelines-owning-memory)
+      voices_model, row_number, std::move(sub_voice));
 }
 
 void add_insert_row(WindowBody& window_body, int row_number,

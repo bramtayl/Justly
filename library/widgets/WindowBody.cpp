@@ -419,7 +419,7 @@ void export_midi_to_file(WindowBody& window_body, const QString& output_file) {
       }
       const auto channel_number = pitched_channels.at(channel_index);
       const auto& program = get_voice_program(
-          get_some_programs(true), pitched_voices, event.voice_number);
+          get_some_programs(true), pitched_voices.at(event.voice_number));
       pitched_channel_end_times[channel_index] =
           end_tick + program.release_milliseconds;
 
@@ -452,8 +452,7 @@ void export_midi_to_file(WindowBody& window_body, const QString& output_file) {
                        end_tick);
     } else {
       const auto& voice = unpitched_voices.at(event.voice_number);
-      const auto& program = get_voice_program(
-          get_some_programs(false), unpitched_voices, event.voice_number);
+      const auto& program = get_voice_program(get_some_programs(false), voice);
 
       if (has_percussion_program && start_tick == percussion_tick &&
           program.preset_number != percussion_preset_number) {
@@ -745,9 +744,10 @@ auto open_file(WindowBody& window_body, const QString& filename) -> bool {
     for (auto chord_number = 0; chord_number < new_chords.size();
          chord_number = chord_number + 1) {
       const auto& chord = new_chords.at(chord_number);
-      if (!check_note_voices(window_body, chord.pitched_notes, chord_number) ||
+      if (!check_note_voices(window_body, chord.pitched_notes,
+                             new_pitched_voices, chord_number) ||
           !check_note_voices(window_body, chord.unpitched_notes,
-                             chord_number)) {
+                             new_unpitched_voices, chord_number)) {
         names_and_voices_ok = false;
         break;
       }
@@ -906,24 +906,25 @@ struct Spelling {
 };
 
 // the key signature's alteration for each step, indexed C through B
-auto get_key_alterations(const int fifths) -> std::array<int, STEPS_PER_OCTAVE> {
+auto get_key_alterations(const int fifths)
+    -> std::array<int, STEPS_PER_OCTAVE> {
   // step indices in the order sharps (or, reversed, flats) are added
   static const std::array<int, STEPS_PER_OCTAVE> SHARP_ORDER = {3, 0, 4, 1,
-                                                             5, 2, 6};
+                                                                5, 2, 6};
   std::array<int, STEPS_PER_OCTAVE> alterations = {};
   const auto number_of_accidentals = std::abs(static_cast<long long>(fifths));
   const auto direction = fifths > 0 ? 1 : -1;
-  for (auto position = 0; position < STEPS_PER_OCTAVE; position = position + 1) {
+  for (auto position = 0; position < STEPS_PER_OCTAVE;
+       position = position + 1) {
     const auto order_index =
         fifths > 0 ? position : STEPS_PER_OCTAVE - 1 - position;
     Q_ASSERT(order_index >= 0 && order_index < STEPS_PER_OCTAVE);
     const auto step_index = SHARP_ORDER.at(order_index);
     // past seven accidentals, the cycle wraps around into double accidentals
-    const auto times = number_of_accidentals > position
-                           ? (number_of_accidentals - 1 - position) /
-                                     STEPS_PER_OCTAVE +
-                                 1
-                           : 0;
+    const auto times =
+        number_of_accidentals > position
+            ? (number_of_accidentals - 1 - position) / STEPS_PER_OCTAVE + 1
+            : 0;
     Q_ASSERT(step_index >= 0 && step_index < STEPS_PER_OCTAVE);
     alterations.at(step_index) = direction * static_cast<int>(times);
   }
@@ -946,6 +947,8 @@ auto get_max_duration(const QList<MusicXMLNote>& notes) -> int {
 void add_chord(ChordsModel& chords_model, const MusicXMLChord& parse_chord,
                const int measure_number, const int key, const int last_midi_key,
                const int song_divisions, const int time_delta) {
+  // voices are already in the song, under their deduplicated names
+  const auto& song = chords_model.song;
   Chord new_chord;
   new_chord.beats = Rational(time_delta, song_divisions);
   new_chord.interval = get_interval(key - last_midi_key);
@@ -955,7 +958,8 @@ void add_chord(ChordsModel& chords_model, const MusicXMLChord& parse_chord,
     UnpitchedNote new_note;
     new_note.beats = Rational(parse_unpitched_note.duration, song_divisions);
     new_note.words = parse_unpitched_note.words;
-    new_note.voice_number = parse_unpitched_note.voice_number;
+    new_note.voice_name =
+        song.unpitched_voices.at(parse_unpitched_note.voice_number).name;
     unpitched_notes.push_back(std::move(new_note));
   }
   auto& pitched_notes = new_chord.pitched_notes;
@@ -965,7 +969,8 @@ void add_chord(ChordsModel& chords_model, const MusicXMLChord& parse_chord,
     new_note.words = parse_pitched_note.words;
     new_note.interval = get_interval(parse_pitched_note.midi_number - key,
                                      parse_pitched_note.septimal_quartertones);
-    new_note.voice_number = parse_pitched_note.voice_number;
+    new_note.voice_name =
+        song.pitched_voices.at(parse_pitched_note.voice_number).name;
     pitched_notes.push_back(std::move(new_note));
   }
   chords_model.insert_row(chords_model.rowCount(QModelIndex()),
@@ -1398,8 +1403,7 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
                 // an el from an F# lowered by a 7, so pitches are spelled
                 // from the accidentals as they would be read
                 step = get_content(get_xml_child(note_field, "step"));
-                octave_number =
-                    xml_to_int(get_xml_child(note_field, "octave"));
+                octave_number = xml_to_int(get_xml_child(note_field, "octave"));
               } else if (name == "accidental") {
                 const auto accidental_name = get_content(note_field);
                 const auto found_spelling =
@@ -1467,8 +1471,7 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
               } else {
                 spelling.chromatic = key_alterations.at(step_index);
               }
-              midi_number = step_halfsteps.at(step_index) +
-                            spelling.chromatic +
+              midi_number = step_halfsteps.at(step_index) + spelling.chromatic +
                             octave_number * HALFSTEPS_PER_OCTAVE + C_0_MIDI +
                             current_transpose_semitones;
               septimal_quartertones = spelling.septimal_quartertones;
@@ -1498,9 +1501,9 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
               // keyed by written step and octave rather than pitch, since a
               // note tied across a barline usually drops its accidental,
               // but still continues the pitch it was tied from
-              const auto tied_note_key =
-                  voice_key + ":" + QString::fromStdString(step) + ":" +
-                  QString::number(octave_number);
+              const auto tied_note_key = voice_key + ":" +
+                                         QString::fromStdString(step) + ":" +
+                                         QString::number(octave_number);
               if (tie_end && !tied_notes.contains(tied_note_key)) {
                 // no matching tie-start -- the schema doesn't require ties
                 // to be well-formed, so a malformed or hand-edited file can
@@ -1705,8 +1708,8 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
   if (unpitched_voice_names.empty()) {
     // a file with no percussion/unpitched notes would otherwise leave
     // song.unpitched_voices completely empty, so manually inserting any
-    // unpitched note afterward (which defaults its voice_number to 0)
-    // would reference a voice that doesn't exist
+    // unpitched note afterward (which defaults to the first voice) would
+    // reference a voice that doesn't exist
     unpitched_voice_names.push_back(QObject::tr("unpitched voice 1"));
   }
 

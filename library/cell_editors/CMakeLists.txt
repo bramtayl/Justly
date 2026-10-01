@@ -3,7 +3,6 @@ set(EDITOR_HEADERS
     "MidiNumberEditor.hpp"
     "RationalEditor.hpp"
     "StringPicker.hpp"
-    "VoiceNumberPicker.hpp"
 )
 
 target_sources(JustlyLibrary PUBLIC FILE_SET justly_headers FILES
@@ -15,7 +14,6 @@ target_sources(JustlyLibrary PRIVATE
     "MidiNumberEditor.cpp"
     "RationalEditor.cpp"
     "StringPicker.cpp"
-    "VoiceNumberPicker.cpp"
 )
 
 # need to include because Q_OBJECT compiles code

@@ -3,14 +3,14 @@ target_sources(JustlyLibrary PUBLIC FILE_SET justly_headers FILES
     "DeleteCells.hpp"
     "InsertRemoveRows.hpp"
     "InsertRow.hpp"
-    "InsertVoiceRow.hpp"
-    "OrphanedVoiceNumberLocation.hpp"
+    "NoteLocation.hpp"
+    "OrphanedVoiceNameLocation.hpp"
     "RemoveVoiceRows.hpp"
+    "RenameVoice.hpp"
     "ReplaceTable.hpp"
     "SetCell.hpp"
     "SetCells.hpp"
     "SetDouble.hpp"
-    "ShiftedVoiceNumberLocation.hpp"
 )
 
 target_sources(JustlyLibrary PRIVATE

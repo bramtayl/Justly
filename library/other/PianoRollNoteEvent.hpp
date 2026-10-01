@@ -36,14 +36,17 @@ static void append_piano_roll_events(
     event.velocity = play_state.current_velocity *
                      rational_to_double(sub_note.velocity_ratio) *
                      rational_to_double(voice_velocity_ratio);
-    event.voice_number = sub_note.voice_number;
     event.chord_number = chord_number;
     event.note_number = note_number;
     if constexpr (std::is_same_v<SubNote, PitchedNote>) {
+      event.voice_number =
+          get_voice_number(pitched_voices, sub_note.voice_name);
       event.is_pitched = true;
       event.frequency =
           play_state.current_key * interval_to_double(sub_note.interval);
     } else {
+      event.voice_number =
+          get_voice_number(unpitched_voices, sub_note.voice_name);
       event.is_pitched = false;
     }
     events.push_back(event);

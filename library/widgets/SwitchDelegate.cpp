@@ -80,16 +80,16 @@ auto SwitchDelegate::createEditor(QWidget* parent_pointer,
     result_pointer = &specific_result;
   }
   if (current_row_type == RowType::pitched_note_type &&
-      column == static_cast<int>(
-                    PitchedNoteColumn::pitched_note_voice_number_column)) {
+      column ==
+          static_cast<int>(PitchedNoteColumn::pitched_note_voice_name_column)) {
     result_pointer =
-        &create_voice_number_picker(parent_pointer, song.pitched_voices);
+        &create_string_picker(parent_pointer, get_names(song.pitched_voices));
   }
   if (current_row_type == RowType::unpitched_note_type &&
       column == static_cast<int>(
-                    UnpitchedNoteColumn::unpitched_note_voice_number_column)) {
+                    UnpitchedNoteColumn::unpitched_note_voice_name_column)) {
     result_pointer =
-        &create_voice_number_picker(parent_pointer, song.unpitched_voices);
+        &create_string_picker(parent_pointer, get_names(song.unpitched_voices));
   }
   if (current_row_type == RowType::pitched_voice_type &&
       column == static_cast<int>(

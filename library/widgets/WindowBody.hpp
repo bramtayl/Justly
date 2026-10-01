@@ -80,7 +80,7 @@ template <VoiceInterface SubVoice>
        voice_number = voice_number + 1) {
     const auto& voice = voices.at(voice_number);
 
-    const auto& program = get_voice_program(programs, voices, voice_number);
+    const auto& program = get_voice_program(programs, voice);
 
     const auto maybe_channel_number =
         get_channel_number(parent, player, program, current_time);
@@ -244,15 +244,14 @@ template <VoiceInterface SubVoice>
   return true;
 }
 
-// from_xml sets voice_number to -1 when a note's voice_name doesn't match any
-// voice
-template <NoteInterface SubNote>
+template <NoteInterface SubNote, VoiceInterface SubVoice>
 [[nodiscard]] static auto check_note_voices(QWidget& parent,
                                             const QList<SubNote>& notes,
+                                            const QList<SubVoice>& voices,
                                             const int chord_number) -> bool {
   for (auto note_number = 0; note_number < notes.size();
        note_number = note_number + 1) {
-    if (notes.at(note_number).voice_number < 0) {
+    if (!has_voice(voices, notes.at(note_number).voice_name)) {
       QString message;
       QTextStream stream(&message);
       stream << QObject::tr("Voice");

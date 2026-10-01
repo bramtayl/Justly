@@ -75,7 +75,7 @@ void Tester::test_column_header_data() {
       << "Unpitched notes";
   QTest::newRow("pitched note voice")
       << RowType::pitched_note_type << 1
-      << static_cast<int>(PitchedNoteColumn::pitched_note_voice_number_column)
+      << static_cast<int>(PitchedNoteColumn::pitched_note_voice_name_column)
       << "Voice";
   QTest::newRow("pitched note interval")
       << RowType::pitched_note_type << 1
@@ -95,8 +95,7 @@ void Tester::test_column_header_data() {
       << "Words";
   QTest::newRow("unpitched note voice")
       << RowType::unpitched_note_type << 1
-      << static_cast<int>(
-             UnpitchedNoteColumn::unpitched_note_voice_number_column)
+      << static_cast<int>(UnpitchedNoteColumn::unpitched_note_voice_name_column)
       << "Voice";
   QTest::newRow("unpitched note beats")
       << RowType::unpitched_note_type << 1
@@ -704,8 +703,8 @@ void Tester::test_navigate_chords_after_edit() {
   switch_to(main_window, RowType::pitched_note_type, 1);
   auto& model = get_model(switch_table);
   QVERIFY(model.setData(
-      model.index(0,
-                  static_cast<int>(PitchedNoteColumn::pitched_note_words_column)),
+      model.index(
+          0, static_cast<int>(PitchedNoteColumn::pitched_note_words_column)),
       "edited"));
   const auto index_after_edit = undo_stack.index();
 
