@@ -693,9 +693,10 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
     combine_ties(part);
   }
   const auto song_divisions = get_song_divisions(parts);
+  const auto playback_order = get_playback_order(get_score_measures(parts));
   for (auto& part : parts) {
     normalize_divisions(part, song_divisions);
-    unroll_repeats(part);
+    unroll_repeats(part, playback_order);
   }
   auto voice_names = assign_voices(parts);
 

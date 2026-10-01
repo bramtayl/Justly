@@ -1,7 +1,9 @@
 #include "musicxml/MusicXMLPart.hpp"
 
+#include <QtCore/QSet>
 #include <QtCore/QTextStream>
 #include <QtWidgets/QMessageBox>
+#include <algorithm>
 #include <array>
 #include <numeric>
 
@@ -231,11 +233,21 @@ auto parse_note(QWidget& parent, xmlNode& note_node, MusicXMLMeasure& measure,
   return true;
 }
 
-// records forward/backward repeats and first/second-ending brackets onto the
-// measure, so the part can be unrolled later
+void maybe_add_marker(xmlNode& node, const char* name,
+                      QList<QString>& markers) {
+  const auto maybe_marker = maybe_get_property(node, name);
+  if (maybe_marker.has_value()) {
+    markers.push_back(QString::fromStdString(maybe_marker.value()));
+  }
+}
+
+// records forward/backward repeats, first/second-ending brackets, and segnos
+// and codas onto the measure, so the part can be unrolled later
 auto parse_barline(QWidget& parent, xmlNode& barline_node,
                    MusicXMLMeasure& measure, QList<int>& active_ending_numbers)
     -> bool {
+  maybe_add_marker(barline_node, "segno", measure.segnos);
+  maybe_add_marker(barline_node, "coda", measure.codas);
   for (auto& child : get_xml_children(barline_node)) {
     if (node_is(child, "repeat")) {
       const auto direction = get_property(child, "direction");
@@ -244,11 +256,8 @@ auto parse_barline(QWidget& parent, xmlNode& barline_node,
       } else {
         Q_ASSERT(direction == "backward");
         measure.has_backward_repeat = true;
-        auto* const times_property =
-            xmlGetProp(&child, c_string_to_xml_string("times"));
-        const auto times_text = times_property == nullptr
-                                    ? std::string()
-                                    : xml_string_to_string(times_property);
+        const auto times_text =
+            maybe_get_property(child, "times").value_or("");
         if (!times_text.empty()) {
           const auto maybe_times = get_int_or_warn(
               parent, times_text, QObject::tr("Repeat error"),
@@ -285,6 +294,42 @@ auto parse_barline(QWidget& parent, xmlNode& barline_node,
     }
   }
   return true;
+}
+
+// records jumps, and the segnos and codas they jump to, onto the measure
+void parse_sound(xmlNode& sound_node, MusicXMLMeasure& measure) {
+  QList<int> times;
+  const auto time_only_text = QString::fromStdString(
+      maybe_get_property(sound_node, "time-only").value_or(""));
+  for (const auto& token : time_only_text.split(',', Qt::SkipEmptyParts)) {
+    bool is_number = false;
+    const auto time = token.trimmed().toInt(&is_number);
+    if (is_number) {
+      times.push_back(time);
+    }
+  }
+  const auto maybe_add_jump = [&sound_node, &measure, &times](
+                                  const JumpType type,
+                                  const char* name) -> void {
+    const auto maybe_target = maybe_get_property(sound_node, name);
+    // dacapo and forward-repeat can be "no"
+    if (maybe_target.has_value() && maybe_target.value() != "no") {
+      measure.jumps.push_back(
+          {.type = type,
+           .target = QString::fromStdString(maybe_target.value()),
+           .times = times});
+    }
+  };
+  maybe_add_jump(JumpType::da_capo, "dacapo");
+  maybe_add_jump(JumpType::dal_segno, "dalsegno");
+  maybe_add_jump(JumpType::to_coda, "tocoda");
+  maybe_add_jump(JumpType::fine, "fine");
+  maybe_add_marker(sound_node, "segno", measure.segnos);
+  maybe_add_marker(sound_node, "coda", measure.codas);
+  // a forward repeat that isn't drawn, e.g. at the start of a trio
+  if (maybe_get_property(sound_node, "forward-repeat") == "yes") {
+    measure.has_forward_repeat = true;
+  }
 }
 
 // times are in the part's own divisions, as written
@@ -328,6 +373,14 @@ auto parse_part(QWidget& parent, xmlNode& part_node, MusicXMLPart& part)
                            active_ending_numbers)) {
           return false;
         }
+      } else if (measure_element_name == "sound") {
+        parse_sound(measure_element, measure);
+      } else if (measure_element_name == "direction") {
+        auto* const sound_pointer =
+            maybe_get_xml_child(measure_element, "sound");
+        if (sound_pointer != nullptr) {
+          parse_sound(*sound_pointer, measure);
+        }
       }
     }
     measure.end_time = current_time;
@@ -348,57 +401,179 @@ auto get_most_recent(const QMap<int, int>& changes, const int time,
   return iterator.value();
 }
 
-auto get_playback_order(const QList<MusicXMLMeasure>& measures) -> QList<int> {
-  QList<int> playback_order;
-  const auto number_of_measures = static_cast<int>(measures.size());
-  auto repeat_start_index = -1;
-  auto block_start_index = 0;
+namespace {
 
-  const auto flush = [&](const int first_index, const int last_index) -> auto {
-    for (auto index = first_index; index <= last_index; index = index + 1) {
-      playback_order.push_back(index);
+// the measure marked with the named segno or coda, or, failing that, the
+// nearest marked measure in the direction of the jump
+auto find_marker(const QList<MusicXMLMeasure>& measures,
+                 QList<QString> MusicXMLMeasure::* markers, const QString& name,
+                 const int fallback_start_index, const int fallback_step)
+    -> std::optional<int> {
+  const auto number_of_measures = static_cast<int>(measures.size());
+  for (auto index = 0; index < number_of_measures; index = index + 1) {
+    if ((measures.at(index).*markers).contains(name)) {
+      return index;
     }
-  };
+  }
+  for (auto index = fallback_start_index;
+       index >= 0 && index < number_of_measures;
+       index = index + fallback_step) {
+    if (!(measures.at(index).*markers).isEmpty()) {
+      return index;
+    }
+  }
+  return std::nullopt;
+}
+
+// whether the ending measure belongs to the last of its set of endings
+auto is_in_last_ending(const QList<MusicXMLMeasure>& measures,
+                       const int measure_index) -> bool {
+  const auto number_of_measures = static_cast<int>(measures.size());
+  auto last_index = measure_index;
+  while (last_index + 1 < number_of_measures &&
+         !measures.at(last_index + 1).ending_numbers.isEmpty()) {
+    last_index = last_index + 1;
+  }
+  const auto& last_ending_numbers = measures.at(last_index).ending_numbers;
+  return std::ranges::any_of(
+      measures.at(measure_index).ending_numbers,
+      [&last_ending_numbers](const int number) -> bool {
+        return last_ending_numbers.contains(number);
+      });
+}
+
+}  // namespace
+
+auto get_playback_order(const QList<MusicXMLMeasure>& measures) -> QList<int> {
+  const auto number_of_measures = static_cast<int>(measures.size());
+  QList<int> playback_order;
+  QList<int> times_played(number_of_measures, 0);
+  // how many times each backward repeat has gone back, this time through
+  QList<int> times_repeated(number_of_measures, 0);
+  // measures whose da capo or dal segno has been taken
+  QSet<int> jumped_from;
+  // after a da capo or dal segno, repeats are skipped, and only the last
+  // ending is played
+  auto after_jump = false;
+  // a backward repeat without a forward repeat goes back to the end of the
+  // last repeat or set of endings
+  auto repeat_start_index = 0;
+  auto pass_number = 1;
+  auto in_endings = false;
+  auto repeating = false;
 
   auto measure_index = 0;
   while (measure_index < number_of_measures) {
     const auto& measure = measures.at(measure_index);
-    if (measure.has_forward_repeat) {
-      flush(block_start_index, measure_index - 1);
+    const auto& ending_numbers = measure.ending_numbers;
+    if (!repeating &&
+        (measure.has_forward_repeat || (in_endings && ending_numbers.isEmpty()))) {
       repeat_start_index = measure_index;
-      block_start_index = measure_index;
+      pass_number = 1;
     }
-    if (measure.has_backward_repeat) {
-      const auto start_index =
-          repeat_start_index == -1 ? block_start_index : repeat_start_index;
-      // a later ending (e.g. the second ending) has no repeat barline of
-      // its own; it just continues on directly after the measure with the
-      // backward repeat, so absorb any immediately-following ending measures
-      auto block_end_index = measure_index;
-      while (block_end_index + 1 < number_of_measures &&
-             !measures.at(block_end_index + 1).ending_numbers.isEmpty()) {
-        block_end_index = block_end_index + 1;
+    repeating = false;
+    in_endings = !ending_numbers.isEmpty();
+    if (in_endings && !(after_jump ? is_in_last_ending(measures, measure_index)
+                                   : ending_numbers.contains(pass_number))) {
+      measure_index = measure_index + 1;
+      continue;
+    }
+
+    playback_order.push_back(measure_index);
+    auto& time_through = times_played[measure_index];
+    time_through = time_through + 1;
+    const auto applies = [time_through](const MusicXMLJump& jump,
+                                        const bool by_default) -> bool {
+      return jump.times.isEmpty() ? by_default
+                                  : jump.times.contains(time_through);
+    };
+
+    if (std::ranges::any_of(
+            measure.jumps,
+            [&applies, after_jump](const MusicXMLJump& jump) -> bool {
+              return jump.type == JumpType::fine && applies(jump, after_jump);
+            })) {
+      break;
+    }
+
+    if (measure.has_backward_repeat && !after_jump) {
+      auto& repeats = times_repeated[measure_index];
+      if (repeats < measure.repeat_times - 1) {
+        repeats = repeats + 1;
+        pass_number = repeats + 1;
+        measure_index = repeat_start_index;
+        repeating = true;
+        continue;
       }
-      for (auto pass_number = 1; pass_number <= measure.repeat_times;
-           pass_number = pass_number + 1) {
-        for (auto inner_index = start_index; inner_index <= block_end_index;
-             inner_index = inner_index + 1) {
-          const auto& ending_numbers =
-              measures.at(inner_index).ending_numbers;
-          if (ending_numbers.isEmpty() ||
-              ending_numbers.contains(pass_number)) {
-            playback_order.push_back(inner_index);
-          }
+      repeats = 0;
+      if (!in_endings) {
+        repeat_start_index = measure_index + 1;
+        pass_number = 1;
+      }
+    }
+
+    std::optional<int> maybe_jump_index;
+    for (const auto& jump : measure.jumps) {
+      if (jump.type == JumpType::to_coda && applies(jump, after_jump)) {
+        maybe_jump_index = find_marker(measures, &MusicXMLMeasure::codas,
+                                       jump.target, measure_index + 1, 1);
+      } else if ((jump.type == JumpType::da_capo ||
+                  jump.type == JumpType::dal_segno) &&
+                 applies(jump, !jumped_from.contains(measure_index))) {
+        maybe_jump_index =
+            jump.type == JumpType::da_capo
+                ? 0
+                : find_marker(measures, &MusicXMLMeasure::segnos, jump.target,
+                              measure_index, -1);
+        if (maybe_jump_index.has_value()) {
+          jumped_from.insert(measure_index);
+          after_jump = true;
         }
       }
-      measure_index = block_end_index;
-      block_start_index = block_end_index + 1;
-      repeat_start_index = -1;
+      if (maybe_jump_index.has_value()) {
+        break;
+      }
     }
-    measure_index = measure_index + 1;
+    if (maybe_jump_index.has_value()) {
+      measure_index = maybe_jump_index.value();
+      repeat_start_index = measure_index;
+      pass_number = 1;
+      in_endings = false;
+    } else {
+      measure_index = measure_index + 1;
+    }
   }
-  flush(block_start_index, number_of_measures - 1);
   return playback_order;
+}
+
+auto get_score_measures(const QList<MusicXMLPart>& parts)
+    -> QList<MusicXMLMeasure> {
+  QList<MusicXMLMeasure> score_measures;
+  for (const auto& part : parts) {
+    const auto& measures = part.measures;
+    for (auto index = 0; index < measures.size(); index = index + 1) {
+      if (index == score_measures.size()) {
+        score_measures.emplace_back();
+      }
+      auto& score_measure = score_measures[index];
+      const auto& measure = measures.at(index);
+      score_measure.has_forward_repeat =
+          score_measure.has_forward_repeat || measure.has_forward_repeat;
+      if (measure.has_backward_repeat && !score_measure.has_backward_repeat) {
+        score_measure.has_backward_repeat = true;
+        score_measure.repeat_times = measure.repeat_times;
+      }
+      for (const auto number : measure.ending_numbers) {
+        if (!score_measure.ending_numbers.contains(number)) {
+          score_measure.ending_numbers.push_back(number);
+        }
+      }
+      score_measure.segnos.append(measure.segnos);
+      score_measure.codas.append(measure.codas);
+      score_measure.jumps.append(measure.jumps);
+    }
+  }
+  return score_measures;
 }
 
 auto parse_musicxml(QWidget& parent, xmlNode& score_partwise)
@@ -595,13 +770,17 @@ void normalize_divisions(MusicXMLPart& part, const int song_divisions) {
   part.divisions_changes.clear();
 }
 
-void unroll_repeats(MusicXMLPart& part) {
+void unroll_repeats(MusicXMLPart& part, const QList<int>& playback_order) {
   const auto& fifths_changes = part.fifths_changes;
   QList<MusicXMLMeasure> unrolled_measures;
   QMap<int, int> unrolled_fifths_changes;
   auto time = 0;
   auto previous_index = -1;
-  for (const auto measure_index : get_playback_order(part.measures)) {
+  for (const auto measure_index : playback_order) {
+    // a part can be missing measures at the end
+    if (measure_index >= part.measures.size()) {
+      continue;
+    }
     auto measure = part.measures.at(measure_index);
     const auto offset = time - measure.start_time;
     if (measure_index != previous_index + 1) {

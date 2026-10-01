@@ -34,10 +34,15 @@ struct VoiceNames {
 [[nodiscard]] auto get_most_recent(const QMap<int, int>& changes, int time,
                                    int default_value) -> int;
 
-// the order the measures are played in, as indices, unrolling repeated
-// sections and picking the ending that belongs to each pass
+// the order the measures are played in, as indices, following repeats,
+// endings, da capos, dal segnos, codas, and fines
 [[nodiscard]] auto get_playback_order(const QList<MusicXMLMeasure>& measures)
     -> QList<int>;
+
+// every part's repeats, endings, and jumps, measure by measure, since jumps
+// are often only written in one part. The measures have no notes
+[[nodiscard]] auto get_score_measures(const QList<MusicXMLPart>& parts)
+    -> QList<MusicXMLMeasure>;
 
 // reads each part as written, in its own divisions; warns and returns nullopt
 // if the score has something that can't be imported
@@ -63,7 +68,7 @@ void combine_ties(MusicXMLPart& part);
 void normalize_divisions(MusicXMLPart& part, int song_divisions);
 
 // lays the measures out in the order they're played
-void unroll_repeats(MusicXMLPart& part);
+void unroll_repeats(MusicXMLPart& part, const QList<int>& playback_order);
 
 // each instrument in each part gets its own voice
 [[nodiscard]] auto assign_voices(QList<MusicXMLPart>& parts) -> VoiceNames;

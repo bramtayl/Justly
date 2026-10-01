@@ -725,3 +725,160 @@ void Tester::test_musicxml_endings() {
                        main_window.piano_roll_widget,
                        test_dir.filePath("test_song.xml"));
 }
+
+namespace {
+
+// one quarter note per measure, each followed by that measure's extras
+auto make_measures(const QList<QString>& measure_extras) -> QString {
+  QString body;
+  for (auto index = 0; index < measure_extras.size(); index = index + 1) {
+    if (index > 0) {
+      body += get_next_measure();
+    }
+    body += make_pitch_note("", "1") + measure_extras.at(index);
+  }
+  return body;
+}
+
+auto get_forward_repeat() -> QString {
+  return R"(<barline location="left"><repeat direction="forward"/></barline>)";
+}
+
+auto get_backward_repeat() -> QString {
+  return R"(<barline><repeat direction="backward"/></barline>)";
+}
+
+}  // namespace
+
+// jumps are taken at the end of their measure. After a da capo or dal segno,
+// repeats are skipped, only the last ending is played, and a fine or to coda
+// applies
+void Tester::test_musicxml_jumps_data() {
+  QTest::addColumn<QString>("body");
+  QTest::addColumn<QList<int>>("expected_measures");
+
+  const QString da_capo = R"(<sound dacapo="yes"/>)";
+  const QString dal_segno = R"(<sound dalsegno="segno"/>)";
+  const QString segno = R"(<sound segno="segno"/>)";
+  const QString to_coda = R"(<sound tocoda="coda"/>)";
+  const QString coda = R"(<sound coda="coda"/>)";
+  const QString fine = R"(<sound fine="yes"/>)";
+
+  QTest::newRow("da capo")
+      << make_measures({"", da_capo}) << QList<int>({1, 2, 1, 2});
+  QTest::newRow("da capo in a direction")
+      << make_measures(
+             {"", R"(<direction>
+        <direction-type><words>D.C.</words></direction-type>
+        <sound dacapo="yes"/>
+      </direction>)"})
+      << QList<int>({1, 2, 1, 2});
+  QTest::newRow("da capo al fine")
+      << make_measures({fine, "", da_capo}) << QList<int>({1, 2, 3, 1});
+  QTest::newRow("dal segno")
+      << make_measures({"", segno, dal_segno})
+      << QList<int>({1, 2, 3, 2, 3});
+  QTest::newRow("segno on a barline")
+      << make_measures(
+             {"", R"(<barline location="left" segno="segno"><segno/></barline>)",
+              dal_segno})
+      << QList<int>({1, 2, 3, 2, 3});
+  // with no segno by that name, go back to the nearest one
+  QTest::newRow("unnamed segno")
+      << make_measures({"", R"(<sound segno=""/>)", dal_segno})
+      << QList<int>({1, 2, 3, 2, 3});
+  QTest::newRow("dal segno al coda")
+      << make_measures({segno, to_coda, dal_segno, coda})
+      << QList<int>({1, 2, 3, 1, 2, 4});
+  QTest::newRow("repeats skipped after a da capo")
+      << make_measures({get_forward_repeat(), get_backward_repeat(), da_capo})
+      << QList<int>({1, 2, 1, 2, 3, 1, 2, 3});
+  QTest::newRow("last ending after a da capo")
+      << make_measures(
+             {get_forward_repeat(),
+              R"(<barline location="left"><ending number="1" type="start"/></barline>
+      <barline>
+        <ending number="1" type="stop"/>
+        <repeat direction="backward"/>
+      </barline>)",
+              R"(<barline location="left"><ending number="2" type="start"/></barline>
+      <barline><ending number="2" type="discontinue"/></barline>)" +
+                  fine,
+              da_capo})
+      << QList<int>({1, 2, 1, 3, 4, 1, 3});
+  QTest::newRow("time-only")
+      << make_measures({R"(<sound tocoda="coda" time-only="1"/>)", "", coda})
+      << QList<int>({1, 3});
+  QTest::newRow("hidden forward repeat")
+      << make_measures(
+             {"", R"(<sound forward-repeat="yes"/>)", get_backward_repeat()})
+      << QList<int>({1, 2, 3, 2, 3});
+}
+
+void Tester::test_musicxml_jumps() {
+  QFETCH(const QString, body);
+  QFETCH(const QList<int>, expected_measures);
+
+  QTemporaryFile temp_file;
+  QVERIFY(temp_file.open());
+  temp_file.write(make_musicxml(get_divisions(), body).toStdString().c_str());
+  temp_file.close();
+
+  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
+                             main_window.piano_roll_widget,
+                             temp_file.fileName());
+  // each chord's words are its measure number
+  QList<int> measures;
+  for (const auto& chord : main_window.window_body.song.chords) {
+    measures.push_back(chord.words.toInt());
+  }
+  QCOMPARE(measures, expected_measures);
+
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}
+
+// jumps are often only written in the top part, but every part follows them
+void Tester::test_musicxml_jump_in_one_part() {
+  const auto make_part = [](const QString& part_id,
+                            const QString& last_measure_extras) -> QString {
+    return QString(R"(
+  <part id="%1">
+    <measure number="1">
+      <attributes>%2</attributes>
+      %3)")
+        .arg(part_id, get_divisions(),
+             make_measures({"", last_measure_extras})) +
+           R"(
+    </measure>
+  </part>)";
+  };
+
+  QTemporaryFile temp_file;
+  QVERIFY(temp_file.open());
+  temp_file.write((QString(R"(
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1"><part-name>P1</part-name></score-part>
+    <score-part id="P2"><part-name>P2</part-name></score-part>
+  </part-list>)") + make_part("P1", R"(<sound dacapo="yes"/>)") +
+                   make_part("P2", "") + R"(
+</score-partwise>)")
+                      .toStdString()
+                      .c_str());
+  temp_file.close();
+
+  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
+                             main_window.piano_roll_widget,
+                             temp_file.fileName());
+  const auto& chords = main_window.window_body.song.chords;
+  QCOMPARE(chords.size(), 4);
+  for (const auto& chord : chords) {
+    QCOMPARE(chord.pitched_notes.size(), 2);
+  }
+
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}

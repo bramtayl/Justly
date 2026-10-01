@@ -2,6 +2,7 @@
 
 #include <QtCore/QList>
 
+#include "musicxml/MusicXMLJump.hpp"
 #include "musicxml/MusicXMLNote.hpp"
 
 struct MusicXMLMeasure {
@@ -13,6 +14,10 @@ struct MusicXMLMeasure {
   int repeat_times = 2;
   // the passes through a repeat this measure plays on, if it's in an ending
   QList<int> ending_numbers;
+  // the names of the segnos and codas that mark this measure as a target
+  QList<QString> segnos;
+  QList<QString> codas;
+  QList<MusicXMLJump> jumps;
   // rests are left out, but the rest of the notes are in written order
   QList<MusicXMLNote> notes;
 };

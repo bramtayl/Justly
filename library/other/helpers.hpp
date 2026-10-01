@@ -3,6 +3,7 @@
 #include <libxml/parser.h>
 
 #include <QtCore/QDir>
+#include <optional>
 
 class QClipboard;
 class QAbstractItemModel;
@@ -78,6 +79,9 @@ template <typename SubType>
 [[nodiscard]] auto get_content(const xmlNode& node) -> std::string;
 
 [[nodiscard]] auto get_property(xmlNode& node, const char* name) -> std::string;
+
+[[nodiscard]] auto maybe_get_property(xmlNode& node, const char* name)
+    -> std::optional<std::string>;
 
 [[nodiscard]] auto node_is(const xmlNode& node, const char* name) -> bool;
 

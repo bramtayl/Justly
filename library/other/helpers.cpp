@@ -51,6 +51,15 @@ auto get_property(xmlNode& node, const char* name) -> std::string {
   return xml_string_to_string(xmlGetProp(&node, c_string_to_xml_string(name)));
 }
 
+auto maybe_get_property(xmlNode& node, const char* name)
+    -> std::optional<std::string> {
+  const XMLString property{xmlGetProp(&node, c_string_to_xml_string(name))};
+  if (property.internal_pointer == nullptr) {
+    return std::nullopt;
+  }
+  return xml_string_to_string(property.internal_pointer);
+}
+
 auto node_is(const xmlNode& node, const char* name) -> bool {
   return get_xml_name(node) == name;
 }
