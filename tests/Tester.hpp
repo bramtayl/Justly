@@ -49,9 +49,8 @@ struct Tester : public QObject {
 
  private slots:
   // the OS clipboard is a process-global singleton that outlives any single
-  // test, so a stale copy left over from an earlier test (e.g. a copied
-  // voice_number cell) must not bleed into a later test's voice removal and
-  // trigger an unexpected clipboard-reassignment warning
+  // test, so a stale copy left over from an earlier test must not bleed into
+  // a later test's paste
   static void init() { get_clipboard().clear(); }
 
   static void test_column_count_data();
@@ -80,6 +79,7 @@ struct Tester : public QObject {
   static void test_file_dialog_reject_data();
   void test_file_dialog_reject();
   void test_open_via_dialog();
+  void test_save_escapes_text();
   void test_import_via_dialog();
   static void test_open_asks_to_discard_changes_data();
   void test_open_asks_to_discard_changes();
@@ -109,11 +109,6 @@ struct Tester : public QObject {
   static void test_remove_voice_reassigns_notes_data();
   void test_remove_voice_reassigns_notes();
   void test_remove_voice_row_consistent_during_warning();
-  static void test_remove_voice_leaves_clipboard_data();
-  void test_remove_voice_leaves_clipboard();
-  static void test_voice_change_keeps_earlier_clipboard_voice_data();
-  void test_voice_change_keeps_earlier_clipboard_voice();
-  void test_undo_voice_insert_reassigns_clipboard();
   static void test_remove_last_voice_disables_action_data();
   void test_remove_last_voice_disables_action();
   static void test_unreduced_ratio_from_xml_data();
@@ -170,12 +165,14 @@ struct Tester : public QObject {
   void test_paste_into();
   static void test_paste_stale_voice_data();
   void test_paste_stale_voice();
-  static void test_paste_voice_renumbered_on_insert_data();
-  void test_paste_voice_renumbered_on_insert();
-  static void test_paste_voice_renumbered_on_remove_data();
-  void test_paste_voice_renumbered_on_remove();
-  static void test_paste_chord_voice_renumbered_on_insert_data();
-  void test_paste_chord_voice_renumbered_on_insert();
+  static void test_paste_voice_after_insert_data();
+  void test_paste_voice_after_insert();
+  static void test_paste_voice_after_remove_data();
+  void test_paste_voice_after_remove();
+  static void test_paste_chord_voice_after_insert_data();
+  void test_paste_chord_voice_after_insert();
+  static void test_paste_unknown_voice_data();
+  void test_paste_unknown_voice();
   static void test_play_data();
   void test_play();
   void test_play_to_end_starts_playhead();

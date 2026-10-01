@@ -5,6 +5,7 @@
 #include <QtWidgets/QMenu>
 
 #include "actions/InsertRemoveRows.hpp"
+#include "actions/OrphanedVoiceNumberLocation.hpp"
 #include "actions/SetCells.hpp"
 #include "other/Cells.hpp"
 #include "widgets/WindowBody.hpp"
@@ -13,9 +14,63 @@
 
 [[nodiscard]] auto get_mime_description(const QString& mime_type) -> QString;
 
+// returns how many notes had a voice_name matching no voice (from_xml leaves
+// those at -1), e.g. copied from another song, or before their voice was
+// renamed or removed, after moving them to the first voice
+template <NoteInterface SubNote>
+[[nodiscard]] static auto reassign_unknown_voices(QList<SubNote>& notes)
+    -> int {
+  auto reassigned_count = 0;
+  for (auto& note : notes) {
+    if (note.voice_number < 0) {
+      note.voice_number = 0;
+      reassigned_count = reassigned_count + 1;
+    }
+  }
+  return reassigned_count;
+}
+
+template <NoteInterface SubNote, VoiceInterface SubVoice>
+static void maybe_warn_reassigned_voices(QWidget& parent,
+                                         const int reassigned_count,
+                                         const QList<SubVoice>& voices) {
+  if (reassigned_count > 0) {
+    warn_reassigned_voices<SubNote>(parent, reassigned_count, voices.at(0).name,
+                                    /*is_clipboard=*/true);
+  }
+}
+
+// pasted notes, including any nested in pasted chords, whose voice no longer
+// exists land on the first voice, with a warning
+template <RowInterface SubRow>
+static void reassign_unknown_pasted_voices(QWidget& parent, const Song& song,
+                                           QList<SubRow>& rows) {
+  if constexpr (std::same_as<SubRow, PitchedNote>) {
+    maybe_warn_reassigned_voices<PitchedNote>(
+        parent, reassign_unknown_voices(rows), song.pitched_voices);
+  } else if constexpr (std::same_as<SubRow, UnpitchedNote>) {
+    maybe_warn_reassigned_voices<UnpitchedNote>(
+        parent, reassign_unknown_voices(rows), song.unpitched_voices);
+  } else if constexpr (std::same_as<SubRow, Chord>) {
+    auto pitched_count = 0;
+    auto unpitched_count = 0;
+    for (auto& chord : rows) {
+      pitched_count =
+          pitched_count + reassign_unknown_voices(chord.pitched_notes);
+      unpitched_count =
+          unpitched_count + reassign_unknown_voices(chord.unpitched_notes);
+    }
+    maybe_warn_reassigned_voices<PitchedNote>(parent, pitched_count,
+                                              song.pitched_voices);
+    maybe_warn_reassigned_voices<UnpitchedNote>(parent, unpitched_count,
+                                                song.unpitched_voices);
+  }
+}
+
 template <RowInterface SubRow>
 [[nodiscard]] static auto parse_clipboard(
-    QWidget& parent, const int max_rows = std::numeric_limits<int>::max())
+    QWidget& parent, const Song& song,
+    const int max_rows = std::numeric_limits<int>::max())
     -> std::optional<Cells<SubRow>> {
   const auto& mime_data = get_reference(get_clipboard().mimeData());
   const auto* mime_type = SubRow::get_cells_mime();
@@ -67,7 +122,8 @@ template <RowInterface SubRow>
       auto* xml_row_pointer = xmlFirstElementChild(&field_node);
       while (xml_row_pointer != nullptr && counter <= max_rows) {
         SubRow child_row;
-        child_row.from_xml(get_reference(xml_row_pointer));
+        child_row.from_xml(get_reference(xml_row_pointer), song.pitched_voices,
+                           song.unpitched_voices);
         new_rows.push_back(std::move(child_row));
         xml_row_pointer = xmlNextElementSibling(xml_row_pointer);
         counter++;
@@ -75,6 +131,7 @@ template <RowInterface SubRow>
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }
+  reassign_unknown_pasted_voices(parent, song, new_rows);
   return Cells(left_column, right_column, std::move(new_rows));
 }
 
@@ -82,21 +139,11 @@ template <RowInterface SubRow>
 [[nodiscard]] static auto make_paste_insert_command(
     QWidget& parent, RowsModel<SubRow>& rows_model, const int row_number)
     -> QUndoCommand* {
-  const auto maybe_cells = parse_clipboard<SubRow>(parent);
+  auto maybe_cells = parse_clipboard<SubRow>(parent, rows_model.song);
   if (!maybe_cells.has_value()) {
     return nullptr;
   }
   auto& cells = maybe_cells.value();
-  if constexpr (NoteInterface<SubRow>) {
-    const auto& song = rows_model.song;
-    const auto number_of_voices =
-        SubRow::is_pitched() ? static_cast<int>(song.pitched_voices.size())
-                             : static_cast<int>(song.unpitched_voices.size());
-    if (!check_note_voices(parent, cells.rows, number_of_voices,
-                           rows_model.parent_chord_number)) {
-      return nullptr;
-    }
-  }
   return new InsertRemoveRows(  // NOLINT(cppcoreguidelines-owning-memory)
       rows_model, row_number, std::move(cells.rows), cells.left_column,
       cells.right_column, false);
@@ -107,23 +154,14 @@ template <RowInterface SubRow>
     QWidget& parent, const int first_row_number, RowsModel<SubRow>& rows_model)
     -> QUndoCommand* {
   auto& rows = rows_model.get_rows();
-  auto maybe_cells = parse_clipboard<SubRow>(
-      parent, static_cast<int>(rows.size()) - first_row_number);
+  auto maybe_cells =
+      parse_clipboard<SubRow>(parent, rows_model.song,
+                              static_cast<int>(rows.size()) - first_row_number);
   if (!maybe_cells.has_value()) {
     return nullptr;
   }
   auto& cells = maybe_cells.value();
   auto& copy_rows = cells.rows;
-  if constexpr (NoteInterface<SubRow>) {
-    const auto& song = rows_model.song;
-    const auto number_of_voices =
-        SubRow::is_pitched() ? static_cast<int>(song.pitched_voices.size())
-                             : static_cast<int>(song.unpitched_voices.size());
-    if (!check_note_voices(parent, copy_rows, number_of_voices,
-                           rows_model.parent_chord_number)) {
-      return nullptr;
-    }
-  }
   return new SetCells(  // NOLINT(cppcoreguidelines-owning-memory)
       rows_model, first_row_number, static_cast<int>(copy_rows.size()),
       cells.left_column, cells.right_column, std::move(copy_rows));

@@ -135,10 +135,19 @@ inline auto make_song_xml(const QString& body) -> QString {
   return make_song_xml(10, body);
 }
 
+// the name of voice_number in voice_names, or, past the end, a name no
+// fixture voice has
+inline auto get_fixture_voice_name(const QList<QString>& voice_names,
+                                   const int voice_number) -> QString {
+  return voice_number < voice_names.size() ? voice_names.at(voice_number)
+                                           : QString("Missing");
+}
+
 // builds a minimal <song> fixture with one pitched/unpitched voice per given
 // name and, optionally, one <chord> per entry in chord_voice_numbers whose
 // pitched/unpitched notes reference voices by number (first/second of the
-// pair respectively; an empty list omits that note type from the chord).
+// pair respectively; an empty list omits that note type from the chord),
+// written out as that voice's name.
 // Instrument/percussion_set/midi_number are arbitrary, since no voice test
 // asserts on them -- only on voice names, counts, and voice_numbers.
 inline auto make_voice_song_xml(
@@ -185,8 +194,9 @@ inline auto make_voice_song_xml(
       <pitched_notes>)";
         for (const auto voice_number : pitched_numbers) {
           body += QString(R"(
-        <pitched_note><voice_number>%1</voice_number></pitched_note>)")
-                      .arg(voice_number);
+        <pitched_note><voice_name>%1</voice_name></pitched_note>)")
+                      .arg(get_fixture_voice_name(pitched_voice_names,
+                                                  voice_number));
         }
         body += R"(
       </pitched_notes>)";
@@ -196,8 +206,9 @@ inline auto make_voice_song_xml(
       <unpitched_notes>)";
         for (const auto voice_number : unpitched_numbers) {
           body += QString(R"(
-        <unpitched_note><voice_number>%1</voice_number></unpitched_note>)")
-                      .arg(voice_number);
+        <unpitched_note><voice_name>%1</voice_name></unpitched_note>)")
+                      .arg(get_fixture_voice_name(unpitched_voice_names,
+                                                  voice_number));
         }
         body += R"(
       </unpitched_notes>)";
@@ -281,8 +292,8 @@ inline void close_message_later(QWidget& parent, bool& waiting_for_message,
 };
 
 // like close_message_later, but for an action that pops up several message
-// boxes in a row (e.g. a voice removal that warns about a reassigned live
-// note and then, separately, a reassigned clipboard entry); re-arms the
+// boxes in a row (e.g. pasting a chord whose pitched and unpitched notes
+// both need reassigning to the first voice); re-arms the
 // timer after each box closes so every expected text gets matched in order
 inline void close_messages_later(QWidget& parent, bool& waiting_for_message,
                                  const QList<QString>& expected_texts) {

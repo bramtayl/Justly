@@ -3,7 +3,9 @@
 #include "column_numbers/UnpitchedNoteColumn.hpp"
 #include "rows/UnpitchedVoice.hpp"
 
-void UnpitchedNote::from_xml(xmlNode& node) {
+void UnpitchedNote::from_xml(xmlNode& node,
+                             const QList<PitchedVoice>& /*pitched_voices*/,
+                             const QList<UnpitchedVoice>& unpitched_voices) {
   auto* field_pointer = xmlFirstElementChild(&node);
   while (field_pointer != nullptr) {
     auto& field_node = get_reference(field_pointer);
@@ -15,8 +17,9 @@ void UnpitchedNote::from_xml(xmlNode& node) {
     } else if (name == "words") {
       words = get_qstring_content(field_node);
     } else {
-      Q_ASSERT(name == "voice_number");
-      voice_number = xml_to_int(field_node);
+      Q_ASSERT(name == "voice_name");
+      voice_number =
+          get_voice_number(unpitched_voices, get_qstring_content(field_node));
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }
@@ -139,13 +142,16 @@ void UnpitchedNote::copy_column_from(const UnpitchedNote& template_row,
   }
 }
 
-void UnpitchedNote::column_to_xml(xmlNode& node,
-                                  const int column_number) const {
+void UnpitchedNote::column_to_xml(
+    xmlNode& node, const int column_number,
+    const QList<PitchedVoice>& /*pitched_voices*/,
+    const QList<UnpitchedVoice>& unpitched_voices) const {
   switch (static_cast<UnpitchedNoteColumn>(column_number)) {
     case UnpitchedNoteColumn::number_of_unpitched_note_columns:
       Q_UNREACHABLE();
     case UnpitchedNoteColumn::unpitched_note_voice_number_column:
-      set_xml_int(node, "voice_number", voice_number);
+      set_xml_string(node, "voice_name",
+                     unpitched_voices.at(voice_number).name.toStdString());
       break;
     case UnpitchedNoteColumn::unpitched_note_beats_column:
       maybe_add_rational_to_xml(node, "beats", beats);
@@ -159,8 +165,11 @@ void UnpitchedNote::column_to_xml(xmlNode& node,
   }
 }
 
-void UnpitchedNote::to_xml(xmlNode& node) const {
-  set_xml_int(node, "voice_number", voice_number);
+void UnpitchedNote::to_xml(
+    xmlNode& node, const QList<PitchedVoice>& /*pitched_voices*/,
+    const QList<UnpitchedVoice>& unpitched_voices) const {
+  set_xml_string(node, "voice_name",
+                 unpitched_voices.at(voice_number).name.toStdString());
   maybe_add_rational_to_xml(node, "beats", beats);
   maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
   maybe_add_qstring_to_xml(node, "words", words);

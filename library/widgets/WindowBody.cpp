@@ -581,9 +581,14 @@ void populate_song_document(WindowBody& window_body, XMLDocument& document) {
   set_xml_double(song_node, "starting_tempo", song.starting_tempo);
   set_xml_double(song_node, "starting_velocity", song.starting_velocity);
 
-  maybe_set_xml_rows(song_node, "chords", song.chords);
-  maybe_set_xml_rows(song_node, "pitched_voices", song.pitched_voices);
-  maybe_set_xml_rows(song_node, "unpitched_voices", song.unpitched_voices);
+  const auto& pitched_voices = song.pitched_voices;
+  const auto& unpitched_voices = song.unpitched_voices;
+  maybe_set_xml_rows(song_node, "chords", song.chords, pitched_voices,
+                     unpitched_voices);
+  maybe_set_xml_rows(song_node, "pitched_voices", pitched_voices,
+                     pitched_voices, unpitched_voices);
+  maybe_set_xml_rows(song_node, "unpitched_voices", unpitched_voices,
+                     pitched_voices, unpitched_voices);
 }
 
 }  // namespace
@@ -729,35 +734,38 @@ auto open_file(WindowBody& window_body, const QString& filename) -> bool {
   QList<Chord> new_chords;
   QList<PitchedVoice> new_pitched_voices;
   QList<UnpitchedVoice> new_unpitched_voices;
+  // notes refer to voices by name, so parse every voice before any chord
+  xmlNode* chords_pointer = nullptr;
   for (auto* field_pointer = xmlFirstElementChild(&song_node);
        field_pointer != nullptr;
        field_pointer = xmlNextElementSibling(field_pointer)) {
     auto& field_node = get_reference(field_pointer);
     const auto name = get_xml_name(field_node);
     if (name == "chords") {
-      xml_to_rows(new_chords, field_node);
+      chords_pointer = field_pointer;
     } else if (name == "pitched_voices") {
-      xml_to_rows(new_pitched_voices, field_node);
+      xml_to_rows(new_pitched_voices, field_node, new_pitched_voices,
+                  new_unpitched_voices);
     } else if (name == "unpitched_voices") {
-      xml_to_rows(new_unpitched_voices, field_node);
+      xml_to_rows(new_unpitched_voices, field_node, new_pitched_voices,
+                  new_unpitched_voices);
     }
+  }
+  if (chords_pointer != nullptr) {
+    xml_to_rows(new_chords, get_reference(chords_pointer), new_pitched_voices,
+                new_unpitched_voices);
   }
 
   auto names_and_voices_ok =
       check_duplicate_or_empty_voice_names(window_body, new_pitched_voices) &&
       check_duplicate_or_empty_voice_names(window_body, new_unpitched_voices);
   if (names_and_voices_ok) {
-    const auto number_of_pitched_voices =
-        static_cast<int>(new_pitched_voices.size());
-    const auto number_of_unpitched_voices =
-        static_cast<int>(new_unpitched_voices.size());
     for (auto chord_number = 0; chord_number < new_chords.size();
          chord_number = chord_number + 1) {
       const auto& chord = new_chords.at(chord_number);
-      if (!check_note_voices(window_body, chord.pitched_notes,
-                             number_of_pitched_voices, chord_number) ||
+      if (!check_note_voices(window_body, chord.pitched_notes, chord_number) ||
           !check_note_voices(window_body, chord.unpitched_notes,
-                             number_of_unpitched_voices, chord_number)) {
+                             chord_number)) {
         names_and_voices_ok = false;
         break;
       }
@@ -786,12 +794,15 @@ auto open_file(WindowBody& window_body, const QString& filename) -> bool {
     } else if (name == "starting_tempo") {
       spin_boxes.starting_tempo_editor.setValue(xml_to_double(field_node));
     } else if (name == "chords") {
-      chords_model.insert_xml_rows(0, field_node);
+      chords_model.insert_xml_rows(0, field_node, new_pitched_voices,
+                                   new_unpitched_voices);
     } else if (name == "pitched_voices") {
-      pitched_voices_model.insert_xml_rows(0, field_node);
+      pitched_voices_model.insert_xml_rows(0, field_node, new_pitched_voices,
+                                           new_unpitched_voices);
     } else {
       Q_ASSERT(name == "unpitched_voices");
-      unpitched_voices_model.insert_xml_rows(0, field_node);
+      unpitched_voices_model.insert_xml_rows(0, field_node, new_pitched_voices,
+                                             new_unpitched_voices);
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }

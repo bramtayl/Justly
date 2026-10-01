@@ -174,9 +174,11 @@ struct RowsModel : public QAbstractTableModel {
                 QItemSelectionModel::Select | QItemSelectionModel::Clear);
   }
 
-  void insert_xml_rows(const int first_row_number, xmlNode& rows_node) {
+  void insert_xml_rows(const int first_row_number, xmlNode& rows_node,
+                       const QList<PitchedVoice>& pitched_voices,
+                       const QList<UnpitchedVoice>& unpitched_voices) {
     QList<SubRow> new_rows;
-    xml_to_rows(new_rows, rows_node);
+    xml_to_rows(new_rows, rows_node, pitched_voices, unpitched_voices);
     const auto number_of_rows = static_cast<int>(new_rows.size());
 
     auto& rows = get_rows();

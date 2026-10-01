@@ -9,8 +9,7 @@ template <VoiceInterface SubVoice>
 struct VoicesModel;
 
 // inserts a voice row, shifting the voice_number of any note that referenced
-// a voice at or after the insertion point, including any note cells sitting
-// on the OS clipboard, so a later paste doesn't land on the wrong voice
+// a voice at or after the insertion point
 template <VoiceInterface SubVoice, NoteInterface SubNote>
 struct InsertVoiceRow : public QUndoCommand {
   VoicesModel<SubVoice>& voices_model;
@@ -43,15 +42,11 @@ struct InsertVoiceRow : public QUndoCommand {
     voices_model.remove_rows(row_number, 1);
     shift_voice_numbers<SubVoice, SubNote>(voices_model.song.chords,
                                            shifted_locations, -1);
-    renumber_clipboard_voice_numbers<SubNote>(row_number, 1,
-                                              /*is_insertion=*/false);
   }
 
   void redo() override {
     shift_voice_numbers<SubVoice, SubNote>(voices_model.song.chords,
                                            shifted_locations, 1);
-    renumber_clipboard_voice_numbers<SubNote>(row_number, 1,
-                                              /*is_insertion=*/true);
     voices_model.insert_row(row_number, new_row);
   }
 };

@@ -244,21 +244,21 @@ template <VoiceInterface SubVoice>
   return true;
 }
 
+// from_xml sets voice_number to -1 when a note's voice_name doesn't match any
+// voice
 template <NoteInterface SubNote>
 [[nodiscard]] static auto check_note_voices(QWidget& parent,
                                             const QList<SubNote>& notes,
-                                            const int number_of_voices,
                                             const int chord_number) -> bool {
   for (auto note_number = 0; note_number < notes.size();
        note_number = note_number + 1) {
-    const auto voice_number = notes.at(note_number).voice_number;
-    if (voice_number < 0 || voice_number >= number_of_voices) {
+    if (notes.at(note_number).voice_number < 0) {
       QString message;
       QTextStream stream(&message);
-      stream << QObject::tr("Voice ") << voice_number;
+      stream << QObject::tr("Voice");
       add_note_location<SubNote>(stream, chord_number, note_number);
       stream << QObject::tr(" has no corresponding voice");
-      QMessageBox::warning(&parent, QObject::tr("Voice number error"), message);
+      QMessageBox::warning(&parent, QObject::tr("Voice name error"), message);
       return false;
     }
   }

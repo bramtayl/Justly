@@ -6,12 +6,21 @@ void Tester::test_voice_error_data() {
   QTest::addColumn<QString>("text");
   QTest::addColumn<QString>("error_message");
 
-  QTest::newRow("pitched voice number out of range")
+  QTest::newRow("unknown pitched voice name")
       << make_voice_song_xml({"A"}, {"B"}, {{{5}, {}}})
-      << "Voice 5 for chord 1, pitched note 1 has no corresponding voice";
-  QTest::newRow("unpitched voice number out of range")
+      << "Voice for chord 1, pitched note 1 has no corresponding voice";
+  QTest::newRow("unknown unpitched voice name")
       << make_voice_song_xml({"A"}, {"B"}, {{{}, {5}}})
-      << "Voice 5 for chord 1, unpitched note 1 has no corresponding voice";
+      << "Voice for chord 1, unpitched note 1 has no corresponding voice";
+  // every note in a song file must name its voice
+  QTest::newRow("pitched note without voice")
+      << make_voice_song_xml({"A"}, {"B"}, {{{0}, {}}})
+             .replace("<voice_name>A</voice_name>", "")
+      << "Invalid song file";
+  QTest::newRow("unpitched note without voice")
+      << make_voice_song_xml({"A"}, {"B"}, {{{}, {0}}})
+             .replace("<voice_name>B</voice_name>", "")
+      << "Invalid song file";
   QTest::newRow("duplicate pitched voice name")
       << make_voice_song_xml({"A", "A"}, {"B"})
       << "Duplicate voice name \"A\"!";
@@ -232,172 +241,6 @@ void Tester::test_remove_voice_row_consistent_during_warning() {
                        test_dir.filePath("test_song.xml"));
 }
 
-// removing a voice only rewrites a copied note's voice_number when the copy
-// actually holds one -- a copy that starts after the voice column, a copied
-// chord with no notes, a clipboard holding something else entirely, or one
-// that doesn't parse, is left exactly as it was, with no extra clipboard
-// warning
-void Tester::test_remove_voice_leaves_clipboard_data() {
-  QTest::addColumn<QString>("clipboard_text");
-  QTest::addColumn<QString>("mime_type");
-
-  const QString notes_mime = PitchedNote::get_cells_mime();
-
-  // empty means copy a live note's interval cell instead
-  QTest::newRow("copy after voice column") << "" << notes_mime;
-  QTest::newRow("invalid clipboard") << "<" << notes_mime;
-  QTest::newRow("chord without notes")
-      << "<clipboard><left_column>6</left_column><right_column>6</"
-         "right_column><rows><chord><words>hi</words></chord></rows>"
-         "</clipboard>"
-      << Chord::get_cells_mime();
-  QTest::newRow("not Justly cells") << "plain text" << "text/plain";
-}
-
-void Tester::test_remove_voice_leaves_clipboard() {
-  QFETCH(const QString, clipboard_text);
-  QFETCH(const QString, mime_type);
-
-  auto& window_body = main_window.window_body;
-  auto& switch_table = window_body.switch_column.switch_table;
-  auto& edit_menu = main_window.song_menu_bar.edit_menu;
-
-  open_text(main_window,
-            make_voice_song_xml({"A", "B"}, {"D"}, {{{0, 1}, {}}}));
-
-  if (clipboard_text.isEmpty()) {
-    switch_to(main_window, RowType::pitched_note_type, 0);
-    select_cell(
-        switch_table, 1,
-        static_cast<int>(PitchedNoteColumn::pitched_note_interval_column));
-    edit_menu.copy_action.trigger();
-    main_window.song_menu_bar.view_menu.back_to_chords_action.trigger();
-  } else {
-    auto& new_data = get_reference(
-        new QMimeData);  // NOLINT(cppcoreguidelines-owning-memory)
-    new_data.setData(mime_type, clipboard_text.toStdString().c_str());
-    get_clipboard().setMimeData(&new_data);
-  }
-  const auto old_clipboard =
-      get_reference(get_clipboard().mimeData()).data(mime_type);
-  QVERIFY(!old_clipboard.isEmpty());
-
-  // only the live note gets a warning
-  switch_to(main_window, RowType::pitched_voice_type, -1);
-  select_cell(switch_table, 1, 0);
-  close_message_later(main_window, waiting_for_message,
-                      "Reassigning 1 pitched note voice to the first voice "
-                      "\"A\"");
-  edit_menu.remove_rows_action.trigger();
-  QVERIFY(!waiting_for_message);
-
-  QCOMPARE(get_reference(get_clipboard().mimeData()).data(mime_type),
-           old_clipboard);
-  main_window.song_menu_bar.view_menu.back_to_chords_action.trigger();
-
-  // restore the shared fixture
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
-}
-
-namespace {
-
-// a copied pitched note on voice_number, with a non-voice field alongside
-// it, as the clipboard XML Justly writes for a two-column copy
-void set_pitched_note_clipboard(const int voice_number) {
-  auto& new_data =
-      get_reference(new QMimeData);  // NOLINT(cppcoreguidelines-owning-memory)
-  new_data.setData(
-      PitchedNote::get_cells_mime(),
-      QString("<clipboard><left_column>0</left_column><right_column>1</"
-              "right_column><rows><pitched_note><voice_number>%1</"
-              "voice_number><words>hi</words></pitched_note></rows>"
-              "</clipboard>")
-          .arg(voice_number)
-          .toUtf8());
-  get_clipboard().setMimeData(&new_data);
-}
-
-auto get_pitched_note_clipboard() -> QString {
-  return QString::fromUtf8(get_reference(get_clipboard().mimeData())
-                               .data(PitchedNote::get_cells_mime()));
-}
-
-}  // namespace
-
-void Tester::test_voice_change_keeps_earlier_clipboard_voice_data() {
-  QTest::addColumn<bool>("is_insertion");
-
-  QTest::newRow("insert") << true;
-  QTest::newRow("remove") << false;
-}
-
-// a copied note on a voice before the inserted/removed row keeps its voice
-// number, along with the rest of its copied fields
-void Tester::test_voice_change_keeps_earlier_clipboard_voice() {
-  QFETCH(const bool, is_insertion);
-
-  auto& switch_table = main_window.window_body.switch_column.switch_table;
-  auto& edit_menu = main_window.song_menu_bar.edit_menu;
-
-  open_text(main_window,
-            make_voice_song_xml({"A", "B"}, {"D"}, {{{0, 1}, {}}}));
-  set_pitched_note_clipboard(0);
-
-  switch_to(main_window, RowType::pitched_voice_type, -1);
-  if (is_insertion) {
-    select_cell(switch_table, 0, 0);
-    edit_menu.insert_menu.insert_after_action.trigger();
-  } else {
-    select_cell(switch_table, 1, 0);
-    close_message_later(main_window, waiting_for_message,
-                        "Reassigning 1 pitched note voice to the first voice "
-                        "\"A\"");
-    edit_menu.remove_rows_action.trigger();
-    QVERIFY(!waiting_for_message);
-  }
-
-  const auto clipboard_text = get_pitched_note_clipboard();
-  QVERIFY(clipboard_text.contains("<voice_number>0</voice_number>"));
-  QVERIFY(clipboard_text.contains("<words>hi</words>"));
-  main_window.song_menu_bar.view_menu.back_to_chords_action.trigger();
-
-  // restore the shared fixture
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
-}
-
-// undoing a voice insertion removes that voice again, so a copied note on it
-// falls back to the first voice -- silently, since the user is undoing
-// rather than removing the voice themselves
-void Tester::test_undo_voice_insert_reassigns_clipboard() {
-  auto& window_body = main_window.window_body;
-  auto& switch_table = window_body.switch_column.switch_table;
-
-  open_text(main_window, make_voice_song_xml({"A"}, {"D"}, {{{0}, {}}}));
-
-  switch_to(main_window, RowType::pitched_voice_type, -1);
-  select_cell(switch_table, 0, 0);
-  main_window.song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();
-  QCOMPARE(window_body.song.pitched_voices.size(), 2);
-
-  set_pitched_note_clipboard(1);
-  // the class-wide unexpected_message_timer watchdog fails the test if a
-  // warning appears here
-  window_body.undo_stack.undo();
-  QCOMPARE(window_body.song.pitched_voices.size(), 1);
-  QVERIFY(get_pitched_note_clipboard().contains(
-      "<voice_number>0</voice_number>"));
-  main_window.song_menu_bar.view_menu.back_to_chords_action.trigger();
-
-  // restore the shared fixture
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
-}
-
 void Tester::test_remove_last_voice_disables_action_data() {
   QTest::addColumn<QString>("text");
   QTest::addColumn<bool>("is_pitched");
@@ -453,10 +296,8 @@ void Tester::test_paste_stale_voice_data() {
 
 void Tester::test_paste_stale_voice() {
   // if the clipboard holds a note referencing a voice, and that voice gets
-  // deleted before the paste happens, the clipboard's voice_number must be
-  // reassigned to the first remaining voice the same way the live note is,
-  // so pasting lands on a valid voice instead of indexing into the voices
-  // list with the now out-of-range voice number
+  // deleted before the paste happens, pasting reassigns it to the first
+  // remaining voice the same way removing the voice reassigned the live note
   QFETCH(const QString, text);
   QFETCH(const bool, is_pitched);
 
@@ -476,16 +317,15 @@ void Tester::test_paste_stale_voice() {
                        PitchedNoteColumn::pitched_note_voice_number_column)
                  : static_cast<int>(
                        UnpitchedNoteColumn::unpitched_note_voice_number_column);
-  const QList<QString> reassign_warnings =
-      is_pitched
-          ? QList<QString>{"Reassigning 1 pitched note voice to the "
-                           "first voice \"A\"",
-                           "Reassigning 1 clipboard pitched note voice to "
-                           "the first voice \"A\""}
-          : QList<QString>{"Reassigning 1 unpitched note voice to the "
-                           "first voice \"D\"",
-                           "Reassigning 1 clipboard unpitched note voice "
-                           "to the first voice \"D\""};
+  const auto* const remove_warning =
+      is_pitched ? "Reassigning 1 pitched note voice to the first voice \"A\""
+                 : "Reassigning 1 unpitched note voice to the first voice "
+                   "\"D\"";
+  const auto* const paste_warning =
+      is_pitched ? "Reassigning 1 clipboard pitched note voice to the first "
+                   "voice \"A\""
+                 : "Reassigning 1 clipboard unpitched note voice to the first "
+                   "voice \"D\"";
 
   open_text(main_window, text);
 
@@ -496,20 +336,21 @@ void Tester::test_paste_stale_voice() {
   edit_menu.copy_action.trigger();
   back_to_chords_action.trigger();
 
-  // remove that voice; the fixture's only note gets reassigned to voice 0,
-  // warning about that live note, and separately about the clipboard copy
-  // (of that same note's voice cell) that also collapses to voice 0
+  // remove that voice; the live note on it gets reassigned to voice 0
   switch_to(main_window, voice_row_type, -1);
   select_cell(switch_table, 1, 0);
-  close_messages_later(main_window, waiting_for_message, reassign_warnings);
+  close_message_later(main_window, waiting_for_message, remove_warning);
   edit_menu.remove_rows_action.trigger();
+  QVERIFY(!waiting_for_message);
   back_to_chords_action.trigger();
 
-  // pasting the reassigned clipboard should succeed silently, landing on
-  // the first remaining voice instead of erroring or misassigning
+  // the clipboard still names the removed voice, so pasting lands on the
+  // first remaining voice, with a warning
   switch_to(main_window, note_row_type, 0);
   select_cell(switch_table, 0, voice_column);
+  close_message_later(main_window, waiting_for_message, paste_warning);
   edit_menu.paste_menu.paste_over_action.trigger();
+  QVERIFY(!waiting_for_message);
   QCOMPARE(is_pitched ? song.chords.at(0).pitched_notes.at(0).voice_number
                       : song.chords.at(0).unpitched_notes.at(0).voice_number,
            0);
@@ -521,7 +362,7 @@ void Tester::test_paste_stale_voice() {
                        test_dir.filePath("test_song.xml"));
 }
 
-void Tester::test_paste_voice_renumbered_on_insert_data() {
+void Tester::test_paste_voice_after_insert_data() {
   QTest::addColumn<QString>("text");
   QTest::addColumn<bool>("is_pitched");
 
@@ -534,11 +375,9 @@ void Tester::test_paste_voice_renumbered_on_insert_data() {
   QTest::newRow("unpitched voice") << unpitched_song << false;
 }
 
-void Tester::test_paste_voice_renumbered_on_insert() {
-  // if the clipboard holds a note referencing a voice, and a voice is
-  // inserted before it, the clipboard's voice_number must shift the same
-  // way the live note's does, or pasting would silently land on whatever
-  // voice now occupies the old index instead of the voice actually copied
+void Tester::test_paste_voice_after_insert() {
+  // copied notes name their voice, so inserting a voice before it doesn't
+  // change which voice pasting lands on, even though its number shifts
   QFETCH(const QString, text);
   QFETCH(const bool, is_pitched);
 
@@ -567,15 +406,13 @@ void Tester::test_paste_voice_renumbered_on_insert() {
   edit_menu.copy_action.trigger();
   back_to_chords_action.trigger();
 
-  // insert a new voice before both existing voices; the fixture's notes
-  // both shift up by one, and so must the clipboard's copied voice_number
+  // insert a new voice before both existing voices, shifting their numbers
   switch_to(main_window, voice_row_type, -1);
   select_cell(switch_table, 0, 0);
   edit_menu.insert_menu.insert_into_start_action.trigger();
   back_to_chords_action.trigger();
 
-  // pasting the shifted clipboard should land on the second voice's new
-  // index, not the stale pre-insert index (which now points elsewhere)
+  // pasting should land on the second voice's new number
   switch_to(main_window, note_row_type, 0);
   select_cell(switch_table, 0, voice_column);
   edit_menu.paste_menu.paste_over_action.trigger();
@@ -590,7 +427,7 @@ void Tester::test_paste_voice_renumbered_on_insert() {
                        test_dir.filePath("test_song.xml"));
 }
 
-void Tester::test_paste_chord_voice_renumbered_on_insert_data() {
+void Tester::test_paste_chord_voice_after_insert_data() {
   QTest::addColumn<QString>("text");
   QTest::addColumn<bool>("is_pitched");
 
@@ -603,13 +440,9 @@ void Tester::test_paste_chord_voice_renumbered_on_insert_data() {
   QTest::newRow("unpitched voice") << unpitched_song << false;
 }
 
-void Tester::test_paste_chord_voice_renumbered_on_insert() {
-  // copying a whole chord bakes its nested notes' voice_number into the
-  // clipboard too; inserting a voice must shift those nested voice_numbers
-  // the same way it shifts a flat note copy, or pasting the chord back
-  // would silently restore the notes' stale, pre-insert voice numbers
-  // (regression test for renumber_clipboard_voice_numbers not looking
-  // inside a copied chord's nested pitched_notes/unpitched_notes)
+void Tester::test_paste_chord_voice_after_insert() {
+  // a copied chord's nested notes also name their voices, so inserting a
+  // voice doesn't change which voices pasting the chord back lands on
   QFETCH(const QString, text);
   QFETCH(const bool, is_pitched);
 
@@ -627,22 +460,21 @@ void Tester::test_paste_chord_voice_renumbered_on_insert() {
   open_text(main_window, text);
 
   // copy the whole chord row, including its pitched_notes/unpitched_notes
-  // column, which nests both notes' voice_number fields in the clipboard
+  // column, which nests both notes' voice names in the clipboard
   get_selection_model(switch_table)
       .select(QItemSelection(get_model(switch_table).index(0, 0),
                              get_model(switch_table).index(0, last_column)),
               SELECT_AND_CLEAR);
   edit_menu.copy_action.trigger();
 
-  // insert a new voice before both existing voices; the live chord's notes
-  // shift up by one, and so must the nested voice_numbers on the clipboard
+  // insert a new voice before both existing voices, shifting their numbers
   switch_to(main_window, voice_row_type, -1);
   select_cell(switch_table, 0, 0);
   edit_menu.insert_menu.insert_into_start_action.trigger();
   back_to_chords_action.trigger();
 
-  // pasting the shifted clipboard back over the chord should restore both
-  // notes at their new, shifted voice numbers, not the stale pre-insert ones
+  // pasting the chord back should restore both notes at their voices' new
+  // numbers
   get_selection_model(switch_table)
       .select(QItemSelection(get_model(switch_table).index(0, 0),
                              get_model(switch_table).index(0, last_column)),
@@ -686,7 +518,7 @@ void Tester::test_voice_velocity_ratio_data() {
   <chords>
     <chord>
       <pitched_notes>
-        <pitched_note><voice_number>0</voice_number></pitched_note>
+        <pitched_note><voice_name>A</voice_name></pitched_note>
       </pitched_notes>
     </chord>
   </chords>)")
@@ -711,7 +543,7 @@ void Tester::test_voice_velocity_ratio_data() {
   <chords>
     <chord>
       <unpitched_notes>
-        <unpitched_note><voice_number>0</voice_number></unpitched_note>
+        <unpitched_note><voice_name>D</voice_name></unpitched_note>
       </unpitched_notes>
     </chord>
   </chords>)")
@@ -888,7 +720,7 @@ void Tester::test_voice_velocity_ratio_cells() {
                        test_dir.filePath("test_song.xml"));
 }
 
-void Tester::test_paste_voice_renumbered_on_remove_data() {
+void Tester::test_paste_voice_after_remove_data() {
   QTest::addColumn<QString>("text");
   QTest::addColumn<bool>("is_pitched");
 
@@ -901,10 +733,9 @@ void Tester::test_paste_voice_renumbered_on_remove_data() {
   QTest::newRow("unpitched voice") << unpitched_song << false;
 }
 
-void Tester::test_paste_voice_renumbered_on_remove() {
-  // if the clipboard holds a note referencing a voice, and an earlier voice
-  // is removed, the clipboard's voice_number must shift down the same way
-  // the live notes' do, or pasting would land on the wrong voice
+void Tester::test_paste_voice_after_remove() {
+  // copied notes name their voice, so removing an earlier voice doesn't
+  // change which voice pasting lands on, even though its number shifts
   QFETCH(const QString, text);
   QFETCH(const bool, is_pitched);
 
@@ -934,7 +765,7 @@ void Tester::test_paste_voice_renumbered_on_remove() {
   back_to_chords_action.trigger();
 
   // remove the first voice; no note uses it, so nothing is reassigned or
-  // warned about, but the clipboard's voice_number must still shift down
+  // warned about
   switch_to(main_window, voice_row_type, -1);
   select_cell(switch_table, 0, 0);
   edit_menu.remove_rows_action.trigger();
@@ -947,6 +778,91 @@ void Tester::test_paste_voice_renumbered_on_remove() {
                       : song.chords.at(0).unpitched_notes.at(1).voice_number,
            0);
   back_to_chords_action.trigger();
+
+  // restore the shared fixture
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}
+
+void Tester::test_paste_unknown_voice_data() {
+  QTest::addColumn<RowType>("row_type");
+  QTest::addColumn<int>("chord_number");
+  QTest::addColumn<QString>("copied");
+  QTest::addColumn<QString>("mime_type");
+  QTest::addColumn<QList<QString>>("warnings");
+
+  // e.g. copied from another song
+  QTest::newRow("pitched note")
+      << RowType::pitched_note_type << 0
+      << "<clipboard><left_column>0</left_column><right_column>0</"
+         "right_column><rows><pitched_note><voice_name>Z</voice_name></"
+         "pitched_note></rows></clipboard>"
+      << PitchedNote::get_cells_mime()
+      << QList<QString>{
+             "Reassigning 1 clipboard pitched note voice to the first voice "
+             "\"A\""};
+  QTest::newRow("unpitched note")
+      << RowType::unpitched_note_type << 0
+      << "<clipboard><left_column>0</left_column><right_column>0</"
+         "right_column><rows><unpitched_note><voice_name>Z</voice_name></"
+         "unpitched_note></rows></clipboard>"
+      << UnpitchedNote::get_cells_mime()
+      << QList<QString>{
+             "Reassigning 1 clipboard unpitched note voice to the first voice "
+             "\"D\""};
+  QTest::newRow("chord")
+      << RowType::chord_type << -1
+      << "<clipboard><left_column>0</left_column><right_column>1</"
+         "right_column><rows><chord><pitched_notes><pitched_note><voice_name>"
+         "Z</voice_name></pitched_note></pitched_notes><unpitched_notes>"
+         "<unpitched_note><voice_name>Z</voice_name></unpitched_note>"
+         "</unpitched_notes></chord></rows></clipboard>"
+      << Chord::get_cells_mime()
+      << QList<QString>{
+             "Reassigning 1 clipboard pitched note voice to the first voice "
+             "\"A\"",
+             "Reassigning 1 clipboard unpitched note voice to the first voice "
+             "\"D\""};
+}
+
+// pasted notes whose voice the song doesn't have land on the first voice,
+// with a warning
+void Tester::test_paste_unknown_voice() {
+  QFETCH(const RowType, row_type);
+  QFETCH(const int, chord_number);
+  QFETCH(const QString, copied);
+  QFETCH(const QString, mime_type);
+  QFETCH(const QList<QString>, warnings);
+
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& song = window_body.song;
+
+  open_text(main_window,
+            make_voice_song_xml({"A", "B"}, {"D", "E"}, {{{1}, {1}}}));
+
+  auto& new_data =
+      get_reference(new QMimeData);  // NOLINT(cppcoreguidelines-owning-memory)
+  new_data.setData(mime_type, copied.toUtf8());
+  get_clipboard().setMimeData(&new_data);
+
+  switch_to(main_window, row_type, chord_number);
+  select_cell(switch_table, 0, 0);
+  close_messages_later(main_window, waiting_for_message, warnings);
+  main_window.song_menu_bar.edit_menu.paste_menu.paste_over_action.trigger();
+  QVERIFY(!waiting_for_message);
+
+  const auto& chord = song.chords.at(0);
+  if (row_type != RowType::unpitched_note_type) {
+    QCOMPARE(chord.pitched_notes.at(0).voice_number, 0);
+  }
+  if (row_type != RowType::pitched_note_type) {
+    QCOMPARE(chord.unpitched_notes.at(0).voice_number, 0);
+  }
+  if (row_type != RowType::chord_type) {
+    main_window.song_menu_bar.view_menu.back_to_chords_action.trigger();
+  }
 
   // restore the shared fixture
   open_file_and_reload(main_window.song_menu_bar, main_window.window_body,

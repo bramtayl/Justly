@@ -240,9 +240,10 @@
             <xs:enumeration value="TR-808" />
         </xs:restriction>
     </xs:simpleType>
+    <!-- every note has a voice -->
     <xs:complexType name="pitched_note_type">
         <xs:all>
-            <xs:element name="voice_number" type="xs:int" minOccurs="0" />
+            <xs:element name="voice_name" type="xs:string" />
             <xs:element name="interval" type="interval_type" minOccurs="0" />
             <xs:element name="beats" type="ratio_type" minOccurs="0" />
             <xs:element name="velocity_ratio" type="ratio_type" minOccurs="0" />
@@ -251,7 +252,7 @@
     </xs:complexType>
     <xs:complexType name="unpitched_note_type">
         <xs:all>
-            <xs:element name="voice_number" type="xs:int" minOccurs="0" />
+            <xs:element name="voice_name" type="xs:string" />
             <xs:element name="beats" type="ratio_type" minOccurs="0" />
             <xs:element name="velocity_ratio" type="ratio_type" minOccurs="0" />
             <xs:element name="words" type="xs:string" minOccurs="0" />
@@ -267,12 +268,39 @@
             <xs:element name="unpitched_note" type="unpitched_note_type" minOccurs="1" maxOccurs="unbounded" />
         </xs:sequence>
     </xs:complexType>
+    <!-- copied note cells only include the copied columns, which might not
+    include the voice -->
+    <xs:complexType name="pitched_note_cells_type">
+        <xs:all>
+            <xs:element name="voice_name" type="xs:string" minOccurs="0" />
+            <xs:element name="interval" type="interval_type" minOccurs="0" />
+            <xs:element name="beats" type="ratio_type" minOccurs="0" />
+            <xs:element name="velocity_ratio" type="ratio_type" minOccurs="0" />
+            <xs:element name="words" type="xs:string" minOccurs="0" />
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="unpitched_note_cells_type">
+        <xs:all>
+            <xs:element name="voice_name" type="xs:string" minOccurs="0" />
+            <xs:element name="beats" type="ratio_type" minOccurs="0" />
+            <xs:element name="velocity_ratio" type="ratio_type" minOccurs="0" />
+            <xs:element name="words" type="xs:string" minOccurs="0" />
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="pitched_notes_cells_type">
+        <xs:sequence>
+            <xs:element name="pitched_note" type="pitched_note_cells_type" minOccurs="1" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="unpitched_notes_cells_type">
+        <xs:sequence>
+            <xs:element name="unpitched_note" type="unpitched_note_cells_type" minOccurs="1" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
     <xs:complexType name="chord_type">
         <xs:all>
             <xs:element name="pitched_notes" type="pitched_notes_type" minOccurs="0" />
             <xs:element name="unpitched_notes" type="unpitched_notes_type" minOccurs="0" />
-            <xs:element name="pitched_voice" type="xs:string" minOccurs="0" />
-            <xs:element name="unpitched_voice" type="xs:string" minOccurs="0" />
             <xs:element name="interval" type="interval_type" minOccurs="0" />
             <xs:element name="beats" type="ratio_type" minOccurs="0" />
             <xs:element name="velocity_ratio" type="ratio_type" minOccurs="0" />

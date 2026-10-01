@@ -232,6 +232,35 @@ void Tester::test_open_via_dialog() {
   QCOMPARE_NE(window_body.song.chords.size(), 1);
 }
 
+// text with XML special characters must be escaped on save, or reopening
+// would lose or reject it
+void Tester::test_save_escapes_text() {
+  auto& window_body = main_window.window_body;
+  auto& song = window_body.song;
+
+  open_text(main_window,
+            make_voice_song_xml({"R&amp;B &lt;1&gt;"}, {"D"}, {{{0}, {}}})
+                .replace("</voice_name></pitched_note>",
+                         "</voice_name><words>a &amp; b &lt; c</words>"
+                         "</pitched_note>"));
+
+  QTemporaryFile temp_file;
+  QVERIFY(temp_file.open());
+  temp_file.close();
+  save_as_file(window_body, temp_file.fileName());
+  QVERIFY(open_file(window_body, temp_file.fileName()));
+
+  QCOMPARE(song.pitched_voices.at(0).name, QString("R&B <1>"));
+  const auto& note = song.chords.at(0).pitched_notes.at(0);
+  QCOMPARE(note.voice_number, 0);
+  QCOMPARE(note.words, QString("a & b < c"));
+
+  // restore the shared fixture
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}
+
 void Tester::test_import_via_dialog() {
   auto& switch_table = main_window.window_body.switch_column.switch_table;
 

@@ -19,6 +19,7 @@ static void copy_from_model(QMimeData& mime_data,
                             const RowsModel<SubRow>& rows_model,
                             const QItemSelectionRange& range) {
   const auto& rows = rows_model.get_rows();
+  const auto& song = rows_model.song;
 
   const auto first_row_number = range.top();
   const auto left_column = range.left();
@@ -35,7 +36,8 @@ static void copy_from_model(QMimeData& mime_data,
     auto& row_node = get_new_child(rows_node, SubRow::get_xml_field_name());
     for (auto column_number = left_column; column_number <= right_column;
          column_number++) {
-      row.column_to_xml(row_node, column_number);
+      row.column_to_xml(row_node, column_number, song.pitched_voices,
+                        song.unpitched_voices);
     }
   }
 

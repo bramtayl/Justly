@@ -81,8 +81,9 @@ namespace {
 
 auto get_new_child_pointer(xmlNode& node, const char* const field_name,
                            const xmlChar* contents = nullptr) -> xmlNode* {
-  return xmlNewChild(&node, nullptr, c_string_to_xml_string(field_name),
-                     contents);
+  // unlike xmlNewChild, escapes contents, so text like "R&B" or "<" survives
+  return xmlNewTextChild(&node, nullptr, c_string_to_xml_string(field_name),
+                         contents);
 }
 
 }  // namespace

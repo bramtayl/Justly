@@ -33,7 +33,9 @@ void send_event_at(FluidSequencer& sequencer, FluidEvent& event,
       static_cast<unsigned int>(std::round(time)), 1));
 }
 
-void PitchedNote::from_xml(xmlNode& node) {
+void PitchedNote::from_xml(xmlNode& node,
+                           const QList<PitchedVoice>& pitched_voices,
+                           const QList<UnpitchedVoice>& /*unpitched_voices*/) {
   auto* field_pointer = xmlFirstElementChild(&node);
   while (field_pointer != nullptr) {
     auto& field_node = get_reference(field_pointer);
@@ -47,8 +49,9 @@ void PitchedNote::from_xml(xmlNode& node) {
     } else if (name == "interval") {
       set_interval_from_xml(interval, field_node);
     } else {
-      Q_ASSERT(name == "voice_number");
-      voice_number = xml_to_int(field_node);
+      Q_ASSERT(name == "voice_name");
+      voice_number =
+          get_voice_number(pitched_voices, get_qstring_content(field_node));
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }
@@ -213,12 +216,16 @@ void PitchedNote::copy_column_from(const PitchedNote& template_row,
   }
 }
 
-void PitchedNote::column_to_xml(xmlNode& node, const int column_number) const {
+void PitchedNote::column_to_xml(
+    xmlNode& node, const int column_number,
+    const QList<PitchedVoice>& pitched_voices,
+    const QList<UnpitchedVoice>& /*unpitched_voices*/) const {
   switch (static_cast<PitchedNoteColumn>(column_number)) {
     case PitchedNoteColumn::number_of_pitched_note_columns:
       Q_UNREACHABLE();
     case PitchedNoteColumn::pitched_note_voice_number_column:
-      set_xml_int(node, "voice_number", voice_number);
+      set_xml_string(node, "voice_name",
+                     pitched_voices.at(voice_number).name.toStdString());
       break;
     case PitchedNoteColumn::pitched_note_interval_column:
       maybe_add_interval_to_xml(node, "interval", interval);
@@ -235,8 +242,11 @@ void PitchedNote::column_to_xml(xmlNode& node, const int column_number) const {
   }
 }
 
-void PitchedNote::to_xml(xmlNode& node) const {
-  set_xml_int(node, "voice_number", voice_number);
+void PitchedNote::to_xml(
+    xmlNode& node, const QList<PitchedVoice>& pitched_voices,
+    const QList<UnpitchedVoice>& /*unpitched_voices*/) const {
+  set_xml_string(node, "voice_name",
+                 pitched_voices.at(voice_number).name.toStdString());
   maybe_add_interval_to_xml(node, "interval", interval);
   maybe_add_rational_to_xml(node, "beats", beats);
   maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);

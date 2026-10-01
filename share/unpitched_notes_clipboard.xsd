@@ -10,7 +10,7 @@
         <xs:all>
             <xs:element name="left_column" type="unpitched_note_column" />
             <xs:element name="right_column" type="unpitched_note_column" />
-            <xs:element name="rows" type="unpitched_notes_type" />
+            <xs:element name="rows" type="unpitched_notes_cells_type" />
         </xs:all>
     </xs:complexType>
     <xs:element name="clipboard" type="unpitched_notes_clipboard_type" />

@@ -10,9 +10,7 @@ struct VoicesModel;
 
 // removes a range of voice rows, warning about (and reassigning to the first
 // remaining voice) any notes that referenced a removed voice, and shifting
-// the voice_number of notes that referenced a later voice, including any
-// note cells sitting on the OS clipboard, so a later paste doesn't land on
-// the wrong voice
+// the voice_number of notes that referenced a later voice
 template <VoiceInterface SubVoice, NoteInterface SubNote>
 struct RemoveVoiceRows : public QUndoCommand {
   VoicesModel<SubVoice>& voices_model;
@@ -70,9 +68,6 @@ struct RemoveVoiceRows : public QUndoCommand {
           chords[orphaned_location.chord_number])[orphaned_location.note_number]
           .voice_number = orphaned_location.old_voice_number;
     }
-    renumber_clipboard_voice_numbers<SubNote>(
-        first_row_number, static_cast<int>(old_voice_rows.size()),
-        /*is_insertion=*/true);
   }
 
   void redo() override {
@@ -98,9 +93,5 @@ struct RemoveVoiceRows : public QUndoCommand {
           voices_model.parent, static_cast<int>(orphaned_locations.size()),
           first_voice_name);
     }
-
-    renumber_clipboard_voice_numbers<SubNote>(
-        first_row_number, number_of_rows, /*is_insertion=*/false,
-        &voices_model.parent, first_voice_name);
   }
 };

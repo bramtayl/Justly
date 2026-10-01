@@ -185,10 +185,10 @@ void Tester::test_play_velocity_error() {
   <chords>
     <chord>
       <pitched_notes>
-        <pitched_note><voice_number>0</voice_number></pitched_note>
+        <pitched_note><voice_name>A</voice_name></pitched_note>
       </pitched_notes>
       <unpitched_notes>
-        <unpitched_note><voice_number>0</voice_number></unpitched_note>
+        <unpitched_note><voice_name>D</voice_name></unpitched_note>
       </unpitched_notes>
     </chord>
   </chords>)");

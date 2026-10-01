@@ -347,7 +347,7 @@ auto make_export_song_xml(const int starting_velocity,
     body += R"(
       <pitched_notes>
         <pitched_note>
-          <voice_number>0</voice_number>
+          <voice_name>A</voice_name>
           )" +
             pitched_note_fields +
             R"(
@@ -358,7 +358,7 @@ auto make_export_song_xml(const int starting_velocity,
     body += R"(
       <unpitched_notes>
         <unpitched_note>
-          <voice_number>0</voice_number>
+          <voice_name>D</voice_name>
           )" +
             unpitched_note_fields +
             R"(

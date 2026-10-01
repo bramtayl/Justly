@@ -998,8 +998,8 @@ void Tester::test_piano_roll_minimum_bar_width() {
   // 1/100 of a beat at 100 bpm is 6ms, well under a pixel wide
   open_text(main_window,
             make_voice_song_xml({"A"}, {"D"}, {{{0}, {}}})
-                .replace("</voice_number></pitched_note>",
-                         "</voice_number><beats><numerator>1</numerator>"
+                .replace("</voice_name></pitched_note>",
+                         "</voice_name><beats><numerator>1</numerator>"
                          "<denominator>100</denominator></beats>"
                          "</pitched_note>"));
   const auto& note_items = piano_roll_widget.piano_roll_scene.note_items;

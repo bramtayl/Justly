@@ -68,11 +68,13 @@ void Tester::test_insert_xml_rows_respects_first_row_number() {
 
   const auto second_document = read_xml_document(
       "<chords><chord><words>second</words></chord></chords>");
-  chords_model.insert_xml_rows(0, get_root(second_document));
+  chords_model.insert_xml_rows(0, get_root(second_document),
+                               song.pitched_voices, song.unpitched_voices);
 
   const auto first_document =
       read_xml_document("<chords><chord><words>first</words></chord></chords>");
-  chords_model.insert_xml_rows(0, get_root(first_document));
+  chords_model.insert_xml_rows(0, get_root(first_document), song.pitched_voices,
+                               song.unpitched_voices);
 
   QCOMPARE(chords_model.rowCount(QModelIndex()), 2);
   QCOMPARE(song.chords.at(0).words, QString("first"));
@@ -153,29 +155,6 @@ void Tester::test_paste_error_data() {
   QTest::newRow("unpitched note not Justly")
       << RowType::unpitched_note_type << 1 << "<song/>"
       << UnpitchedNote::get_cells_mime() << "Invalid clipboard";
-  // well-formed notes whose voice the song doesn't have
-  QTest::newRow("pitched note missing voice")
-      << RowType::pitched_note_type << 1 << R"(
-<clipboard>
-  <left_column>0</left_column>
-  <right_column>0</right_column>
-  <rows>
-    <pitched_note><voice_number>99</voice_number></pitched_note>
-  </rows>
-</clipboard>)"
-      << PitchedNote::get_cells_mime()
-      << "Voice 99 for chord 2, pitched note 1 has no corresponding voice";
-  QTest::newRow("unpitched note missing voice")
-      << RowType::unpitched_note_type << 1 << R"(
-<clipboard>
-  <left_column>0</left_column>
-  <right_column>0</right_column>
-  <rows>
-    <unpitched_note><voice_number>99</voice_number></unpitched_note>
-  </rows>
-</clipboard>)"
-      << UnpitchedNote::get_cells_mime()
-      << "Voice 99 for chord 2, unpitched note 1 has no corresponding voice";
 }
 
 void Tester::test_paste_error() {

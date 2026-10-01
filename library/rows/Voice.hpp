@@ -30,6 +30,18 @@ template <VoiceInterface SubVoice>
   return *result_index;
 }
 
+// -1 if no voice has that name, e.g. a note pasted from another song, or
+// copied before its voice was renamed or removed
+template <VoiceInterface SubVoice>
+[[nodiscard]] auto get_voice_number(const QList<SubVoice>& voices,
+                                    const QString& name) -> int {
+  const auto result_index = get_named_index(voices, name);
+  if (result_index == voices.cend()) {
+    return -1;
+  }
+  return static_cast<int>(result_index - voices.cbegin());
+}
+
 template <VoiceInterface SubVoice>
 [[nodiscard]] auto check_voice_name(QWidget& parent,
                                     const QList<SubVoice>& voices,
