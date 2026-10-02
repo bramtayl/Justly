@@ -11,6 +11,8 @@ struct PitchedVoice : Voice {
 
   [[nodiscard]] static auto is_pitched() -> bool;
 
+  [[nodiscard]] static auto get_name_column() -> int;
+
   [[nodiscard]] static auto get_preview_midi_number() -> short;
 
   void from_xml(xmlNode& node, const QList<PitchedVoice>& /*pitched_voices*/,

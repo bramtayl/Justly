@@ -19,7 +19,7 @@ auto PitchedVoicesModel::make_set_cell(const QModelIndex& index,
   if (index.column() ==
       static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column)) {
     return new RenameVoice<  // NOLINT(cppcoreguidelines-owning-memory)
-        PitchedVoice, PitchedNote>(*this, index,
+        PitchedVoice, PitchedNote>(*this, index.row(),
                                    variant_to<QString>(new_value));
   }
   return VoicesModel<PitchedVoice>::make_set_cell(index, new_value);

@@ -11,18 +11,22 @@ struct RowsModel;
 template <RowInterface SubRow>
 struct SetCell : public QUndoCommand {
   RowsModel<SubRow>& rows_model;
-  QModelIndex index;
+  const int row_number;
+  const int column_number;
   const QVariant old_value;
   const QVariant new_value;
 
   explicit SetCell(RowsModel<SubRow>& rows_model_input,
-                   const QModelIndex& index_input, QVariant new_value_input)
-      : rows_model(rows_model_input),
-        index(index_input),
-        old_value(index.data(Qt::EditRole)),
+                   const QModelIndex& index, QVariant new_value_input)
+      : rows_model(rows_model_input), row_number(index.row()),
+        column_number(index.column()), old_value(index.data(Qt::EditRole)),
         new_value(std::move(new_value_input)) {}
 
-  void undo() override { rows_model.set_cell(index, old_value); }
+  void undo() override {
+    rows_model.set_cell(row_number, column_number, old_value);
+  }
 
-  void redo() override { rows_model.set_cell(index, new_value); }
+  void redo() override {
+    rows_model.set_cell(row_number, column_number, new_value);
+  }
 };

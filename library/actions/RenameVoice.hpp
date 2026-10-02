@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QtCore/QModelIndex>
 #include <QtGui/QUndoCommand>
 
 #include "actions/NoteLocation.hpp"
@@ -13,16 +12,15 @@ struct VoicesModel;
 template <VoiceInterface SubVoice, NoteInterface SubNote>
 struct RenameVoice : public QUndoCommand {
   VoicesModel<SubVoice>& voices_model;
-  QModelIndex index;
+  const int row_number;
   const QString old_name;
   const QString new_name;
   QList<NoteLocation> note_locations;
 
   RenameVoice(VoicesModel<SubVoice>& voices_model_input,
-              const QModelIndex& index_input, QString new_name_input)
-      : voices_model(voices_model_input),
-        index(index_input),
-        old_name(voices_model.get_rows().at(index.row()).name),
+              const int row_number_input, QString new_name_input)
+      : voices_model(voices_model_input), row_number(row_number_input),
+        old_name(voices_model.get_rows().at(row_number).name),
         new_name(std::move(new_name_input)) {
     for_each_note<SubNote>(
         voices_model.song.chords,
@@ -42,7 +40,7 @@ struct RenameVoice : public QUndoCommand {
                         note_location.note_number)
           .voice_name = name;
     }
-    voices_model.set_cell(index, name);
+    voices_model.set_cell(row_number, SubVoice::get_name_column(), name);
   }
 
   void undo() override { set_name(old_name); }

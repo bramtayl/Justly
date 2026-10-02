@@ -8,6 +8,10 @@ auto UnpitchedVoice::get_pitched() -> const char* { return "unpitched"; }
 
 auto UnpitchedVoice::is_pitched() -> bool { return false; }
 
+auto UnpitchedVoice::get_name_column() -> int {
+  return static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column);
+}
+
 auto UnpitchedVoice::get_preview_midi_number() const -> short {
   return midi_number;
 }

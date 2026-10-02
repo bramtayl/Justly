@@ -8,6 +8,10 @@ auto PitchedVoice::get_pitched() -> const char* { return "pitched"; }
 
 auto PitchedVoice::is_pitched() -> bool { return true; }
 
+auto PitchedVoice::get_name_column() -> int {
+  return static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column);
+}
+
 auto PitchedVoice::get_preview_midi_number() -> short { return MIDDLE_C_MIDI; }
 
 void PitchedVoice::from_xml(xmlNode& node,

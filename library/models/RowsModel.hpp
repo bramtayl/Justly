@@ -111,9 +111,9 @@ struct RowsModel : public QAbstractTableModel {
   }
 
   // don't inline these functions because they use protected methods
-  void set_cell(const QModelIndex& set_index, const QVariant& new_value) {
-    const auto row_number = set_index.row();
-    const auto column_number = set_index.column();
+  void set_cell(const int row_number, const int column_number,
+                const QVariant& new_value) {
+    const auto set_index = index(row_number, column_number);
 
     get_rows()[row_number].set_data(column_number, new_value);
     dataChanged(set_index, set_index);
