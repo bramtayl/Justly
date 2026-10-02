@@ -114,6 +114,7 @@ struct Tester : public QObject {
   static void test_musicxml_jumps_data();
   void test_musicxml_jumps();
   void test_musicxml_jump_in_one_part();
+  void test_musicxml_parts_with_different_measures();
   void test_musicxml_tie_into_endings();
   static void test_musicxml_accidentals_data();
   void test_musicxml_accidentals();

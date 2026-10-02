@@ -643,12 +643,13 @@ auto check_navigation(QWidget& parent, const QList<MusicXMLMeasure>& measures)
 auto get_score_measures(const QList<MusicXMLPart>& parts)
     -> QList<MusicXMLMeasure> {
   QList<MusicXMLMeasure> score_measures;
+  // parse_musicxml checks that every part has the same measures
+  if (!parts.empty()) {
+    score_measures.resize(parts.at(0).measures.size());
+  }
   for (const auto& part : parts) {
     const auto& measures = part.measures;
     for (auto index = 0; index < measures.size(); index = index + 1) {
-      if (index == score_measures.size()) {
-        score_measures.emplace_back();
-      }
       auto& score_measure = score_measures[index];
       const auto& measure = measures.at(index);
       score_measure.has_forward_repeat =
@@ -702,6 +703,20 @@ auto parse_musicxml(QWidget& parent, xmlNode& score_partwise)
         return std::nullopt;
       }
       parts.push_back(std::move(part));
+    }
+  }
+  // the schema can't check this, but the spec requires it
+  for (const auto& part : parts) {
+    const auto& first_part = parts.at(0);
+    if (part.measures.size() != first_part.measures.size()) {
+      QMessageBox::warning(
+          &parent, QObject::tr("Measure error"),
+          QObject::tr("Part %1 has %2 measure(s), but part %3 has %4")
+              .arg(part.name)
+              .arg(part.measures.size())
+              .arg(first_part.name)
+              .arg(first_part.measures.size()));
+      return std::nullopt;
     }
   }
   return parts;
@@ -896,10 +911,8 @@ void unroll_repeats(MusicXMLPart& part, const QList<int>& playback_order) {
   auto time = 0;
   auto previous_index = -1;
   for (const auto measure_index : playback_order) {
-    // a part can be missing measures at the end
-    if (measure_index >= part.measures.size()) {
-      continue;
-    }
+    // parse_musicxml checks that every part has the same measures
+    Q_ASSERT(measure_index < part.measures.size());
     auto measure = part.measures.at(measure_index);
     const auto offset = time - measure.start_time;
     if (measure_index != previous_index + 1) {

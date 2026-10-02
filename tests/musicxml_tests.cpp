@@ -953,6 +953,42 @@ void Tester::test_musicxml_jump_in_one_part() {
                        test_dir.filePath("test_song.xml"));
 }
 
+// the schema can't check that every part has the same measures
+void Tester::test_musicxml_parts_with_different_measures() {
+  const auto plain_note = make_pitch_note("", "1");
+  QTemporaryFile temp_file;
+  QVERIFY(temp_file.open());
+  temp_file.write((QString(R"(
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1"><part-name>P1</part-name></score-part>
+    <score-part id="P2"><part-name>P2</part-name></score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>%1</attributes>
+      %2%3%2
+    </measure>
+  </part>
+  <part id="P2">
+    <measure number="1">
+      <attributes>%1</attributes>
+      %2
+    </measure>
+  </part>
+</score-partwise>)")
+                       .arg(get_divisions(), plain_note, get_next_measure()))
+                      .toStdString()
+                      .c_str());
+  temp_file.close();
+
+  close_message_later(main_window, waiting_for_message,
+                      "Part P2 has 1 measure(s), but part P1 has 2");
+  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
+                             main_window.piano_roll_widget,
+                             temp_file.fileName());
+}
+
 // ties are followed in the order the measures are played, so a note tied
 // into both endings is held into each of them
 void Tester::test_musicxml_tie_into_endings() {
