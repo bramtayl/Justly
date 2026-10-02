@@ -39,6 +39,12 @@ struct VoiceNames {
 [[nodiscard]] auto get_playback_order(const QList<MusicXMLMeasure>& measures)
     -> QList<int>;
 
+// warns and returns false if a forward repeat has no backward repeat, or a
+// dal segno or to coda has nowhere to go
+[[nodiscard]] auto check_navigation(QWidget& parent,
+                                    const QList<MusicXMLMeasure>& measures)
+    -> bool;
+
 // every part's repeats, endings, and jumps, measure by measure, since jumps
 // are often only written in one part. The measures have no notes
 [[nodiscard]] auto get_score_measures(const QList<MusicXMLPart>& parts)
@@ -57,8 +63,11 @@ void fill_in_accidentals(MusicXMLPart& part);
 // sounding pitch
 void untranspose(MusicXMLPart& part);
 
-// extends each tie-start note through the notes tied to it, and drops those
-void combine_ties(MusicXMLPart& part);
+// extends each tie-start note through the notes tied to it, and drops those;
+// warns and returns false if a tie doesn't both start and stop. Ties are
+// followed in the order the measures are played, so repeats should already be
+// unrolled
+[[nodiscard]] auto combine_ties(QWidget& parent, MusicXMLPart& part) -> bool;
 
 // divisions per beat that every part's divisions fit into
 [[nodiscard]] auto get_song_divisions(const QList<MusicXMLPart>& parts) -> int;

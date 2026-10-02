@@ -894,7 +894,6 @@
     <!--=======================================================-->
     <measure implicit="yes" number="X1" width="71">
       <barline location="left">
-        <repeat direction="forward" winged="none"/>
       </barline>
       <note default-x="22">
         <rest/>
@@ -1434,7 +1433,6 @@
     <!--=======================================================-->
     <measure implicit="yes" number="X1" width="71">
       <barline location="left">
-        <repeat direction="forward" winged="none"/>
       </barline>
       <note default-x="21">
         <pitch>
@@ -2087,7 +2085,6 @@
     <!--=======================================================-->
     <measure implicit="yes" number="X1" width="71">
       <barline location="left">
-        <repeat direction="forward" winged="none"/>
       </barline>
       <note default-x="22">
         <rest/>
@@ -2682,7 +2679,6 @@
     <!--=======================================================-->
     <measure implicit="yes" number="X1" width="71">
       <barline location="left">
-        <repeat direction="forward" winged="none"/>
       </barline>
       <note default-x="22">
         <rest/>
@@ -3186,7 +3182,6 @@
     <!--=======================================================-->
     <measure implicit="yes" number="X1" width="71">
       <barline location="left">
-        <repeat direction="forward" winged="none"/>
       </barline>
       <note default-x="22">
         <rest/>

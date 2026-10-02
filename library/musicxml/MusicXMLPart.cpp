@@ -136,7 +136,8 @@ auto parse_attributes(QWidget& parent, xmlNode& attributes_node,
 
 // adds the note, unless it's a rest, to the measure, and moves the time
 // forward, unless the note is part of the previous chord
-auto parse_note(QWidget& parent, xmlNode& note_node, MusicXMLMeasure& measure,
+auto parse_note(QWidget& parent, xmlNode& note_node,
+                const MusicXMLPart& part, MusicXMLMeasure& measure,
                 int& current_time, int& chord_start_time) -> bool {
   // arrows mark Johnston's 7 (down) and el (up)
   static const QMap<std::string, Accidental> accidentals = {
@@ -214,6 +215,16 @@ auto parse_note(QWidget& parent, xmlNode& note_node, MusicXMLMeasure& measure,
       is_rest = true;
     } else if (name == "instrument") {
       note.instrument_id = get_property(note_field, "id");
+      // the schema only checks that the id is declared somewhere
+      if (!part.instrument_names.contains(note.instrument_id)) {
+        QMessageBox::warning(
+            &parent, QObject::tr("Instrument error"),
+            QObject::tr("Instrument %1 in measure %2 isn't in part %3")
+                .arg(QString::fromStdString(note.instrument_id))
+                .arg(measure.number)
+                .arg(part.name));
+        return false;
+      }
     }
   }
 
@@ -244,8 +255,8 @@ void maybe_add_marker(xmlNode& node, const char* name,
 // records forward/backward repeats, first/second-ending brackets, and segnos
 // and codas onto the measure, so the part can be unrolled later
 auto parse_barline(QWidget& parent, xmlNode& barline_node,
-                   MusicXMLMeasure& measure, QList<int>& active_ending_numbers)
-    -> bool {
+                   MusicXMLMeasure& measure, QList<int>& active_ending_numbers,
+                   bool& in_ending) -> bool {
   maybe_add_marker(barline_node, "segno", measure.segnos);
   maybe_add_marker(barline_node, "coda", measure.codas);
   for (auto& child : get_xml_children(barline_node)) {
@@ -269,7 +280,21 @@ auto parse_barline(QWidget& parent, xmlNode& barline_node,
         }
       }
     } else if (node_is(child, "ending")) {
-      if (get_property(child, "type") == "start") {
+      const auto is_start = get_property(child, "type") == "start";
+      // a blank ending has no numbers, so whether an ending is open has to
+      // be tracked separately
+      if (is_start == in_ending) {
+        QMessageBox::warning(
+            &parent, QObject::tr("Ending error"),
+            (is_start
+                 ? QObject::tr("Ending in measure %1 starts before the "
+                               "previous ending stops")
+                 : QObject::tr("Ending in measure %1 stops without starting"))
+                .arg(measure.number));
+        return false;
+      }
+      in_ending = is_start;
+      if (is_start) {
         QList<int> ending_numbers;
         const auto numbers_text =
             QString::fromStdString(get_property(child, "number"));
@@ -338,6 +363,7 @@ auto parse_part(QWidget& parent, xmlNode& part_node, MusicXMLPart& part)
   auto current_time = 0;
   auto chord_start_time = current_time;
   QList<int> active_ending_numbers;
+  auto in_ending = false;
   for (auto& measure_node : get_xml_children(part_node)) {
     MusicXMLMeasure measure;
     measure.number = static_cast<int>(part.measures.size()) + 1;
@@ -350,7 +376,7 @@ auto parse_part(QWidget& parent, xmlNode& part_node, MusicXMLPart& part)
           return false;
         }
       } else if (measure_element_name == "note") {
-        if (!parse_note(parent, measure_element, measure, current_time,
+        if (!parse_note(parent, measure_element, part, measure, current_time,
                         chord_start_time)) {
           return false;
         }
@@ -360,6 +386,14 @@ auto parse_part(QWidget& parent, xmlNode& part_node, MusicXMLPart& part)
           return false;
         }
         current_time -= duration.value();
+        if (current_time < measure.start_time) {
+          QMessageBox::warning(
+              &parent, QObject::tr("Duration error"),
+              QObject::tr("Backup in measure %1 goes back past the start of "
+                          "the measure")
+                  .arg(measure.number));
+          return false;
+        }
         chord_start_time = current_time;
       } else if (measure_element_name == "forward") {
         const auto duration = get_duration(parent, measure_element);
@@ -370,7 +404,7 @@ auto parse_part(QWidget& parent, xmlNode& part_node, MusicXMLPart& part)
         chord_start_time = current_time;
       } else if (measure_element_name == "barline") {
         if (!parse_barline(parent, measure_element, measure,
-                           active_ending_numbers)) {
+                           active_ending_numbers, in_ending)) {
           return false;
         }
       } else if (measure_element_name == "sound") {
@@ -385,6 +419,12 @@ auto parse_part(QWidget& parent, xmlNode& part_node, MusicXMLPart& part)
     }
     measure.end_time = current_time;
     part.measures.push_back(std::move(measure));
+  }
+  if (in_ending) {
+    QMessageBox::warning(&parent, QObject::tr("Ending error"),
+                         QObject::tr("Ending in part %1 never stops")
+                             .arg(part.name));
+    return false;
   }
   return true;
 }
@@ -546,6 +586,60 @@ auto get_playback_order(const QList<MusicXMLMeasure>& measures) -> QList<int> {
   return playback_order;
 }
 
+auto check_navigation(QWidget& parent, const QList<MusicXMLMeasure>& measures)
+    -> bool {
+  const auto number_of_measures = static_cast<int>(measures.size());
+  // a backward repeat without a forward repeat is fine, but not the reverse
+  std::optional<int> maybe_open_repeat_index;
+  const auto warn_dangling_repeat = [&parent](const int measure_index) -> void {
+    QMessageBox::warning(
+        &parent, QObject::tr("Repeat error"),
+        QObject::tr("Forward repeat in measure %1 has no backward repeat")
+            .arg(measure_index + 1));
+  };
+  for (auto measure_index = 0; measure_index < number_of_measures;
+       measure_index = measure_index + 1) {
+    const auto& measure = measures.at(measure_index);
+    if (measure.has_forward_repeat) {
+      if (maybe_open_repeat_index.has_value()) {
+        warn_dangling_repeat(maybe_open_repeat_index.value());
+        return false;
+      }
+      maybe_open_repeat_index = measure_index;
+    }
+    if (measure.has_backward_repeat) {
+      maybe_open_repeat_index.reset();
+    }
+    for (const auto& jump : measure.jumps) {
+      if (jump.type == JumpType::dal_segno &&
+          !find_marker(measures, &MusicXMLMeasure::segnos, jump.target,
+                       measure_index, -1)
+               .has_value()) {
+        QMessageBox::warning(
+            &parent, QObject::tr("Jump error"),
+            QObject::tr("Dal segno in measure %1 has no segno to go back to")
+                .arg(measure_index + 1));
+        return false;
+      }
+      if (jump.type == JumpType::to_coda &&
+          !find_marker(measures, &MusicXMLMeasure::codas, jump.target,
+                       measure_index + 1, 1)
+               .has_value()) {
+        QMessageBox::warning(
+            &parent, QObject::tr("Jump error"),
+            QObject::tr("To coda in measure %1 has no coda to go to")
+                .arg(measure_index + 1));
+        return false;
+      }
+    }
+  }
+  if (maybe_open_repeat_index.has_value()) {
+    warn_dangling_repeat(maybe_open_repeat_index.value());
+    return false;
+  }
+  return true;
+}
+
 auto get_score_measures(const QList<MusicXMLPart>& parts)
     -> QList<MusicXMLMeasure> {
   QList<MusicXMLMeasure> score_measures;
@@ -677,41 +771,66 @@ void untranspose(MusicXMLPart& part) {
   part.transpose_changes.clear();
 }
 
-void combine_ties(MusicXMLPart& part) {
+auto combine_ties(QWidget& parent, MusicXMLPart& part) -> bool {
   // a tie only ever connects notes within the same voice, so an in-progress
   // tie must be looked up by instrument as well as pitch -- otherwise two
   // simultaneous instruments tying the same pitch clobber each other's
   // still-open note. Keyed by written step and octave rather than pitch,
   // since a note tied across a barline usually drops its accidental, but
   // still continues the pitch it was tied from
-  QMap<QString, MusicXMLNote*> tied_notes;
+  struct TiedNote {
+    MusicXMLNote* note_pointer = nullptr;
+    int measure_number = 1;
+  };
+  QMap<QString, TiedNote> tied_notes;
+  // the schema doesn't require ties to be well-formed
+  const auto warn_unstopped = [&parent, &part](const int measure_number) {
+    QMessageBox::warning(
+        &parent, QObject::tr("Tie error"),
+        QObject::tr("Tie in measure %1 of part %2 never stops")
+            .arg(measure_number)
+            .arg(part.name));
+  };
   for (auto& measure : part.measures) {
     for (auto& note : measure.notes) {
       const auto tied_note_key = QString::fromStdString(note.instrument_id) +
                                  ":" + note.step + ":" +
                                  QString::number(note.octave);
       const auto tied_notes_iterator = tied_notes.find(tied_note_key);
-      if (note.tie_stop && tied_notes_iterator != tied_notes.end()) {
-        auto& previous_note = *tied_notes_iterator.value();
+      if (note.tie_stop) {
+        if (tied_notes_iterator == tied_notes.end()) {
+          QMessageBox::warning(
+              &parent, QObject::tr("Tie error"),
+              QObject::tr("Tie in measure %1 of part %2 never starts")
+                  .arg(measure.number)
+                  .arg(part.name));
+          return false;
+        }
+        auto& previous_note =
+            get_reference(tied_notes_iterator.value().note_pointer);
         previous_note.duration = previous_note.duration + note.duration;
         if (!note.tie_start) {
           tied_notes.erase(tied_notes_iterator);
         }
-      } else {
-        // no matching tie-start -- the schema doesn't require ties to be
-        // well-formed, so a malformed or hand-edited file can have an orphan
-        // tie-stop; treat it as an unstarted note
-        note.tie_stop = false;
-        if (note.tie_start) {
-          tied_notes[tied_note_key] = &note;
+      } else if (note.tie_start) {
+        if (tied_notes_iterator != tied_notes.end()) {
+          warn_unstopped(tied_notes_iterator.value().measure_number);
+          return false;
         }
+        tied_notes[tied_note_key] = {.note_pointer = &note,
+                                     .measure_number = measure.number};
       }
     }
+  }
+  if (!tied_notes.isEmpty()) {
+    warn_unstopped(tied_notes.first().measure_number);
+    return false;
   }
   for (auto& measure : part.measures) {
     measure.notes.removeIf(
         [](const MusicXMLNote& note) -> bool { return note.tie_stop; });
   }
+  return true;
 }
 
 auto get_song_divisions(const QList<MusicXMLPart>& parts) -> int {

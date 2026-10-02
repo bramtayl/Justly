@@ -114,13 +114,14 @@ struct Tester : public QObject {
   static void test_musicxml_jumps_data();
   void test_musicxml_jumps();
   void test_musicxml_jump_in_one_part();
+  void test_musicxml_tie_into_endings();
   static void test_musicxml_accidentals_data();
   void test_musicxml_accidentals();
   static void test_playback_order_lone_backward_repeat();
   void test_import_musicxml_ties_do_not_cross_voices();
-  void test_import_musicxml_orphan_tie_stop();
   void test_import_musicxml_voice_named_like_program();
-  void test_import_musicxml_voice_names_deduplicated();
+  void test_import_musicxml_unnamed_voice();
+  void test_import_musicxml_duplicate_voice_names();
   void test_musicxml_endings();
   static void test_zip_entry_size_is_safe_data();
   static void test_zip_entry_size_is_safe();

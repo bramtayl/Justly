@@ -69,6 +69,9 @@ void Tester::test_musicxml_error_data() {
   // must be rejected with a warning instead of overflowing std::stoi
   QTest::newRow("overflowing divisions") << "overflowing_divisions.musicxml"
                                          << "Divisions value is out of range";
+  // the schema doesn't require a tie-stop to have a matching tie-start
+  QTest::newRow("orphan tie") << "orphan_tie.musicxml"
+                              << "Tie in measure 1 of part Piano never starts";
 }
 
 void Tester::test_musicxml_error() {
@@ -135,31 +138,6 @@ void Tester::test_import_musicxml_ties_do_not_cross_voices() {
   QVERIFY(right_hand_notes.at(0).words.contains("Right Hand"));
   QCOMPARE(right_hand_notes.at(0).beats.numerator, 8);
   QCOMPARE(right_hand_notes.at(0).beats.denominator, 1);
-
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
-}
-
-// regression test: a <tie type="stop"/> with no matching earlier
-// <tie type="start"/> for the same pitch/voice used to dereference a
-// missing map entry, guarded only by a release-mode-noop Q_ASSERT -- a
-// malformed or hand-edited musicxml file could trigger undefined behavior.
-// It must now import as an ordinary, unstarted note instead.
-void Tester::test_import_musicxml_orphan_tie_stop() {
-  auto& window_body = main_window.window_body;
-
-  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
-                             main_window.piano_roll_widget,
-                             test_dir.filePath("orphan_tie.musicxml"));
-
-  auto& song = window_body.song;
-  QCOMPARE(song.chords.size(), 1);
-
-  const auto& notes = song.chords.at(0).pitched_notes;
-  QCOMPARE(notes.size(), 1);
-  QCOMPARE(notes.at(0).beats.numerator, 4);
-  QCOMPARE(notes.at(0).beats.denominator, 1);
 
   open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
                        main_window.piano_roll_widget,
@@ -403,6 +381,69 @@ void Tester::test_musicxml_inline_error_data() {
                  R"(<barline><repeat direction="backward" times="%1"/></barline>)")
                  .arg(get_huge_number())
       << "Repeat times is out of range";
+
+  // the rest of these are allowed by the schema, but don't make sense
+
+  // the schema only checks that the id belongs to something, here the part
+  QTest::newRow("instrument not in part")
+      << get_divisions()
+      << R"(<note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>1</duration>
+        <instrument id="P1"/>
+      </note>)"
+      << "Instrument P1 in measure 1 isn't in part P";
+  QTest::newRow("backup past the measure")
+      << get_divisions() << plain_note + "<backup><duration>2</duration></backup>"
+      << "Backup in measure 1 goes back past the start of the measure";
+  QTest::newRow("tie never starts")
+      << get_divisions() << make_spelled_note("C", "4", "", "stop")
+      << "Tie in measure 1 of part P never starts";
+  QTest::newRow("tie never stops")
+      << get_divisions() << make_spelled_note("C", "4", "", "start")
+      << "Tie in measure 1 of part P never stops";
+  QTest::newRow("tie restarts before stopping")
+      << get_divisions()
+      << make_spelled_note("C", "4", "", "start") + get_next_measure() +
+             make_spelled_note("C", "4", "", "start") +
+             make_spelled_note("C", "4", "", "stop")
+      << "Tie in measure 1 of part P never stops";
+  QTest::newRow("ending never starts")
+      << get_divisions()
+      << plain_note + R"(<barline><ending number="1" type="stop"/></barline>)"
+      << "Ending in measure 1 stops without starting";
+  QTest::newRow("ending starts twice")
+      << get_divisions()
+      << R"(<barline location="left"><ending number="1" type="start"/></barline>)" +
+             plain_note + get_next_measure() +
+             R"(<barline location="left"><ending number="2" type="start"/></barline>)" +
+             plain_note +
+             R"(<barline><ending number="2" type="discontinue"/></barline>)"
+      << "Ending in measure 2 starts before the previous ending stops";
+  QTest::newRow("ending never stops")
+      << get_divisions()
+      << R"(<barline location="left"><ending number="1" type="start"/></barline>)" +
+             plain_note
+      << "Ending in part P never stops";
+  QTest::newRow("forward repeat at the end")
+      << get_divisions()
+      << R"(<barline location="left"><repeat direction="forward"/></barline>)" +
+             plain_note
+      << "Forward repeat in measure 1 has no backward repeat";
+  QTest::newRow("forward repeat before another")
+      << get_divisions()
+      << R"(<barline location="left"><repeat direction="forward"/></barline>)" +
+             plain_note + get_next_measure() +
+             R"(<barline location="left"><repeat direction="forward"/></barline>)" +
+             plain_note +
+             R"(<barline><repeat direction="backward"/></barline>)"
+      << "Forward repeat in measure 1 has no backward repeat";
+  QTest::newRow("dal segno without a segno")
+      << get_divisions() << plain_note + R"(<sound dalsegno="segno"/>)"
+      << "Dal segno in measure 1 has no segno to go back to";
+  QTest::newRow("to coda without a coda")
+      << get_divisions() << plain_note + R"(<sound tocoda="coda"/>)"
+      << "To coda in measure 1 has no coda to go to";
 }
 
 void Tester::test_musicxml_inline_error() {
@@ -629,11 +670,10 @@ void Tester::test_musicxml_accidentals() {
                        test_dir.filePath("test_song.xml"));
 }
 
-// every imported voice needs a unique, non-empty name, so an unnamed part
-// gets a placeholder and a repeated part name gets a numbered suffix
-void Tester::test_import_musicxml_voice_names_deduplicated() {
-  static const QList<QString> part_names = {"", "Flute", "Flute"};
+namespace {
 
+// a score with a one-note part for each name
+auto make_named_parts(const QList<QString>& part_names) -> QString {
   QString part_list;
   QString parts;
   for (auto part_number = 1; part_number <= part_names.size();
@@ -651,15 +691,44 @@ void Tester::test_import_musicxml_voice_names_deduplicated() {
   </part>)")
                  .arg(part_id, get_divisions(), make_pitch_note("", "1"));
   }
-
-  QTemporaryFile temp_file;
-  QVERIFY(temp_file.open());
-  temp_file.write(QString(R"(
+  return QString(R"(
 <score-partwise version="4.0">
   <part-list>%1
   </part-list>%2
 </score-partwise>)")
-                      .arg(part_list, parts)
+      .arg(part_list, parts);
+}
+
+}  // namespace
+
+// every imported voice needs a non-empty name, so an unnamed part gets a
+// placeholder
+void Tester::test_import_musicxml_unnamed_voice() {
+  QTemporaryFile temp_file;
+  QVERIFY(temp_file.open());
+  temp_file.write(make_named_parts({"", "Flute"}).toStdString().c_str());
+  temp_file.close();
+
+  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
+                             main_window.piano_roll_widget,
+                             temp_file.fileName());
+
+  const auto& pitched_voices = main_window.window_body.song.pitched_voices;
+  QCOMPARE(pitched_voices.size(), 2);
+  QCOMPARE(pitched_voices.at(0).name, QString("Unnamed instrument"));
+  QCOMPARE(pitched_voices.at(1).name, QString("Flute"));
+
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}
+
+// voices are looked up by name, so a repeated part name, or a second unnamed
+// part, gets a numbered suffix
+void Tester::test_import_musicxml_duplicate_voice_names() {
+  QTemporaryFile temp_file;
+  QVERIFY(temp_file.open());
+  temp_file.write(make_named_parts({"Flute", "", "Flute", ""})
                       .toStdString()
                       .c_str());
   temp_file.close();
@@ -669,10 +738,11 @@ void Tester::test_import_musicxml_voice_names_deduplicated() {
                              temp_file.fileName());
 
   const auto& pitched_voices = main_window.window_body.song.pitched_voices;
-  QCOMPARE(pitched_voices.size(), 3);
-  QCOMPARE(pitched_voices.at(0).name, QString("Unnamed instrument"));
-  QCOMPARE(pitched_voices.at(1).name, QString("Flute"));
+  QCOMPARE(pitched_voices.size(), 4);
+  QCOMPARE(pitched_voices.at(0).name, QString("Flute"));
+  QCOMPARE(pitched_voices.at(1).name, QString("Unnamed instrument"));
   QCOMPARE(pitched_voices.at(2).name, QString("Flute (2)"));
+  QCOMPARE(pitched_voices.at(3).name, QString("Unnamed instrument (2)"));
 
   open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
                        main_window.piano_roll_widget,
@@ -876,6 +946,46 @@ void Tester::test_musicxml_jump_in_one_part() {
   QCOMPARE(chords.size(), 4);
   for (const auto& chord : chords) {
     QCOMPARE(chord.pitched_notes.size(), 2);
+  }
+
+  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
+                       main_window.piano_roll_widget,
+                       test_dir.filePath("test_song.xml"));
+}
+
+// ties are followed in the order the measures are played, so a note tied
+// into both endings is held into each of them
+void Tester::test_musicxml_tie_into_endings() {
+  const auto body =
+      get_forward_repeat() + make_spelled_note("C", "4", "", "start") +
+      get_next_measure() +
+      R"(<barline location="left"><ending number="1" type="start"/></barline>)" +
+      make_spelled_note("C", "4", "", "stop") + R"(
+      <barline>
+        <ending number="1" type="stop"/>
+        <repeat direction="backward"/>
+      </barline>)" +
+      get_next_measure() +
+      R"(<barline location="left"><ending number="2" type="start"/></barline>)" +
+      make_spelled_note("C", "4", "", "stop") +
+      R"(<barline><ending number="2" type="discontinue"/></barline>)";
+
+  QTemporaryFile temp_file;
+  QVERIFY(temp_file.open());
+  temp_file.write(make_musicxml(get_divisions(), body).toStdString().c_str());
+  temp_file.close();
+
+  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
+                             main_window.piano_roll_widget,
+                             temp_file.fileName());
+  // measure 1, held through the first ending, then again through the second
+  const auto& chords = main_window.window_body.song.chords;
+  QCOMPARE(chords.size(), 2);
+  for (const auto& chord : chords) {
+    QCOMPARE(chord.words, QString("1"));
+    QCOMPARE(chord.pitched_notes.size(), 1);
+    QCOMPARE(chord.pitched_notes.at(0).beats.numerator, 2);
+    QCOMPARE(chord.pitched_notes.at(0).beats.denominator, 1);
   }
 
   open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
