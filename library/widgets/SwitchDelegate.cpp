@@ -14,12 +14,21 @@
 
 namespace {
 
-auto create_string_picker(QWidget* parent_pointer, const QList<QString>& names)
+auto create_string_picker(const SwitchDelegate& delegate,
+                          QWidget* parent_pointer, const QList<QString>& names)
     -> StringPicker& {
   auto& specific_result = get_reference(
       new StringPicker(  // NOLINT(cppcoreguidelines-owning-memory)
           parent_pointer, names));
   specific_result.setFrame(false);
+  // commit as soon as the user picks an item, instead of waiting for enter
+  auto& mutable_delegate = const_cast<
+      SwitchDelegate&>(  // NOLINT(cppcoreguidelines-pro-type-const-cast)
+      delegate);
+  QObject::connect(&specific_result, &QComboBox::activated, &mutable_delegate,
+                   [&mutable_delegate, &specific_result]() {
+                     emit mutable_delegate.commitData(&specific_result);
+                   });
   return specific_result;
 }
 
@@ -75,8 +84,8 @@ auto SwitchDelegate::createEditor(QWidget* parent_pointer,
       column == static_cast<int>(
                     UnpitchedVoiceColumn::unpitched_voice_midi_number_column)) {
     static const auto MAX_MIDI_NUMBER = 127;
-    auto& specific_result = get_reference(
-        new QSpinBox(  // NOLINT(cppcoreguidelines-owning-memory)
+    auto& specific_result =
+        get_reference(new QSpinBox(  // NOLINT(cppcoreguidelines-owning-memory)
             parent_pointer));
     specific_result.setRange(0, MAX_MIDI_NUMBER);
     specific_result.setFrame(false);
@@ -85,27 +94,27 @@ auto SwitchDelegate::createEditor(QWidget* parent_pointer,
   if (current_row_type == RowType::pitched_note_type &&
       column ==
           static_cast<int>(PitchedNoteColumn::pitched_note_voice_name_column)) {
-    result_pointer =
-        &create_string_picker(parent_pointer, get_names(song.pitched_voices));
+    result_pointer = &create_string_picker(*this, parent_pointer,
+                                           get_names(song.pitched_voices));
   }
   if (current_row_type == RowType::unpitched_note_type &&
       column == static_cast<int>(
                     UnpitchedNoteColumn::unpitched_note_voice_name_column)) {
-    result_pointer =
-        &create_string_picker(parent_pointer, get_names(song.unpitched_voices));
+    result_pointer = &create_string_picker(*this, parent_pointer,
+                                           get_names(song.unpitched_voices));
   }
   if (current_row_type == RowType::pitched_voice_type &&
       column == static_cast<int>(
                     PitchedVoiceColumn::pitched_voice_instrument_column)) {
-    result_pointer =
-        &create_string_picker(parent_pointer, get_some_program_names(true));
+    result_pointer = &create_string_picker(*this, parent_pointer,
+                                           get_some_program_names(true));
   }
   if (current_row_type == RowType::unpitched_voice_type &&
       column ==
           static_cast<int>(
               UnpitchedVoiceColumn::unpitched_voice_percussion_set_column)) {
-    result_pointer =
-        &create_string_picker(parent_pointer, get_some_program_names(false));
+    result_pointer = &create_string_picker(*this, parent_pointer,
+                                           get_some_program_names(false));
   }
   if (result_pointer != nullptr) {
     auto& result = get_reference(result_pointer);
