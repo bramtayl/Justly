@@ -1,6 +1,6 @@
 #pragma once
 
-#include "actions/SetCell.hpp"
+#include "actions/SetCells.hpp"
 #include "models/RowsModel.hpp"
 
 template <RowInterface SubRow>
@@ -29,7 +29,11 @@ struct UndoRowsModel : public RowsModel<SubRow> {
   [[nodiscard]] virtual auto make_set_cell(const QModelIndex& index,
                                            const QVariant& new_value)
       -> QUndoCommand* {
-    return new SetCell<SubRow>(  // NOLINT(cppcoreguidelines-owning-memory)
-        *this, index, new_value);
+    const auto row_number = index.row();
+    const auto column_number = index.column();
+    auto new_row = this->get_rows().at(row_number);
+    new_row.set_data(column_number, new_value);
+    return new SetCells<SubRow>(  // NOLINT(cppcoreguidelines-owning-memory)
+        *this, row_number, 1, column_number, column_number, {new_row});
   }
 };

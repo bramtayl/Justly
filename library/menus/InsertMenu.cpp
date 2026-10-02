@@ -11,8 +11,7 @@ void add_insert_row(WindowBody& window_body, const int row_number,
   const auto& chords = window_body.song.chords;
   switch (new_row_type) {
     case RowType::chord_type:
-      undo_command = new InsertRow(  // NOLINT(cppcoreguidelines-owning-memory)
-          switch_table.chords_model, row_number);
+      undo_command = make_insert_row(switch_table.chords_model, row_number);
       break;
     case RowType::pitched_note_type:
       undo_command = make_insert_note<PitchedVoice>(

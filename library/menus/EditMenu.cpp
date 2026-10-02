@@ -1,7 +1,7 @@
 #include "menus/EditMenu.hpp"
 
-#include "actions/DeleteCells.hpp"
 #include "actions/RemoveVoiceRows.hpp"
+#include "actions/SetCells.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchTable.hpp"
 
@@ -15,8 +15,11 @@ void add_delete_cells(WindowBody& window_body) {
 
   undo_stack.push(dispatch_row_type(
       switch_table, [&range](auto& rows_model) -> QUndoCommand* {
-        return new DeleteCells(  // NOLINT(cppcoreguidelines-owning-memory)
-            rows_model, range);
+        const auto number_of_rows = get_number_of_rows(range);
+        auto empty_row = rows_model.make_empty_row();
+        return new SetCells(  // NOLINT(cppcoreguidelines-owning-memory)
+            rows_model, range.top(), number_of_rows, range.left(),
+            range.right(), QList<decltype(empty_row)>(number_of_rows, empty_row));
       }));
 }
 

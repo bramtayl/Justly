@@ -151,33 +151,6 @@ struct RowsModel : public QAbstractTableModel {
                 QItemSelectionModel::Select | QItemSelectionModel::Clear);
   }
 
-  void delete_cells(const QItemSelectionRange& range) {
-    Q_ASSERT(range.isValid());
-
-    const auto& top_left_index = range.topLeft();
-    const auto& bottom_right_index = range.bottomRight();
-
-    const auto first_row_number = range.top();
-    const auto left_column = range.left();
-    const auto right_column = range.right();
-    const auto number_of_rows = get_number_of_rows(range);
-
-    auto& rows = get_rows();
-    for (auto replace_number = 0; replace_number < number_of_rows;
-         replace_number++) {
-      auto& row = rows[first_row_number + replace_number];
-      const auto empty_row = make_empty_row();
-      for (auto column_number = left_column; column_number <= right_column;
-           column_number++) {
-        row.copy_column_from(empty_row, column_number);
-      }
-    }
-    dataChanged(top_left_index, bottom_right_index);
-    get_reference(selection_model_pointer)
-        .select(QItemSelection(top_left_index, bottom_right_index),
-                QItemSelectionModel::Select | QItemSelectionModel::Clear);
-  }
-
   void insert_xml_rows(const int first_row_number, xmlNode& rows_node,
                        const QList<PitchedVoice>& pitched_voices,
                        const QList<UnpitchedVoice>& unpitched_voices) {
