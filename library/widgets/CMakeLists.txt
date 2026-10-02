@@ -22,5 +22,3 @@ target_sources(JustlyLibrary PRIVATE
     "SwitchDelegate.cpp"
     "SwitchTable.cpp"
 )
-
-add_subdirectory("piano_roll")

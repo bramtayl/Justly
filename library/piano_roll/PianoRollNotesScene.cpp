@@ -1,4 +1,4 @@
-#include "widgets/piano_roll/PianoRollNotesScene.hpp"
+#include "piano_roll/PianoRollNotesScene.hpp"
 
 #include <QtCore/QTimer>
 #include <QtWidgets/QGraphicsItem>

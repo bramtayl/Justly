@@ -11,9 +11,9 @@
 #include "actions/ReplaceTable.hpp"
 #include "column_numbers/ChordColumn.hpp"
 #include "menus/SongMenuBar.hpp"
+#include "piano_roll/PianoRollNotesScene.hpp"
+#include "piano_roll/PianoRollWidget.hpp"
 #include "widgets/SpinBoxes.hpp"
-#include "widgets/piano_roll/PianoRollNotesScene.hpp"
-#include "widgets/piano_roll/PianoRollWidget.hpp"
 
 namespace {
 

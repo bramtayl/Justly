@@ -1,4 +1,4 @@
-#include "widgets/piano_roll/PianoRollWidget.hpp"
+#include "piano_roll/PianoRollWidget.hpp"
 
 #include <QtCore/QEasingCurve>
 #include <QtCore/QTimer>
@@ -8,12 +8,12 @@
 #include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QScrollBar>
 
+#include "piano_roll/PianoRollAxisScene.hpp"
+#include "piano_roll/PianoRollLegendScene.hpp"
+#include "piano_roll/PianoRollNotesScene.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchTable.hpp"
 #include "widgets/WindowBody.hpp"
-#include "widgets/piano_roll/PianoRollAxisScene.hpp"
-#include "widgets/piano_roll/PianoRollLegendScene.hpp"
-#include "widgets/piano_roll/PianoRollNotesScene.hpp"
 
 namespace {
 const auto PIANO_ROLL_AXIS_TICK_LENGTH = 5.0;

@@ -1,4 +1,4 @@
-#include "widgets/piano_roll/PianoRollAxisScene.hpp"
+#include "piano_roll/PianoRollAxisScene.hpp"
 
 #include <QtWidgets/QGraphicsView>
 

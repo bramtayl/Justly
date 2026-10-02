@@ -3,8 +3,8 @@
 #include <QtWidgets/QGraphicsView>
 
 #include "Tester.hpp"
-#include "widgets/piano_roll/PianoRollNotesScene.hpp"
-#include "widgets/piano_roll/PianoRollWidget.hpp"
+#include "piano_roll/PianoRollNotesScene.hpp"
+#include "piano_roll/PianoRollWidget.hpp"
 
 namespace {
 // checks that exactly the events matching the given criteria (mirroring

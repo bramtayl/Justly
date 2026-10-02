@@ -4,7 +4,7 @@
 #include <QtWidgets/QGraphicsScene>
 
 #include "other/PianoRollNoteEvent.hpp"
-#include "widgets/piano_roll/PlayheadTransition.hpp"
+#include "piano_roll/PlayheadTransition.hpp"
 
 static const auto PIANO_ROLL_PIXELS_PER_MS = 0.1;
 static const auto PIANO_ROLL_DEFAULT_AXIS_Y = 0.0;

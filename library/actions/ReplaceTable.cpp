@@ -12,8 +12,8 @@
 #include "column_numbers/UnpitchedNoteColumn.hpp"
 #include "column_numbers/UnpitchedVoiceColumn.hpp"
 #include "menus/SongMenuBar.hpp"
+#include "piano_roll/PianoRollWidget.hpp"
 #include "widgets/ControlsColumn.hpp"
-#include "widgets/piano_roll/PianoRollWidget.hpp"
 
 namespace {
 
