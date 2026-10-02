@@ -1,6 +1,5 @@
 set(EDITOR_HEADERS 
     "IntervalEditor.hpp"
-    "MidiNumberEditor.hpp"
     "RationalEditor.hpp"
     "StringPicker.hpp"
 )
@@ -11,7 +10,6 @@ target_sources(JustlyLibrary PUBLIC FILE_SET justly_headers FILES
 
 target_sources(JustlyLibrary PRIVATE
     "IntervalEditor.cpp"
-    "MidiNumberEditor.cpp"
     "RationalEditor.cpp"
     "StringPicker.cpp"
 )

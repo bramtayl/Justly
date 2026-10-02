@@ -13,7 +13,7 @@ auto UnpitchedVoice::get_name_column() -> int {
 }
 
 auto UnpitchedVoice::get_preview_midi_number() const -> short {
-  return midi_number;
+  return static_cast<short>(midi_number);
 }
 
 void UnpitchedVoice::from_xml(
@@ -26,7 +26,7 @@ void UnpitchedVoice::from_xml(
     } else if (field_name == "percussion_set_pointer") {
       program = get_qstring_content(field_node);
     } else if (field_name == "midi_number") {
-      midi_number = static_cast<short>(xml_to_int(field_node));
+      midi_number = xml_to_int(field_node);
     } else {
       Q_ASSERT(field_name == "velocity_ratio");
       set_rational_from_xml(velocity_ratio, field_node);
@@ -99,7 +99,7 @@ void UnpitchedVoice::set_data(const int column_number,
       program = variant_to<QString>(new_value);
       break;
     case UnpitchedVoiceColumn::unpitched_voice_midi_number_column:
-      midi_number = variant_to<short>(new_value);
+      midi_number = variant_to<int>(new_value);
       break;
     case UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column:
       velocity_ratio = variant_to<Rational>(new_value);

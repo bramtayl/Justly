@@ -1,7 +1,6 @@
 #include <QtWidgets/QSpinBox>
 
 #include "Tester.hpp"
-#include "cell_editors/MidiNumberEditor.hpp"
 #include "cell_editors/RationalEditor.hpp"
 #include "cell_editors/StringPicker.hpp"
 #include "widgets/ControlsColumn.hpp"
@@ -678,7 +677,10 @@ void Tester::test_voice_cell_editors() {
     if (dynamic_cast<RationalEditor*>(editor_pointer) != nullptr) {
       return "rational";
     }
-    if (dynamic_cast<MidiNumberEditor*>(editor_pointer) != nullptr) {
+    const auto* const spin_box_pointer =
+        dynamic_cast<QSpinBox*>(editor_pointer);
+    if (spin_box_pointer != nullptr && spin_box_pointer->minimum() == 0 &&
+        spin_box_pointer->maximum() == 127) {  // NOLINT(readability-magic-numbers)
       return "midi number";
     }
     if (dynamic_cast<QLineEdit*>(editor_pointer) != nullptr) {

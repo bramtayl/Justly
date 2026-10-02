@@ -7,7 +7,7 @@ static const auto DEFAULT_MIDI_NUMBER = 57;
 struct UnpitchedVoice : Voice {
   UnpitchedVoice();
 
-  short midi_number = DEFAULT_MIDI_NUMBER;
+  int midi_number = DEFAULT_MIDI_NUMBER;
 
   [[nodiscard]] static auto get_pitched() -> const char*;
 

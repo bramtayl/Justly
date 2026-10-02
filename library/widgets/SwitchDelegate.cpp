@@ -1,7 +1,8 @@
 #include "widgets/SwitchDelegate.hpp"
 
+#include <QtWidgets/QSpinBox>
+
 #include "cell_editors/IntervalEditor.hpp"
-#include "cell_editors/MidiNumberEditor.hpp"
 #include "cell_editors/RationalEditor.hpp"
 #include "cell_editors/StringPicker.hpp"
 #include "column_numbers/ChordColumn.hpp"
@@ -73,9 +74,11 @@ auto SwitchDelegate::createEditor(QWidget* parent_pointer,
   if (current_row_type == RowType::unpitched_voice_type &&
       column == static_cast<int>(
                     UnpitchedVoiceColumn::unpitched_voice_midi_number_column)) {
+    static const auto MAX_MIDI_NUMBER = 127;
     auto& specific_result = get_reference(
-        new MidiNumberEditor(  // NOLINT(cppcoreguidelines-owning-memory)
+        new QSpinBox(  // NOLINT(cppcoreguidelines-owning-memory)
             parent_pointer));
+    specific_result.setRange(0, MAX_MIDI_NUMBER);
     specific_result.setFrame(false);
     result_pointer = &specific_result;
   }
