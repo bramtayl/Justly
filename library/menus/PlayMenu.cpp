@@ -17,6 +17,77 @@ void modulate_before_chord(const Song& song, PlayState& play_state,
   }
 }
 
+template <NoteInterface SubNote>
+[[nodiscard]] auto play_selected_notes(Player& player, const Song& song,
+                                       const TableSelection& selection,
+                                       const QList<SubNote>& notes,
+                                       const bool to_end) -> bool {
+  const auto first_row_number = selection.first_row_number;
+  return play_notes(player, song.pitched_voices, song.unpitched_voices,
+                    selection.chord_number, notes, first_row_number,
+                    to_end ? static_cast<int>(notes.size()) - first_row_number
+                           : selection.number_of_rows);
+}
+
+// plays the selected rows, or with to_end, everything from the start of the
+// selection through the end of the song
+void play_selection(WindowBody& window_body, const bool to_end) {
+  const auto& song = window_body.song;
+  auto& player = window_body.player;
+  auto& play_state = player.play_state;
+  const auto number_of_chords = static_cast<int>(song.chords.size());
+
+  const auto selection = get_play_selection(window_body);
+  const auto row_type = selection.row_type;
+  const auto first_row_number = selection.first_row_number;
+  const auto number_of_rows = selection.number_of_rows;
+
+  stop_playing(player.sequencer, player.event);
+  initialize_play(window_body);
+
+  switch (row_type) {
+    case RowType::chord_type:
+      modulate_before_chord(song, play_state, first_row_number);
+      play_chords(window_body, first_row_number,
+                  to_end ? number_of_chords - first_row_number
+                         : number_of_rows);
+      break;
+    case RowType::pitched_note_type:
+    case RowType::unpitched_note_type: {
+      const auto chord_number = selection.chord_number;
+      modulate_before_chord(song, play_state, chord_number);
+      const auto& chord = song.chords.at(chord_number);
+      modulate(play_state, chord);
+      const auto played =
+          row_type == RowType::pitched_note_type
+              ? play_selected_notes(player, song, selection,
+                                    chord.pitched_notes, to_end)
+              : play_selected_notes(player, song, selection,
+                                    chord.unpitched_notes, to_end);
+      if (played && to_end) {
+        move_time(play_state, chord);
+        update_final_time(player, play_state.current_time);
+        play_chords(window_body, chord_number + 1,
+                    number_of_chords - chord_number - 1);
+      }
+      break;
+    }
+    case RowType::pitched_voice_type:
+    case RowType::unpitched_voice_type:
+      // play_to_end_action is disabled for voice rows; see
+      // ReplaceTable.cpp's update_actions/get_is_voice
+      Q_ASSERT(!to_end);
+      // play_voices has already warned about anything it couldn't play
+      static_cast<void>(
+          row_type == RowType::pitched_voice_type
+              ? play_voices(player, song.pitched_voices, first_row_number,
+                            number_of_rows)
+              : play_voices(player, song.unpitched_voices, first_row_number,
+                            number_of_rows));
+      break;
+  }
+}
+
 }  // namespace
 
 auto get_play_selection(const WindowBody& window_body) -> TableSelection {
@@ -41,124 +112,12 @@ PlayMenu::PlayMenu(WindowBody& window_body)
 
   const auto& player = window_body.player;
   QObject::connect(
-      &play_action, &QAction::triggered, this, [&window_body]() -> auto {
-        const auto& song = window_body.song;
-        const auto& pitched_voices = song.pitched_voices;
-        const auto& unpitched_voices = song.unpitched_voices;
-        auto& player = window_body.player;
-        auto& play_state = player.play_state;
-
-        const auto selection = get_play_selection(window_body);
-        const auto current_row_type = selection.row_type;
-        const auto first_row_number = selection.first_row_number;
-        const auto number_of_rows = selection.number_of_rows;
-
-        stop_playing(player.sequencer, player.event);
-        initialize_play(window_body);
-
-        switch (current_row_type) {
-          case RowType::chord_type:
-            modulate_before_chord(song, play_state, first_row_number);
-            play_chords(window_body, first_row_number, number_of_rows);
-            break;
-          case RowType::pitched_note_type:
-          case RowType::unpitched_note_type: {
-            const auto chord_number = selection.chord_number;
-            modulate_before_chord(song, play_state, chord_number);
-            const auto& chord = song.chords.at(chord_number);
-            modulate(play_state, chord);
-            if (current_row_type == RowType::pitched_note_type) {
-              const auto pitched_result = play_notes(
-                  player, pitched_voices, unpitched_voices, chord_number,
-                  chord.pitched_notes, first_row_number, number_of_rows);
-              if (!pitched_result) {
-                return;
-              }
-            } else {
-              const auto unpitched_result = play_notes(
-                  player, pitched_voices, unpitched_voices, chord_number,
-                  chord.unpitched_notes, first_row_number, number_of_rows);
-              if (!unpitched_result) {
-                return;
-              }
-            }
-            break;
-          }
-          case RowType::pitched_voice_type:
-            if (!play_voices(player, pitched_voices, first_row_number,
-                             number_of_rows)) {
-              return;
-            }
-            break;
-          case RowType::unpitched_voice_type:
-            if (!play_voices(player, unpitched_voices, first_row_number,
-                             number_of_rows)) {
-              return;
-            }
-            break;
-        }
-      });
+      &play_action, &QAction::triggered, this,
+      [&window_body]() -> auto { play_selection(window_body, false); });
 
   QObject::connect(
-      &play_to_end_action, &QAction::triggered, this, [&window_body]() -> auto {
-        const auto& song = window_body.song;
-        const auto& pitched_voices = song.pitched_voices;
-        const auto& unpitched_voices = song.unpitched_voices;
-        auto& player = window_body.player;
-        auto& play_state = player.play_state;
-        const auto number_of_chords = static_cast<int>(song.chords.size());
-
-        const auto selection = get_play_selection(window_body);
-        const auto current_row_type = selection.row_type;
-        const auto first_row_number = selection.first_row_number;
-
-        stop_playing(player.sequencer, player.event);
-        initialize_play(window_body);
-
-        switch (current_row_type) {
-          case RowType::chord_type:
-            modulate_before_chord(song, play_state, first_row_number);
-            play_chords(window_body, first_row_number,
-                        number_of_chords - first_row_number);
-            break;
-          case RowType::pitched_note_type:
-          case RowType::unpitched_note_type: {
-            const auto chord_number = selection.chord_number;
-            modulate_before_chord(song, play_state, chord_number);
-            const auto& chord = song.chords.at(chord_number);
-            modulate(play_state, chord);
-            if (current_row_type == RowType::pitched_note_type) {
-              const auto pitched_result = play_notes(
-                  player, pitched_voices, unpitched_voices, chord_number,
-                  chord.pitched_notes, first_row_number,
-                  static_cast<int>(chord.pitched_notes.size()) -
-                      first_row_number);
-              if (!pitched_result) {
-                return;
-              }
-            } else {
-              const auto unpitched_result = play_notes(
-                  player, pitched_voices, unpitched_voices, chord_number,
-                  chord.unpitched_notes, first_row_number,
-                  static_cast<int>(chord.unpitched_notes.size()) -
-                      first_row_number);
-              if (!unpitched_result) {
-                return;
-              }
-            }
-            move_time(play_state, chord);
-            update_final_time(player, play_state.current_time);
-            play_chords(window_body, chord_number + 1,
-                        number_of_chords - chord_number - 1);
-            break;
-          }
-          case RowType::pitched_voice_type:
-          case RowType::unpitched_voice_type:
-            // play_to_end_action is disabled for voice rows; see
-            // ReplaceTable.cpp's update_actions/get_is_voice
-            Q_UNREACHABLE();
-        }
-      });
+      &play_to_end_action, &QAction::triggered, this,
+      [&window_body]() -> auto { play_selection(window_body, true); });
 
   QObject::connect(
       &stop_playing_action, &QAction::triggered, this,
