@@ -1,7 +1,6 @@
 #include "rows/UnpitchedNote.hpp"
 
 #include "column_numbers/UnpitchedNoteColumn.hpp"
-#include "rows/UnpitchedVoice.hpp"
 
 void UnpitchedNote::from_xml(xmlNode& node) {
   for (auto& field_node : get_xml_children(node)) {
@@ -46,27 +45,6 @@ auto UnpitchedNote::get_pitched() -> const char* { return "unpitched"; }
 
 auto UnpitchedNote::is_column_editable(int /*column_number*/) -> bool {
   return true;
-}
-
-auto UnpitchedNote::get_closest_midi(
-    QWidget& /*parent*/, Player& /*player*/,
-    const QList<UnpitchedVoice>& unpitched_voices, const int /*channel_number*/,
-    int /*chord_number*/, int /*note_number*/) const -> std::optional<short> {
-  return static_cast<short>(
-      get_voice(unpitched_voices, voice_name).midi_number);
-}
-
-auto UnpitchedNote::get_program(
-    const QList<PitchedVoice>& /*pitched_voices*/,
-    const QList<UnpitchedVoice>& unpitched_voices) const -> const Program& {
-  return get_voice_program(get_some_programs(false),
-                           get_voice(unpitched_voices, voice_name));
-}
-
-auto UnpitchedNote::get_voice_velocity_ratio(
-    const QList<PitchedVoice>& /*pitched_voices*/,
-    const QList<UnpitchedVoice>& unpitched_voices) const -> const Rational& {
-  return get_voice(unpitched_voices, voice_name).velocity_ratio;
 }
 
 auto UnpitchedNote::get_data(const int column_number) const -> QVariant {

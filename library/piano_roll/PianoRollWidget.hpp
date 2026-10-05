@@ -17,8 +17,8 @@ static const auto PIANO_ROLL_TIME_ZOOM_STEP = 1.25;
 // PianoRollWidget.cpp
 
 // converts an absolute song time (ms) to this scene's x coordinate --
-// identity-scaled by time_axis_baseline_ms, which is 0 outside notes mode
-// (see the field's comment above) so this is a no-op there
+// offset by time_axis_baseline_ms, which is 0 outside notes mode (see that
+// field in PianoRollNotesScene.hpp)
 [[nodiscard]] auto to_scene_x(const PianoRollNotesScene& notes_scene,
                               double time_ms) -> double;
 

@@ -19,21 +19,6 @@ struct UnpitchedNote : Note {
 
   [[nodiscard]] static auto is_column_editable(int /*column_number*/) -> bool;
 
-  [[nodiscard]] auto get_closest_midi(
-      QWidget& /*parent*/, Player& /*player*/,
-      const QList<UnpitchedVoice>& unpitched_voices, int /*channel_number*/,
-      int /*chord_number*/, int /*note_number*/) const
-      -> std::optional<short> override;
-
-  [[nodiscard]] auto get_program(const QList<PitchedVoice>& /*pitched_voices*/,
-                                 const QList<UnpitchedVoice>& unpitched_voices)
-      const -> const Program& override;
-
-  [[nodiscard]] auto get_voice_velocity_ratio(
-      const QList<PitchedVoice>& /*pitched_voices*/,
-      const QList<UnpitchedVoice>& unpitched_voices) const
-      -> const Rational& override;
-
   [[nodiscard]] auto get_data(int column_number) const -> QVariant;
 
   void set_data(int column_number, const QVariant& new_value);

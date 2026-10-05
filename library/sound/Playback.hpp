@@ -80,14 +80,14 @@ template <VoiceInterface SubVoice>
        voice_number < first_voice_number + number_of_voices;
        voice_number = voice_number + 1) {
     const auto& voice = voices.at(voice_number);
+    const auto velocity =
+        play_state.current_velocity * rational_to_double(voice.velocity_ratio);
     if (!play_checked_note(
             player, get_voice_program(programs, voice),
             [&voice](int /*channel_number*/) -> std::optional<short> {
               return voice.get_preview_midi_number();
             },
-            play_state.current_velocity* rational_to_double(
-                voice.velocity_ratio),
-            play_state.current_time + VOICE_PREVIEW_MILLISECONDS,
+            velocity, play_state.current_time + VOICE_PREVIEW_MILLISECONDS,
             [&voice](QTextStream& stream) -> void {
               stream << QObject::tr(" for ")
                      << QObject::tr(SubVoice::get_pitched())
@@ -101,11 +101,11 @@ template <VoiceInterface SubVoice>
 }
 
 template <NoteInterface SubNote>
-[[nodiscard]] static auto play_notes(
-    Player& player, const QList<PitchedVoice>& pitched_voices,
-    const QList<UnpitchedVoice>& unpitched_voices, const int chord_number,
-    const QList<SubNote>& sub_notes, const int first_note_number,
-    const int number_of_notes) -> bool {
+[[nodiscard]] static auto play_notes(Player& player, const Song& song,
+                                     const int chord_number,
+                                     const QList<SubNote>& sub_notes,
+                                     const int first_note_number,
+                                     const int number_of_notes) -> bool {
   auto& parent = player.parent;
   const auto& play_state = player.play_state;
 
@@ -114,14 +114,17 @@ template <NoteInterface SubNote>
        note_number = note_number + 1) {
     const auto& sub_note = sub_notes.at(note_number);
     if (!play_checked_note(
-            player, sub_note.get_program(pitched_voices, unpitched_voices),
+            player, get_note_program(song, sub_note),
             [&](const int channel_number) -> std::optional<short> {
-              return sub_note.get_closest_midi(parent, player, unpitched_voices,
-                                               channel_number, chord_number,
-                                               note_number);
+              if constexpr (std::same_as<SubNote, PitchedNote>) {
+                return sub_note.get_closest_midi(parent, player, channel_number,
+                                                 chord_number, note_number);
+              } else {
+                return static_cast<short>(
+                    get_note_voice(song, sub_note).midi_number);
+              }
             },
-            sub_note.get_velocity(play_state.current_velocity, pitched_voices,
-                                  unpitched_voices),
+            get_note_velocity(song, sub_note, play_state.current_velocity),
             play_state.current_time + get_duration_in_milliseconds(
                                           play_state.current_tempo,
                                           rational_to_double(sub_note.beats)),
@@ -135,12 +138,12 @@ template <NoteInterface SubNote>
 }
 
 template <NoteInterface SubNote>
-[[nodiscard]] static auto play_all_notes(
-    Player& player, const QList<PitchedVoice>& pitched_voices,
-    const QList<UnpitchedVoice>& unpitched_voices, const int chord_number,
-    const QList<SubNote>& sub_notes) -> bool {
-  return play_notes(player, pitched_voices, unpitched_voices, chord_number,
-                    sub_notes, 0, static_cast<int>(sub_notes.size()));
+[[nodiscard]] static auto play_all_notes(Player& player, const Song& song,
+                                         const int chord_number,
+                                         const QList<SubNote>& sub_notes)
+    -> bool {
+  return play_notes(player, song, chord_number, sub_notes, 0,
+                    static_cast<int>(sub_notes.size()));
 }
 
 void update_final_time(Player& player, double new_final_time);

@@ -44,16 +44,25 @@ void move_time(PlayState& play_state, const Chord& chord);
 
 // steps play_state through chords [first_chord_number, end_chord_number),
 // calling visit(chord_number, chord) once each chord has modulated
-// play_state, before its time moves on
+// play_state, before its time moves on. If visit returns a bool, false stops
+// the walk at that chord, before its time moves on; returns whether every
+// chord was visited
 template <typename Visit>
-static void walk_chords(PlayState& play_state, const QList<Chord>& chords,
+static auto walk_chords(PlayState& play_state, const QList<Chord>& chords,
                         const int first_chord_number,
-                        const int end_chord_number, Visit visit) {
+                        const int end_chord_number, Visit visit) -> bool {
   for (auto chord_number = first_chord_number; chord_number < end_chord_number;
        chord_number = chord_number + 1) {
     const auto& chord = chords.at(chord_number);
     modulate(play_state, chord);
-    visit(chord_number, chord);
+    if constexpr (std::same_as<decltype(visit(chord_number, chord)), bool>) {
+      if (!visit(chord_number, chord)) {
+        return false;
+      }
+    } else {
+      visit(chord_number, chord);
+    }
     move_time(play_state, chord);
   }
+  return true;
 }

@@ -27,8 +27,7 @@ struct NotesModel : public UndoRowsModel<SubNote> {
     }
     add_timing_to_stream(
         stream, play_state,
-        sub_note.get_velocity(play_state.current_velocity, song.pitched_voices,
-                              song.unpitched_voices),
+        get_note_velocity(song, sub_note, play_state.current_velocity),
         rational_to_double(sub_note.beats));
   }
 };

@@ -74,7 +74,7 @@ struct PianoRollNotesScene : public QGraphicsScene {
   // parallel to events -- the actual drawn item for each event, so a table
   // selection can be traced forward to the bar(s) it should highlight
   QList<QGraphicsRectItem*> note_items;
-  // parallel to events -- lets select_chord_at_playhead()
+  // one per chord, in chord order -- lets select_chord_at_playhead()
   // find which chord a cursor time falls in without rescanning the whole
   // song on every playback tick
   QList<double> chord_start_times;

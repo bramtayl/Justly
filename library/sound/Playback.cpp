@@ -95,35 +95,20 @@ void update_final_time(Player& player, const double new_final_time) {
 void play_chords(Player& player, const Song& song, const int first_chord_number,
                  const int number_of_chords, const int wait_frames) {
   auto& play_state = player.play_state;
-
-  const auto& pitched_voices = song.pitched_voices;
-  const auto& unpitched_voices = song.unpitched_voices;
-
-  const auto start_time = player.play_state.current_time + wait_frames;
-  play_state.current_time = start_time;
-  update_final_time(player, start_time);
-  const auto& chords = song.chords;
-  for (auto chord_number = first_chord_number;
-       chord_number < first_chord_number + number_of_chords;
-       chord_number = chord_number + 1) {
-    const auto& chord = chords.at(chord_number);
-
-    modulate(play_state, chord);
-    const auto pitched_result =
-        play_all_notes(player, pitched_voices, unpitched_voices, chord_number,
-                       chord.pitched_notes);
-    if (!pitched_result) {
-      return;
-    }
-    const auto unpitched_result =
-        play_all_notes(player, pitched_voices, unpitched_voices, chord_number,
-                       chord.unpitched_notes);
-    if (!unpitched_result) {
-      return;
-    }
-    move_time(play_state, chord);
-    update_final_time(player, play_state.current_time);
-  }
+  play_state.current_time = play_state.current_time + wait_frames;
+  // stops at the first chord with a note that can't be played, which has
+  // already warned about it
+  static_cast<void>(walk_chords(
+      play_state, song.chords, first_chord_number,
+      first_chord_number + number_of_chords,
+      [&player, &song](const int chord_number, const Chord& chord) -> bool {
+        return play_all_notes(player, song, chord_number,
+                              chord.pitched_notes) &&
+               play_all_notes(player, song, chord_number,
+                              chord.unpitched_notes);
+      }));
+  // time only ever moves forward, so this is the latest time played
+  update_final_time(player, play_state.current_time);
 }
 
 void export_to_file(Player& player, const Song& song,

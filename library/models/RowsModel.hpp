@@ -102,7 +102,9 @@ struct RowsModel : public QAbstractTableModel {
 
   // what a new row, or a deleted cell, starts as; notes override this so
   // they always name an existing voice
-  [[nodiscard]] virtual auto make_empty_row() const -> SubRow { return SubRow(); }
+  [[nodiscard]] virtual auto make_empty_row() const -> SubRow {
+    return SubRow();
+  }
 
   [[nodiscard]] virtual auto check_cell(const int /*column_number*/,
                                         const QVariant& /*new_value*/) const
@@ -172,17 +174,6 @@ struct RowsModel : public QAbstractTableModel {
                     index(first_row_number, left_column),
                     index(first_row_number + number_of_rows - 1, right_column)),
                 QItemSelectionModel::Select | QItemSelectionModel::Clear);
-  }
-
-  void insert_row(const int row_number, SubRow new_row) {
-    beginInsertRows(QModelIndex(), row_number, row_number);
-    auto& rows = get_rows();
-    rows.insert(rows.begin() + row_number, std::move(new_row));
-    endInsertRows();
-    get_reference(selection_model_pointer)
-        .select(index(row_number, 0), QItemSelectionModel::Select |
-                                          QItemSelectionModel::Clear |
-                                          QItemSelectionModel::Rows);
   }
 
   void remove_rows(const int first_row_number, int number_of_rows) {

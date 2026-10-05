@@ -16,10 +16,10 @@ auto get_mime_description(const QString& mime_type) -> QString {
     return QObject::tr("unpitched notes cells");
   }
   if (mime_type == PitchedVoice::get_cells_mime()) {
-    return QObject::tr("pitched voice cells");
+    return QObject::tr("pitched voices cells");
   }
   if (mime_type == UnpitchedVoice::get_cells_mime()) {
-    return QObject::tr("unpitched voice cells");
+    return QObject::tr("unpitched voices cells");
   }
   return mime_type;
 }

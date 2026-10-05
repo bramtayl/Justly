@@ -140,6 +140,18 @@ void reset_switch_table_to_chords(SwitchColumn& switch_column) {
   switch_column.editing_text.setText(SwitchColumn::tr("Chords"));
 }
 
+// swaps in a whole new song, e.g. from a file, bypassing the undo stack
+void replace_song(WindowBody& window_body, QList<Chord> chords,
+                  QList<PitchedVoice> pitched_voices,
+                  QList<UnpitchedVoice> unpitched_voices) {
+  auto& switch_table = window_body.switch_column.switch_table;
+  reset_switch_table_to_chords(window_body.switch_column);
+  switch_table.chords_model.replace_all_rows(std::move(chords));
+  switch_table.pitched_voices_model.replace_all_rows(std::move(pitched_voices));
+  switch_table.unpitched_voices_model.replace_all_rows(
+      std::move(unpitched_voices));
+}
+
 // the song was replaced wholesale, so there's nothing to undo back to, and
 // nothing unsaved to recover
 void finish_loading(WindowBody& window_body) {
@@ -207,7 +219,6 @@ template <NoteInterface SubNote, VoiceInterface SubVoice>
 auto open_file(WindowBody& window_body, const QString& filename) -> bool {
   Q_ASSERT(filename.isValidUtf16());
   auto& spin_boxes = window_body.controls_column.spin_boxes;
-  auto& switch_table = window_body.switch_column.switch_table;
 
   auto document = read_xml_file(filename);
   static XMLValidator song_validator("song.xsd");
@@ -257,12 +268,8 @@ auto open_file(WindowBody& window_body, const QString& filename) -> bool {
     return false;
   }
 
-  reset_switch_table_to_chords(window_body.switch_column);
-  switch_table.chords_model.replace_all_rows(std::move(new_chords));
-  switch_table.pitched_voices_model.replace_all_rows(
-      std::move(new_pitched_voices));
-  switch_table.unpitched_voices_model.replace_all_rows(
-      std::move(new_unpitched_voices));
+  replace_song(window_body, std::move(new_chords),
+               std::move(new_pitched_voices), std::move(new_unpitched_voices));
 
   for (auto& field_node : get_xml_children(song_node)) {
     const auto name = get_xml_name(field_node);
@@ -338,18 +345,12 @@ void connect_recovery_timer(WindowBody& window_body) {
 
 namespace {
 
-template <RowInterface SubRow>
-void clear_rows(RowsModel<SubRow>& rows_model) {
-  const auto number_of_rows = rows_model.rowCount(QModelIndex());
-  if (number_of_rows > 0) {
-    rows_model.remove_rows(0, number_of_rows);
-  }
-}
-
+// a voice per name, playing the program of the same name if there is one
 template <VoiceInterface SubVoice>
-void add_imported_voices(RowsModel<SubVoice>& voices_model,
-                         const QList<QString>& voice_names) {
+auto make_imported_voices(const QList<QString>& voice_names)
+    -> QList<SubVoice> {
   const auto& programs = get_some_programs(SubVoice::is_pitched());
+  QList<SubVoice> voices;
   for (const auto& voice_name : voice_names) {
     SubVoice new_voice;
     new_voice.name = voice_name;
@@ -357,19 +358,14 @@ void add_imported_voices(RowsModel<SubVoice>& voices_model,
     if (matching_program != programs.cend()) {
       new_voice.program = matching_program->name;
     }
-    voices_model.insert_row(voices_model.rowCount(QModelIndex()),
-                            std::move(new_voice));
+    voices.push_back(std::move(new_voice));
   }
+  return voices;
 }
 
 }  // namespace
 
 auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
-  auto& switch_table = window_body.switch_column.switch_table;
-  auto& chords_model = switch_table.chords_model;
-  auto& pitched_voices_model = switch_table.pitched_voices_model;
-  auto& unpitched_voices_model = switch_table.unpitched_voices_model;
-
   auto document = read_musicxml_document(filename);
   static XMLValidator musicxml_validator("musicxml.xsd");
   if (!check_document(window_body, document, musicxml_validator,
@@ -383,20 +379,13 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
   }
   auto& score = maybe_score.value();
 
-  reset_switch_table_to_chords(window_body.switch_column);
-  clear_rows(chords_model);
-  clear_rows(pitched_voices_model);
-  clear_rows(unpitched_voices_model);
-  add_imported_voices(pitched_voices_model, score.voice_names.pitched);
-  add_imported_voices(unpitched_voices_model, score.voice_names.unpitched);
+  replace_song(
+      window_body, std::move(score.chords),
+      make_imported_voices<PitchedVoice>(score.voice_names.pitched),
+      make_imported_voices<UnpitchedVoice>(score.voice_names.unpitched));
 
   window_body.controls_column.spin_boxes.starting_key_editor.setValue(
       midi_number_to_frequency(score.starting_midi_key));
-
-  for (auto& chord : score.chords) {
-    chords_model.insert_row(chords_model.rowCount(QModelIndex()),
-                            std::move(chord));
-  }
 
   finish_loading(window_body);
   return true;

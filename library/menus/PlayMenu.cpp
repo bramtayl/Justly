@@ -8,15 +8,13 @@
 
 namespace {
 
-void modulate_before_chord(const Song& song, PlayState& play_state,
-                           const int next_chord_number) {
-  const auto& chords = song.chords;
-  if (next_chord_number > 0) {
-    std::ranges::for_each(chords | std::views::take(next_chord_number),
-                          [&play_state](const auto& chord) -> void {
-                            modulate(play_state, chord);
-                          });
-  }
+// skips ahead to chord_number's key, velocity, and tempo, while staying at
+// the current time, so playback starts right away
+void skip_to_chord(const Song& song, PlayState& play_state,
+                   const int chord_number) {
+  const auto current_time = play_state.current_time;
+  play_state = get_play_state_before_chord(song, chord_number);
+  play_state.current_time = current_time;
 }
 
 template <NoteInterface SubNote>
@@ -25,8 +23,8 @@ template <NoteInterface SubNote>
                                        const QList<SubNote>& notes,
                                        const bool to_end) -> bool {
   const auto first_row_number = selection.first_row_number;
-  return play_notes(player, song.pitched_voices, song.unpitched_voices,
-                    selection.chord_number, notes, first_row_number,
+  return play_notes(player, song, selection.chord_number, notes,
+                    first_row_number,
                     to_end ? static_cast<int>(notes.size()) - first_row_number
                            : selection.number_of_rows);
 }
@@ -49,7 +47,7 @@ void play_selection(WindowBody& window_body, const bool to_end) {
 
   switch (row_type) {
     case RowType::chord_type:
-      modulate_before_chord(song, play_state, first_row_number);
+      skip_to_chord(song, play_state, first_row_number);
       play_chords(
           player, song, first_row_number,
           to_end ? number_of_chords - first_row_number : number_of_rows);
@@ -57,7 +55,7 @@ void play_selection(WindowBody& window_body, const bool to_end) {
     case RowType::pitched_note_type:
     case RowType::unpitched_note_type: {
       const auto chord_number = selection.chord_number;
-      modulate_before_chord(song, play_state, chord_number);
+      skip_to_chord(song, play_state, chord_number);
       const auto& chord = song.chords.at(chord_number);
       modulate(play_state, chord);
       const auto played =

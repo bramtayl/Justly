@@ -240,6 +240,8 @@ MainWindow::MainWindow()
       &play_menu.stop_playing_action, &QAction::triggered, this,
       [this]() -> auto { stop_piano_roll_playhead(piano_roll_widget); });
 
+  // start with one voice of each kind, for new notes to use; add_insert_row
+  // inserts into whichever table add_replace_table just switched to
   add_replace_table(song_menu_bar, window_body, RowType::pitched_voice_type, -1,
                     piano_roll_widget);
   add_insert_row(window_body, 0);

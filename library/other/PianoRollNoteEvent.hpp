@@ -27,8 +27,7 @@ static void append_piano_roll_events(QList<PianoRollNoteEvent>& events,
     event.duration_ms = get_duration_in_milliseconds(
         play_state.current_tempo, rational_to_double(sub_note.beats));
     event.velocity =
-        sub_note.get_velocity(play_state.current_velocity, song.pitched_voices,
-                              song.unpitched_voices);
+        get_note_velocity(song, sub_note, play_state.current_velocity);
     event.chord_number = chord_number;
     event.note_number = note_number;
     event.voice_number =

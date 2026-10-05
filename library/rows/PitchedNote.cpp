@@ -1,7 +1,8 @@
 #include "rows/PitchedNote.hpp"
 
+#include <QtWidgets/QMessageBox>
+
 #include "column_numbers/PitchedNoteColumn.hpp"
-#include "rows/PitchedVoice.hpp"
 #include "sound/Player.hpp"
 
 namespace {
@@ -85,10 +86,10 @@ auto PitchedNote::is_column_editable(int /*column_number*/) -> bool {
 
 auto PitchedNote::get_pitched() -> const char* { return "pitched"; }
 
-auto PitchedNote::get_closest_midi(
-    QWidget& parent, Player& player,
-    const QList<UnpitchedVoice>& /*unpitched_voices*/, const int channel_number,
-    const int chord_number, const int note_number) const
+auto PitchedNote::get_closest_midi(QWidget& parent, Player& player,
+                                   const int channel_number,
+                                   const int chord_number,
+                                   const int note_number) const
     -> std::optional<short> {
   const auto& play_state = player.play_state;
   auto& event = player.event;
@@ -117,20 +118,6 @@ auto PitchedNote::get_closest_midi(
              BEND_PER_HALFSTEP));
   send_event_at(player.sequencer, event, play_state.current_time);
   return closest_midi;
-}
-
-auto PitchedNote::get_program(
-    const QList<PitchedVoice>& pitched_voices,
-    const QList<UnpitchedVoice>& /*unpitched_voices*/) const -> const Program& {
-  return get_voice_program(get_some_programs(true),
-                           get_voice(pitched_voices, voice_name));
-}
-
-auto PitchedNote::get_voice_velocity_ratio(
-    const QList<PitchedVoice>& pitched_voices,
-    const QList<UnpitchedVoice>& /*unpitched_voices*/) const
-    -> const Rational& {
-  return get_voice(pitched_voices, voice_name).velocity_ratio;
 }
 
 auto PitchedNote::get_data(const int column_number) const -> QVariant {

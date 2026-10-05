@@ -34,6 +34,33 @@ template <NoteInterface SubNote>
   }
 }
 
+// the voice a note's voice_name refers to; see get_voice
+template <NoteInterface SubNote>
+[[nodiscard]] static auto get_note_voice(const Song& song, const SubNote& note)
+    -> const auto& {
+  return get_voice(get_voices<SubNote>(song), note.voice_name);
+}
+
+template <NoteInterface SubNote>
+[[nodiscard]] static auto get_note_program(const Song& song,
+                                           const SubNote& note)
+    -> const Program& {
+  const auto& voice = get_note_voice(song, note);
+  return get_voice_program(
+      get_some_programs(std::remove_cvref_t<decltype(voice)>::is_pitched()),
+      voice);
+}
+
+// scales the chord's velocity by the note's ratio and its voice's ratio
+template <NoteInterface SubNote>
+[[nodiscard]] static auto get_note_velocity(const Song& song,
+                                            const SubNote& note,
+                                            const double current_velocity)
+    -> double {
+  return current_velocity * rational_to_double(note.velocity_ratio) *
+         rational_to_double(get_note_voice(song, note).velocity_ratio);
+}
+
 [[nodiscard]] auto get_octave_degree(int midi_interval) -> std::tuple<int, int>;
 
 [[nodiscard]] auto initialize_playstate(const Song& song,

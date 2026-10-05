@@ -97,6 +97,9 @@ void Tester::test_paste_error_data() {
   QTest::newRow("chord pitched notes mime")
       << RowType::chord_type << -1 << "" << PitchedNote::get_cells_mime()
       << "Cannot paste pitched notes cells as chords cells";
+  QTest::newRow("chord pitched voice mime")
+      << RowType::chord_type << -1 << "" << PitchedVoice::get_cells_mime()
+      << "Cannot paste pitched voices cells as chords cells";
   QTest::newRow("chord not xml") << RowType::chord_type << -1 << "["
                                  << Chord::get_cells_mime() << "Invalid XML";
   QTest::newRow("chord not Justly")
@@ -108,6 +111,9 @@ void Tester::test_paste_error_data() {
   QTest::newRow("pitched note chords mime")
       << RowType::pitched_note_type << 1 << "" << Chord::get_cells_mime()
       << "Cannot paste chords cells as pitched notes cells";
+  QTest::newRow("pitched note pitched voice mime")
+      << RowType::pitched_note_type << 1 << "" << PitchedVoice::get_cells_mime()
+      << "Cannot paste pitched voices cells as pitched notes cells";
   QTest::newRow("pitched note not xml")
       << RowType::pitched_note_type << 1 << "<" << PitchedNote::get_cells_mime()
       << "Invalid XML";
@@ -120,6 +126,10 @@ void Tester::test_paste_error_data() {
   QTest::newRow("unpitched note chords mime")
       << RowType::unpitched_note_type << 1 << "" << Chord::get_cells_mime()
       << "Cannot paste chords cells as unpitched notes cells";
+  QTest::newRow("unpitched note unpitched voice mime")
+      << RowType::unpitched_note_type << 1 << ""
+      << UnpitchedVoice::get_cells_mime()
+      << "Cannot paste unpitched voices cells as unpitched notes cells";
   QTest::newRow("unpitched note not xml")
       << RowType::unpitched_note_type << 1 << "<"
       << UnpitchedNote::get_cells_mime() << "Invalid XML";

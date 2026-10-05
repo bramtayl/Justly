@@ -3,6 +3,8 @@
 #include "cell_types/Interval.hpp"
 #include "rows/Note.hpp"
 
+struct Player;
+
 static const auto BEND_PER_HALFSTEP = 4096;
 static const auto HALFSTEPS_PER_OCTAVE = 12;
 static const auto MAX_FREQUENCY = 12911.41;  // MIDI 127 plus half step
@@ -32,20 +34,13 @@ struct PitchedNote : Note {
 
   [[nodiscard]] static auto get_pitched() -> const char*;
 
-  [[nodiscard]] auto get_closest_midi(
-      QWidget& parent, Player& player,
-      const QList<UnpitchedVoice>& /*unpitched_voices*/, int channel_number,
-      int chord_number, int note_number) const -> std::optional<short> override;
-
-  [[nodiscard]] auto get_program(
-      const QList<PitchedVoice>& pitched_voices,
-      const QList<UnpitchedVoice>& /*unpitched_voices*/) const
-      -> const Program& override;
-
-  [[nodiscard]] auto get_voice_velocity_ratio(
-      const QList<PitchedVoice>& pitched_voices,
-      const QList<UnpitchedVoice>& /*unpitched_voices*/) const
-      -> const Rational& override;
+  // bends channel_number to this note's exact pitch, and returns the nearest
+  // MIDI key to play; nullopt (after warning) if the frequency is out of MIDI
+  // range, so the caller should abort rather than play a bogus note
+  [[nodiscard]] auto get_closest_midi(QWidget& parent, Player& player,
+                                      int channel_number, int chord_number,
+                                      int note_number) const
+      -> std::optional<short>;
 
   [[nodiscard]] auto get_data(int column_number) const -> QVariant;
 
