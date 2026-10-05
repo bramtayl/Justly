@@ -52,6 +52,12 @@ void position_playhead(PianoRollNotesScene& notes_scene, double time_ms,
     std::optional<bool> pitched_filter = std::nullopt)
     -> std::pair<double, double>;
 
+// get_piano_roll_time_bounds for a chord or note selection; voice
+// selections have no timeline position, so callers must rule them out
+[[nodiscard]] auto get_selection_time_bounds(const Song& song,
+                                             const TableSelection& selection)
+    -> std::pair<double, double>;
+
 void zoom_in(PianoRollNotesScene& piano_roll_scene);
 
 void zoom_out(PianoRollNotesScene& piano_roll_scene);

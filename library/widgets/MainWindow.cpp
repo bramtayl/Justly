@@ -290,19 +290,8 @@ MainWindow::MainWindow()
           stop_piano_roll_playhead(piano_roll_widget_ref);
           return;
         }
-        const auto is_chord_selection =
-            selection.row_type == RowType::chord_type;
-        const auto [baseline_ms, end_ms] = get_piano_roll_time_bounds(
-            window_body_ref.song,
-            is_chord_selection ? selection.first_row_number
-                               : selection.chord_number,
-            is_chord_selection ? selection.number_of_rows : 1,
-            is_chord_selection ? 0 : selection.first_row_number,
-            is_chord_selection ? -1 : selection.number_of_rows,
-            is_chord_selection
-                ? std::nullopt
-                : std::make_optional(selection.row_type ==
-                                     RowType::pitched_note_type));
+        const auto [baseline_ms, end_ms] =
+            get_selection_time_bounds(window_body_ref.song, selection);
         start_piano_roll_playhead(piano_roll_widget_ref, baseline_ms, end_ms);
       });
   QObject::connect(
@@ -314,22 +303,12 @@ MainWindow::MainWindow()
         // ReplaceTable.cpp's update_actions
         Q_ASSERT(selection.row_type != RowType::pitched_voice_type &&
                  selection.row_type != RowType::unpitched_voice_type);
-        const auto is_chord_selection =
-            selection.row_type == RowType::chord_type;
-        const auto first_chord_number = is_chord_selection
-                                            ? selection.first_row_number
-                                            : selection.chord_number;
+        const auto first_chord_number =
+            selection.row_type == RowType::chord_type
+                ? selection.first_row_number
+                : selection.chord_number;
         const auto baseline_ms =
-            get_piano_roll_time_bounds(
-                song, first_chord_number,
-                is_chord_selection ? selection.number_of_rows : 1,
-                is_chord_selection ? 0 : selection.first_row_number,
-                is_chord_selection ? -1 : selection.number_of_rows,
-                is_chord_selection
-                    ? std::nullopt
-                    : std::make_optional(selection.row_type ==
-                                         RowType::pitched_note_type))
-                .first;
+            get_selection_time_bounds(song, selection).first;
         // "play to end" always continues through every remaining chord in
         // full, regardless of note-row selection, so the end bound must
         // span the whole remaining song rather than just the selected notes

@@ -288,34 +288,94 @@ void draw_legend_row(QGraphicsScene& legend_scene, const QString& name,
 
 }  // namespace
 
+namespace {
+
+// the latest end time of notes [first_note_number, first_note_number +
+// number_of_notes) of a chord starting at play_state's current time; a note
+// only ends later than end_ms by its own beats at the chord's tempo
+template <NoteInterface SubNote>
+[[nodiscard]] auto get_notes_end_ms(const PlayState& play_state,
+                                    const QList<SubNote>& notes,
+                                    const int first_note_number,
+                                    const int number_of_notes, double end_ms)
+    -> double {
+  const auto end_note_number =
+      std::min(first_note_number + number_of_notes,
+               static_cast<int>(notes.size()));
+  for (auto note_number = first_note_number; note_number < end_note_number;
+       note_number = note_number + 1) {
+    end_ms = std::max(
+        end_ms, play_state.current_time +
+                    get_duration_in_milliseconds(
+                        play_state.current_tempo,
+                        rational_to_double(notes.at(note_number).beats)));
+  }
+  return end_ms;
+}
+
+}  // namespace
+
 auto get_piano_roll_time_bounds(const Song& song, const int first_chord_number,
                                 const int number_of_chords,
                                 const int first_note_number,
                                 const int number_of_notes,
                                 const std::optional<bool> pitched_filter)
     -> std::pair<double, double> {
-  const auto baseline_ms =
-      get_play_state_at_chord(song, first_chord_number).current_time;
+  // walks the chords directly rather than building every note's
+  // PianoRollNoteEvent, since only the selected chords' note end times matter
+  const auto& chords = song.chords;
+  PlayState play_state;
+  initialize_playstate(song, play_state, 0);
+  for (auto chord_number = 0; chord_number < first_chord_number;
+       chord_number = chord_number + 1) {
+    const auto& chord = chords.at(chord_number);
+    modulate(play_state, chord);
+    move_time(play_state, chord);
+  }
+  const auto baseline_ms = play_state.current_time;
+
+  const auto single_chord_note_range = number_of_notes != -1;
+  const auto note_first = single_chord_note_range ? first_note_number : 0;
+  const auto note_count = single_chord_note_range
+                              ? number_of_notes
+                              : std::numeric_limits<int>::max() - note_first;
+  const auto include_pitched = pitched_filter.value_or(true);
+  const auto include_unpitched = !pitched_filter.value_or(false);
 
   auto end_ms = baseline_ms;
-  const auto single_chord_note_range = number_of_notes != -1;
-  for (const auto& event : get_piano_roll_events(song)) {
-    if (event.chord_number < first_chord_number ||
-        event.chord_number >= first_chord_number + number_of_chords) {
-      continue;
+  const auto end_chord_number = std::min(first_chord_number + number_of_chords,
+                                         static_cast<int>(chords.size()));
+  for (auto chord_number = first_chord_number; chord_number < end_chord_number;
+       chord_number = chord_number + 1) {
+    const auto& chord = chords.at(chord_number);
+    modulate(play_state, chord);
+    if (include_pitched) {
+      end_ms = get_notes_end_ms(play_state, chord.pitched_notes, note_first,
+                                note_count, end_ms);
     }
-    if (single_chord_note_range) {
-      if (event.note_number < first_note_number ||
-          event.note_number >= first_note_number + number_of_notes) {
-        continue;
-      }
-      if (pitched_filter.has_value() && event.is_pitched != *pitched_filter) {
-        continue;
-      }
+    if (include_unpitched) {
+      end_ms = get_notes_end_ms(play_state, chord.unpitched_notes, note_first,
+                                note_count, end_ms);
     }
-    end_ms = std::max(end_ms, event.start_time_ms + event.duration_ms);
+    move_time(play_state, chord);
   }
   return {baseline_ms, end_ms};
+}
+
+auto get_selection_time_bounds(const Song& song,
+                               const TableSelection& selection)
+    -> std::pair<double, double> {
+  const auto row_type = selection.row_type;
+  if (row_type == RowType::chord_type) {
+    return get_piano_roll_time_bounds(song, selection.first_row_number,
+                                      selection.number_of_rows);
+  }
+  // voice rows have no timeline position
+  Q_ASSERT(row_type == RowType::pitched_note_type ||
+           row_type == RowType::unpitched_note_type);
+  return get_piano_roll_time_bounds(
+      song, selection.chord_number, 1, selection.first_row_number,
+      selection.number_of_rows, row_type == RowType::pitched_note_type);
 }
 
 namespace {
@@ -585,15 +645,8 @@ void apply_selection_highlight(const Song& song,
     return;
   }
 
-  const auto [range_start_ms, range_end_ms] = get_piano_roll_time_bounds(
-      song,
-      is_chord_selection ? first_row_number : selection.chord_number,
-      is_chord_selection ? number_of_rows : 1,
-      is_chord_selection ? 0 : first_row_number,
-      is_chord_selection ? -1 : number_of_rows,
-      is_chord_selection
-          ? std::nullopt
-          : std::make_optional(row_type == RowType::pitched_note_type));
+  const auto [range_start_ms, range_end_ms] =
+      get_selection_time_bounds(song, selection);
 
   // a shaded box over the selected range's own timeline extent -- driven
   // straight off the committed selection (rather than raw drag position),
