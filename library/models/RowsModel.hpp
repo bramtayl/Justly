@@ -151,19 +151,11 @@ struct RowsModel : public QAbstractTableModel {
                 QItemSelectionModel::Select | QItemSelectionModel::Clear);
   }
 
-  void insert_xml_rows(const int first_row_number, xmlNode& rows_node,
-                       const QList<PitchedVoice>& pitched_voices,
-                       const QList<UnpitchedVoice>& unpitched_voices) {
-    QList<SubRow> new_rows;
-    xml_to_rows(new_rows, rows_node, pitched_voices, unpitched_voices);
-    const auto number_of_rows = static_cast<int>(new_rows.size());
-
-    auto& rows = get_rows();
-    beginInsertRows(QModelIndex(), first_row_number,
-                    first_row_number + number_of_rows - 1);
-    std::copy(new_rows.cbegin(), new_rows.cend(),
-              std::inserter(rows, rows.begin() + first_row_number));
-    endInsertRows();
+  // swaps in every row at once, e.g. when loading a file
+  void replace_all_rows(QList<SubRow> new_rows) {
+    beginResetModel();
+    get_rows() = std::move(new_rows);
+    endResetModel();
   }
 
   void insert_rows(const int first_row_number, const QList<SubRow>& new_rows,

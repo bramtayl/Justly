@@ -444,9 +444,9 @@ auto open_file(WindowBody& window_body, const QString& filename) -> bool {
   }
 
   reset_switch_table_to_chords(window_body.switch_column);
-  clear_rows(chords_model);
-  clear_rows(pitched_voices_model);
-  clear_rows(unpitched_voices_model);
+  chords_model.replace_all_rows(std::move(new_chords));
+  pitched_voices_model.replace_all_rows(std::move(new_pitched_voices));
+  unpitched_voices_model.replace_all_rows(std::move(new_unpitched_voices));
 
   for (auto& field_node : get_xml_children(song_node)) {
     const auto name = get_xml_name(field_node);
@@ -458,16 +458,6 @@ auto open_file(WindowBody& window_body, const QString& filename) -> bool {
       spin_boxes.starting_velocity_editor.setValue(xml_to_double(field_node));
     } else if (name == "starting_tempo") {
       spin_boxes.starting_tempo_editor.setValue(xml_to_double(field_node));
-    } else if (name == "chords") {
-      chords_model.insert_xml_rows(0, field_node, new_pitched_voices,
-                                   new_unpitched_voices);
-    } else if (name == "pitched_voices") {
-      pitched_voices_model.insert_xml_rows(0, field_node, new_pitched_voices,
-                                           new_unpitched_voices);
-    } else {
-      Q_ASSERT(name == "unpitched_voices");
-      unpitched_voices_model.insert_xml_rows(0, field_node, new_pitched_voices,
-                                             new_unpitched_voices);
     }
   }
 
