@@ -2,7 +2,6 @@
 
 #include <QtWidgets/QWidget>
 
-class QBoxLayout;
 class QUndoStack;
 struct CustomIntervalRow;
 struct FluidSynth;
@@ -21,7 +20,6 @@ struct ControlsColumn : public QWidget {
   IntervalRow& seventh_row;
   IntervalRow& octave_row;
   CustomIntervalRow& custom_row;
-  QBoxLayout& column_layout;
 
   ControlsColumn(Song& song, FluidSynth& synth, QUndoStack& undo_stack,
                  SwitchTable& switch_table);

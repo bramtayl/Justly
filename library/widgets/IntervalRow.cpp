@@ -113,15 +113,16 @@ IntervalRow::IntervalRow(QUndoStack& undo_stack_input,
                          Interval interval_input)
     : undo_stack(undo_stack_input),
       switch_table(switch_table_input),
-      row_layout(*(new QHBoxLayout(this))),
       minus_button(*(new QPushButton("−", this))),
-      text(*(new QLabel(interval_name, this))),
       plus_button(*(new QPushButton("+", this))),
       interval(interval_input) {
   make_square(minus_button);
   make_square(plus_button);
+  auto& row_layout =  // NOLINT(cppcoreguidelines-owning-memory)
+      *(new QHBoxLayout(this));
   row_layout.addWidget(&minus_button);
-  row_layout.addWidget(&text);
+  row_layout.addWidget(
+      new QLabel(interval_name));  // NOLINT(cppcoreguidelines-owning-memory)
   row_layout.addWidget(&plus_button);
 
   auto& switch_table_ref = this->switch_table;

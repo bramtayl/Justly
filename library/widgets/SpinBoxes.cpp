@@ -45,8 +45,7 @@ SpinBoxes::SpinBoxes(Song& song, FluidSynth& synth, QUndoStack& undo_stack)
     : gain_editor(*(new QDoubleSpinBox)),
       starting_key_editor(*(new QDoubleSpinBox)),
       starting_velocity_editor(*(new QDoubleSpinBox)),
-      starting_tempo_editor(*(new QDoubleSpinBox)),
-      spin_boxes_form(*(new QFormLayout(this))) {
+      starting_tempo_editor(*(new QDoubleSpinBox)) {
   static const auto DEFAULT_GAIN = 5;
   static const auto GAIN_STEP = 0.1;
   static const auto MAX_GAIN = 10;
@@ -58,6 +57,8 @@ SpinBoxes::SpinBoxes(Song& song, FluidSynth& synth, QUndoStack& undo_stack)
   auto& starting_velocity_editor_ref = this->starting_velocity_editor;
   auto& starting_tempo_editor_ref = this->starting_tempo_editor;
 
+  auto& spin_boxes_form =  // NOLINT(cppcoreguidelines-owning-memory)
+      *(new QFormLayout(this));
   add_control(spin_boxes_form, SpinBoxes::tr("&Gain:"), gain_editor, 0,
               MAX_GAIN, SpinBoxes::tr("/10"), GAIN_STEP, 1);
   add_control(spin_boxes_form, SpinBoxes::tr("Starting &key:"),

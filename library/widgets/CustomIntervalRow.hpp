@@ -3,7 +3,6 @@
 #include <QtWidgets/QWidget>
 
 class QComboBox;
-class QGridLayout;
 class QPushButton;
 class QUndoStack;
 struct IntervalEditor;
@@ -14,7 +13,6 @@ struct SwitchTable;
 struct CustomIntervalRow : public QWidget {
   QUndoStack& undo_stack;
   SwitchTable& switch_table;
-  QGridLayout& row_layout;
   QPushButton& minus_button;
   IntervalEditor& interval_editor;
   QPushButton& plus_button;

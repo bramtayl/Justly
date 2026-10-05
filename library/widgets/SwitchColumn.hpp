@@ -3,7 +3,6 @@
 #include <QtCore/QItemSelectionModel>
 #include <QtWidgets/QWidget>
 
-class QBoxLayout;
 class QLabel;
 class QUndoStack;
 struct Song;
@@ -14,7 +13,6 @@ struct SwitchColumn : public QWidget {
   QLabel& editing_text;
   SwitchTable& switch_table;
 
-  QBoxLayout& column_layout;
 
   SwitchColumn(QUndoStack& undo_stack, Song& song);
 };

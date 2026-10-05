@@ -27,8 +27,9 @@ WindowBody::WindowBody()
       recovery_timer(*(new QTimer(this))),
       switch_column(*(new SwitchColumn(undo_stack, song))),
       controls_column(*(new ControlsColumn(song, player.synth, undo_stack,
-                                           switch_column.switch_table))),
-      row_layout(*(new QHBoxLayout(this))) {
+                                           switch_column.switch_table))) {
+  auto& row_layout =  // NOLINT(cppcoreguidelines-owning-memory)
+      *(new QHBoxLayout(this));
   row_layout.addWidget(&controls_column, 0, Qt::AlignTop);
   row_layout.addWidget(&switch_column, 0, Qt::AlignTop);
 }

@@ -35,7 +35,6 @@ CustomIntervalRow::CustomIntervalRow(QUndoStack& undo_stack_input,
                                      SwitchTable& switch_table_input)
     : undo_stack(undo_stack_input),
       switch_table(switch_table_input),
-      row_layout(*(new QGridLayout(this))),
       minus_button(*(new QPushButton("−", this))),
       interval_editor(*(new IntervalEditor(this))),
       plus_button(*(new QPushButton("+", this))),
@@ -48,6 +47,8 @@ CustomIntervalRow::CustomIntervalRow(QUndoStack& undo_stack_input,
   make_square(plus_button);
   presets_box.setPlaceholderText(QObject::tr("Custom"));
 
+  auto& row_layout =  // NOLINT(cppcoreguidelines-owning-memory)
+      *(new QGridLayout(this));
   row_layout.addWidget(&minus_button, 0, 0);
   row_layout.addWidget(&interval_editor, 0, 1);
   row_layout.addWidget(&plus_button, 0, 2);

@@ -7,8 +7,9 @@
 
 SwitchColumn::SwitchColumn(QUndoStack& undo_stack, Song& song)
     : editing_text(*(new QLabel(SwitchColumn::tr("Chords")))),
-      switch_table(*new SwitchTable(undo_stack, song)),
-      column_layout(*(new QVBoxLayout(this))) {
+      switch_table(*new SwitchTable(undo_stack, song)) {
+  auto& column_layout =  // NOLINT(cppcoreguidelines-owning-memory)
+      *(new QVBoxLayout(this));
   column_layout.addWidget(&editing_text);
   column_layout.addWidget(&switch_table);
 }

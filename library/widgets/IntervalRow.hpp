@@ -4,8 +4,6 @@
 
 #include "cell_types/Interval.hpp"
 
-class QBoxLayout;
-class QLabel;
 class QPushButton;
 class QUndoStack;
 struct SwitchTable;
@@ -13,9 +11,7 @@ struct SwitchTable;
 struct IntervalRow : public QWidget {
   QUndoStack& undo_stack;
   SwitchTable& switch_table;
-  QBoxLayout& row_layout;
   QPushButton& minus_button;
-  QLabel& text;
   QPushButton& plus_button;
   const Interval interval;
 

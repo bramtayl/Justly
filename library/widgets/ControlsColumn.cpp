@@ -29,8 +29,9 @@ ControlsColumn::ControlsColumn(Song& song, FluidSynth& synth,
                                    Interval(Rational(SEVEN, 4), 0))),
       octave_row(*new IntervalRow(undo_stack, switch_table, "Octave",
                                   Interval(Rational(), 1))),
-      custom_row(*new CustomIntervalRow(undo_stack, switch_table)),
-      column_layout(*(new QVBoxLayout(this))) {
+      custom_row(*new CustomIntervalRow(undo_stack, switch_table)) {
+  auto& column_layout =  // NOLINT(cppcoreguidelines-owning-memory)
+      *(new QVBoxLayout(this));
   column_layout.addWidget(&spin_boxes);
   column_layout.addWidget(&third_row);
   column_layout.addWidget(&fifth_row);

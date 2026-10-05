@@ -11,7 +11,6 @@ template <RowInterface SubRow>
 struct RowsModel;
 class XMLDocument;
 struct XMLValidator;
-class QBoxLayout;
 struct ControlsColumn;
 struct SwitchColumn;
 
@@ -29,7 +28,6 @@ struct WindowBody : public QWidget {
 
   SwitchColumn& switch_column;
   ControlsColumn& controls_column;
-  QBoxLayout& row_layout;
 
   explicit WindowBody();
 
