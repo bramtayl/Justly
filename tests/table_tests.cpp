@@ -680,7 +680,8 @@ void Tester::test_voice_cell_editors() {
     const auto* const spin_box_pointer =
         dynamic_cast<QSpinBox*>(editor_pointer);
     if (spin_box_pointer != nullptr && spin_box_pointer->minimum() == 0 &&
-        spin_box_pointer->maximum() == 127) {  // NOLINT(readability-magic-numbers)
+        spin_box_pointer->maximum() ==
+            127) {  // NOLINT(readability-magic-numbers)
       return "midi number";
     }
     if (dynamic_cast<QLineEdit*>(editor_pointer) != nullptr) {

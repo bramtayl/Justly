@@ -299,16 +299,15 @@ template <NoteInterface SubNote>
                                     const int first_note_number,
                                     const int number_of_notes, double end_ms)
     -> double {
-  const auto end_note_number =
-      std::min(first_note_number + number_of_notes,
-               static_cast<int>(notes.size()));
+  const auto end_note_number = std::min(first_note_number + number_of_notes,
+                                        static_cast<int>(notes.size()));
   for (auto note_number = first_note_number; note_number < end_note_number;
        note_number = note_number + 1) {
-    end_ms = std::max(
-        end_ms, play_state.current_time +
-                    get_duration_in_milliseconds(
-                        play_state.current_tempo,
-                        rational_to_double(notes.at(note_number).beats)));
+    end_ms = std::max(end_ms,
+                      play_state.current_time +
+                          get_duration_in_milliseconds(
+                              play_state.current_tempo,
+                              rational_to_double(notes.at(note_number).beats)));
   }
   return end_ms;
 }
@@ -461,13 +460,12 @@ void select_chord_range_at_playhead(SwitchTable& switch_table,
   auto& selection_model = get_selection_model(switch_table);
   const auto selected_rows = selection_model.selectedRows();
   if (selected_rows.size() == last_chord_number - first_chord_number + 1 &&
-      std::ranges::all_of(
-          selected_rows,
-          [first_chord_number,
-           last_chord_number](const QModelIndex& index) -> bool {
-            return first_chord_number <= index.row() &&
-                   index.row() <= last_chord_number;
-          })) {
+      std::ranges::all_of(selected_rows,
+                          [first_chord_number, last_chord_number](
+                              const QModelIndex& index) -> bool {
+                            return first_chord_number <= index.row() &&
+                                   index.row() <= last_chord_number;
+                          })) {
     return;
   }
 
@@ -1125,8 +1123,8 @@ auto PianoRollWidget::eventFilter(QObject* watched_pointer,
       // driven animation, the same way it takes over from a stale
       // selection-driven position in drag_playhead_to()
       if (piano_roll_scene.playhead_active) {
-        stop_playhead(piano_roll_scene, axis_scene, window_body.song,
-                      selection, selecting_chord_from_playhead);
+        stop_playhead(piano_roll_scene, axis_scene, window_body.song, selection,
+                      selecting_chord_from_playhead);
       }
       piano_roll_scene.playhead_dragging = true;
       drag_start_chord_number =

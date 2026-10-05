@@ -49,9 +49,9 @@ void play_selection(WindowBody& window_body, const bool to_end) {
   switch (row_type) {
     case RowType::chord_type:
       modulate_before_chord(song, play_state, first_row_number);
-      play_chords(window_body, first_row_number,
-                  to_end ? number_of_chords - first_row_number
-                         : number_of_rows);
+      play_chords(
+          window_body, first_row_number,
+          to_end ? number_of_chords - first_row_number : number_of_rows);
       break;
     case RowType::pitched_note_type:
     case RowType::unpitched_note_type: {
@@ -79,12 +79,11 @@ void play_selection(WindowBody& window_body, const bool to_end) {
       // ReplaceTable.cpp's update_actions
       Q_ASSERT(!to_end);
       // play_voices has already warned about anything it couldn't play
-      static_cast<void>(
-          row_type == RowType::pitched_voice_type
-              ? play_voices(player, song.pitched_voices, first_row_number,
-                            number_of_rows)
-              : play_voices(player, song.unpitched_voices, first_row_number,
-                            number_of_rows));
+      static_cast<void>(row_type == RowType::pitched_voice_type
+                            ? play_voices(player, song.pitched_voices,
+                                          first_row_number, number_of_rows)
+                            : play_voices(player, song.unpitched_voices,
+                                          first_row_number, number_of_rows));
       break;
   }
 }

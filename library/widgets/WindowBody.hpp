@@ -116,8 +116,8 @@ template <VoiceInterface SubVoice>
             [&voice](int /*channel_number*/) -> std::optional<short> {
               return voice.get_preview_midi_number();
             },
-            play_state.current_velocity *
-                rational_to_double(voice.velocity_ratio),
+            play_state.current_velocity* rational_to_double(
+                voice.velocity_ratio),
             play_state.current_time + VOICE_PREVIEW_MILLISECONDS,
             [&voice](QTextStream& stream) -> void {
               stream << QObject::tr(" for ")
@@ -147,16 +147,15 @@ template <NoteInterface SubNote>
     if (!play_checked_note(
             player, sub_note.get_program(pitched_voices, unpitched_voices),
             [&](const int channel_number) -> std::optional<short> {
-              return sub_note.get_closest_midi(parent, player,
-                                               unpitched_voices, channel_number,
-                                               chord_number, note_number);
+              return sub_note.get_closest_midi(parent, player, unpitched_voices,
+                                               channel_number, chord_number,
+                                               note_number);
             },
-            sub_note.get_velocity(play_state.current_velocity,
-                                  pitched_voices, unpitched_voices),
-            play_state.current_time +
-                get_duration_in_milliseconds(
-                    play_state.current_tempo,
-                    rational_to_double(sub_note.beats)),
+            sub_note.get_velocity(play_state.current_velocity, pitched_voices,
+                                  unpitched_voices),
+            play_state.current_time + get_duration_in_milliseconds(
+                                          play_state.current_tempo,
+                                          rational_to_double(sub_note.beats)),
             [chord_number, note_number](QTextStream& stream) -> void {
               add_note_location<SubNote>(stream, chord_number, note_number);
             })) {

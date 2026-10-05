@@ -55,10 +55,9 @@ void connect_navigate_chord_action(QAction& action, QObject& context,
 }
 
 void rebuild_piano_roll_scene(PianoRollWidget& widget) {
-  rebuild_scene(
-      widget, widget.window_body, widget.piano_roll_scene, widget.axis_scene,
-      widget.legend_scene, widget.row_layout, widget.selection,
-      widget.selecting_chord_from_playhead);
+  rebuild_scene(widget, widget.window_body, widget.piano_roll_scene,
+                widget.axis_scene, widget.legend_scene, widget.row_layout,
+                widget.selection, widget.selecting_chord_from_playhead);
 }
 
 }  // namespace

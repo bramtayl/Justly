@@ -386,15 +386,15 @@ void Tester::test_musicxml_inline_error_data() {
 
   // the schema only checks that the id belongs to something, here the part
   QTest::newRow("instrument not in part")
-      << get_divisions()
-      << R"(<note>
+      << get_divisions() << R"(<note>
         <pitch><step>C</step><octave>4</octave></pitch>
         <duration>1</duration>
         <instrument id="P1"/>
       </note>)"
       << "Instrument P1 in measure 1 isn't in part P";
   QTest::newRow("backup past the measure")
-      << get_divisions() << plain_note + "<backup><duration>2</duration></backup>"
+      << get_divisions()
+      << plain_note + "<backup><duration>2</duration></backup>"
       << "Backup in measure 1 goes back past the start of the measure";
   QTest::newRow("tie never starts")
       << get_divisions() << make_spelled_note("C", "4", "", "stop")
@@ -435,8 +435,7 @@ void Tester::test_musicxml_inline_error_data() {
       << R"(<barline location="left"><repeat direction="forward"/></barline>)" +
              plain_note + get_next_measure() +
              R"(<barline location="left"><repeat direction="forward"/></barline>)" +
-             plain_note +
-             R"(<barline><repeat direction="backward"/></barline>)"
+             plain_note + R"(<barline><repeat direction="backward"/></barline>)"
       << "Forward repeat in measure 1 has no backward repeat";
   QTest::newRow("dal segno without a segno")
       << get_divisions() << plain_note + R"(<sound dalsegno="segno"/>)"
@@ -728,9 +727,8 @@ void Tester::test_import_musicxml_unnamed_voice() {
 void Tester::test_import_musicxml_duplicate_voice_names() {
   QTemporaryFile temp_file;
   QVERIFY(temp_file.open());
-  temp_file.write(make_named_parts({"Flute", "", "Flute", ""})
-                      .toStdString()
-                      .c_str());
+  temp_file.write(
+      make_named_parts({"Flute", "", "Flute", ""}).toStdString().c_str());
   temp_file.close();
 
   import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
@@ -834,23 +832,20 @@ void Tester::test_musicxml_jumps_data() {
   const QString coda = R"(<sound coda="coda"/>)";
   const QString fine = R"(<sound fine="yes"/>)";
 
-  QTest::newRow("da capo")
-      << make_measures({"", da_capo}) << QList<int>({1, 2, 1, 2});
-  QTest::newRow("da capo in a direction")
-      << make_measures(
-             {"", R"(<direction>
+  QTest::newRow("da capo") << make_measures({"", da_capo})
+                           << QList<int>({1, 2, 1, 2});
+  QTest::newRow("da capo in a direction") << make_measures({"", R"(<direction>
         <direction-type><words>D.C.</words></direction-type>
         <sound dacapo="yes"/>
-      </direction>)"})
-      << QList<int>({1, 2, 1, 2});
+      </direction>)"}) << QList<int>({1, 2, 1, 2});
   QTest::newRow("da capo al fine")
       << make_measures({fine, "", da_capo}) << QList<int>({1, 2, 3, 1});
   QTest::newRow("dal segno")
-      << make_measures({"", segno, dal_segno})
-      << QList<int>({1, 2, 3, 2, 3});
+      << make_measures({"", segno, dal_segno}) << QList<int>({1, 2, 3, 2, 3});
   QTest::newRow("segno on a barline")
       << make_measures(
-             {"", R"(<barline location="left" segno="segno"><segno/></barline>)",
+             {"",
+              R"(<barline location="left" segno="segno"><segno/></barline>)",
               dal_segno})
       << QList<int>({1, 2, 3, 2, 3});
   // with no segno by that name, go back to the nearest one
@@ -918,8 +913,8 @@ void Tester::test_musicxml_jump_in_one_part() {
     <measure number="1">
       <attributes>%2</attributes>
       %3)")
-        .arg(part_id, get_divisions(),
-             make_measures({"", last_measure_extras})) +
+               .arg(part_id, get_divisions(),
+                    make_measures({"", last_measure_extras})) +
            R"(
     </measure>
   </part>)";

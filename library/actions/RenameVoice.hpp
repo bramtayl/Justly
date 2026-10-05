@@ -19,7 +19,8 @@ struct RenameVoice : public QUndoCommand {
 
   RenameVoice(VoicesModel<SubVoice, SubNote>& voices_model_input,
               const int row_number_input, QString new_name_input)
-      : voices_model(voices_model_input), row_number(row_number_input),
+      : voices_model(voices_model_input),
+        row_number(row_number_input),
         old_name(voices_model.get_rows().at(row_number).name),
         new_name(std::move(new_name_input)) {
     for_each_note<SubNote>(

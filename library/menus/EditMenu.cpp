@@ -19,7 +19,8 @@ void add_delete_cells(WindowBody& window_body) {
         auto empty_row = rows_model.make_empty_row();
         return new SetCells(  // NOLINT(cppcoreguidelines-owning-memory)
             rows_model, range.top(), number_of_rows, range.left(),
-            range.right(), QList<decltype(empty_row)>(number_of_rows, empty_row));
+            range.right(),
+            QList<decltype(empty_row)>(number_of_rows, empty_row));
       }));
 }
 

@@ -854,8 +854,8 @@ void Tester::test_piano_roll_ignores_other_widgets() {
   select_cell(switch_table, 0, 0);
   const QPointF chord_1_pos(600.0 * PIANO_ROLL_PIXELS_PER_MS, 0);
 
-  const auto send_to_widget = [&piano_roll_widget](
-                                  const QEvent::Type event_type) -> bool {
+  const auto send_to_widget =
+      [&piano_roll_widget](const QEvent::Type event_type) -> bool {
     QMouseEvent mouse_event(event_type, QPointF(), QPointF(), Qt::LeftButton,
                             Qt::LeftButton, Qt::NoModifier);
     return piano_roll_widget.eventFilter(&piano_roll_widget, &mouse_event);
@@ -916,7 +916,8 @@ void Tester::test_piano_roll_drag_before_start() {
       view.mapFromScene(QPointF(0, 0)).x() - 1000, 0);
   QMouseEvent move_event(
       QEvent::MouseMove, QPointF(before_start_view_pos),
-      QPointF(get_reference(view.viewport()).mapToGlobal(before_start_view_pos)),
+      QPointF(
+          get_reference(view.viewport()).mapToGlobal(before_start_view_pos)),
       Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
   QVERIFY(piano_roll_widget.eventFilter(view.viewport(), &move_event));
   QCOMPARE(get_only_range(switch_table).top(), 0);
@@ -956,7 +957,8 @@ void Tester::test_piano_roll_click_replaces_note_row() {
               QItemSelectionModel::Select | QItemSelectionModel::Clear |
                   QItemSelectionModel::Rows);
 
-  const auto maybe_bar_center = get_note_bar_center(piano_roll_widget, 1, 2, true);
+  const auto maybe_bar_center =
+      get_note_bar_center(piano_roll_widget, 1, 2, true);
   if (!maybe_bar_center.has_value()) {
     QFAIL("no note bar to click");
   }
@@ -977,13 +979,11 @@ void Tester::test_piano_roll_click_empty_song() {
   auto& switch_table = main_window.window_body.switch_column.switch_table;
 
   open_text(main_window, make_voice_song_xml({"A"}, {"D"}));
-  QVERIFY(send_piano_roll_mouse_event(piano_roll_widget,
-                                      QEvent::MouseButtonPress, QPointF(),
-                                      Qt::LeftButton));
+  QVERIFY(send_piano_roll_mouse_event(
+      piano_roll_widget, QEvent::MouseButtonPress, QPointF(), Qt::LeftButton));
   QVERIFY(get_selection_model(switch_table).selection().empty());
-  QVERIFY(send_piano_roll_mouse_event(piano_roll_widget,
-                                      QEvent::MouseButtonRelease, QPointF(),
-                                      Qt::NoButton));
+  QVERIFY(send_piano_roll_mouse_event(
+      piano_roll_widget, QEvent::MouseButtonRelease, QPointF(), Qt::NoButton));
 
   // restore the shared fixture
   open_file_and_reload(main_window.song_menu_bar, main_window.window_body,

@@ -13,7 +13,6 @@ struct SwitchColumn : public QWidget {
   QLabel& editing_text;
   SwitchTable& switch_table;
 
-
   SwitchColumn(QUndoStack& undo_stack, Song& song);
 };
 

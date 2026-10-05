@@ -99,10 +99,10 @@ auto parse_attributes(QWidget& parent, xmlNode& attributes_node,
   for (auto& attribute_element : get_xml_children(attributes_node)) {
     const auto attribute_name = get_xml_name(attribute_element);
     if (attribute_name == "key") {
-      const auto maybe_fifths = get_int_or_warn(
-          parent, get_xml_child(attribute_element, "fifths"),
-          QObject::tr("Key error"),
-          QObject::tr("Fifths value is out of range"));
+      const auto maybe_fifths =
+          get_int_or_warn(parent, get_xml_child(attribute_element, "fifths"),
+                          QObject::tr("Key error"),
+                          QObject::tr("Fifths value is out of range"));
       if (!maybe_fifths.has_value()) {
         return false;
       }
@@ -148,9 +148,9 @@ auto parse_attributes(QWidget& parent, xmlNode& attributes_node,
 
 // adds the note, unless it's a rest, to the measure, and moves the time
 // forward, unless the note is part of the previous chord
-auto parse_note(QWidget& parent, xmlNode& note_node,
-                const MusicXMLPart& part, MusicXMLMeasure& measure,
-                int& current_time, int& chord_start_time) -> bool {
+auto parse_note(QWidget& parent, xmlNode& note_node, const MusicXMLPart& part,
+                MusicXMLMeasure& measure, int& current_time,
+                int& chord_start_time) -> bool {
   // arrows mark Johnston's 7 (down) and el (up)
   static const QMap<std::string, Accidental> accidentals = {
       {"triple-flat", {.chromatic = -3, .septimal_quartertones = 0}},
@@ -274,12 +274,11 @@ auto parse_barline(QWidget& parent, xmlNode& barline_node,
       } else {
         Q_ASSERT(direction == "backward");
         measure.has_backward_repeat = true;
-        const auto times_text =
-            maybe_get_property(child, "times").value_or("");
+        const auto times_text = maybe_get_property(child, "times").value_or("");
         if (!times_text.empty()) {
-          const auto maybe_times = get_int_or_warn(
-              parent, times_text, QObject::tr("Repeat error"),
-              QObject::tr("Repeat times is out of range"));
+          const auto maybe_times =
+              get_int_or_warn(parent, times_text, QObject::tr("Repeat error"),
+                              QObject::tr("Repeat times is out of range"));
           if (!maybe_times.has_value()) {
             return false;
           }
@@ -411,9 +410,9 @@ auto parse_part(QWidget& parent, xmlNode& part_node, MusicXMLPart& part)
     part.measures.push_back(std::move(measure));
   }
   if (in_ending) {
-    QMessageBox::warning(&parent, QObject::tr("Ending error"),
-                         QObject::tr("Ending in part %1 never stops")
-                             .arg(part.name));
+    QMessageBox::warning(
+        &parent, QObject::tr("Ending error"),
+        QObject::tr("Ending in part %1 never stops").arg(part.name));
     return false;
   }
   return true;
@@ -465,11 +464,10 @@ auto is_in_last_ending(const QList<MusicXMLMeasure>& measures,
     last_index = last_index + 1;
   }
   const auto& last_ending_numbers = measures.at(last_index).ending_numbers;
-  return std::ranges::any_of(
-      measures.at(measure_index).ending_numbers,
-      [&last_ending_numbers](const int number) -> bool {
-        return last_ending_numbers.contains(number);
-      });
+  return std::ranges::any_of(measures.at(measure_index).ending_numbers,
+                             [&last_ending_numbers](const int number) -> bool {
+                               return last_ending_numbers.contains(number);
+                             });
 }
 
 }  // namespace
@@ -496,8 +494,8 @@ auto get_playback_order(const QList<MusicXMLMeasure>& measures) -> QList<int> {
   while (measure_index < number_of_measures) {
     const auto& measure = measures.at(measure_index);
     const auto& ending_numbers = measure.ending_numbers;
-    if (!repeating &&
-        (measure.has_forward_repeat || (in_endings && ending_numbers.isEmpty()))) {
+    if (!repeating && (measure.has_forward_repeat ||
+                       (in_endings && ending_numbers.isEmpty()))) {
       repeat_start_index = measure_index;
       pass_number = 1;
     }
@@ -550,11 +548,10 @@ auto get_playback_order(const QList<MusicXMLMeasure>& measures) -> QList<int> {
       } else if ((jump.type == JumpType::da_capo ||
                   jump.type == JumpType::dal_segno) &&
                  applies(jump, !jumped_from.contains(measure_index))) {
-        maybe_jump_index =
-            jump.type == JumpType::da_capo
-                ? 0
-                : find_marker(measures, &MusicXMLMeasure::segnos, jump.target,
-                              measure_index, -1);
+        maybe_jump_index = jump.type == JumpType::da_capo
+                               ? 0
+                               : find_marker(measures, &MusicXMLMeasure::segnos,
+                                             jump.target, measure_index, -1);
         if (maybe_jump_index.has_value()) {
           jumped_from.insert(measure_index);
           after_jump = true;
@@ -715,8 +712,8 @@ auto parse_musicxml(QWidget& parent, xmlNode& score_partwise)
 void fill_in_accidentals(MusicXMLPart& part) {
   static const QMap<QString, int> step_indices = {
       {"C", 0}, {"D", 1}, {"E", 2}, {"F", 3}, {"G", 4}, {"A", 5}, {"B", 6}};
-  static const std::array<int, STEPS_PER_OCTAVE> step_halfsteps = {
-      0, 2, 4, 5, 7, 9, 11};
+  static const std::array<int, STEPS_PER_OCTAVE> step_halfsteps = {0, 2, 4, 5,
+                                                                   7, 9, 11};
   for (auto& measure : part.measures) {
     // an accidental lasts until the end of its measure, for notes on the
     // same staff, step, and octave
@@ -790,11 +787,10 @@ auto combine_ties(QWidget& parent, MusicXMLPart& part) -> bool {
   QMap<QString, TiedNote> tied_notes;
   // the schema doesn't require ties to be well-formed
   const auto warn_unstopped = [&parent, &part](const int measure_number) {
-    QMessageBox::warning(
-        &parent, QObject::tr("Tie error"),
-        QObject::tr("Tie in measure %1 of part %2 never stops")
-            .arg(measure_number)
-            .arg(part.name));
+    QMessageBox::warning(&parent, QObject::tr("Tie error"),
+                         QObject::tr("Tie in measure %1 of part %2 never stops")
+                             .arg(measure_number)
+                             .arg(part.name));
   };
   for (auto& measure : part.measures) {
     for (auto& note : measure.notes) {
@@ -860,7 +856,8 @@ auto get_song_time(const QMap<int, int>& divisions_changes,
     if (change_time > time) {
       break;
     }
-    song_time = song_time + time_per_division * (change_time - last_change_time);
+    song_time =
+        song_time + time_per_division * (change_time - last_change_time);
     last_change_time = change_time;
     time_per_division = song_divisions / divisions;
   }
@@ -877,10 +874,9 @@ void normalize_divisions(MusicXMLPart& part, const int song_divisions) {
   };
   for (auto& measure : part.measures) {
     for (auto& note : measure.notes) {
-      note.duration =
-          note.duration *
-          (song_divisions /
-           get_most_recent(divisions_changes, note.start_time, 1));
+      note.duration = note.duration *
+                      (song_divisions /
+                       get_most_recent(divisions_changes, note.start_time, 1));
       note.start_time = to_song_time(note.start_time);
     }
     measure.start_time = to_song_time(measure.start_time);

@@ -1,9 +1,10 @@
 #pragma once
 
+#include <libxml/tree.h>
+
 #include <QtCore/QList>
 #include <QtCore/QMap>
 #include <QtCore/QString>
-#include <libxml/tree.h>
 #include <optional>
 #include <string>
 

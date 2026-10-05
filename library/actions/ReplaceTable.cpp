@@ -77,8 +77,7 @@ void show_notes(SwitchTable& switch_table, RowsModel<SubNote>& notes_model,
     resize_columns(switch_table, row_type);
   }
   if (new_note_number >= 0) {
-    select_row_and_scroll(switch_table,
-                          notes_model.index(new_note_number, 0));
+    select_row_and_scroll(switch_table, notes_model.index(new_note_number, 0));
   }
 }
 
@@ -230,9 +229,8 @@ void replace_table(SongMenuBar& song_menu_bar, WindowBody& window_body,
     resize_columns(switch_table, new_row_type);
 
     if (old_parent_chord_number >= 0) {
-      select_row_and_scroll(
-          switch_table,
-          switch_table.chords_model.index(old_parent_chord_number, 0));
+      select_row_and_scroll(switch_table, switch_table.chords_model.index(
+                                              old_parent_chord_number, 0));
     }
 
     switch (old_row_type) {

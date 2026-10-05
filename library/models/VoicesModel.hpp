@@ -20,8 +20,7 @@ struct VoicesModel : public UndoRowsModel<SubVoice> {
   [[nodiscard]] auto check_cell(const int column_number,
                                 const QVariant& new_value) const
       -> bool override {
-    return check_voice_name(parent, this->get_rows(), column_number,
-                            new_value);
+    return check_voice_name(parent, this->get_rows(), column_number, new_value);
   }
 
   [[nodiscard]] auto make_set_cell(const QModelIndex& index,
