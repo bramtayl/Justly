@@ -435,29 +435,63 @@ auto get_chord_number_at_viewport_pos(
 // kick the user out of whichever chord's notes/voices they're editing.
 namespace {
 
+// selects every chord row between anchor_chord_number and
+// current_chord_number (in either order), scrolled to current_chord_number
+void select_chord_range_at_playhead(SwitchTable& switch_table,
+                                    const int number_of_chords,
+                                    bool& selecting_chord_from_playhead,
+                                    const int anchor_chord_number,
+                                    const int current_chord_number) {
+  if (switch_table.delegate.current_row_type != RowType::chord_type) {
+    return;
+  }
+  if (number_of_chords == 0) {
+    return;
+  }
+  // both come from a playhead position inside the song (a drag, or
+  // playback, which only runs over chords, starting at the first one), so
+  // they always name an existing chord
+  Q_ASSERT(anchor_chord_number >= 0 && anchor_chord_number < number_of_chords);
+  Q_ASSERT(current_chord_number >= 0 &&
+           current_chord_number < number_of_chords);
+  const auto first_chord_number =
+      std::min(anchor_chord_number, current_chord_number);
+  const auto last_chord_number =
+      std::max(anchor_chord_number, current_chord_number);
+
+  auto& selection_model = get_selection_model(switch_table);
+  const auto selected_rows = selection_model.selectedRows();
+  if (selected_rows.size() == last_chord_number - first_chord_number + 1 &&
+      std::ranges::all_of(
+          selected_rows,
+          [first_chord_number,
+           last_chord_number](const QModelIndex& index) -> bool {
+            return first_chord_number <= index.row() &&
+                   index.row() <= last_chord_number;
+          })) {
+    return;
+  }
+
+  auto& chords_model = switch_table.chords_model;
+  selecting_chord_from_playhead = true;
+  selection_model.select(
+      QItemSelection(chords_model.index(first_chord_number, 0),
+                     chords_model.index(last_chord_number, 0)),
+      QItemSelectionModel::Select | QItemSelectionModel::Clear |
+          QItemSelectionModel::Rows);
+  selecting_chord_from_playhead = false;
+  switch_table.scrollTo(chords_model.index(current_chord_number, 0));
+}
+
 void select_chord_at_playhead(SwitchTable& switch_table,
                               const QList<double>& chord_start_times,
                               bool& selecting_chord_from_playhead,
                               const double time_ms) {
-  if (switch_table.delegate.current_row_type != RowType::chord_type) {
-    return;
-  }
   const auto chord_number =
       get_chord_number_at_time(chord_start_times, time_ms);
-  // playback only runs over chords, starting at the first one
-  Q_ASSERT(chord_number >= 0);
-  auto& selection_model = get_selection_model(switch_table);
-  const auto selected_rows = selection_model.selectedRows();
-  if (selected_rows.size() == 1 && selected_rows.at(0).row() == chord_number) {
-    return;
-  }
-  const auto chord_index = switch_table.chords_model.index(chord_number, 0);
-  selecting_chord_from_playhead = true;
-  selection_model.select(chord_index, QItemSelectionModel::Select |
-                                          QItemSelectionModel::Clear |
-                                          QItemSelectionModel::Rows);
-  selecting_chord_from_playhead = false;
-  switch_table.scrollTo(chord_index);
+  select_chord_range_at_playhead(
+      switch_table, static_cast<int>(chord_start_times.size()),
+      selecting_chord_from_playhead, chord_number, chord_number);
 }
 
 // selects the note row (in whichever of pitched_notes_model /
@@ -496,48 +530,6 @@ void select_note_at_bar(SwitchTable& switch_table,
                                          QItemSelectionModel::Clear |
                                          QItemSelectionModel::Rows);
   switch_table.scrollTo(note_index);
-}
-
-void select_chord_range_at_playhead(SwitchTable& switch_table,
-                                    const int number_of_chords,
-                                    bool& selecting_chord_from_playhead,
-                                    const int anchor_chord_number,
-                                    const int current_chord_number) {
-  if (switch_table.delegate.current_row_type != RowType::chord_type) {
-    return;
-  }
-  if (number_of_chords == 0) {
-    return;
-  }
-  // both come from get_chord_number_at_viewport_pos, which only ever
-  // returns an existing chord
-  Q_ASSERT(anchor_chord_number >= 0 && anchor_chord_number < number_of_chords);
-  Q_ASSERT(current_chord_number >= 0 &&
-           current_chord_number < number_of_chords);
-  const auto first_chord_number =
-      std::min(anchor_chord_number, current_chord_number);
-  const auto last_chord_number =
-      std::max(anchor_chord_number, current_chord_number);
-
-  auto& selection_model = get_selection_model(switch_table);
-  const auto& selection = selection_model.selection();
-  if (!selection.empty()) {
-    const auto& range = get_only(selection);
-    if (range.top() == first_chord_number &&
-        range.bottom() == last_chord_number) {
-      return;
-    }
-  }
-
-  auto& chords_model = switch_table.chords_model;
-  selecting_chord_from_playhead = true;
-  selection_model.select(
-      QItemSelection(chords_model.index(first_chord_number, 0),
-                     chords_model.index(last_chord_number, 0)),
-      QItemSelectionModel::Select | QItemSelectionModel::Clear |
-          QItemSelectionModel::Rows);
-  selecting_chord_from_playhead = false;
-  switch_table.scrollTo(chords_model.index(current_chord_number, 0));
 }
 
 }  // namespace
@@ -936,17 +928,13 @@ void rebuild_scene(QWidget& widget, const WindowBody& window_body,
     auto& view = legend_scene.view;
 
     scene.clear();
-    auto row_y = 0.0;
-    auto global_voice_index = 0;
-    for (const auto& voice : song.pitched_voices) {
-      draw_legend_row(scene, voice.name, global_voice_index, row_y);
-      row_y = row_y + PIANO_ROLL_LANE_HEIGHT;
-      global_voice_index = global_voice_index + 1;
-    }
-    for (const auto& voice : song.unpitched_voices) {
-      draw_legend_row(scene, voice.name, global_voice_index, row_y);
-      row_y = row_y + PIANO_ROLL_LANE_HEIGHT;
-      global_voice_index = global_voice_index + 1;
+    const auto voice_names =
+        get_names(song.pitched_voices) + get_names(song.unpitched_voices);
+    for (auto global_voice_index = 0; global_voice_index < voice_names.size();
+         global_voice_index = global_voice_index + 1) {
+      draw_legend_row(scene, voice_names.at(global_voice_index),
+                      global_voice_index,
+                      global_voice_index * PIANO_ROLL_LANE_HEIGHT);
     }
 
     const auto legend_bounds = scene.itemsBoundingRect().adjusted(
