@@ -3,8 +3,7 @@
 #include "column_numbers/ChordColumn.hpp"
 #include "sound/PlayState.hpp"
 
-void Chord::from_xml(xmlNode& node, const QList<PitchedVoice>& pitched_voices,
-                     const QList<UnpitchedVoice>& unpitched_voices) {
+void Chord::from_xml(xmlNode& node) {
   for (auto& field_node : get_xml_children(node)) {
     const auto name = get_xml_name(field_node);
     if (name == "beats") {
@@ -18,11 +17,10 @@ void Chord::from_xml(xmlNode& node, const QList<PitchedVoice>& pitched_voices,
     } else if (name == "interval") {
       set_interval_from_xml(interval, field_node);
     } else if (name == "pitched_notes") {
-      xml_to_rows(pitched_notes, field_node, pitched_voices, unpitched_voices);
+      xml_to_rows(pitched_notes, field_node);
     } else {
       Q_ASSERT(name == "unpitched_notes");
-      xml_to_rows(unpitched_notes, field_node, pitched_voices,
-                  unpitched_voices);
+      xml_to_rows(unpitched_notes, field_node);
     }
   }
 }
@@ -147,19 +145,15 @@ void Chord::copy_column_from(const Chord& template_row,
   }
 }
 
-void Chord::column_to_xml(xmlNode& chord_node, const int column_number,
-                          const QList<PitchedVoice>& pitched_voices,
-                          const QList<UnpitchedVoice>& unpitched_voices) const {
+void Chord::column_to_xml(xmlNode& chord_node, const int column_number) const {
   switch (static_cast<ChordColumn>(column_number)) {
     case ChordColumn::number_of_chord_columns:
       Q_UNREACHABLE();
     case ChordColumn::chord_pitched_notes_column:
-      maybe_set_xml_rows(chord_node, "pitched_notes", pitched_notes,
-                         pitched_voices, unpitched_voices);
+      maybe_set_xml_rows(chord_node, "pitched_notes", pitched_notes);
       break;
     case ChordColumn::chord_unpitched_notes_column:
-      maybe_set_xml_rows(chord_node, "unpitched_notes", unpitched_notes,
-                         pitched_voices, unpitched_voices);
+      maybe_set_xml_rows(chord_node, "unpitched_notes", unpitched_notes);
       break;
     case ChordColumn::chord_interval_column:
       maybe_add_interval_to_xml(chord_node, "interval", interval);
@@ -179,13 +173,9 @@ void Chord::column_to_xml(xmlNode& chord_node, const int column_number,
   }
 }
 
-void Chord::to_xml(xmlNode& chord_node,
-                   const QList<PitchedVoice>& pitched_voices,
-                   const QList<UnpitchedVoice>& unpitched_voices) const {
-  maybe_set_xml_rows(chord_node, "pitched_notes", pitched_notes, pitched_voices,
-                     unpitched_voices);
-  maybe_set_xml_rows(chord_node, "unpitched_notes", unpitched_notes,
-                     pitched_voices, unpitched_voices);
+void Chord::to_xml(xmlNode& chord_node) const {
+  maybe_set_xml_rows(chord_node, "pitched_notes", pitched_notes);
+  maybe_set_xml_rows(chord_node, "unpitched_notes", unpitched_notes);
   maybe_add_interval_to_xml(chord_node, "interval", interval);
   maybe_add_rational_to_xml(chord_node, "beats", beats);
   maybe_add_rational_to_xml(chord_node, "velocity_ratio", velocity_ratio);

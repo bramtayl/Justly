@@ -129,7 +129,7 @@ template <RowInterface SubRow>
       for (auto& xml_row :
            get_xml_children(field_node) | std::views::take(max_rows)) {
         SubRow child_row;
-        child_row.from_xml(xml_row, song.pitched_voices, song.unpitched_voices);
+        child_row.from_xml(xml_row);
         new_rows.push_back(std::move(child_row));
       }
     }

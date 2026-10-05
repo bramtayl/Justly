@@ -15,8 +15,7 @@ struct Chord : public Row {
   QList<PitchedNote> pitched_notes;
   QList<UnpitchedNote> unpitched_notes;
 
-  void from_xml(xmlNode& node, const QList<PitchedVoice>& pitched_voices,
-                const QList<UnpitchedVoice>& unpitched_voices) override;
+  void from_xml(xmlNode& node) override;
 
   [[nodiscard]] static auto get_clipboard_schema() -> const char*;
 
@@ -36,13 +35,9 @@ struct Chord : public Row {
 
   void copy_column_from(const Chord& template_row, int column_number);
 
-  void column_to_xml(
-      xmlNode& chord_node, int column_number,
-      const QList<PitchedVoice>& pitched_voices,
-      const QList<UnpitchedVoice>& unpitched_voices) const override;
+  void column_to_xml(xmlNode& chord_node, int column_number) const override;
 
-  void to_xml(xmlNode& chord_node, const QList<PitchedVoice>& pitched_voices,
-              const QList<UnpitchedVoice>& unpitched_voices) const override;
+  void to_xml(xmlNode& chord_node) const override;
 };
 
 void modulate(PlayState& play_state, const Chord& chord);

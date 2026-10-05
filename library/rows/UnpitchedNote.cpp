@@ -3,9 +3,7 @@
 #include "column_numbers/UnpitchedNoteColumn.hpp"
 #include "rows/UnpitchedVoice.hpp"
 
-void UnpitchedNote::from_xml(
-    xmlNode& node, const QList<PitchedVoice>& /*pitched_voices*/,
-    const QList<UnpitchedVoice>& /*unpitched_voices*/) {
+void UnpitchedNote::from_xml(xmlNode& node) {
   for (auto& field_node : get_xml_children(node)) {
     note_field_from_xml(get_xml_name(field_node), field_node);
   }
@@ -127,10 +125,8 @@ void UnpitchedNote::copy_column_from(const UnpitchedNote& template_row,
   }
 }
 
-void UnpitchedNote::column_to_xml(
-    xmlNode& node, const int column_number,
-    const QList<PitchedVoice>& /*pitched_voices*/,
-    const QList<UnpitchedVoice>& /*unpitched_voices*/) const {
+void UnpitchedNote::column_to_xml(xmlNode& node,
+                                  const int column_number) const {
   switch (static_cast<UnpitchedNoteColumn>(column_number)) {
     case UnpitchedNoteColumn::number_of_unpitched_note_columns:
       Q_UNREACHABLE();
@@ -149,9 +145,7 @@ void UnpitchedNote::column_to_xml(
   }
 }
 
-void UnpitchedNote::to_xml(
-    xmlNode& node, const QList<PitchedVoice>& /*pitched_voices*/,
-    const QList<UnpitchedVoice>& /*unpitched_voices*/) const {
+void UnpitchedNote::to_xml(xmlNode& node) const {
   set_xml_string(node, "voice_name", voice_name.toStdString());
   note_fields_to_xml(node);
 }

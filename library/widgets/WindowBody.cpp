@@ -264,14 +264,9 @@ void populate_song_document(WindowBody& window_body, XMLDocument& document) {
   set_xml_double(song_node, "starting_tempo", song.starting_tempo);
   set_xml_double(song_node, "starting_velocity", song.starting_velocity);
 
-  const auto& pitched_voices = song.pitched_voices;
-  const auto& unpitched_voices = song.unpitched_voices;
-  maybe_set_xml_rows(song_node, "chords", song.chords, pitched_voices,
-                     unpitched_voices);
-  maybe_set_xml_rows(song_node, "pitched_voices", pitched_voices,
-                     pitched_voices, unpitched_voices);
-  maybe_set_xml_rows(song_node, "unpitched_voices", unpitched_voices,
-                     pitched_voices, unpitched_voices);
+  maybe_set_xml_rows(song_node, "chords", song.chords);
+  maybe_set_xml_rows(song_node, "pitched_voices", song.pitched_voices);
+  maybe_set_xml_rows(song_node, "unpitched_voices", song.unpitched_voices);
 }
 
 }  // namespace
@@ -406,23 +401,15 @@ auto open_file(WindowBody& window_body, const QString& filename) -> bool {
   QList<Chord> new_chords;
   QList<PitchedVoice> new_pitched_voices;
   QList<UnpitchedVoice> new_unpitched_voices;
-  // notes refer to voices by name, so parse every voice before any chord
-  xmlNode* chords_pointer = nullptr;
   for (auto& field_node : get_xml_children(song_node)) {
     const auto name = get_xml_name(field_node);
     if (name == "chords") {
-      chords_pointer = &field_node;
+      xml_to_rows(new_chords, field_node);
     } else if (name == "pitched_voices") {
-      xml_to_rows(new_pitched_voices, field_node, new_pitched_voices,
-                  new_unpitched_voices);
+      xml_to_rows(new_pitched_voices, field_node);
     } else if (name == "unpitched_voices") {
-      xml_to_rows(new_unpitched_voices, field_node, new_pitched_voices,
-                  new_unpitched_voices);
+      xml_to_rows(new_unpitched_voices, field_node);
     }
-  }
-  if (chords_pointer != nullptr) {
-    xml_to_rows(new_chords, get_reference(chords_pointer), new_pitched_voices,
-                new_unpitched_voices);
   }
 
   auto names_and_voices_ok =
@@ -727,8 +714,8 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
   add_imported_voices(unpitched_voices_model,
                       deduplicate_voice_names(voice_names.unpitched));
 
-  auto last_midi_key = get_most_recent(midi_keys, chords_dict.firstKey(),
-                                       DEFAULT_STARTING_MIDI);
+  auto last_midi_key =
+      get_most_recent(midi_keys, chords_dict.firstKey(), DEFAULT_STARTING_MIDI);
   spin_boxes.starting_key_editor.setValue(
       midi_number_to_frequency(last_midi_key));
 

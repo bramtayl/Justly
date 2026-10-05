@@ -16,8 +16,7 @@ static const auto ZERO_BEND_HALFSTEPS = 2;
 struct PitchedNote : Note {
   Interval interval;
 
-  void from_xml(xmlNode& node, const QList<PitchedVoice>& pitched_voices,
-                const QList<UnpitchedVoice>& /*unpitched_voices*/) override;
+  void from_xml(xmlNode& node) override;
 
   [[nodiscard]] static auto get_clipboard_schema() -> const char*;
 
@@ -54,11 +53,7 @@ struct PitchedNote : Note {
 
   void copy_column_from(const PitchedNote& template_row, int column_number);
 
-  void column_to_xml(
-      xmlNode& node, int column_number,
-      const QList<PitchedVoice>& pitched_voices,
-      const QList<UnpitchedVoice>& /*unpitched_voices*/) const override;
+  void column_to_xml(xmlNode& node, int column_number) const override;
 
-  void to_xml(xmlNode& node, const QList<PitchedVoice>& pitched_voices,
-              const QList<UnpitchedVoice>& /*unpitched_voices*/) const override;
+  void to_xml(xmlNode& node) const override;
 };

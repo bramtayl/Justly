@@ -3,27 +3,15 @@
 #include "other/helpers.hpp"
 #include "xml/XMLChildren.hpp"
 
-struct PitchedVoice;
-struct UnpitchedVoice;
-
-// the XML methods take the song's voices so notes can store their voice by
-// name in files and on the clipboard, while referring to it by number in
-// memory
 struct Row {
   virtual ~Row() = default;
-  virtual void from_xml(xmlNode& node,
-                        const QList<PitchedVoice>& pitched_voices,
-                        const QList<UnpitchedVoice>& unpitched_voices) = 0;
+  virtual void from_xml(xmlNode& node) = 0;
 
   [[nodiscard]] virtual auto get_data(int column_number) const -> QVariant = 0;
 
   virtual void set_data(int column, const QVariant& new_value) = 0;
-  virtual void column_to_xml(
-      xmlNode& node, int column_number,
-      const QList<PitchedVoice>& pitched_voices,
-      const QList<UnpitchedVoice>& unpitched_voices) const = 0;
-  virtual void to_xml(xmlNode& node, const QList<PitchedVoice>& pitched_voices,
-                      const QList<UnpitchedVoice>& unpitched_voices) const = 0;
+  virtual void column_to_xml(xmlNode& node, int column_number) const = 0;
+  virtual void to_xml(xmlNode& node) const = 0;
 };
 
 template <typename SubRow>
@@ -43,26 +31,21 @@ concept RowInterface =
     };
 
 template <RowInterface SubRow>
-static void xml_to_rows(QList<SubRow>& new_rows, xmlNode& node,
-                        const QList<PitchedVoice>& pitched_voices,
-                        const QList<UnpitchedVoice>& unpitched_voices) {
+static void xml_to_rows(QList<SubRow>& new_rows, xmlNode& node) {
   for (auto& xml_row : get_xml_children(node)) {
     SubRow child_row;
-    child_row.from_xml(xml_row, pitched_voices, unpitched_voices);
+    child_row.from_xml(xml_row);
     new_rows.push_back(std::move(child_row));
   }
 }
 
 template <RowInterface SubRow>
 static void maybe_set_xml_rows(xmlNode& node, const char* const array_name,
-                               const QList<SubRow>& rows,
-                               const QList<PitchedVoice>& pitched_voices,
-                               const QList<UnpitchedVoice>& unpitched_voices) {
+                               const QList<SubRow>& rows) {
   if (!rows.empty()) {
     auto& rows_node = get_new_child(node, array_name);
     for (const auto& row : rows) {
-      row.to_xml(get_new_child(rows_node, SubRow::get_xml_field_name()),
-                 pitched_voices, unpitched_voices);
+      row.to_xml(get_new_child(rows_node, SubRow::get_xml_field_name()));
     }
   }
 }

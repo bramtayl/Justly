@@ -36,9 +36,7 @@ void warn_frequency(QWidget& parent, const double frequency,
 
 }  // namespace
 
-void PitchedNote::from_xml(xmlNode& node,
-                           const QList<PitchedVoice>& /*pitched_voices*/,
-                           const QList<UnpitchedVoice>& /*unpitched_voices*/) {
+void PitchedNote::from_xml(xmlNode& node) {
   for (auto& field_node : get_xml_children(node)) {
     const auto name = get_xml_name(field_node);
     if (name == "interval") {
@@ -198,10 +196,7 @@ void PitchedNote::copy_column_from(const PitchedNote& template_row,
   }
 }
 
-void PitchedNote::column_to_xml(
-    xmlNode& node, const int column_number,
-    const QList<PitchedVoice>& /*pitched_voices*/,
-    const QList<UnpitchedVoice>& /*unpitched_voices*/) const {
+void PitchedNote::column_to_xml(xmlNode& node, const int column_number) const {
   switch (static_cast<PitchedNoteColumn>(column_number)) {
     case PitchedNoteColumn::number_of_pitched_note_columns:
       Q_UNREACHABLE();
@@ -223,9 +218,7 @@ void PitchedNote::column_to_xml(
   }
 }
 
-void PitchedNote::to_xml(
-    xmlNode& node, const QList<PitchedVoice>& /*pitched_voices*/,
-    const QList<UnpitchedVoice>& /*unpitched_voices*/) const {
+void PitchedNote::to_xml(xmlNode& node) const {
   set_xml_string(node, "voice_name", voice_name.toStdString());
   maybe_add_interval_to_xml(node, "interval", interval);
   note_fields_to_xml(node);

@@ -16,9 +16,7 @@ auto UnpitchedVoice::get_preview_midi_number() const -> short {
   return static_cast<short>(midi_number);
 }
 
-void UnpitchedVoice::from_xml(
-    xmlNode& node, const QList<PitchedVoice>& /*pitched_voices*/,
-    const QList<UnpitchedVoice>& /*unpitched_voices*/) {
+void UnpitchedVoice::from_xml(xmlNode& node) {
   for (auto& field_node : get_xml_children(node)) {
     const auto field_name = get_xml_name(field_node);
     if (field_name == "name") {
@@ -127,10 +125,8 @@ void UnpitchedVoice::copy_column_from(const UnpitchedVoice& template_row,
   }
 }
 
-void UnpitchedVoice::column_to_xml(
-    xmlNode& node, const int column_number,
-    const QList<PitchedVoice>& /*pitched_voices*/,
-    const QList<UnpitchedVoice>& /*unpitched_voices*/) const {
+void UnpitchedVoice::column_to_xml(xmlNode& node,
+                                   const int column_number) const {
   switch (static_cast<UnpitchedVoiceColumn>(column_number)) {
     case UnpitchedVoiceColumn::number_of_unpitched_voice_columns:
     case UnpitchedVoiceColumn::unpitched_voice_name_column:
@@ -149,9 +145,7 @@ void UnpitchedVoice::column_to_xml(
   }
 }
 
-void UnpitchedVoice::to_xml(
-    xmlNode& node, const QList<PitchedVoice>& /*pitched_voices*/,
-    const QList<UnpitchedVoice>& /*unpitched_voices*/) const {
+void UnpitchedVoice::to_xml(xmlNode& node) const {
   maybe_add_qstring_to_xml(node, "name", name);
   maybe_add_qstring_to_xml(node, "percussion_set_pointer", program);
   set_xml_int(node, "midi_number", midi_number);
