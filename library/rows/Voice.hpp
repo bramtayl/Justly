@@ -59,10 +59,9 @@ template <VoiceInterface SubVoice>
 template <VoiceInterface SubVoice>
 [[nodiscard]] auto check_voice_name(QWidget& parent,
                                     const QList<SubVoice>& voices,
-                                    const int name_column_number,
-                                    const int cell_column_number,
+                                    const int column_number,
                                     const QVariant& new_value) -> bool {
-  if (name_column_number != cell_column_number) {
+  if (column_number != SubVoice::get_name_column()) {
     return true;
   }
   const auto new_string = variant_to<QString>(new_value);

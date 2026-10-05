@@ -5,20 +5,20 @@
 #include "actions/NoteLocation.hpp"
 #include "actions/OrphanedVoiceNameLocation.hpp"
 
-template <VoiceInterface SubVoice>
+template <VoiceInterface SubVoice, NoteInterface SubNote>
 struct VoicesModel;
 
 // removes a range of voice rows, warning about (and reassigning to the first
 // remaining voice) any notes that referenced a removed voice
 template <VoiceInterface SubVoice, NoteInterface SubNote>
 struct RemoveVoiceRows : public QUndoCommand {
-  VoicesModel<SubVoice>& voices_model;
+  VoicesModel<SubVoice, SubNote>& voices_model;
   const int first_row_number;
   const QList<SubVoice> old_voice_rows;
   QList<OrphanedVoiceNameLocation> orphaned_locations;
   const QString first_voice_name;
 
-  RemoveVoiceRows(VoicesModel<SubVoice>& voices_model_input,
+  RemoveVoiceRows(VoicesModel<SubVoice, SubNote>& voices_model_input,
                   const int first_row_number_input, const int number_of_rows)
       : voices_model(voices_model_input),
         first_row_number(first_row_number_input),

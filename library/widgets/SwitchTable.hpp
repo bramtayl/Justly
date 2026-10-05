@@ -3,10 +3,8 @@
 #include <QtWidgets/QTableView>
 
 #include "models/ChordsModel.hpp"
-#include "models/PitchedNotesModel.hpp"
-#include "models/PitchedVoicesModel.hpp"
-#include "models/UnpitchedNotesModel.hpp"
-#include "models/UnpitchedVoicesModel.hpp"
+#include "models/NotesModel.hpp"
+#include "models/VoicesModel.hpp"
 #include "widgets/SwitchDelegate.hpp"
 
 template <RowInterface SubRow>

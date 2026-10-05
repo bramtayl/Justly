@@ -5,19 +5,19 @@
 #include "actions/NoteLocation.hpp"
 #include "rows/Voice.hpp"
 
-template <VoiceInterface SubVoice>
+template <VoiceInterface SubVoice, NoteInterface SubNote>
 struct VoicesModel;
 
 // renames a voice, and every note naming it, so notes follow their voice
 template <VoiceInterface SubVoice, NoteInterface SubNote>
 struct RenameVoice : public QUndoCommand {
-  VoicesModel<SubVoice>& voices_model;
+  VoicesModel<SubVoice, SubNote>& voices_model;
   const int row_number;
   const QString old_name;
   const QString new_name;
   QList<NoteLocation> note_locations;
 
-  RenameVoice(VoicesModel<SubVoice>& voices_model_input,
+  RenameVoice(VoicesModel<SubVoice, SubNote>& voices_model_input,
               const int row_number_input, QString new_name_input)
       : voices_model(voices_model_input), row_number(row_number_input),
         old_name(voices_model.get_rows().at(row_number).name),

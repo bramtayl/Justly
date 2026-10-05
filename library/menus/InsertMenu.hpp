@@ -29,9 +29,9 @@ template <NoteInterface SubNote>
   return make_insert_row(notes_model, row_number, std::move(sub_note));
 }
 
-template <VoiceInterface SubVoice>
-[[nodiscard]] static auto make_insert_voice(VoicesModel<SubVoice>& voices_model,
-                                            const int row_number)
+template <VoiceInterface SubVoice, NoteInterface SubNote>
+[[nodiscard]] static auto make_insert_voice(
+    VoicesModel<SubVoice, SubNote>& voices_model, const int row_number)
     -> QUndoCommand* {
   auto& created_voices = voices_model.created_voices;
   const auto& voices = voices_model.get_rows();
