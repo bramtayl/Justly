@@ -16,7 +16,7 @@ static const auto ZERO_BEND_HALFSTEPS = 2;
 struct PitchedNote : Note {
   Interval interval;
 
-  void from_xml(xmlNode& node) override;
+  void from_xml(xmlNode& node);
 
   [[nodiscard]] static auto get_clipboard_schema() -> const char*;
 
@@ -47,9 +47,9 @@ struct PitchedNote : Note {
       const QList<UnpitchedVoice>& /*unpitched_voices*/) const
       -> const Rational& override;
 
-  [[nodiscard]] auto get_data(int column_number) const -> QVariant override;
+  [[nodiscard]] auto get_data(int column_number) const -> QVariant;
 
-  void set_data(int column_number, const QVariant& new_value) override;
+  void set_data(int column_number, const QVariant& new_value);
 
-  void column_to_xml(xmlNode& node, int column_number) const override;
+  void column_to_xml(xmlNode& node, int column_number) const;
 };

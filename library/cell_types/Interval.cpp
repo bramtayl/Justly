@@ -52,6 +52,14 @@ auto interval_to_double(const Interval& interval) -> double {
          pow(OCTAVE_RATIO, interval.octave);
 }
 
+auto interval_to_qstring(const Interval& interval) -> QString {
+  auto result = rational_to_qstring(interval.ratio);
+  if (interval.octave != 0) {
+    result += "o" + QString::number(interval.octave);
+  }
+  return result;
+}
+
 void set_interval_from_xml(Interval& interval, xmlNode& node) {
   for (auto& field_node : get_xml_children(node)) {
     const auto name = get_xml_name(field_node);

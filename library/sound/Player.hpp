@@ -17,13 +17,6 @@ static const auto NUMBER_OF_MIDI_CHANNELS = 64;
 
 void stop_playing(const FluidSequencer& sequencer, const FluidEvent& event);
 
-void check_fluid_ok(int fluid_result);
-
-void set_fluid_int(FluidSettings& settings, const char* field, int value);
-
-void set_fluid_string(FluidSettings& settings, const char* field,
-                      const char* value);
-
 void set_destination(FluidEvent& event, fluid_seq_id_t sequencer_id);
 
 void send_event_at(FluidSequencer& sequencer, FluidEvent& event, double time);

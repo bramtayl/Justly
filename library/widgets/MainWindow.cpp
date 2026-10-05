@@ -260,21 +260,6 @@ void MainWindow::closeEvent(QCloseEvent* close_event_pointer) {
   QMainWindow::closeEvent(close_event_pointer);
 }
 
-namespace {
-
-void write_rational(QTextStream& stream, const Rational& rational) {
-  const auto numerator = rational.numerator;
-  const auto denominator = rational.denominator;
-  if (numerator != 1) {
-    stream << numerator;
-  }
-  if (denominator != 1) {
-    stream << "/" << denominator;
-  }
-}
-
-}  // namespace
-
 void set_up() {
   LIBXML_TEST_VERSION
 
@@ -289,23 +274,6 @@ void set_up() {
     QApplication::setWindowIcon(QIcon(pixmap));
   }
 
-  QMetaType::registerConverter<Rational, QString>(
-      [](const Rational& rational) -> auto {
-        QString result;
-        QTextStream stream(&result);
-        write_rational(stream, rational);
-        return result;
-      });
-  QMetaType::registerConverter<Interval, QString>(
-      [](const Interval& interval) -> auto {
-        const auto octave = interval.octave;
-
-        QString result;
-        QTextStream stream(&result);
-        write_rational(stream, interval.ratio);
-        if (octave != 0) {
-          stream << "o" << octave;
-        }
-        return result;
-      });
+  QMetaType::registerConverter<Rational, QString>(rational_to_qstring);
+  QMetaType::registerConverter<Interval, QString>(interval_to_qstring);
 }

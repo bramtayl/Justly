@@ -38,6 +38,9 @@ static const auto PERFECT_FIFTH_HALFSTEPS = 7;
 
 [[nodiscard]] auto interval_to_double(const Interval& interval) -> double;
 
+// e.g. "3/2o1", leaving out an octave of 0
+[[nodiscard]] auto interval_to_qstring(const Interval& interval) -> QString;
+
 void set_interval_from_xml(Interval& interval, xmlNode& node);
 
 void maybe_add_interval_to_xml(xmlNode& node, const char* column_name,

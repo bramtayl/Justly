@@ -31,25 +31,6 @@ void stop_playing(const FluidSequencer& sequencer, const FluidEvent& event) {
   }
 }
 
-void check_fluid_ok(const int fluid_result) {
-  Q_ASSERT(fluid_result == FLUID_OK);
-}
-
-void set_fluid_int(FluidSettings& settings, const char* const field,
-                   const int value) {
-  Q_ASSERT(field != nullptr);
-  check_fluid_ok(
-      fluid_settings_setint(settings.internal_pointer, field, value));
-}
-
-void set_fluid_string(FluidSettings& settings, const char* const field,
-                      const char* const value) {
-  Q_ASSERT(field != nullptr);
-  Q_ASSERT(value != nullptr);
-  check_fluid_ok(
-      fluid_settings_setstr(settings.internal_pointer, field, value));
-}
-
 void set_destination(FluidEvent& event, const fluid_seq_id_t sequencer_id) {
   fluid_event_set_dest(event.internal_pointer, sequencer_id);
 }

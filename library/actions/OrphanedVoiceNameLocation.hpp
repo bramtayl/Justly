@@ -2,14 +2,13 @@
 
 #include <QtWidgets/QMessageBox>
 
-#include "rows/Chord.hpp"
+#include "actions/NoteLocation.hpp"
 #include "rows/Voice.hpp"
 
 // a note reassigned from a removed voice to the first remaining voice, so the
 // old voice name must be stored to be restorable on undo
 struct OrphanedVoiceNameLocation {
-  int chord_number;
-  int note_number;
+  NoteLocation location;
   QString old_voice_name;
 };
 

@@ -35,7 +35,9 @@ struct RemoveVoiceRows : public QUndoCommand {
                                const QString& voice_name) -> void {
                              if (has_voice(old_voice_rows, voice_name)) {
                                orphaned_locations.push_back(
-                                   {chord_number, note_number, voice_name});
+                                   {.location = {.chord_number = chord_number,
+                                                 .note_number = note_number},
+                                    .old_voice_name = voice_name});
                              }
                            });
   }
@@ -45,9 +47,8 @@ struct RemoveVoiceRows : public QUndoCommand {
                              SubVoice::get_number_of_columns() - 1);
     auto& chords = voices_model.song.chords;
     for (const auto& orphaned_location : orphaned_locations) {
-      get_note<SubNote>(chords[orphaned_location.chord_number],
-                        orphaned_location.note_number)
-          .voice_name = orphaned_location.old_voice_name;
+      set_voice_name<SubNote>(chords, orphaned_location.location,
+                              orphaned_location.old_voice_name);
     }
   }
 
@@ -59,9 +60,8 @@ struct RemoveVoiceRows : public QUndoCommand {
     // loop, and anything that repaints while it's up (e.g. the piano roll)
     // must never see a note naming a voice that's already been removed
     for (const auto& orphaned_location : orphaned_locations) {
-      get_note<SubNote>(chords[orphaned_location.chord_number],
-                        orphaned_location.note_number)
-          .voice_name = first_voice_name;
+      set_voice_name<SubNote>(chords, orphaned_location.location,
+                              first_voice_name);
     }
     voices_model.remove_rows(first_row_number,
                              static_cast<int>(old_voice_rows.size()));

@@ -33,7 +33,7 @@ PianoRollNotesScene::PianoRollNotesScene(QWidget& parent_widget)
   // content is narrower than the viewport itself -- e.g. a song with only
   // one short note. That padding isn't clipped, so it reveals whatever
   // the shared scene actually has to the left of PIANO_ROLL_AXIS_X: the
-  // pitch axis' own ticks/labels, duplicating PianoRollAxisScene's. Pinning
+  // pitch axis' own ticks/labels, duplicating axis_scene's. Pinning
   // to the top-left keeps any leftover space on the right/bottom instead,
   // where the scene has nothing to leak through.
   view.setAlignment(Qt::AlignLeft | Qt::AlignTop);

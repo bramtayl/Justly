@@ -4,8 +4,7 @@
 
 #include "other/TableSelection.hpp"
 
-struct PianoRollAxisScene;
-struct PianoRollLegendScene;
+struct PianoRollColumnScene;
 struct PianoRollNotesScene;
 class QBoxLayout;
 struct Song;
@@ -27,7 +26,7 @@ static const auto PIANO_ROLL_TIME_ZOOM_STEP = 1.25;
 // via QGraphicsView::scale()) so repeated zoom_in()/zoom_out() calls can't
 // drift and clamping is just one std::clamp on the absolute factor; the
 // vertical scale is always left at 1, so the pitch axis (and
-// PianoRollAxisScene, which is never zoomed) stays visually fixed while
+// axis_scene, which is never zoomed) stays visually fixed while
 // only the time axis expands/contracts
 void set_notes_view_time_zoom(PianoRollNotesScene& notes_scene,
                               double new_zoom_factor);
@@ -64,12 +63,15 @@ struct PianoRollWidget : public QWidget {
   const WindowBody& window_body;
 
   PianoRollNotesScene& piano_roll_scene;
-  // a second, fixed-width view pinned to the left edge, showing the pitch
-  // axis -- see PianoRollAxisScene for details
-  PianoRollAxisScene& axis_scene;
-  // a separate scene/view for the voice legend, pinned to the right edge --
-  // see PianoRollLegendScene for details
-  PianoRollLegendScene& legend_scene;
+  // the pitch axis' ticks/labels, pinned to the left edge; its vertical
+  // scroll is kept in lockstep with piano_roll_scene's, and both scenes place
+  // items using the same y = -midi * PIANO_ROLL_PIXELS_PER_SEMITONE formula,
+  // so the pitch labels stay lined up with their notes no matter how far
+  // either view is scrolled vertically
+  PianoRollColumnScene& axis_scene;
+  // the voice legend, pinned to the right edge; left free to scroll
+  // vertically on its own so a long voice list stays reachable
+  PianoRollColumnScene& legend_scene;
 
   QBoxLayout& row_layout;
 

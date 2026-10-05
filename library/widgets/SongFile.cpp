@@ -219,10 +219,9 @@ auto open_file(WindowBody& window_body, const QString& filename) -> bool {
   auto& song_node = get_root(document);
 
   // parse into scratch lists and validate voice names/references before
-  // touching the current song, so a file that fails validation can't wipe
-  // out the switch table's contents (see open_file's history for the bug
-  // this avoids: clearing/repopulating first meant a rejected file still
-  // destroyed whatever was previously open, with no way to undo back to it)
+  // touching the current song, so a file that fails validation leaves
+  // whatever was already open intact (loading clears the undo stack, so
+  // there'd be no way to get it back)
   QList<Chord> new_chords;
   QList<PitchedVoice> new_pitched_voices;
   QList<UnpitchedVoice> new_unpitched_voices;

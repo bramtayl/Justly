@@ -10,11 +10,13 @@ struct UnpitchedVoice;
 
 static const auto MAX_VELOCITY = 127;
 
-struct Note : Row {
+struct Note {
   QString voice_name;
   Rational beats;
   Rational velocity_ratio;
   QString words;
+
+  virtual ~Note() = default;
 
   // nullopt means the note is unplayable as-is (e.g. a pitched note whose
   // frequency is out of MIDI range) and the caller should abort rather than

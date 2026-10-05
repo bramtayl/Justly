@@ -36,3 +36,10 @@ struct NoteLocation {
   int chord_number;
   int note_number;
 };
+
+template <NoteInterface SubNote>
+static void set_voice_name(QList<Chord>& chords, const NoteLocation& location,
+                           const QString& voice_name) {
+  get_note<SubNote>(chords[location.chord_number], location.note_number)
+      .voice_name = voice_name;
+}

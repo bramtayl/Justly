@@ -10,7 +10,6 @@
 #include "other/Song.hpp"
 #include "rows/PitchedNote.hpp"
 #include "rows/PitchedVoice.hpp"
-#include "rows/Row.hpp"
 #include "xml/XMLChildren.hpp"
 
 namespace {

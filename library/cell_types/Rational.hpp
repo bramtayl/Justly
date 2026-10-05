@@ -3,6 +3,7 @@
 #include <libxml/parser.h>
 
 #include <QtCore/QMetaType>
+#include <QtCore/QString>
 
 static const auto MAX_NUMERATOR = 999;
 static const auto MAX_DENOMINATOR = 999;
@@ -13,10 +14,10 @@ struct Rational {
 
   explicit Rational(int numerator_input = 1, int denominator_input = 1);
 
-  [[nodiscard]] auto operator*(const Rational& other_interval) const
+  [[nodiscard]] auto operator*(const Rational& other_rational) const
       -> Rational;
 
-  [[nodiscard]] auto operator/(const Rational& other_interval) const
+  [[nodiscard]] auto operator/(const Rational& other_rational) const
       -> Rational;
 
   [[nodiscard]] auto operator==(const Rational& other_rational) const -> bool;
@@ -27,6 +28,9 @@ Q_DECLARE_METATYPE(Rational);
 [[nodiscard]] auto rational_to_double(const Rational& rational) -> double;
 
 [[nodiscard]] auto rational_is_default(const Rational& rational) -> bool;
+
+// e.g. "3/2", leaving out a numerator or denominator of 1
+[[nodiscard]] auto rational_to_qstring(const Rational& rational) -> QString;
 
 void set_rational_from_xml(Rational& rational, xmlNode& node);
 

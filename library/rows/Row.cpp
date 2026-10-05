@@ -7,11 +7,6 @@ void maybe_add_qstring_to_xml(xmlNode& node, const char* const field_name,
   }
 }
 
-auto get_qstring_content(const xmlNode& node) -> QString {
-  const XMLString content{xmlNodeGetContent(&node)};
-  return {xml_string_to_c_string(content.internal_pointer)};
-}
-
 auto get_duration_in_milliseconds(const double beats_per_minute,
                                   const double beats_double) -> double {
   static const auto MILLISECONDS_PER_MINUTE = 60000;

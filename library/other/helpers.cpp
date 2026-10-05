@@ -57,6 +57,10 @@ auto get_content(const xmlNode& node) -> std::string {
   return xml_string_to_string(content.internal_pointer);
 }
 
+auto get_qstring_content(const xmlNode& node) -> QString {
+  return QString::fromStdString(get_content(node));
+}
+
 auto get_property(xmlNode& node, const char* name) -> std::string {
   // the schemas require every attribute read this way
   const auto maybe_property = maybe_get_property(node, name);

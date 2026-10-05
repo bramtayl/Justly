@@ -8,7 +8,7 @@
 
 class QWidget;
 
-struct Voice : Row {
+struct Voice {
   QString name;
   QString program;
   Rational velocity_ratio;

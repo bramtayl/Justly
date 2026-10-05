@@ -3,19 +3,14 @@
 #include "other/helpers.hpp"
 #include "xml/XMLChildren.hpp"
 
-struct Row {
-  virtual ~Row() = default;
-  virtual void from_xml(xmlNode& node) = 0;
-
-  [[nodiscard]] virtual auto get_data(int column_number) const -> QVariant = 0;
-
-  virtual void set_data(int column, const QVariant& new_value) = 0;
-  virtual void column_to_xml(xmlNode& node, int column_number) const = 0;
-};
-
 template <typename SubRow>
 concept RowInterface =
-    std::derived_from<SubRow, Row> && requires(int column_number) {
+    requires(SubRow row, const SubRow& const_row, xmlNode& node,
+             int column_number, const QVariant& new_value) {
+      row.from_xml(node);
+      { const_row.get_data(column_number) } -> std::same_as<QVariant>;
+      row.set_data(column_number, new_value);
+      const_row.column_to_xml(node, column_number);
       { SubRow::get_number_of_columns() } -> std::same_as<int>;
       { SubRow::get_column_name(column_number) } -> std::same_as<const char*>;
       { SubRow::get_clipboard_schema() } -> std::same_as<const char*>;
@@ -74,8 +69,6 @@ static void maybe_set_xml_rows(xmlNode& node, const char* const array_name,
 
 void maybe_add_qstring_to_xml(xmlNode& node, const char* field_name,
                               const QString& words);
-
-[[nodiscard]] auto get_qstring_content(const xmlNode& node) -> QString;
 
 [[nodiscard]] auto get_duration_in_milliseconds(double beats_per_minute,
                                                 double beats_double) -> double;

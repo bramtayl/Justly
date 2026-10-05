@@ -17,7 +17,7 @@ struct UnpitchedVoice : Voice {
 
   [[nodiscard]] auto get_preview_midi_number() const -> short;
 
-  void from_xml(xmlNode& node) override;
+  void from_xml(xmlNode& node);
 
   [[nodiscard]] static auto get_clipboard_schema() -> const char*;
 
@@ -31,11 +31,11 @@ struct UnpitchedVoice : Voice {
 
   [[nodiscard]] static auto is_column_editable(int /*column_number*/) -> bool;
 
-  [[nodiscard]] auto get_data(int column_number) const -> QVariant override;
+  [[nodiscard]] auto get_data(int column_number) const -> QVariant;
 
-  void set_data(int column_number, const QVariant& new_value) override;
+  void set_data(int column_number, const QVariant& new_value);
 
-  void column_to_xml(xmlNode& node, int column_number) const override;
+  void column_to_xml(xmlNode& node, int column_number) const;
 
   void to_xml(xmlNode& node) const;
 };

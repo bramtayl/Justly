@@ -93,6 +93,24 @@ template <typename SubType>
   return variant.value<SubType>();
 }
 
+template <typename SubNamed>
+concept NamedInterface = requires(SubNamed named) { named.name; };
+
+template <NamedInterface Named>
+auto get_named_index(const QList<Named>& nameds, const QString& name) -> auto {
+  return std::find_if(
+      nameds.cbegin(), nameds.cend(),
+      [&name](const Named& named) -> auto { return named.name == name; });
+}
+
+template <NamedInterface Named>
+[[nodiscard]] static auto get_names(const QList<Named>& nameds) {
+  QList<QString> names;
+  std::transform(nameds.cbegin(), nameds.cend(), std::back_inserter(names),
+                 [](const Named& named) -> auto { return named.name; });
+  return names;
+}
+
 [[nodiscard]] auto c_string_to_xml_string(const char* text) -> const xmlChar*;
 
 [[nodiscard]] auto xml_string_to_c_string(const xmlChar* text) -> const char*;
@@ -102,6 +120,8 @@ template <typename SubType>
 [[nodiscard]] auto get_xml_name(const xmlNode& node) -> std::string;
 
 [[nodiscard]] auto get_content(const xmlNode& node) -> std::string;
+
+[[nodiscard]] auto get_qstring_content(const xmlNode& node) -> QString;
 
 [[nodiscard]] auto get_property(xmlNode& node, const char* name) -> std::string;
 

@@ -8,8 +8,7 @@
 #include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QScrollBar>
 
-#include "piano_roll/PianoRollAxisScene.hpp"
-#include "piano_roll/PianoRollLegendScene.hpp"
+#include "piano_roll/PianoRollColumnScene.hpp"
 #include "piano_roll/PianoRollNotesScene.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchTable.hpp"
@@ -535,10 +534,10 @@ namespace {
 
 // position_playhead() recenters the view every tick while playing, fighting
 // any manual scroll (drag on the scrollbar, or wheel) the user does at the
-// same time -- the two writes to the same scroll position within one 33ms
-// tick used to leave rendering artifacts behind that read as extra, stuck
-// red cursor lines. Disabling manual scrolling during playback removes the
-// conflicting writer entirely.
+// same time -- two writes to the same scroll position within one 33ms tick
+// leave rendering artifacts behind that read as extra, stuck red cursor
+// lines. Disabling manual scrolling during playback removes the conflicting
+// writer entirely.
 void set_manual_scrolling_enabled(PianoRollWidget& widget, const bool enabled) {
   auto& notes_view = widget.piano_roll_scene.view;
   get_reference(notes_view.horizontalScrollBar()).setEnabled(enabled);
@@ -565,46 +564,40 @@ void apply_selection_highlight(PianoRollWidget& widget) {
   const auto is_chord_selection = row_type == RowType::chord_type;
   const auto is_note_selection = is_note_type(row_type);
 
+  const auto in_selected_rows = [first_row_number,
+                                 number_of_rows](const int row_number) -> bool {
+    return row_number >= first_row_number &&
+           row_number < first_row_number + number_of_rows;
+  };
   // a chord-row selection highlights every note in the selected chords, a
   // note-row selection highlights only same-kind notes at those row
   // numbers within their one parent chord. Voice-row selections (and no
   // selection at all, encoded as number_of_rows == 0) have no timeline
   // position and always highlight nothing.
-  QList<bool> is_selected(static_cast<int>(events.size()), false);
-  if (is_chord_selection || is_note_selection) {
-    const auto pitched_filter = row_type == RowType::pitched_note_type;
-    for (auto event_index = 0; event_index < events.size();
-         event_index = event_index + 1) {
-      const auto& event = events.at(event_index);
-      if (is_chord_selection) {
-        if (event.chord_number >= first_row_number &&
-            event.chord_number < first_row_number + number_of_rows) {
-          is_selected[event_index] = true;
-        }
-      } else if (event.chord_number == selection.chord_number &&
-                 event.is_pitched == pitched_filter &&
-                 event.note_number >= first_row_number &&
-                 event.note_number < first_row_number + number_of_rows) {
-        is_selected[event_index] = true;
-      }
+  const auto is_selected = [&](const PianoRollNoteEvent& event) -> bool {
+    if (is_chord_selection) {
+      return in_selected_rows(event.chord_number);
     }
-  }
+    return is_note_selection && event.chord_number == selection.chord_number &&
+           event.is_pitched == (row_type == RowType::pitched_note_type) &&
+           in_selected_rows(event.note_number);
+  };
 
-  // styles each note bar's pen based on is_selected (parallel to
-  // events/note_items), leaving highlighted_bounds as the union of the
-  // highlighted bars' scene bounds (a null rect if none are highlighted) so
-  // it can be scrolled into view below
+  // styles each note bar's pen (note_items is parallel to events), leaving
+  // highlighted_bounds as the union of the highlighted bars' scene bounds (a
+  // null rect if none are highlighted) so it can be scrolled into view below
   QRectF highlighted_bounds;
   auto& note_items = piano_roll_scene.note_items;
+  Q_ASSERT(note_items.size() == events.size());
   for (auto event_index = 0; event_index < note_items.size();
        event_index = event_index + 1) {
     auto& note_item = get_reference(note_items.at(event_index));
-    if (is_selected.at(event_index)) {
+    if (is_selected(events.at(event_index))) {
       // cosmetic so the highlight stroke stays a constant device-pixel
       // width instead of stretching with the notes view's horizontal zoom
-      // transform (see set_notes_view_time_zoom) -- an uncapped width at
-      // high zoom oversized the selected note's right edge enough to look
-      // like a stray, unlabeled extra tick past the note's true end time
+      // transform (see set_notes_view_time_zoom) -- otherwise at high zoom
+      // the selected note's right edge is oversized enough to look like a
+      // stray, unlabeled extra tick past the note's true end time
       auto highlight_pen = QPen(Qt::black, PIANO_ROLL_HIGHLIGHT_PEN_WIDTH);
       highlight_pen.setCosmetic(true);
       note_item.setPen(highlight_pen);
@@ -717,7 +710,7 @@ auto get_unpitched_lanes(const QList<PianoRollNoteEvent>& events)
 // Returns the horizontal axis' y, a fixed few semitones below the lowest
 // note (not snapped to any tick), so the lowest note's bar never reads as
 // glued to the axis line
-auto draw_pitch_axis(PianoRollAxisScene& axis_scene,
+auto draw_pitch_axis(PianoRollColumnScene& axis_scene,
                      const QList<PianoRollNoteEvent>& events) -> double {
   // how far below the lowest note the horizontal axis sits -- enough that
   // the lowest note's bar never reads as glued to (or nearly touching) the
@@ -807,9 +800,9 @@ void draw_note_bars(PianoRollNotesScene& notes_scene,
     // pitched bars center on their exact pitch line (one semitone = 6px);
     // unpitched lanes are much taller 20px bands, so their bars center
     // within the band instead. Using the band offset for pitched notes too
-    // used to push low notes' bars several pixels below their true pitch
-    // line -- enough to dip below the horizontal axis for the lowest notes
-    // in a song.
+    // would push low notes' bars several pixels below their true pitch line
+    // -- enough to dip below the horizontal axis for the lowest notes in a
+    // song.
     const auto bar_y =
         is_pitched
             ? (-frequency_to_midi_number(event.frequency) *
@@ -913,7 +906,7 @@ void rebuild_notes_scene(PianoRollWidget& widget) {
 // then sizes legend_scene to exactly fit its content (plus a margin), so
 // the fixed-width column stays as narrow as the longest voice name rather
 // than an arbitrary guessed width
-void draw_legend(PianoRollLegendScene& legend_scene, const Song& song) {
+void draw_legend(PianoRollColumnScene& legend_scene, const Song& song) {
   static const auto PIANO_ROLL_LEGEND_GAP = 10.0;
 
   auto& view = legend_scene.view;
@@ -1067,13 +1060,29 @@ void update_playhead_position(PianoRollWidget& widget) {
 PianoRollWidget::PianoRollWidget(const WindowBody& window_body_input)
     : window_body(window_body_input),
       piano_roll_scene(*(new PianoRollNotesScene(*this))),
-      axis_scene(*(new PianoRollAxisScene(*this))),
-      legend_scene(*(new PianoRollLegendScene(*this))),
+      axis_scene(*(new PianoRollColumnScene(*this))),
+      legend_scene(*(new PianoRollColumnScene(*this))),
       row_layout(*(new QHBoxLayout(this))) {
   // a bottom dock would otherwise default to a cramped sliver; this keeps
   // it usable out of the box while still letting the user drag it taller
   // (or shorter, down to this floor) via the splitter
   setMinimumHeight(PIANO_ROLL_MIN_HEIGHT);
+
+  auto& axis_view = axis_scene.view;
+  // scrolled only through piano_roll_scene's view (see below)
+  axis_view.setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  // must match PianoRollNotesScene's alignment (Qt::AlignLeft | AlignTop):
+  // when this scene's content is shorter than the viewport (e.g. a new
+  // song with one note), QGraphicsView falls back to alignment-based
+  // static positioning instead of scrolling, so a mismatched alignment
+  // here would decouple this view's ticks from the notes view's content
+  // even though both scenes place items at the same scene y-coordinate
+  axis_view.setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  // each QGraphicsView draws its own sunken frame by default, which shows
+  // up as a gray seam between this view and the main view even with the
+  // layout's spacing at 0 -- dropping both frames removes that seam while
+  // leaving the two views' contents flush against each other
+  axis_view.setFrameShape(QFrame::NoFrame);
 
   row_layout.setSpacing(0);
   row_layout.addWidget(&axis_scene.view);

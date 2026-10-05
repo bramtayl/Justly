@@ -37,9 +37,7 @@ struct RenameVoice : public QUndoCommand {
   void set_name(const QString& name) {
     auto& chords = voices_model.song.chords;
     for (const auto& note_location : note_locations) {
-      get_note<SubNote>(chords[note_location.chord_number],
-                        note_location.note_number)
-          .voice_name = name;
+      set_voice_name<SubNote>(chords, note_location, name);
     }
     voices_model.set_cell(row_number, SubVoice::get_name_column(), name);
   }

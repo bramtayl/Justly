@@ -3,27 +3,11 @@
 #include <QtCore/QList>
 #include <QtCore/QMetaType>
 
+#include "other/helpers.hpp"
+
 struct FluidSynth;
 
 [[nodiscard]] auto get_soundfont_id(FluidSynth& synth) -> int;
-
-template <typename SubNamed>
-concept NamedInterface = requires(SubNamed named) { named.name; };
-
-template <NamedInterface Named>
-auto get_named_index(const QList<Named>& nameds, const QString& name) -> auto {
-  return std::find_if(
-      nameds.cbegin(), nameds.cend(),
-      [&name](const Named& named) -> auto { return named.name == name; });
-}
-
-template <NamedInterface Named>
-[[nodiscard]] static auto get_names(const QList<Named>& nameds) {
-  QList<QString> names;
-  std::transform(nameds.cbegin(), nameds.cend(), std::back_inserter(names),
-                 [](const Named& named) -> auto { return named.name; });
-  return names;
-}
 
 struct Program {
   QString name;

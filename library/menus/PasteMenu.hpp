@@ -26,12 +26,13 @@ template <NoteInterface SubNote, VoiceInterface SubVoice>
   auto reassigned_count = 0;
   for (auto& note : notes) {
     auto& voice_name = note.voice_name;
-    if (voice_name.isEmpty()) {
-      voice_name = voices.at(0).name;
-    } else if (!has_voice(voices, voice_name)) {
-      voice_name = voices.at(0).name;
+    if (has_voice(voices, voice_name)) {
+      continue;
+    }
+    if (!voice_name.isEmpty()) {
       reassigned_count = reassigned_count + 1;
     }
+    voice_name = voices.at(0).name;
   }
   return reassigned_count;
 }

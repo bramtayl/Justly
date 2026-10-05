@@ -1,5 +1,7 @@
 #include "cell_types/Rational.hpp"
 
+#include <QtCore/QTextStream>
+
 #include "other/helpers.hpp"
 #include "xml/XMLChildren.hpp"
 
@@ -11,15 +13,15 @@ Rational::Rational(const int numerator_input, const int denominator_input) {
   denominator = denominator_input / common_denominator;
 }
 
-auto Rational::operator*(const Rational& other_interval) const -> Rational {
-  return Rational(numerator * other_interval.numerator,
-                  denominator * other_interval.denominator);
+auto Rational::operator*(const Rational& other_rational) const -> Rational {
+  return Rational(numerator * other_rational.numerator,
+                  denominator * other_rational.denominator);
 }
 
-auto Rational::operator/(const Rational& other_interval) const -> Rational {
-  Q_ASSERT(other_interval.numerator != 0);
-  return Rational(numerator * other_interval.denominator,
-                  denominator * other_interval.numerator);
+auto Rational::operator/(const Rational& other_rational) const -> Rational {
+  Q_ASSERT(other_rational.numerator != 0);
+  return Rational(numerator * other_rational.denominator,
+                  denominator * other_rational.numerator);
 }
 
 auto Rational::operator==(const Rational& other_rational) const -> bool {
@@ -35,6 +37,18 @@ auto rational_to_double(const Rational& rational) -> double {
 
 auto rational_is_default(const Rational& rational) -> bool {
   return rational.numerator == 1 && rational.denominator == 1;
+}
+
+auto rational_to_qstring(const Rational& rational) -> QString {
+  QString result;
+  QTextStream stream(&result);
+  if (rational.numerator != 1) {
+    stream << rational.numerator;
+  }
+  if (rational.denominator != 1) {
+    stream << "/" << rational.denominator;
+  }
+  return result;
 }
 
 void set_rational_from_xml(Rational& rational, xmlNode& node) {

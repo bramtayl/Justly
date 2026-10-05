@@ -14,7 +14,7 @@ static const auto PIANO_ROLL_MAX_TIME_ZOOM = 8.0;
 // the main scrollable graphics view: the note bars, the pitch/time axes,
 // and the playhead cursor + its playback animation all live here
 //
-// is-a QGraphicsScene (see PianoRollAxisScene's comment for why) so it can be
+// is-a QGraphicsScene (see PianoRollColumnScene's comment for why) so it can be
 // heap-allocated and parented to parent_widget directly
 struct PianoRollNotesScene : public QGraphicsScene {
   QGraphicsView& view;
@@ -46,7 +46,7 @@ struct PianoRollNotesScene : public QGraphicsScene {
 
   // scales only this view's x axis (time), never its y axis (pitch) -- so
   // the pitch axis stays visually fixed (and stays in lockstep with
-  // PianoRollAxisScene, which is never zoomed) while the time axis
+  // the axis_scene, which is never zoomed) while the time axis
   // expands/contracts
   double time_zoom_factor = 1.0;
 
