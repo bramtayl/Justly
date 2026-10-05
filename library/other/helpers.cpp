@@ -48,7 +48,10 @@ auto get_content(const xmlNode& node) -> std::string {
 }
 
 auto get_property(xmlNode& node, const char* name) -> std::string {
-  return xml_string_to_string(xmlGetProp(&node, c_string_to_xml_string(name)));
+  // the schemas require every attribute read this way
+  const auto maybe_property = maybe_get_property(node, name);
+  Q_ASSERT(maybe_property.has_value());
+  return maybe_property.value_or("");
 }
 
 auto maybe_get_property(xmlNode& node, const char* name)
