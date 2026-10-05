@@ -65,22 +65,14 @@ auto get_is_voice(const RowType row_type) -> bool {
 // and scroll to keep both in view. number_of_rows == 0 clears the highlight
 // and hides the cursor (used both for "nothing selected" and for voice-row
 // selections, which have no timeline position). Only called from
-// update_piano_roll_selection() below, which derives these arguments from
+// update_piano_roll_selection() below, which derives the selection from
 // the switch table's own current selection.
 void update_piano_roll_widget_selection(PianoRollWidget& widget,
-                                        const RowType row_type,
-                                        const int chord_number,
-                                        const int first_row_number,
-                                        const int number_of_rows) {
-  widget.selection_row_type = row_type;
-  widget.selection_chord_number = chord_number;
-  widget.selection_first_row_number = first_row_number;
-  widget.selection_number_of_rows = number_of_rows;
-  apply_selection_highlight(
-      widget.window_body.song, widget.piano_roll_scene,
-      widget.selection_row_type, widget.selection_chord_number,
-      widget.selection_first_row_number, widget.selection_number_of_rows,
-      widget.selecting_chord_from_playhead);
+                                        const TableSelection& selection) {
+  widget.selection = selection;
+  apply_selection_highlight(widget.window_body.song, widget.piano_roll_scene,
+                            widget.selection,
+                            widget.selecting_chord_from_playhead);
 }
 
 // mirrors the switch table's current selection onto the piano roll (which
@@ -89,16 +81,15 @@ void update_piano_roll_widget_selection(PianoRollWidget& widget,
 void update_piano_roll_selection(PianoRollWidget& piano_roll_widget,
                                  const WindowBody& window_body) {
   const auto& switch_table = window_body.switch_column.switch_table;
-  const auto row_type = switch_table.delegate.current_row_type;
-  const auto chord_number = get_parent_chord_number(switch_table);
-  if (get_selection_model(switch_table).selection().empty()) {
-    update_piano_roll_widget_selection(piano_roll_widget, row_type,
-                                       chord_number, -1, 0);
-    return;
+  TableSelection selection{
+      .row_type = switch_table.delegate.current_row_type,
+      .chord_number = get_parent_chord_number(switch_table)};
+  if (!get_selection_model(switch_table).selection().empty()) {
+    const auto& range = get_only_range(switch_table);
+    selection.first_row_number = range.top();
+    selection.number_of_rows = get_number_of_rows(range);
   }
-  const auto& range = get_only_range(switch_table);
-  update_piano_roll_widget_selection(piano_roll_widget, row_type, chord_number,
-                                     range.top(), get_number_of_rows(range));
+  update_piano_roll_widget_selection(piano_roll_widget, selection);
 }
 
 void update_actions(SongMenuBar& song_menu_bar, WindowBody& window_body,

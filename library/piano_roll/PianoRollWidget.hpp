@@ -2,7 +2,7 @@
 
 #include <QtWidgets/QWidget>
 
-#include "rows/RowType.hpp"
+#include "other/TableSelection.hpp"
 
 struct PianoRollAxisScene;
 struct PianoRollLegendScene;
@@ -65,31 +65,26 @@ void zoom_out(PianoRollNotesScene& piano_roll_scene);
 void set_manual_scrolling_enabled(PianoRollNotesScene& piano_roll_scene,
                                   PianoRollAxisScene& axis_scene, bool enabled);
 
-// reapplies the highlight/cursor implied by the current selection_* fields
-// against piano_roll_scene's current note_items -- called both from
+// reapplies the highlight/cursor implied by selection against
+// piano_roll_scene's current note_items -- called both from
 // update_piano_roll_widget_selection() and from the end of rebuild_scene(),
 // since rebuilding replaces every QGraphicsRectItem (and thus wipes any
 // highlight pen set on the old ones)
 void apply_selection_highlight(const Song& song,
                                PianoRollNotesScene& piano_roll_scene,
-                               RowType selection_row_type,
-                               int selection_chord_number,
-                               int selection_first_row_number,
-                               int selection_number_of_rows,
+                               const TableSelection& selection,
                                bool selecting_chord_from_playhead);
 
 void rebuild_scene(QWidget& widget, const WindowBody& window_body,
                    PianoRollNotesScene& piano_roll_scene,
                    PianoRollAxisScene& axis_scene,
                    PianoRollLegendScene& legend_scene, QBoxLayout& row_layout,
-                   RowType selection_row_type, int selection_chord_number,
-                   int selection_first_row_number, int selection_number_of_rows,
+                   const TableSelection& selection,
                    bool selecting_chord_from_playhead);
 
 void stop_playhead(PianoRollNotesScene& piano_roll_scene,
                    PianoRollAxisScene& axis_scene, const Song& song,
-                   RowType selection_row_type, int selection_chord_number,
-                   int selection_first_row_number, int selection_number_of_rows,
+                   const TableSelection& selection,
                    bool selecting_chord_from_playhead);
 
 void update_playhead_position(PianoRollNotesScene& piano_roll_scene,
@@ -127,12 +122,8 @@ struct PianoRollWidget : public QWidget {
   // the switch table's current selection, mirrored here by ReplaceTable.cpp
   // (via update_piano_roll_widget_selection()) every time it changes, so
   // rebuild_scene() can reapply the same highlight/cursor after redrawing a
-  // fresh set of items. number_of_rows == 0 means nothing is selected (the
-  // default at startup)
-  RowType selection_row_type = RowType::chord_type;
-  int selection_chord_number = -1;
-  int selection_first_row_number = -1;
-  int selection_number_of_rows = 0;
+  // fresh set of items. Starts out empty
+  TableSelection selection;
 
   // the chord under the cursor when the current playhead drag started (-1
   // when not dragging), so MouseMove can select the whole range of chords

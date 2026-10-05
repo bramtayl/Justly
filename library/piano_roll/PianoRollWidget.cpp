@@ -511,43 +511,39 @@ void set_manual_scrolling_enabled(PianoRollNotesScene& piano_roll_scene,
 
 void apply_selection_highlight(const Song& song,
                                PianoRollNotesScene& piano_roll_scene,
-                               const RowType selection_row_type,
-                               const int selection_chord_number,
-                               const int selection_first_row_number,
-                               const int selection_number_of_rows,
+                               const TableSelection& selection,
                                const bool selecting_chord_from_playhead) {
   static const auto PIANO_ROLL_HIGHLIGHT_PEN_WIDTH = 1.5;
 
   const auto& events = piano_roll_scene.events;
 
-  const auto is_chord_selection = selection_row_type == RowType::chord_type;
-  const auto is_note_selection =
-      selection_row_type == RowType::pitched_note_type ||
-      selection_row_type == RowType::unpitched_note_type;
+  const auto row_type = selection.row_type;
+  const auto first_row_number = selection.first_row_number;
+  const auto number_of_rows = selection.number_of_rows;
+  const auto is_chord_selection = row_type == RowType::chord_type;
+  const auto is_note_selection = row_type == RowType::pitched_note_type ||
+                                 row_type == RowType::unpitched_note_type;
 
   // a chord-row selection highlights every note in the selected chords, a
   // note-row selection highlights only same-kind notes at those row
   // numbers within their one parent chord. Voice-row selections (and no
-  // selection at all, encoded as selection_number_of_rows == 0) have no
-  // timeline position and always highlight nothing.
+  // selection at all, encoded as number_of_rows == 0) have no timeline
+  // position and always highlight nothing.
   QList<bool> is_selected(static_cast<int>(events.size()), false);
   if (is_chord_selection || is_note_selection) {
-    const auto pitched_filter =
-        selection_row_type == RowType::pitched_note_type;
+    const auto pitched_filter = row_type == RowType::pitched_note_type;
     for (auto event_index = 0; event_index < events.size();
          event_index = event_index + 1) {
       const auto& event = events.at(event_index);
       if (is_chord_selection) {
-        if (event.chord_number >= selection_first_row_number &&
-            event.chord_number <
-                selection_first_row_number + selection_number_of_rows) {
+        if (event.chord_number >= first_row_number &&
+            event.chord_number < first_row_number + number_of_rows) {
           is_selected[event_index] = true;
         }
-      } else if (event.chord_number == selection_chord_number &&
+      } else if (event.chord_number == selection.chord_number &&
                  event.is_pitched == pitched_filter &&
-                 event.note_number >= selection_first_row_number &&
-                 event.note_number <
-                     selection_first_row_number + selection_number_of_rows) {
+                 event.note_number >= first_row_number &&
+                 event.note_number < first_row_number + number_of_rows) {
         is_selected[event_index] = true;
       }
     }
@@ -579,7 +575,7 @@ void apply_selection_highlight(const Song& song,
   }
 
   const auto has_selection =
-      (is_chord_selection || is_note_selection) && selection_number_of_rows > 0;
+      (is_chord_selection || is_note_selection) && number_of_rows > 0;
 
   if (!has_selection) {
     if (!piano_roll_scene.playhead_active) {
@@ -591,13 +587,13 @@ void apply_selection_highlight(const Song& song,
 
   const auto [range_start_ms, range_end_ms] = get_piano_roll_time_bounds(
       song,
-      is_chord_selection ? selection_first_row_number : selection_chord_number,
-      is_chord_selection ? selection_number_of_rows : 1,
-      is_chord_selection ? 0 : selection_first_row_number,
-      is_chord_selection ? -1 : selection_number_of_rows,
-      is_chord_selection ? std::nullopt
-                         : std::make_optional(selection_row_type ==
-                                              RowType::pitched_note_type));
+      is_chord_selection ? first_row_number : selection.chord_number,
+      is_chord_selection ? number_of_rows : 1,
+      is_chord_selection ? 0 : first_row_number,
+      is_chord_selection ? -1 : number_of_rows,
+      is_chord_selection
+          ? std::nullopt
+          : std::make_optional(row_type == RowType::pitched_note_type));
 
   // a shaded box over the selected range's own timeline extent -- driven
   // straight off the committed selection (rather than raw drag position),
@@ -630,10 +626,7 @@ void rebuild_scene(QWidget& widget, const WindowBody& window_body,
                    PianoRollNotesScene& piano_roll_scene,
                    PianoRollAxisScene& axis_scene,
                    PianoRollLegendScene& legend_scene, QBoxLayout& row_layout,
-                   const RowType selection_row_type,
-                   const int selection_chord_number,
-                   const int selection_first_row_number,
-                   const int selection_number_of_rows,
+                   const TableSelection& selection,
                    const bool selecting_chord_from_playhead) {
   static const auto PIANO_ROLL_PIXELS_PER_SEMITONE = 6;
   // how far below the lowest note the horizontal axis sits -- enough that
@@ -958,27 +951,20 @@ void rebuild_scene(QWidget& widget, const WindowBody& window_body,
       std::max(static_cast<double>(PIANO_ROLL_MIN_HEIGHT),
                std::ceil(vertical_rect.height() + chrome_height))));
 
-  apply_selection_highlight(song, piano_roll_scene, selection_row_type,
-                            selection_chord_number, selection_first_row_number,
-                            selection_number_of_rows,
+  apply_selection_highlight(song, piano_roll_scene, selection,
                             selecting_chord_from_playhead);
 }
 
 void stop_playhead(PianoRollNotesScene& piano_roll_scene,
                    PianoRollAxisScene& axis_scene, const Song& song,
-                   const RowType selection_row_type,
-                   const int selection_chord_number,
-                   const int selection_first_row_number,
-                   const int selection_number_of_rows,
+                   const TableSelection& selection,
                    const bool selecting_chord_from_playhead) {
   piano_roll_scene.playhead_timer.stop();
   piano_roll_scene.playhead_active = false;
   piano_roll_scene.playhead_transition = PlayheadTransition::none;
 
   set_manual_scrolling_enabled(piano_roll_scene, axis_scene, true);
-  apply_selection_highlight(song, piano_roll_scene, selection_row_type,
-                            selection_chord_number, selection_first_row_number,
-                            selection_number_of_rows,
+  apply_selection_highlight(song, piano_roll_scene, selection,
                             selecting_chord_from_playhead);
 }
 
@@ -1053,9 +1039,7 @@ PianoRollWidget::PianoRollWidget(const WindowBody& window_body_input)
   get_reference(piano_roll_scene.view.viewport()).installEventFilter(this);
 
   rebuild_scene(*this, window_body, piano_roll_scene, axis_scene, legend_scene,
-                row_layout, selection_row_type, selection_chord_number,
-                selection_first_row_number, selection_number_of_rows,
-                selecting_chord_from_playhead);
+                row_layout, selection, selecting_chord_from_playhead);
 }
 
 auto PianoRollWidget::eventFilter(QObject* watched_pointer,
@@ -1098,9 +1082,7 @@ auto PianoRollWidget::eventFilter(QObject* watched_pointer,
       // selection-driven position in drag_playhead_to()
       if (piano_roll_scene.playhead_active) {
         stop_playhead(piano_roll_scene, axis_scene, window_body.song,
-                      selection_row_type, selection_chord_number,
-                      selection_first_row_number, selection_number_of_rows,
-                      selecting_chord_from_playhead);
+                      selection, selecting_chord_from_playhead);
       }
       piano_roll_scene.playhead_dragging = true;
       drag_start_chord_number =

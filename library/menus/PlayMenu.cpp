@@ -19,7 +19,7 @@ void modulate_before_chord(const Song& song, PlayState& play_state,
 
 }  // namespace
 
-auto get_play_selection(const WindowBody& window_body) -> PlaySelection {
+auto get_play_selection(const WindowBody& window_body) -> TableSelection {
   const auto& switch_table = window_body.switch_column.switch_table;
   const auto& range = get_only_range(switch_table);
   return {.row_type = switch_table.delegate.current_row_type,

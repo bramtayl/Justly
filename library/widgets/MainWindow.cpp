@@ -58,9 +58,8 @@ void connect_navigate_chord_action(QAction& action, QObject& context,
 void rebuild_piano_roll_scene(PianoRollWidget& widget) {
   rebuild_scene(
       widget, widget.window_body, widget.piano_roll_scene, widget.axis_scene,
-      widget.legend_scene, widget.row_layout, widget.selection_row_type,
-      widget.selection_chord_number, widget.selection_first_row_number,
-      widget.selection_number_of_rows, widget.selecting_chord_from_playhead);
+      widget.legend_scene, widget.row_layout, widget.selection,
+      widget.selecting_chord_from_playhead);
 }
 
 }  // namespace
@@ -98,11 +97,9 @@ void zoom_out_piano_roll(PianoRollWidget& widget) {
 }
 
 void stop_piano_roll_playhead(PianoRollWidget& widget) {
-  stop_playhead(
-      widget.piano_roll_scene, widget.axis_scene, widget.window_body.song,
-      widget.selection_row_type, widget.selection_chord_number,
-      widget.selection_first_row_number, widget.selection_number_of_rows,
-      widget.selecting_chord_from_playhead);
+  stop_playhead(widget.piano_roll_scene, widget.axis_scene,
+                widget.window_body.song, widget.selection,
+                widget.selecting_chord_from_playhead);
 }
 
 void start_piano_roll_playhead(PianoRollWidget& widget,
