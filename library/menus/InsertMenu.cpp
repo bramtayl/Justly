@@ -14,12 +14,12 @@ void add_insert_row(WindowBody& window_body, const int row_number,
       undo_command = make_insert_row(switch_table.chords_model, row_number);
       break;
     case RowType::pitched_note_type:
-      undo_command = make_insert_note<PitchedVoice>(
-          switch_table.pitched_notes_model, chords, row_number);
+      undo_command = make_insert_note(switch_table.pitched_notes_model, chords,
+                                      row_number);
       break;
     case RowType::unpitched_note_type:
-      undo_command = make_insert_note<UnpitchedVoice>(
-          switch_table.unpitched_notes_model, chords, row_number);
+      undo_command = make_insert_note(switch_table.unpitched_notes_model,
+                                      chords, row_number);
       break;
     case RowType::pitched_voice_type:
       undo_command =

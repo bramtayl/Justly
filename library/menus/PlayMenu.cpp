@@ -155,7 +155,7 @@ PlayMenu::PlayMenu(WindowBody& window_body)
           case RowType::pitched_voice_type:
           case RowType::unpitched_voice_type:
             // play_to_end_action is disabled for voice rows; see
-            // ReplaceTable.hpp's update_actions/get_is_voice
+            // ReplaceTable.cpp's update_actions/get_is_voice
             Q_UNREACHABLE();
         }
       });

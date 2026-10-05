@@ -19,7 +19,7 @@ template <RowInterface SubRow>
       SubRow::get_number_of_columns() - 1, false);
 }
 
-template <VoiceInterface SubVoice, NoteInterface SubNote>
+template <NoteInterface SubNote>
 [[nodiscard]] static auto make_insert_note(RowsModel<SubNote>& notes_model,
                                            const QList<Chord>& chords,
                                            const int row_number)

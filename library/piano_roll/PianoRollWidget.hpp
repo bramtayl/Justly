@@ -14,13 +14,9 @@ struct SwitchTable;
 
 static const auto PIANO_ROLL_TIME_ZOOM_STEP = 1.25;
 
-// the functions below act on PianoRollNotesScene/PianoRollLegendScene but
-// live here rather than in those structs' own headers, because every
-// caller of theirs is in this file (PianoRollWidget's own methods below) --
-// keeping them in PianoRollNotesScene.hpp/PianoRollLegendScene.hpp would
-// leave them looking unused whenever one of those headers is compiled on
-// its own (e.g. by clangd, which has no way to see this file's calls when
-// it treats a header opened directly as its own translation unit)
+// the functions below act on the piano roll's scenes, but are declared here
+// rather than in those scenes' own headers since they're all defined in
+// PianoRollWidget.cpp
 
 // converts an absolute song time (ms) to this scene's x coordinate --
 // identity-scaled by time_axis_baseline_ms, which is 0 outside notes mode
@@ -39,7 +35,7 @@ void set_notes_view_time_zoom(PianoRollNotesScene& notes_scene,
 
 // follow_view lets a caller move the playhead line without recentering the
 // view on it -- used when playback has already stopped (see
-// PianoRollWidget::apply_selection_highlight()), where forcibly
+// apply_selection_highlight()), where forcibly
 // recentering would yank the view away from wherever the user had it
 // scrolled
 void position_playhead(PianoRollNotesScene& notes_scene, double time_ms,
@@ -128,7 +124,7 @@ struct PianoRollWidget : public QWidget {
   // drag/playback actually put it
   bool selecting_chord_from_playhead = false;
 
-  // the switch table's current selection, mirrored here by ReplaceTable.hpp
+  // the switch table's current selection, mirrored here by ReplaceTable.cpp
   // (via update_piano_roll_widget_selection()) every time it changes, so
   // rebuild_scene() can reapply the same highlight/cursor after redrawing a
   // fresh set of items. number_of_rows == 0 means nothing is selected (the

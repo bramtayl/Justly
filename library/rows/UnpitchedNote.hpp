@@ -20,8 +20,6 @@ struct UnpitchedNote : Note {
 
   [[nodiscard]] static auto is_column_editable(int /*column_number*/) -> bool;
 
-  [[nodiscard]] static auto is_pitched() -> bool;
-
   [[nodiscard]] auto get_closest_midi(
       QWidget& /*parent*/, Player& /*player*/,
       const QList<UnpitchedVoice>& unpitched_voices, int /*channel_number*/,

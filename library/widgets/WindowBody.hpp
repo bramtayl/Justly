@@ -22,8 +22,7 @@ struct WindowBody : public QWidget {
   QString current_folder;
 
   // debounced autosave for crash recovery -- restarted on every undo_stack
-  // change and wired up by connect_recovery_timer once save_as_file and
-  // friends are defined later in this header (see comment there)
+  // change; wired up by connect_recovery_timer
   QTimer& recovery_timer;
 
   SwitchColumn& switch_column;
@@ -195,11 +194,6 @@ void write_recovery_file(WindowBody& window_body);
 
 void save_as_file(WindowBody& window_body, const QString& filename);
 
-// some musicxml fields (e.g. fifths, octave-change, repeat times) are
-// unbounded xs:integer with no schema-enforced range, so a malformed or
-// hostile file can contain a magnitude that overflows int; used by
-// import_musicxml to reject such a file with a warning instead of letting
-// string_to_int assert
 template <RowInterface SubRow>
 static void clear_rows(RowsModel<SubRow>& rows_model) {
   const auto number_of_rows = rows_model.rowCount(QModelIndex());

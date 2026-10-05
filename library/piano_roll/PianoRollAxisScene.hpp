@@ -6,7 +6,7 @@
 
 // a second, fixed-width view pinned to the left edge, showing just the pitch
 // axis' ticks/labels (drawn into this scene by
-// PianoRollWidget::rebuild_scene()); its vertical scroll is kept in lockstep
+// rebuild_scene()); its vertical scroll is kept in lockstep
 // with the main PianoRollNotesScene's (wired up by PianoRollWidget), and both
 // scenes place items using the same y = -midi * PIANO_ROLL_PIXELS_PER_SEMITONE
 // formula, so the pitch labels stay lined up with their notes no matter how

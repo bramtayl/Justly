@@ -49,10 +49,10 @@ FileMenu::FileMenu(WindowBody& window_body)
                                    !window_body.current_file.isEmpty());
       });
 
-  // open_action/import_action are wired externally in MainWindow.hpp,
-  // which is the first header up the include chain with access to both
-  // SongMenuBar and this widget's PianoRollWidget, needed to refresh the
-  // view menu and piano roll after replacing the song wholesale
+  // open_action/import_action are wired in MainWindow's constructor instead,
+  // since refreshing the view menu and piano roll after replacing the song
+  // wholesale needs SongMenuBar and PianoRollWidget, which this menu can't
+  // reach
 
   QObject::connect(&save_action, &QAction::triggered, this,
                    [&window_body]() -> auto {

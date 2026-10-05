@@ -91,8 +91,6 @@ auto PitchedNote::is_column_editable(int /*column_number*/) -> bool {
 
 auto PitchedNote::get_pitched() -> const char* { return "pitched"; }
 
-auto PitchedNote::is_pitched() -> bool { return true; }
-
 auto PitchedNote::get_closest_midi(
     QWidget& parent, Player& player,
     const QList<UnpitchedVoice>& /*unpitched_voices*/, const int channel_number,

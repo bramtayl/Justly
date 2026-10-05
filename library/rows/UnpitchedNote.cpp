@@ -60,13 +60,12 @@ auto UnpitchedNote::is_column_editable(int /*column_number*/) -> bool {
   return true;
 }
 
-auto UnpitchedNote::is_pitched() -> bool { return false; }
-
 auto UnpitchedNote::get_closest_midi(
     QWidget& /*parent*/, Player& /*player*/,
     const QList<UnpitchedVoice>& unpitched_voices, const int /*channel_number*/,
     int /*chord_number*/, int /*note_number*/) const -> std::optional<short> {
-  return static_cast<short>(get_voice(unpitched_voices, voice_name).midi_number);
+  return static_cast<short>(
+      get_voice(unpitched_voices, voice_name).midi_number);
 }
 
 auto UnpitchedNote::get_program(

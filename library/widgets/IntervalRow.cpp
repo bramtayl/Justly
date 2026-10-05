@@ -97,7 +97,7 @@ void update_interval(QUndoStack& undo_stack, SwitchTable& switch_table,
     case RowType::pitched_voice_type:
     case RowType::unpitched_voice_type:
       // interval rows are disabled for these row types; see
-      // ReplaceTable.hpp's update_actions/set_interval_rows_are_enabled
+      // ReplaceTable.cpp's update_actions/set_interval_rows_are_enabled
       Q_UNREACHABLE();
   }
   undo_stack.push(undo_command);

@@ -19,7 +19,7 @@ PianoRollNotesScene::PianoRollNotesScene(QWidget& parent_widget)
   static const auto PIANO_ROLL_SELECTION_RECT_Z_VALUE = -1.0;
 
   // keeps the scene point under the cursor fixed on screen while
-  // ctrl+wheel zooms the time axis (see PianoRollWidget::zoom_in()/
+  // ctrl+wheel zooms the time axis (see zoom_in()/
   // zoom_out()), rather than always zooming around the view's top-left
   // corner
   view.setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
@@ -28,7 +28,7 @@ PianoRollNotesScene::PianoRollNotesScene(QWidget& parent_widget)
   // layout's spacing at 0 -- dropping the frame removes that seam
   view.setFrameShape(QFrame::NoFrame);
   // QGraphicsView's default alignment (Qt::AlignCenter) centers the
-  // view.setSceneRect() bounds (set in PianoRollWidget::rebuild_scene(),
+  // view.setSceneRect() bounds (set in rebuild_scene(),
   // starting at PIANO_ROLL_AXIS_X) within the viewport whenever that
   // content is narrower than the viewport itself -- e.g. a song with only
   // one short note. That padding isn't clipped, so it reveals whatever
