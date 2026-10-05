@@ -41,3 +41,19 @@ struct Chord : public Row {
 void modulate(PlayState& play_state, const Chord& chord);
 
 void move_time(PlayState& play_state, const Chord& chord);
+
+// steps play_state through chords [first_chord_number, end_chord_number),
+// calling visit(chord_number, chord) once each chord has modulated
+// play_state, before its time moves on
+template <typename Visit>
+static void walk_chords(PlayState& play_state, const QList<Chord>& chords,
+                        const int first_chord_number,
+                        const int end_chord_number, Visit visit) {
+  for (auto chord_number = first_chord_number; chord_number < end_chord_number;
+       chord_number = chord_number + 1) {
+    const auto& chord = chords.at(chord_number);
+    modulate(play_state, chord);
+    visit(chord_number, chord);
+    move_time(play_state, chord);
+  }
+}

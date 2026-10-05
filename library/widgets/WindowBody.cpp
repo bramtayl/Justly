@@ -42,9 +42,8 @@ void initialize_play(WindowBody& window_body) {
   auto& player = window_body.player;
   const auto& song = window_body.song;
 
-  initialize_playstate(
-      song, player.play_state,
-      fluid_sequencer_get_tick(player.sequencer.internal_pointer));
+  player.play_state = initialize_playstate(
+      song, fluid_sequencer_get_tick(player.sequencer.internal_pointer));
 
   auto& channel_schedules = player.channel_schedules;
   Q_ASSERT(channel_schedules.size() == NUMBER_OF_MIDI_CHANNELS);

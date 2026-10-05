@@ -11,27 +11,38 @@ auto get_octave_degree(int midi_interval) -> std::tuple<int, int> {
                          midi_interval - (octave * HALFSTEPS_PER_OCTAVE));
 }
 
-void initialize_playstate(const Song& song, PlayState& play_state,
-                          double current_time) {
-  play_state.current_key = song.starting_key;
-  play_state.current_velocity = song.starting_velocity;
-  play_state.current_tempo = song.starting_tempo;
-  play_state.current_time = current_time;
+auto initialize_playstate(const Song& song, const double current_time)
+    -> PlayState {
+  return {.current_time = current_time,
+          .current_key = song.starting_key,
+          .current_velocity = song.starting_velocity,
+          .current_tempo = song.starting_tempo};
+}
+
+auto get_play_state_before_chord(const Song& song, const int chord_number)
+    -> PlayState {
+  auto play_state = initialize_playstate(song);
+  walk_chords(play_state, song.chords, 0, chord_number,
+              [](int /*chord_number*/, const Chord& /*chord*/) -> void {});
+  return play_state;
 }
 
 auto get_play_state_at_chord(const Song& song, const int chord_number)
     -> PlayState {
-  PlayState play_state;
-  initialize_playstate(song, play_state, 0);
-  const auto& chords = song.chords;
-  for (auto previous_chord_number = 0; previous_chord_number < chord_number;
-       previous_chord_number++) {
-    const auto& chord = chords.at(previous_chord_number);
-    modulate(play_state, chord);
-    move_time(play_state, chord);
-  }
-  modulate(play_state, chords.at(chord_number));
+  auto play_state = get_play_state_before_chord(song, chord_number);
+  modulate(play_state, song.chords.at(chord_number));
   return play_state;
+}
+
+auto get_chord_start_times(const Song& song) -> QList<double> {
+  QList<double> chord_start_times;
+  auto play_state = initialize_playstate(song);
+  walk_chords(play_state, song.chords, 0, static_cast<int>(song.chords.size()),
+              [&chord_start_times, &play_state](
+                  int /*chord_number*/, const Chord& /*chord*/) -> void {
+                chord_start_times.push_back(play_state.current_time);
+              });
+  return chord_start_times;
 }
 
 auto get_note_name(const int closest_midi) -> QString {

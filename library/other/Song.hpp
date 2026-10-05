@@ -36,11 +36,21 @@ template <NoteInterface SubNote>
 
 [[nodiscard]] auto get_octave_degree(int midi_interval) -> std::tuple<int, int>;
 
-void initialize_playstate(const Song& song, PlayState& play_state,
-                          double current_time);
+[[nodiscard]] auto initialize_playstate(const Song& song,
+                                        double current_time = 0) -> PlayState;
+
+// the play state once every chord before chord_number has played, i.e. at
+// chord_number's start time, but before chord_number modulates it
+[[nodiscard]] auto get_play_state_before_chord(const Song& song,
+                                               int chord_number) -> PlayState;
 
 [[nodiscard]] auto get_play_state_at_chord(const Song& song, int chord_number)
     -> PlayState;
+
+// each chord's start time, in chord order -- chords are laid out back-to-
+// back with no gaps, so a chord's own end time is simply the next chord's
+// start
+[[nodiscard]] auto get_chord_start_times(const Song& song) -> QList<double>;
 
 [[nodiscard]] auto get_note_name(int closest_midi) -> QString;
 

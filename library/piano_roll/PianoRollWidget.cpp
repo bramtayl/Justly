@@ -325,14 +325,7 @@ auto get_piano_roll_time_bounds(const Song& song, const int first_chord_number,
   // walks the chords directly rather than building every note's
   // PianoRollNoteEvent, since only the selected chords' note end times matter
   const auto& chords = song.chords;
-  PlayState play_state;
-  initialize_playstate(song, play_state, 0);
-  for (auto chord_number = 0; chord_number < first_chord_number;
-       chord_number = chord_number + 1) {
-    const auto& chord = chords.at(chord_number);
-    modulate(play_state, chord);
-    move_time(play_state, chord);
-  }
+  auto play_state = get_play_state_before_chord(song, first_chord_number);
   const auto baseline_ms = play_state.current_time;
 
   const auto single_chord_note_range = number_of_notes != -1;
@@ -346,20 +339,17 @@ auto get_piano_roll_time_bounds(const Song& song, const int first_chord_number,
   auto end_ms = baseline_ms;
   const auto end_chord_number = std::min(first_chord_number + number_of_chords,
                                          static_cast<int>(chords.size()));
-  for (auto chord_number = first_chord_number; chord_number < end_chord_number;
-       chord_number = chord_number + 1) {
-    const auto& chord = chords.at(chord_number);
-    modulate(play_state, chord);
-    if (include_pitched) {
-      end_ms = get_notes_end_ms(play_state, chord.pitched_notes, note_first,
-                                note_count, end_ms);
-    }
-    if (include_unpitched) {
-      end_ms = get_notes_end_ms(play_state, chord.unpitched_notes, note_first,
-                                note_count, end_ms);
-    }
-    move_time(play_state, chord);
-  }
+  walk_chords(play_state, chords, first_chord_number, end_chord_number,
+              [&](int /*chord_number*/, const Chord& chord) -> void {
+                if (include_pitched) {
+                  end_ms = get_notes_end_ms(play_state, chord.pitched_notes,
+                                            note_first, note_count, end_ms);
+                }
+                if (include_unpitched) {
+                  end_ms = get_notes_end_ms(play_state, chord.unpitched_notes,
+                                            note_first, note_count, end_ms);
+                }
+              });
   return {baseline_ms, end_ms};
 }
 
@@ -676,21 +666,6 @@ void set_piano_roll_selection(PianoRollWidget& widget,
 }
 
 namespace {
-
-// each chord's start time, in chord order -- chords are laid out back-to-
-// back with no gaps, so a chord's own end time is simply the next chord's
-// start
-auto get_chord_start_times(const Song& song) -> QList<double> {
-  QList<double> chord_start_times;
-  PlayState play_state;
-  initialize_playstate(song, play_state, 0);
-  for (const auto& chord : song.chords) {
-    modulate(play_state, chord);
-    chord_start_times.push_back(play_state.current_time);
-    move_time(play_state, chord);
-  }
-  return chord_start_times;
-}
 
 // in notes mode the switch table only shows one chord's notes at a time, so
 // the piano roll mirrors that rather than keep drawing every other chord's
