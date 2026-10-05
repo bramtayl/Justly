@@ -340,9 +340,7 @@ void Tester::test_piano_roll_notes_mode_shows_only_chord_notes() {
   QCOMPARE(piano_roll_widget.piano_roll_scene.events.size(), 2);
 
   // restore the fixture used by the other tests
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 }
 
 void Tester::test_piano_roll_notes_mode_axis_starts_at_chord_start() {
@@ -980,9 +978,7 @@ void Tester::test_piano_roll_click_empty_song() {
       piano_roll_widget, QEvent::MouseButtonRelease, QPointF(), Qt::NoButton));
 
   // restore the shared fixture
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 }
 
 // a note too short to see at the current zoom still gets a visible bar
@@ -1001,7 +997,5 @@ void Tester::test_piano_roll_minimum_bar_width() {
   QCOMPARE(get_reference(note_items.at(0)).rect().width(), 1.0);
 
   // restore the shared fixture
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 }

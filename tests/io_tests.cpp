@@ -251,9 +251,7 @@ void Tester::test_save_escapes_text() {
   QCOMPARE(note.words, QString("a & b < c"));
 
   // restore the shared fixture
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 }
 
 void Tester::test_import_via_dialog() {
@@ -266,9 +264,7 @@ void Tester::test_import_via_dialog() {
   QCOMPARE(get_model(switch_table).rowCount(QModelIndex()), PERCUSSION_ROWS);
 
   // restore the shared fixture
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 }
 
 void Tester::test_open_asks_to_discard_changes_data() {

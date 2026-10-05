@@ -54,27 +54,22 @@ void connect_navigate_chord_action(QAction& action, QObject& context,
 
 }  // namespace
 
-void song_reloaded(SongMenuBar& song_menu_bar, WindowBody& window_body,
-                   PianoRollWidget& piano_roll_widget) {
-  replace_table(song_menu_bar, window_body, RowType::chord_type, -1,
-                piano_roll_widget);
-  rebuild_piano_roll_scene(piano_roll_widget);
+void song_reloaded(MainWindow& main_window) {
+  replace_table(main_window.song_menu_bar, main_window.window_body,
+                RowType::chord_type, -1, main_window.piano_roll_widget);
+  rebuild_piano_roll_scene(main_window.piano_roll_widget);
 }
 
-void open_file_and_reload(SongMenuBar& song_menu_bar, WindowBody& window_body,
-                          PianoRollWidget& piano_roll_widget,
-                          const QString& filename) {
-  if (open_file(window_body, filename)) {
-    song_reloaded(song_menu_bar, window_body, piano_roll_widget);
+void open_file_and_reload(MainWindow& main_window, const QString& filename) {
+  if (open_file(main_window.window_body, filename)) {
+    song_reloaded(main_window);
   }
 }
 
-void import_musicxml_and_reload(SongMenuBar& song_menu_bar,
-                                WindowBody& window_body,
-                                PianoRollWidget& piano_roll_widget,
+void import_musicxml_and_reload(MainWindow& main_window,
                                 const QString& filename) {
-  if (import_musicxml(window_body, filename)) {
-    song_reloaded(song_menu_bar, window_body, piano_roll_widget);
+  if (import_musicxml(main_window.window_body, filename)) {
+    song_reloaded(main_window);
   }
 }
 
@@ -169,25 +164,22 @@ MainWindow::MainWindow()
                          window_body, "Open — Justly", "XML file (*.xml)",
                          QFileDialog::AcceptOpen, ".xml");
                      if (maybe_file.has_value()) {
-                       open_file_and_reload(song_menu_bar, window_body,
-                                            piano_roll_widget, *maybe_file);
+                       open_file_and_reload(*this, *maybe_file);
                      }
                    });
-  QObject::connect(
-      &song_menu_bar.file_menu.import_action, &QAction::triggered, this,
-      [this]() -> auto {
-        if (!can_discard_changes(window_body)) {
-          return;
-        }
-        const auto maybe_file =
-            maybe_choose_file(window_body, "Import MusicXML — Justly",
-                              "MusicXML file (*.musicxml *.mxl)",
-                              QFileDialog::AcceptOpen, ".musicxml");
-        if (maybe_file.has_value()) {
-          import_musicxml_and_reload(song_menu_bar, window_body,
-                                     piano_roll_widget, *maybe_file);
-        }
-      });
+  QObject::connect(&song_menu_bar.file_menu.import_action, &QAction::triggered,
+                   this, [this]() -> auto {
+                     if (!can_discard_changes(window_body)) {
+                       return;
+                     }
+                     const auto maybe_file = maybe_choose_file(
+                         window_body, "Import MusicXML — Justly",
+                         "MusicXML file (*.musicxml *.mxl)",
+                         QFileDialog::AcceptOpen, ".musicxml");
+                     if (maybe_file.has_value()) {
+                       import_musicxml_and_reload(*this, *maybe_file);
+                     }
+                   });
 
   // double-clicking a note in the piano roll opens the pitched/unpitched
   // notes table for its chord, scrolled to and highlighting that note --

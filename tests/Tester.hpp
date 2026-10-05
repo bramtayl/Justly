@@ -27,8 +27,7 @@ struct Tester : public QObject {
     // fail fast here instead of letting open_file's "Invalid XML file"
     // QMessageBox block forever with no user around to dismiss it
     Q_ASSERT(QFile::exists(fixture_file));
-    open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                         main_window.piano_roll_widget, fixture_file);
+    open_file_and_reload(main_window, fixture_file);
 
     QObject::connect(
         &unexpected_message_timer, &QTimer::timeout, this, [this]() -> auto {

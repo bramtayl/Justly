@@ -88,8 +88,7 @@ void Tester::test_recovery_removed_on_save_and_open() {
   QVERIFY(QFile::exists(get_recovery_file_path()));
 
   // reloading also restores current_file/song state for later tests
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget, fixture_file);
+  open_file_and_reload(main_window, fixture_file);
   QVERIFY(!QFile::exists(get_recovery_file_path()));
 }
 
@@ -131,8 +130,7 @@ void Tester::test_recovery_restore_accepted() {
   auto& window_body = main_window.window_body;
   auto fixture_file = test_dir.filePath("test_song.xml");
 
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget, fixture_file);
+  open_file_and_reload(main_window, fixture_file);
   const auto old_gain = get_gain(window_body.player);
   QCOMPARE_NE(old_gain, NEW_GAIN_1);
 
@@ -154,16 +152,14 @@ void Tester::test_recovery_restore_accepted() {
   QVERIFY(!QFile::exists(get_recovery_file_path()));
   QVERIFY(!QSettings().contains("recovery/original_file"));
 
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget, fixture_file);
+  open_file_and_reload(main_window, fixture_file);
 }
 
 void Tester::test_recovery_restore_declined() {
   auto& window_body = main_window.window_body;
   auto fixture_file = test_dir.filePath("test_song.xml");
 
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget, fixture_file);
+  open_file_and_reload(main_window, fixture_file);
   const auto old_gain = get_gain(window_body.player);
   QCOMPARE_NE(old_gain, NEW_GAIN_1);
 
@@ -210,9 +206,7 @@ void Tester::test_close_event_discard_declined() {
   QVERIFY(QFile::exists(get_recovery_file_path()));
 
   // restore the shared fixture (also removes the recovery file)
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 }
 
 // a clean shutdown must delete the crash-recovery file, since its presence

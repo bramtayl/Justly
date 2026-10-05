@@ -18,8 +18,7 @@ auto main(int number_of_arguments, char* arguments[]) -> int {
   MainWindow main_window;
   main_window.show();
   if (maybe_restore_recovery(main_window.window_body)) {
-    song_reloaded(main_window.song_menu_bar, main_window.window_body,
-                  main_window.piano_roll_widget);
+    song_reloaded(main_window);
   }
   return QApplication::exec();
 }

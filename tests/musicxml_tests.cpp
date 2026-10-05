@@ -24,15 +24,11 @@ void Tester::test_musicxml() {
 
   auto& window_body = main_window.window_body;
 
-  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
-                             main_window.piano_roll_widget,
-                             test_dir.filePath(file_name));
+  import_musicxml_and_reload(main_window, test_dir.filePath(file_name));
   QCOMPARE(
       get_model(window_body.switch_column.switch_table).rowCount(QModelIndex()),
       number_of_chords);
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 }
 
 void Tester::test_musicxml_error_data() {
@@ -79,9 +75,7 @@ void Tester::test_musicxml_error() {
   QFETCH(const QString, file_name);
 
   close_message_later(main_window, waiting_for_message, error_message);
-  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
-                             main_window.piano_roll_widget,
-                             test_dir.filePath(file_name));
+  import_musicxml_and_reload(main_window, test_dir.filePath(file_name));
 }
 
 // regression test: a backward repeat with no forward repeat since the
@@ -118,8 +112,7 @@ void Tester::test_playback_order_lone_backward_repeat() {
 void Tester::test_import_musicxml_ties_do_not_cross_voices() {
   auto& window_body = main_window.window_body;
 
-  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
-                             main_window.piano_roll_widget,
+  import_musicxml_and_reload(main_window,
                              test_dir.filePath("tied_voices.musicxml"));
 
   auto& song = window_body.song;
@@ -139,9 +132,7 @@ void Tester::test_import_musicxml_ties_do_not_cross_voices() {
   QCOMPARE(right_hand_notes.at(0).beats.numerator, 8);
   QCOMPARE(right_hand_notes.at(0).beats.denominator, 1);
 
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 }
 
 // regression test: inserting a chord, then drilling into and inserting one
@@ -158,14 +149,11 @@ void Tester::test_import_musicxml_after_editing_chord_notes() {
   switch_to(main_window, RowType::pitched_note_type, 1);
   insert_menu.insert_into_start_action.trigger();
 
-  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
-                             main_window.piano_roll_widget,
+  import_musicxml_and_reload(main_window,
                              test_dir.filePath("prelude.musicxml"));
   QCOMPARE(get_model(switch_table).rowCount(QModelIndex()), MUSIC_XML_ROWS);
 
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 }
 
 // regression test: opening/importing a file bypasses the undo stack, so
@@ -183,9 +171,7 @@ void Tester::test_open_after_editing_chord_notes_resets_menu() {
   QCOMPARE(switch_column.editing_text.text(), "Pitched notes for chord 1");
   QVERIFY(view_menu.back_to_chords_action.isEnabled());
 
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 
   QCOMPARE(switch_column.editing_text.text(), "Chords");
   QVERIFY(!view_menu.back_to_chords_action.isEnabled());
@@ -228,8 +214,7 @@ void Tester::test_failed_import_does_not_reset_notes_view() {
 
   close_message_later(main_window, waiting_for_message,
                       "Invalid musicxml file");
-  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
-                             main_window.piano_roll_widget,
+  import_musicxml_and_reload(main_window,
                              test_dir.filePath("not_musicxml.xml"));
 
   QCOMPARE(switch_column.editing_text.text(), "Pitched notes for chord 1");
@@ -243,8 +228,7 @@ void Tester::test_failed_import_does_not_reset_notes_view() {
 void Tester::test_import_musicxml_voice_named_like_program() {
   auto& window_body = main_window.window_body;
 
-  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
-                             main_window.piano_roll_widget,
+  import_musicxml_and_reload(main_window,
                              test_dir.filePath("program_named_part.musicxml"));
 
   const auto& pitched_voices = window_body.song.pitched_voices;
@@ -252,9 +236,7 @@ void Tester::test_import_musicxml_voice_named_like_program() {
   QCOMPARE(pitched_voices.at(0).name, QString("Marimba"));
   QCOMPARE(pitched_voices.at(0).program, QString("Marimba"));
 
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 }
 
 namespace {
@@ -456,9 +438,7 @@ void Tester::test_musicxml_inline_error() {
   temp_file.close();
 
   close_message_later(main_window, waiting_for_message, error_message);
-  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
-                             main_window.piano_roll_widget,
-                             temp_file.fileName());
+  import_musicxml_and_reload(main_window, temp_file.fileName());
 }
 
 // a backward repeat's explicit "times" attribute sets how many passes the
@@ -476,14 +456,10 @@ void Tester::test_musicxml_repeat_times() {
   temp_file.close();
 
   auto& window_body = main_window.window_body;
-  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
-                             main_window.piano_roll_widget,
-                             temp_file.fileName());
+  import_musicxml_and_reload(main_window, temp_file.fileName());
   QCOMPARE(window_body.song.chords.size(), 3);
 
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 }
 
 // a transposing part's <octave-change> shifts every pitched note by that many
@@ -502,9 +478,7 @@ void Tester::test_musicxml_octave_change() {
                         .toStdString()
                         .c_str());
     temp_file.close();
-    import_musicxml_and_reload(
-        main_window.song_menu_bar, main_window.window_body,
-        main_window.piano_roll_widget, temp_file.fileName());
+    import_musicxml_and_reload(main_window, temp_file.fileName());
     octave = window_body.song.chords.at(0).pitched_notes.at(0).interval.octave;
   };
 
@@ -514,9 +488,7 @@ void Tester::test_musicxml_octave_change() {
   import_first_note_octave("<octave-change>1</octave-change>", shifted_octave);
   QCOMPARE(shifted_octave, plain_octave + 1);
 
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 }
 
 // a transposing part's key sounds transposed, like its notes: an A clarinet
@@ -533,9 +505,7 @@ void Tester::test_musicxml_transposed_key() {
   temp_file.close();
 
   auto& window_body = main_window.window_body;
-  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
-                             main_window.piano_roll_widget,
-                             temp_file.fileName());
+  import_musicxml_and_reload(main_window, temp_file.fileName());
   QCOMPARE(window_body.controls_column.spin_boxes.starting_key_editor.value(),
            midi_number_to_frequency(MIDDLE_C_MIDI + 9));
   // so the written tonic is the tonic
@@ -545,9 +515,7 @@ void Tester::test_musicxml_transposed_key() {
   QCOMPARE(interval.ratio.denominator, 1);
   QCOMPARE(interval.octave, -1);
 
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 }
 
 // notes are spelled from their accidentals, as they would be read, with
@@ -652,9 +620,7 @@ void Tester::test_musicxml_accidentals() {
   temp_file.close();
 
   auto& window_body = main_window.window_body;
-  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
-                             main_window.piano_roll_widget,
-                             temp_file.fileName());
+  import_musicxml_and_reload(main_window, temp_file.fileName());
   const auto& chords = window_body.song.chords;
   QVERIFY(!chords.isEmpty());
   const auto& pitched_notes = chords.last().pitched_notes;
@@ -664,9 +630,7 @@ void Tester::test_musicxml_accidentals() {
   QCOMPARE(interval.ratio.denominator, expected_interval.ratio.denominator);
   QCOMPARE(interval.octave, expected_interval.octave);
 
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 }
 
 namespace {
@@ -708,18 +672,14 @@ void Tester::test_import_musicxml_unnamed_voice() {
   temp_file.write(make_named_parts({"", "Flute"}).toStdString().c_str());
   temp_file.close();
 
-  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
-                             main_window.piano_roll_widget,
-                             temp_file.fileName());
+  import_musicxml_and_reload(main_window, temp_file.fileName());
 
   const auto& pitched_voices = main_window.window_body.song.pitched_voices;
   QCOMPARE(pitched_voices.size(), 2);
   QCOMPARE(pitched_voices.at(0).name, QString("Unnamed instrument"));
   QCOMPARE(pitched_voices.at(1).name, QString("Flute"));
 
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 }
 
 // voices are looked up by name, so a repeated part name, or a second unnamed
@@ -731,9 +691,7 @@ void Tester::test_import_musicxml_duplicate_voice_names() {
       make_named_parts({"Flute", "", "Flute", ""}).toStdString().c_str());
   temp_file.close();
 
-  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
-                             main_window.piano_roll_widget,
-                             temp_file.fileName());
+  import_musicxml_and_reload(main_window, temp_file.fileName());
 
   const auto& pitched_voices = main_window.window_body.song.pitched_voices;
   QCOMPARE(pitched_voices.size(), 4);
@@ -742,9 +700,7 @@ void Tester::test_import_musicxml_duplicate_voice_names() {
   QCOMPARE(pitched_voices.at(2).name, QString("Flute (2)"));
   QCOMPARE(pitched_voices.at(3).name, QString("Unnamed instrument (2)"));
 
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 }
 
 // a first ending plays only on the first pass and a second ending only on
@@ -783,15 +739,11 @@ void Tester::test_musicxml_endings() {
   temp_file.write(make_musicxml(get_divisions(), body).toStdString().c_str());
   temp_file.close();
 
-  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
-                             main_window.piano_roll_widget,
-                             temp_file.fileName());
+  import_musicxml_and_reload(main_window, temp_file.fileName());
   // measures 1, 2 (first ending), 1, 3 (second ending), 4
   QCOMPARE(main_window.window_body.song.chords.size(), 5);
 
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 }
 
 namespace {
@@ -889,9 +841,7 @@ void Tester::test_musicxml_jumps() {
   temp_file.write(make_musicxml(get_divisions(), body).toStdString().c_str());
   temp_file.close();
 
-  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
-                             main_window.piano_roll_widget,
-                             temp_file.fileName());
+  import_musicxml_and_reload(main_window, temp_file.fileName());
   // each chord's words are its measure number
   QList<int> measures;
   for (const auto& chord : main_window.window_body.song.chords) {
@@ -899,9 +849,7 @@ void Tester::test_musicxml_jumps() {
   }
   QCOMPARE(measures, expected_measures);
 
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 }
 
 // jumps are often only written in the top part, but every part follows them
@@ -934,18 +882,14 @@ void Tester::test_musicxml_jump_in_one_part() {
                       .c_str());
   temp_file.close();
 
-  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
-                             main_window.piano_roll_widget,
-                             temp_file.fileName());
+  import_musicxml_and_reload(main_window, temp_file.fileName());
   const auto& chords = main_window.window_body.song.chords;
   QCOMPARE(chords.size(), 4);
   for (const auto& chord : chords) {
     QCOMPARE(chord.pitched_notes.size(), 2);
   }
 
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 }
 
 // the schema can't check that every part has the same measures
@@ -979,9 +923,7 @@ void Tester::test_musicxml_parts_with_different_measures() {
 
   close_message_later(main_window, waiting_for_message,
                       "Part P2 has 1 measure(s), but part P1 has 2");
-  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
-                             main_window.piano_roll_widget,
-                             temp_file.fileName());
+  import_musicxml_and_reload(main_window, temp_file.fileName());
 }
 
 // ties are followed in the order the measures are played, so a note tied
@@ -1006,9 +948,7 @@ void Tester::test_musicxml_tie_into_endings() {
   temp_file.write(make_musicxml(get_divisions(), body).toStdString().c_str());
   temp_file.close();
 
-  import_musicxml_and_reload(main_window.song_menu_bar, main_window.window_body,
-                             main_window.piano_roll_widget,
-                             temp_file.fileName());
+  import_musicxml_and_reload(main_window, temp_file.fileName());
   // measure 1, held through the first ending, then again through the second
   const auto& chords = main_window.window_body.song.chords;
   QCOMPARE(chords.size(), 2);
@@ -1019,7 +959,5 @@ void Tester::test_musicxml_tie_into_endings() {
     QCOMPARE(chord.pitched_notes.at(0).beats.denominator, 1);
   }
 
-  open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
-                       main_window.piano_roll_widget,
-                       test_dir.filePath("test_song.xml"));
+  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
 }
