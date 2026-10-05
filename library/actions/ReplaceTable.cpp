@@ -55,6 +55,33 @@ void resize_columns(SwitchTable& switch_table, const RowType row_type) {
   }
 }
 
+void select_row_and_scroll(SwitchTable& switch_table,
+                           const QModelIndex& row_index) {
+  get_selection_model(switch_table)
+      .select(row_index, QItemSelectionModel::Select |
+                             QItemSelectionModel::Clear |
+                             QItemSelectionModel::Rows);
+  switch_table.scrollTo(row_index);
+}
+
+// points notes_model at one chord's notes, swapping it into the table if it
+// isn't already there, and selects new_note_number's row if it's >= 0
+template <NoteInterface SubNote>
+void show_notes(SwitchTable& switch_table, RowsModel<SubNote>& notes_model,
+                QList<SubNote>& notes, const RowType row_type,
+                const bool row_type_changed, const int chord_number,
+                const int new_note_number) {
+  notes_model.set_rows_pointer(&notes, chord_number);
+  if (row_type_changed) {
+    set_model(switch_table, notes_model);
+    resize_columns(switch_table, row_type);
+  }
+  if (new_note_number >= 0) {
+    select_row_and_scroll(switch_table,
+                          notes_model.index(new_note_number, 0));
+  }
+}
+
 auto get_is_voice(const RowType row_type) -> bool {
   return row_type == RowType::pitched_voice_type ||
          row_type == RowType::unpitched_voice_type;
@@ -192,13 +219,9 @@ void replace_table(SongMenuBar& song_menu_bar, WindowBody& window_body,
     resize_columns(switch_table, new_row_type);
 
     if (old_parent_chord_number >= 0) {
-      const auto chord_index =
-          switch_table.chords_model.index(old_parent_chord_number, 0);
-      get_selection_model(switch_table)
-          .select(chord_index, QItemSelectionModel::Select |
-                                   QItemSelectionModel::Clear |
-                                   QItemSelectionModel::Rows);
-      switch_table.scrollTo(chord_index);
+      select_row_and_scroll(
+          switch_table,
+          switch_table.chords_model.index(old_parent_chord_number, 0));
     }
 
     switch (old_row_type) {
@@ -230,40 +253,18 @@ void replace_table(SongMenuBar& song_menu_bar, WindowBody& window_body,
     previous_chord_action.setEnabled(new_chord_number > 0);
     next_chord_action.setEnabled(new_chord_number < chords.size() - 1);
     if (new_row_type == RowType::pitched_note_type) {
-      auto& new_model = switch_table.pitched_notes_model;
       stream << SongMenuBar::tr("Pitched notes for chord ")
              << new_chord_number + 1;
-      new_model.set_rows_pointer(&chord.pitched_notes, new_chord_number);
-      if (row_type_changed) {
-        set_model(switch_table, new_model);
-        resize_columns(switch_table, new_row_type);
-      }
-      if (new_note_number >= 0) {
-        const auto note_index = new_model.index(new_note_number, 0);
-        get_selection_model(switch_table)
-            .select(note_index, QItemSelectionModel::Select |
-                                    QItemSelectionModel::Clear |
-                                    QItemSelectionModel::Rows);
-        switch_table.scrollTo(note_index);
-      }
+      show_notes(switch_table, switch_table.pitched_notes_model,
+                 chord.pitched_notes, new_row_type, row_type_changed,
+                 new_chord_number, new_note_number);
     } else {
       Q_ASSERT(new_row_type == RowType::unpitched_note_type);
-      auto& new_model = switch_table.unpitched_notes_model;
       stream << SongMenuBar::tr("Unpitched notes for chord ")
              << new_chord_number + 1;
-      new_model.set_rows_pointer(&chord.unpitched_notes, new_chord_number);
-      if (row_type_changed) {
-        set_model(switch_table, new_model);
-        resize_columns(switch_table, new_row_type);
-      }
-      if (new_note_number >= 0) {
-        const auto note_index = new_model.index(new_note_number, 0);
-        get_selection_model(switch_table)
-            .select(note_index, QItemSelectionModel::Select |
-                                    QItemSelectionModel::Clear |
-                                    QItemSelectionModel::Rows);
-        switch_table.scrollTo(note_index);
-      }
+      show_notes(switch_table, switch_table.unpitched_notes_model,
+                 chord.unpitched_notes, new_row_type, row_type_changed,
+                 new_chord_number, new_note_number);
     }
   }
 
