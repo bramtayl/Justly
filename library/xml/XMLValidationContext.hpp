@@ -2,14 +2,8 @@
 
 #include "xml/XMLSchema.hpp"
 
-class XMLValidationContext {
- public:
-  _xmlSchemaValidCtxt* const internal_pointer;
-
+struct XMLValidationContext
+    : CHandle<_xmlSchemaValidCtxt, xmlSchemaFreeValidCtxt> {
   explicit XMLValidationContext(XMLSchema& schema)
-      : internal_pointer(xmlSchemaNewValidCtxt(schema.internal_pointer)) {}
-
-  ~XMLValidationContext();
-
-  NO_MOVE_COPY(XMLValidationContext)
+      : CHandle(xmlSchemaNewValidCtxt(schema.internal_pointer)) {}
 };

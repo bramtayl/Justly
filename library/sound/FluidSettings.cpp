@@ -1,10 +1,8 @@
 #include "sound/FluidSettings.hpp"
 
-#include <fluidsynth.h>
-
 FluidSettings::FluidSettings(const int midi_channels, const int cpu_cores,
                              const char* const audio_driver)
-    : internal_pointer(new_fluid_settings()) {
+    : CHandle(new_fluid_settings()) {
   Q_ASSERT(internal_pointer != nullptr);
   if (midi_channels > 0) {
     auto midi_channels_was_set =
@@ -25,5 +23,3 @@ FluidSettings::FluidSettings(const int midi_channels, const int cpu_cores,
     Q_ASSERT(audio_driver_was_set);
   }
 }
-
-FluidSettings::~FluidSettings() { delete_fluid_settings(internal_pointer); }

@@ -1,17 +1,11 @@
 #pragma once
 
-#include <fluidsynth/types.h>
+#include <fluidsynth.h>
 
 #include "other/helpers.hpp"
 
 struct FluidSettings;
 
-struct FluidSynth {
-  fluid_synth_t* const internal_pointer;
-
+struct FluidSynth : CHandle<fluid_synth_t, delete_fluid_synth> {
   explicit FluidSynth(FluidSettings& settings);
-
-  NO_MOVE_COPY(FluidSynth)
-
-  ~FluidSynth();
 };

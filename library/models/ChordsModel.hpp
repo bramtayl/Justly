@@ -4,7 +4,8 @@
 #include "rows/Chord.hpp"
 
 struct ChordsModel : public UndoRowsModel<Chord> {
-  explicit ChordsModel(QUndoStack& undo_stack, Song& song_input);
+  explicit ChordsModel(QUndoStack& undo_stack, Song& song_input)
+      : UndoRowsModel(undo_stack, song_input) {}
 
   void add_to_status(QTextStream& stream, int row_number,
                      const Chord& chord) const override;

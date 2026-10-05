@@ -11,8 +11,5 @@ target_sources(JustlyLibrary PUBLIC FILE_SET justly_headers FILES
 
 target_sources(JustlyLibrary PRIVATE
     "XMLDocument.cpp"
-    "XMLParserContext.cpp"
-    "XMLSchema.cpp"
-    "XMLValidationContext.cpp"
     "ZipArchive.cpp"
 )

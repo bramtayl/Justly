@@ -8,6 +8,7 @@
 class QClipboard;
 class QAbstractItemModel;
 class QItemSelectionRange;
+class QUndoStack;
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
 #define NO_COPY(classname)              \
@@ -19,6 +20,24 @@ class QItemSelectionRange;
   classname(classname&&) = delete; \
   auto operator=(classname&&)->classname = delete;
 // NOLINTEND(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
+
+// owns a pointer from a C library, freeing it with free_function, which is
+// skipped for null since not every library's free function accepts null
+template <typename Pointee, auto free_function>
+struct CHandle {
+  Pointee* const internal_pointer;
+
+  explicit CHandle(Pointee* const internal_pointer_input)
+      : internal_pointer(internal_pointer_input) {}
+
+  ~CHandle() {
+    if (internal_pointer != nullptr) {
+      free_function(internal_pointer);
+    }
+  }
+
+  NO_MOVE_COPY(CHandle)
+};
 
 struct XMLString {
   xmlChar* internal_pointer = nullptr;
@@ -42,6 +61,10 @@ template <typename Thing>
 [[nodiscard]] auto to_int(double value) -> int;
 
 [[nodiscard]] auto get_clipboard() -> QClipboard&;
+
+// forgets every undo command and marks the result as saved, e.g. after
+// loading a song
+void clear_and_clean(QUndoStack& undo_stack);
 
 [[nodiscard]] auto get_number_of_rows(const QItemSelectionRange& range) -> int;
 

@@ -1,5 +1,6 @@
 #include "menus/FileMenu.hpp"
 
+#include "menus/MenuAction.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/WindowBody.hpp"
 
@@ -10,9 +11,8 @@ auto maybe_choose_file(WindowBody& window_body, const char* const caption,
     -> std::optional<QString> {
   Q_ASSERT(filter.isValidUtf16());
   Q_ASSERT(suffix.isValidUtf16());
-  auto& dialog =  // NOLINT(cppcoreguidelines-owning-memory)
-      *(new QFileDialog(&window_body, WindowBody::tr(caption),
-                        window_body.current_folder, filter));
+  QFileDialog dialog(&window_body, WindowBody::tr(caption),
+                     window_body.current_folder, filter);
 
   dialog.setAcceptMode(accept_mode);
   dialog.setDefaultSuffix(suffix);
@@ -23,13 +23,11 @@ auto maybe_choose_file(WindowBody& window_body, const char* const caption,
     dialog.setLabelText(QFileDialog::Accept, WindowBody::tr(accept_label));
   }
 
-  std::optional<QString> maybe_file;
-  if (dialog.exec() != 0) {
-    window_body.current_folder = dialog.directory().absolutePath();
-    maybe_file = get_only(dialog.selectedFiles());
+  if (dialog.exec() == 0) {
+    return std::nullopt;
   }
-  dialog.deleteLater();
-  return maybe_file;
+  window_body.current_folder = dialog.directory().absolutePath();
+  return get_only(dialog.selectedFiles());
 }
 
 FileMenu::FileMenu(WindowBody& window_body)

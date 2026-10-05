@@ -2,18 +2,11 @@
 
 #include "other/helpers.hpp"
 
-class XMLDocument {
- public:
-  xmlDoc* internal_pointer;
-
-  XMLDocument() : internal_pointer(xmlNewDoc(nullptr)) {}
+struct XMLDocument : CHandle<xmlDoc, xmlFreeDoc> {
+  XMLDocument() : CHandle(xmlNewDoc(nullptr)) {}
 
   explicit XMLDocument(xmlDoc* internal_pointer_input)
-      : internal_pointer(internal_pointer_input) {}
-
-  ~XMLDocument();
-
-  NO_MOVE_COPY(XMLDocument)
+      : CHandle(internal_pointer_input) {}
 };
 
 [[nodiscard]] auto get_root(const XMLDocument& document) -> xmlNode&;

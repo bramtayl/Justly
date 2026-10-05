@@ -1,6 +1,6 @@
 #include "menus/ViewMenu.hpp"
 
-#include "widgets/WindowBody.hpp"
+#include "menus/MenuAction.hpp"
 
 ViewMenu::ViewMenu()
     : QMenu(ViewMenu::tr("&View")),

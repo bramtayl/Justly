@@ -1,7 +1,5 @@
 #include "xml/XMLDocument.hpp"
 
-XMLDocument::~XMLDocument() { xmlFreeDoc(internal_pointer); }
-
 auto get_root(const XMLDocument& document) -> xmlNode& {
   return get_reference(xmlDocGetRootElement(document.internal_pointer));
 }

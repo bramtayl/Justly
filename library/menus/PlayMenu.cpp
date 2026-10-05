@@ -1,5 +1,6 @@
 #include "menus/PlayMenu.hpp"
 
+#include "menus/MenuAction.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchTable.hpp"
 #include "widgets/WindowBody.hpp"

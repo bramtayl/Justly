@@ -13,7 +13,6 @@
 #include "menus/SongMenuBar.hpp"
 #include "piano_roll/PianoRollNotesScene.hpp"
 #include "piano_roll/PianoRollWidget.hpp"
-#include "widgets/SpinBoxes.hpp"
 
 namespace {
 

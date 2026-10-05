@@ -2,6 +2,7 @@
 
 #include <QtCore/QItemSelectionModel>
 #include <QtGui/QGuiApplication>
+#include <QtGui/QUndoStack>
 #include <QtWidgets/QMessageBox>
 
 #include "xml/XMLChildren.hpp"
@@ -14,6 +15,11 @@ auto to_int(const double value) -> int {
 
 auto get_clipboard() -> QClipboard& {
   return get_reference(QGuiApplication::clipboard());
+}
+
+void clear_and_clean(QUndoStack& undo_stack) {
+  undo_stack.clear();
+  undo_stack.setClean();
 }
 
 auto get_number_of_rows(const QItemSelectionRange& range) -> int {

@@ -1,5 +1,6 @@
 #include "menus/PasteMenu.hpp"
 
+#include "menus/MenuAction.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchTable.hpp"
 

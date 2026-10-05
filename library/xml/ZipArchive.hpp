@@ -4,17 +4,10 @@
 
 #include "other/helpers.hpp"
 
-class ZipArchive {
- public:
-  zip_t* const internal_pointer;
-
+struct ZipArchive : CHandle<zip_t, zip_close> {
   explicit ZipArchive(const QString& filename)
-      : internal_pointer(
-            zip_open(filename.toStdString().c_str(), ZIP_RDONLY, nullptr)) {}
-
-  ~ZipArchive();
-
-  NO_MOVE_COPY(ZipArchive)
+      : CHandle(zip_open(filename.toStdString().c_str(), ZIP_RDONLY, nullptr)) {
+  }
 };
 
 // rejects entries whose size libzip couldn't report, or that don't fit in

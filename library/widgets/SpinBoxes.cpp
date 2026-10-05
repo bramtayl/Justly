@@ -36,11 +36,6 @@ void add_control(QFormLayout& spin_boxes_form, const QString& label,
 
 }  // namespace
 
-void clear_and_clean(QUndoStack& undo_stack) {
-  undo_stack.clear();
-  undo_stack.setClean();
-}
-
 SpinBoxes::SpinBoxes(Song& song, FluidSynth& synth, QUndoStack& undo_stack)
     : gain_editor(*(new QDoubleSpinBox)),
       starting_key_editor(*(new QDoubleSpinBox)),

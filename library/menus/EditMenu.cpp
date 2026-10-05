@@ -2,6 +2,7 @@
 
 #include "actions/RemoveVoiceRows.hpp"
 #include "actions/SetCells.hpp"
+#include "menus/MenuAction.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchTable.hpp"
 

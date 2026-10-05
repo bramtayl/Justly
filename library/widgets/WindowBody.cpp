@@ -6,7 +6,6 @@
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
-#include <QtWidgets/QMenu>
 
 #include "musicxml/MusicXMLPart.hpp"
 #include "other/PianoRollNoteEvent.hpp"
@@ -752,12 +751,4 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
   clear_and_clean(undo_stack);
   remove_recovery_file();
   return true;
-}
-
-void add_menu_action(QMenu& menu, QAction& action,
-                     const QKeySequence::StandardKey key_sequence,
-                     const bool enabled) {
-  action.setShortcuts(key_sequence);
-  action.setEnabled(enabled);
-  menu.addAction(&action);
 }

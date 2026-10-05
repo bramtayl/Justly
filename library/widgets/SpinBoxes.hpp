@@ -7,8 +7,6 @@ class QUndoStack;
 struct FluidSynth;
 struct Song;
 
-void clear_and_clean(QUndoStack& undo_stack);
-
 struct SpinBoxes : public QWidget {
   QDoubleSpinBox& gain_editor;
   QDoubleSpinBox& starting_key_editor;

@@ -4,14 +4,8 @@
 
 #include "other/helpers.hpp"
 
-class XMLParserContext {
- public:
-  _xmlSchemaParserCtxt* const internal_pointer;
-
+struct XMLParserContext
+    : CHandle<_xmlSchemaParserCtxt, xmlSchemaFreeParserCtxt> {
   explicit XMLParserContext(const char* filename)
-      : internal_pointer(xmlSchemaNewParserCtxt(filename)) {}
-
-  ~XMLParserContext();
-
-  NO_MOVE_COPY(XMLParserContext)
+      : CHandle(xmlSchemaNewParserCtxt(filename)) {}
 };

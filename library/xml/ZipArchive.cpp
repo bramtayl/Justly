@@ -1,11 +1,5 @@
 #include "xml/ZipArchive.hpp"
 
-ZipArchive::~ZipArchive() {
-  if (internal_pointer != nullptr) {
-    zip_close(internal_pointer);
-  }
-}
-
 auto zip_entry_size_is_safe(const zip_stat_t& entry_stat) -> bool {
   return (entry_stat.valid & ZIP_STAT_SIZE) != 0 &&
          entry_stat.size <=

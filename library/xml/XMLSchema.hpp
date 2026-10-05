@@ -2,14 +2,7 @@
 
 #include "xml/XMLParserContext.hpp"
 
-class XMLSchema {
- public:
-  _xmlSchema* const internal_pointer;
-
+struct XMLSchema : CHandle<_xmlSchema, xmlSchemaFree> {
   explicit XMLSchema(const XMLParserContext& context)
-      : internal_pointer(xmlSchemaParse(context.internal_pointer)) {}
-
-  ~XMLSchema();
-
-  NO_MOVE_COPY(XMLSchema)
+      : CHandle(xmlSchemaParse(context.internal_pointer)) {}
 };

@@ -9,7 +9,7 @@
 
 template <RowInterface SubRow>
 struct RowsModel;
-class XMLDocument;
+struct XMLDocument;
 struct XMLValidator;
 struct ControlsColumn;
 struct SwitchColumn;
@@ -282,8 +282,3 @@ static void add_imported_voices(RowsModel<SubVoice>& voices_model,
 
 [[nodiscard]] auto import_musicxml(WindowBody& window_body,
                                    const QString& filename) -> bool;
-
-void add_menu_action(
-    QMenu& menu, QAction& action,
-    QKeySequence::StandardKey key_sequence = QKeySequence::UnknownKey,
-    bool enabled = true);
