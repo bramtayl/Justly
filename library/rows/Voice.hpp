@@ -15,11 +15,16 @@ struct Voice : Row {
 };
 
 template <typename SubVoice>  // type properties
-concept VoiceInterface = std::derived_from<SubVoice, Voice> && requires() {
-  { SubVoice::get_pitched() } -> std::same_as<const char*>;
-  { SubVoice::is_pitched() } -> std::same_as<bool>;
-  { SubVoice::get_name_column() } -> std::same_as<int>;
-};
+concept VoiceInterface = std::derived_from<SubVoice, Voice> &&
+                         requires(const SubVoice& voice, xmlNode& node) {
+                           {
+                             SubVoice::get_pitched()
+                           } -> std::same_as<const char*>;
+                           // see row_to_xml
+                           voice.to_xml(node);
+                           { SubVoice::is_pitched() } -> std::same_as<bool>;
+                           { SubVoice::get_name_column() } -> std::same_as<int>;
+                         };
 
 [[nodiscard]] inline auto get_voice_program(const QList<Program>& programs,
                                             const Voice& voice)

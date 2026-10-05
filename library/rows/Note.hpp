@@ -46,10 +46,6 @@ struct Note : Row {
   // reads one of the fields every note has: beats, velocity_ratio, words, or
   // voice_name
   void note_field_from_xml(const std::string& name, xmlNode& field_node);
-
-  // writes beats, velocity_ratio, and words; voice_name is written by each
-  // subclass, before its own fields
-  void note_fields_to_xml(xmlNode& node) const;
 };
 
 template <typename SubNote>  // type properties

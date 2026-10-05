@@ -11,17 +11,11 @@ struct Row {
 
   virtual void set_data(int column, const QVariant& new_value) = 0;
   virtual void column_to_xml(xmlNode& node, int column_number) const = 0;
-  virtual void to_xml(xmlNode& node) const = 0;
 };
 
 template <typename SubRow>
 concept RowInterface =
-    std::derived_from<SubRow, Row> &&
-    requires(SubRow target_row, const SubRow& template_row, xmlNode& node,
-             int column_number) {
-      {
-        target_row.copy_column_from(template_row, column_number)
-      } -> std::same_as<void>;
+    std::derived_from<SubRow, Row> && requires(int column_number) {
       { SubRow::get_number_of_columns() } -> std::same_as<int>;
       { SubRow::get_column_name(column_number) } -> std::same_as<const char*>;
       { SubRow::get_clipboard_schema() } -> std::same_as<const char*>;
@@ -29,6 +23,34 @@ concept RowInterface =
       { SubRow::get_cells_mime() } -> std::same_as<const char*>;
       { SubRow::is_column_editable(column_number) } -> std::same_as<bool>;
     };
+
+// copies through get_data/set_data, unless the row has its own
+// copy_column_from for columns that don't round-trip, e.g. a chord's notes
+template <RowInterface SubRow>
+static void copy_column(SubRow& target_row, const SubRow& template_row,
+                        const int column_number) {
+  if constexpr (requires {
+                  target_row.copy_column_from(template_row, column_number);
+                }) {
+    target_row.copy_column_from(template_row, column_number);
+  } else {
+    target_row.set_data(column_number, template_row.get_data(column_number));
+  }
+}
+
+// writes every column, in column order, unless the row has its own to_xml
+// for columns that can't be written alone, e.g. a voice's name
+template <RowInterface SubRow>
+static void row_to_xml(const SubRow& row, xmlNode& node) {
+  if constexpr (requires { row.to_xml(node); }) {
+    row.to_xml(node);
+  } else {
+    for (auto column_number = 0;
+         column_number < SubRow::get_number_of_columns(); column_number++) {
+      row.column_to_xml(node, column_number);
+    }
+  }
+}
 
 template <RowInterface SubRow>
 static void xml_to_rows(QList<SubRow>& new_rows, xmlNode& node) {
@@ -45,7 +67,7 @@ static void maybe_set_xml_rows(xmlNode& node, const char* const array_name,
   if (!rows.empty()) {
     auto& rows_node = get_new_child(node, array_name);
     for (const auto& row : rows) {
-      row.to_xml(get_new_child(rows_node, SubRow::get_xml_field_name()));
+      row_to_xml(row, get_new_child(rows_node, SubRow::get_xml_field_name()));
     }
   }
 }

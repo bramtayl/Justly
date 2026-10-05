@@ -173,29 +173,6 @@ void PitchedNote::set_data(const int column_number, const QVariant& new_value) {
   }
 }
 
-void PitchedNote::copy_column_from(const PitchedNote& template_row,
-                                   const int column_number) {
-  switch (static_cast<PitchedNoteColumn>(column_number)) {
-    case PitchedNoteColumn::number_of_pitched_note_columns:
-      Q_UNREACHABLE();
-    case PitchedNoteColumn::pitched_note_voice_name_column:
-      voice_name = template_row.voice_name;
-      break;
-    case PitchedNoteColumn::pitched_note_interval_column:
-      interval = template_row.interval;
-      break;
-    case PitchedNoteColumn::pitched_note_beats_column:
-      beats = template_row.beats;
-      break;
-    case PitchedNoteColumn::pitched_note_velocity_ratio_column:
-      velocity_ratio = template_row.velocity_ratio;
-      break;
-    case PitchedNoteColumn::pitched_note_words_column:
-      words = template_row.words;
-      break;
-  }
-}
-
 void PitchedNote::column_to_xml(xmlNode& node, const int column_number) const {
   switch (static_cast<PitchedNoteColumn>(column_number)) {
     case PitchedNoteColumn::number_of_pitched_note_columns:
@@ -216,10 +193,4 @@ void PitchedNote::column_to_xml(xmlNode& node, const int column_number) const {
       maybe_add_qstring_to_xml(node, "words", words);
       break;
   }
-}
-
-void PitchedNote::to_xml(xmlNode& node) const {
-  set_xml_string(node, "voice_name", voice_name.toStdString());
-  maybe_add_interval_to_xml(node, "interval", interval);
-  note_fields_to_xml(node);
 }

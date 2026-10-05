@@ -93,23 +93,6 @@ void PitchedVoice::set_data(const int column_number,
   }
 }
 
-void PitchedVoice::copy_column_from(const PitchedVoice& template_row,
-                                    const int column_number) {
-  switch (static_cast<PitchedVoiceColumn>(column_number)) {
-    case PitchedVoiceColumn::number_of_pitched_voice_columns:
-      Q_UNREACHABLE();
-    case PitchedVoiceColumn::pitched_voice_name_column:
-      name = template_row.name;
-      break;
-    case PitchedVoiceColumn::pitched_voice_instrument_column:
-      program = template_row.program;
-      break;
-    case PitchedVoiceColumn::pitched_voice_velocity_ratio_column:
-      velocity_ratio = template_row.velocity_ratio;
-      break;
-  }
-}
-
 void PitchedVoice::column_to_xml(xmlNode& node, const int column_number) const {
   switch (static_cast<PitchedVoiceColumn>(column_number)) {
     case PitchedVoiceColumn::number_of_pitched_voice_columns:

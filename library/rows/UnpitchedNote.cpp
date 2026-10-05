@@ -105,26 +105,6 @@ void UnpitchedNote::set_data(const int column_number,
   }
 }
 
-void UnpitchedNote::copy_column_from(const UnpitchedNote& template_row,
-                                     const int column_number) {
-  switch (static_cast<UnpitchedNoteColumn>(column_number)) {
-    case UnpitchedNoteColumn::number_of_unpitched_note_columns:
-      Q_UNREACHABLE();
-    case UnpitchedNoteColumn::unpitched_note_voice_name_column:
-      voice_name = template_row.voice_name;
-      break;
-    case UnpitchedNoteColumn::unpitched_note_beats_column:
-      beats = template_row.beats;
-      break;
-    case UnpitchedNoteColumn::unpitched_note_velocity_ratio_column:
-      velocity_ratio = template_row.velocity_ratio;
-      break;
-    case UnpitchedNoteColumn::unpitched_note_words_column:
-      words = template_row.words;
-      break;
-  }
-}
-
 void UnpitchedNote::column_to_xml(xmlNode& node,
                                   const int column_number) const {
   switch (static_cast<UnpitchedNoteColumn>(column_number)) {
@@ -143,9 +123,4 @@ void UnpitchedNote::column_to_xml(xmlNode& node,
       maybe_add_qstring_to_xml(node, "words", words);
       break;
   }
-}
-
-void UnpitchedNote::to_xml(xmlNode& node) const {
-  set_xml_string(node, "voice_name", voice_name.toStdString());
-  note_fields_to_xml(node);
 }

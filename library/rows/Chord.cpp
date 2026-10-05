@@ -118,30 +118,16 @@ void Chord::set_data(const int column_number, const QVariant& new_value) {
 
 void Chord::copy_column_from(const Chord& template_row,
                              const int column_number) {
+  // get_data only has the number of notes, so copy the notes themselves
   switch (static_cast<ChordColumn>(column_number)) {
-    case ChordColumn::number_of_chord_columns:
-      Q_UNREACHABLE();
-    case ChordColumn::chord_interval_column:
-      interval = template_row.interval;
-      break;
-    case ChordColumn::chord_beats_column:
-      beats = template_row.beats;
-      break;
-    case ChordColumn::chord_velocity_ratio_column:
-      velocity_ratio = template_row.velocity_ratio;
-      break;
-    case ChordColumn::chord_tempo_ratio_column:
-      tempo_ratio = template_row.tempo_ratio;
-      break;
-    case ChordColumn::chord_words_column:
-      words = template_row.words;
-      break;
     case ChordColumn::chord_pitched_notes_column:
       pitched_notes = template_row.pitched_notes;
       break;
     case ChordColumn::chord_unpitched_notes_column:
       unpitched_notes = template_row.unpitched_notes;
       break;
+    default:
+      set_data(column_number, template_row.get_data(column_number));
   }
 }
 
@@ -171,16 +157,6 @@ void Chord::column_to_xml(xmlNode& chord_node, const int column_number) const {
       maybe_add_qstring_to_xml(chord_node, "words", words);
       break;
   }
-}
-
-void Chord::to_xml(xmlNode& chord_node) const {
-  maybe_set_xml_rows(chord_node, "pitched_notes", pitched_notes);
-  maybe_set_xml_rows(chord_node, "unpitched_notes", unpitched_notes);
-  maybe_add_interval_to_xml(chord_node, "interval", interval);
-  maybe_add_rational_to_xml(chord_node, "beats", beats);
-  maybe_add_rational_to_xml(chord_node, "velocity_ratio", velocity_ratio);
-  maybe_add_rational_to_xml(chord_node, "tempo_ratio", tempo_ratio);
-  maybe_add_qstring_to_xml(chord_node, "words", words);
 }
 
 void modulate(PlayState& play_state, const Chord& chord) {

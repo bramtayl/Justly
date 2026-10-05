@@ -105,26 +105,6 @@ void UnpitchedVoice::set_data(const int column_number,
   }
 }
 
-void UnpitchedVoice::copy_column_from(const UnpitchedVoice& template_row,
-                                      const int column_number) {
-  switch (static_cast<UnpitchedVoiceColumn>(column_number)) {
-    case UnpitchedVoiceColumn::number_of_unpitched_voice_columns:
-      Q_UNREACHABLE();
-    case UnpitchedVoiceColumn::unpitched_voice_name_column:
-      name = template_row.name;
-      break;
-    case UnpitchedVoiceColumn::unpitched_voice_percussion_set_column:
-      program = template_row.program;
-      break;
-    case UnpitchedVoiceColumn::unpitched_voice_midi_number_column:
-      midi_number = template_row.midi_number;
-      break;
-    case UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column:
-      velocity_ratio = template_row.velocity_ratio;
-      break;
-  }
-}
-
 void UnpitchedVoice::column_to_xml(xmlNode& node,
                                    const int column_number) const {
   switch (static_cast<UnpitchedVoiceColumn>(column_number)) {

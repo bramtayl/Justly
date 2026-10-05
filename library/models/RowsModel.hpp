@@ -142,7 +142,7 @@ struct RowsModel : public QAbstractTableModel {
       const auto& new_row = new_rows.at(replace_number);
       for (auto column_number = left_column; column_number <= right_column;
            column_number++) {
-        row.copy_column_from(new_row, column_number);
+        copy_column(row, new_row, column_number);
       }
     }
     dataChanged(top_left_index, bottom_right_index);

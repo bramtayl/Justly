@@ -12,9 +12,3 @@ void Note::note_field_from_xml(const std::string& name, xmlNode& field_node) {
     voice_name = get_qstring_content(field_node);
   }
 }
-
-void Note::note_fields_to_xml(xmlNode& node) const {
-  maybe_add_rational_to_xml(node, "beats", beats);
-  maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
-  maybe_add_qstring_to_xml(node, "words", words);
-}

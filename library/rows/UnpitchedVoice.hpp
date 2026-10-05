@@ -35,9 +35,7 @@ struct UnpitchedVoice : Voice {
 
   void set_data(int column_number, const QVariant& new_value) override;
 
-  void copy_column_from(const UnpitchedVoice& template_row, int column_number);
-
   void column_to_xml(xmlNode& node, int column_number) const override;
 
-  void to_xml(xmlNode& node) const override;
+  void to_xml(xmlNode& node) const;
 };

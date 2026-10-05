@@ -36,8 +36,6 @@ struct Chord : public Row {
   void copy_column_from(const Chord& template_row, int column_number);
 
   void column_to_xml(xmlNode& chord_node, int column_number) const override;
-
-  void to_xml(xmlNode& chord_node) const override;
 };
 
 void modulate(PlayState& play_state, const Chord& chord);
