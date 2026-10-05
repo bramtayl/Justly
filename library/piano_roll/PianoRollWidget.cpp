@@ -371,8 +371,7 @@ auto get_selection_time_bounds(const Song& song,
                                       selection.number_of_rows);
   }
   // voice rows have no timeline position
-  Q_ASSERT(row_type == RowType::pitched_note_type ||
-           row_type == RowType::unpitched_note_type);
+  Q_ASSERT(is_note_type(row_type));
   return get_piano_roll_time_bounds(
       song, selection.chord_number, 1, selection.first_row_number,
       selection.number_of_rows, row_type == RowType::pitched_note_type);
@@ -573,8 +572,7 @@ void apply_selection_highlight(const Song& song,
   const auto first_row_number = selection.first_row_number;
   const auto number_of_rows = selection.number_of_rows;
   const auto is_chord_selection = row_type == RowType::chord_type;
-  const auto is_note_selection = row_type == RowType::pitched_note_type ||
-                                 row_type == RowType::unpitched_note_type;
+  const auto is_note_selection = is_note_type(row_type);
 
   // a chord-row selection highlights every note in the selected chords, a
   // note-row selection highlights only same-kind notes at those row

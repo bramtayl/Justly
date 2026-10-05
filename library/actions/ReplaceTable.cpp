@@ -82,9 +82,36 @@ void show_notes(SwitchTable& switch_table, RowsModel<SubNote>& notes_model,
   }
 }
 
-auto get_is_voice(const RowType row_type) -> bool {
-  return row_type == RowType::pitched_voice_type ||
-         row_type == RowType::unpitched_voice_type;
+// voice names must be typed, not copy/pasted or deleted, since every voice
+// name must stay unique and non-empty
+template <RowInterface SubRow>
+auto selects_voice_name(const RowsModel<SubRow>& /*rows_model*/,
+                        const QItemSelection& selection) -> bool {
+  if constexpr (VoiceInterface<SubRow>) {
+    return std::ranges::any_of(
+        selection, [](const QItemSelectionRange& range) -> bool {
+          return range.contains(range.top(), SubRow::get_name_column(),
+                                range.parent());
+        });
+  } else {
+    return false;
+  }
+}
+
+// removing every remaining voice row would leave no voice for a note to
+// reference, so disable rather than let RemoveVoiceRows warn and cancel;
+// selection.size() can transiently be 0 or >1 while a model change (e.g.
+// undoing a row removal) is still adjusting the selection, so require
+// exactly one range rather than asserting via get_only_range
+template <RowInterface SubRow>
+auto removes_every_voice_row(const RowsModel<SubRow>& rows_model,
+                             const QItemSelection& selection) -> bool {
+  if constexpr (VoiceInterface<SubRow>) {
+    return selection.size() == 1 &&
+           get_number_of_rows(selection.at(0)) >= rows_model.get_rows().size();
+  } else {
+    return false;
+  }
 }
 
 // applies a selection directly to piano_roll_widget's own fields: highlight
@@ -131,31 +158,22 @@ void update_actions(SongMenuBar& song_menu_bar, WindowBody& window_body,
   const auto& switch_table = window_body.switch_column.switch_table;
 
   const auto current_row_type = switch_table.delegate.current_row_type;
-  const auto is_voice = get_is_voice(current_row_type);
+  const auto is_voice = is_voice_type(current_row_type);
 
+  // only chords and pitched notes have intervals
   set_interval_rows_are_enabled(
-      controls_column, anything_selected && !is_voice &&
-                           current_row_type != RowType::unpitched_note_type);
+      controls_column,
+      anything_selected && (current_row_type == RowType::chord_type ||
+                            current_row_type == RowType::pitched_note_type));
 
   song_menu_bar.play_menu.play_action.setEnabled(anything_selected);
   song_menu_bar.play_menu.play_to_end_action.setEnabled(anything_selected &&
                                                         !is_voice);
 
-  // voice names must be typed, not copy/pasted or deleted, since every voice
-  // name must stay unique and non-empty
-  const auto name_column_selected =
-      is_voice &&
-      std::ranges::any_of(
-          selection,
-          [name_column =
-               current_row_type == RowType::pitched_voice_type
-                   ? static_cast<int>(
-                         PitchedVoiceColumn::pitched_voice_name_column)
-                   : static_cast<int>(
-                         UnpitchedVoiceColumn::unpitched_voice_name_column)](
-              const QItemSelectionRange& range) -> auto {
-            return range.contains(range.top(), name_column, range.parent());
-          });
+  const auto name_column_selected = dispatch_row_type(
+      switch_table, [&selection](const auto& rows_model) -> bool {
+        return selects_voice_name(rows_model, selection);
+      });
   const auto can_copy_paste = anything_selected && !name_column_selected;
 
   edit_menu.cut_action.setEnabled(can_copy_paste);
@@ -169,17 +187,10 @@ void update_actions(SongMenuBar& song_menu_bar, WindowBody& window_body,
   paste_menu.paste_after_action.setEnabled(can_copy_paste && !is_voice);
   paste_menu.paste_into_start_action.setEnabled(!is_voice);
   edit_menu.delete_cells_action.setEnabled(can_copy_paste);
-  // removing every remaining voice row would leave no voice for a note to
-  // reference, so disable rather than let RemoveVoiceRows warn and cancel;
-  // selection.size() can transiently be 0 or >1 while a model change (e.g.
-  // undoing a row removal) is still adjusting the selection, so require
-  // exactly one range rather than asserting via get_only_range
-  const auto removing_every_voice_row =
-      is_voice && selection.size() == 1 &&
-      get_number_of_rows(selection.at(0)) >=
-          (current_row_type == RowType::pitched_voice_type
-               ? switch_table.pitched_voices_model.get_rows().size()
-               : switch_table.unpitched_voices_model.get_rows().size());
+  const auto removing_every_voice_row = dispatch_row_type(
+      switch_table, [&selection](const auto& rows_model) -> bool {
+        return removes_every_voice_row(rows_model, selection);
+      });
   edit_menu.remove_rows_action.setEnabled(anything_selected &&
                                           !removing_every_voice_row);
 

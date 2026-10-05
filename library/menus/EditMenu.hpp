@@ -1,5 +1,6 @@
 #pragma once
 
+#include "actions/RemoveVoiceRows.hpp"
 #include "menus/InsertMenu.hpp"
 #include "menus/PasteMenu.hpp"
 
@@ -12,6 +13,15 @@ template <RowInterface SubRow>
       rows_model, first_row_number,
       copy_items(rows_model.get_rows(), first_row_number, number_of_rows), 0,
       SubRow::get_number_of_columns() - 1, true);
+}
+
+// removing voices also reassigns their notes
+template <VoiceInterface SubVoice, NoteInterface SubNote>
+[[nodiscard]] static auto make_remove_command(
+    VoicesModel<SubVoice, SubNote>& voices_model, const int first_row_number,
+    const int number_of_rows) -> QUndoCommand* {
+  return new RemoveVoiceRows<  // NOLINT(cppcoreguidelines-owning-memory)
+      SubVoice, SubNote>(voices_model, first_row_number, number_of_rows);
 }
 
 template <RowInterface SubRow>

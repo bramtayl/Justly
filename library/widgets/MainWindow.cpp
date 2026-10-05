@@ -270,8 +270,7 @@ MainWindow::MainWindow()
   QObject::connect(
       &play_menu.play_action, &QAction::triggered, this, [this]() -> auto {
         const auto selection = get_play_selection(window_body);
-        if (selection.row_type == RowType::pitched_voice_type ||
-            selection.row_type == RowType::unpitched_voice_type) {
+        if (is_voice_type(selection.row_type)) {
           // voice audition/preview has no timeline position
           stop_piano_roll_playhead(piano_roll_widget);
           return;
@@ -287,8 +286,7 @@ MainWindow::MainWindow()
         const auto selection = get_play_selection(window_body);
         // play_to_end_action is disabled for voice rows; see
         // ReplaceTable.cpp's update_actions
-        Q_ASSERT(selection.row_type != RowType::pitched_voice_type &&
-                 selection.row_type != RowType::unpitched_voice_type);
+        Q_ASSERT(!is_voice_type(selection.row_type));
         const auto first_chord_number =
             selection.row_type == RowType::chord_type
                 ? selection.first_row_number
@@ -311,10 +309,10 @@ MainWindow::MainWindow()
 
   add_replace_table(song_menu_bar, window_body, RowType::pitched_voice_type, -1,
                     piano_roll_widget);
-  add_insert_row(window_body, 0, RowType::pitched_voice_type);
+  add_insert_row(window_body, 0);
   add_replace_table(song_menu_bar, window_body, RowType::unpitched_voice_type,
                     -1, piano_roll_widget);
-  add_insert_row(window_body, 0, RowType::unpitched_voice_type);
+  add_insert_row(window_body, 0);
   add_replace_table(song_menu_bar, window_body, RowType::chord_type, -1,
                     piano_roll_widget);
   clear_and_clean(undo_stack);

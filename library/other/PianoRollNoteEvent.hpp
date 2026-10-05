@@ -1,10 +1,6 @@
 #pragma once
 
-#include "rows/Note.hpp"
-#include "sound/PlayState.hpp"
-
-struct PitchedNote;
-struct Song;
+#include "other/Song.hpp"
 
 struct PianoRollNoteEvent {
   double start_time_ms = 0;
@@ -18,11 +14,10 @@ struct PianoRollNoteEvent {
 };
 
 template <NoteInterface SubNote>
-static void append_piano_roll_events(
-    QList<PianoRollNoteEvent>& events, const PlayState& play_state,
-    const QList<PitchedVoice>& pitched_voices,
-    const QList<UnpitchedVoice>& unpitched_voices, const int chord_number,
-    const QList<SubNote>& sub_notes) {
+static void append_piano_roll_events(QList<PianoRollNoteEvent>& events,
+                                     const PlayState& play_state,
+                                     const Song& song, const int chord_number,
+                                     const QList<SubNote>& sub_notes) {
   for (auto note_number = 0; note_number < sub_notes.size();
        note_number = note_number + 1) {
     const auto& sub_note = sub_notes.at(note_number);
@@ -31,20 +26,17 @@ static void append_piano_roll_events(
     event.start_time_ms = play_state.current_time;
     event.duration_ms = get_duration_in_milliseconds(
         play_state.current_tempo, rational_to_double(sub_note.beats));
-    event.velocity = sub_note.get_velocity(play_state.current_velocity,
-                                           pitched_voices, unpitched_voices);
+    event.velocity =
+        sub_note.get_velocity(play_state.current_velocity, song.pitched_voices,
+                              song.unpitched_voices);
     event.chord_number = chord_number;
     event.note_number = note_number;
-    if constexpr (std::is_same_v<SubNote, PitchedNote>) {
-      event.voice_number =
-          get_voice_number(pitched_voices, sub_note.voice_name);
-      event.is_pitched = true;
+    event.voice_number =
+        get_voice_number(get_voices<SubNote>(song), sub_note.voice_name);
+    event.is_pitched = std::same_as<SubNote, PitchedNote>;
+    if constexpr (std::same_as<SubNote, PitchedNote>) {
       event.frequency =
           play_state.current_key * interval_to_double(sub_note.interval);
-    } else {
-      event.voice_number =
-          get_voice_number(unpitched_voices, sub_note.voice_name);
-      event.is_pitched = false;
     }
     events.push_back(event);
   }

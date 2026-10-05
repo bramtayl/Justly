@@ -51,16 +51,13 @@ static void maybe_warn_reassigned_voices(QWidget& parent,
 template <RowInterface SubRow>
 static void reassign_unknown_pasted_voices(QWidget& parent, const Song& song,
                                            QList<SubRow>& rows) {
-  const auto& pitched_voices = song.pitched_voices;
-  const auto& unpitched_voices = song.unpitched_voices;
-  if constexpr (std::same_as<SubRow, PitchedNote>) {
-    maybe_warn_reassigned_voices<PitchedNote>(
-        parent, reassign_unknown_voices(rows, pitched_voices), pitched_voices);
-  } else if constexpr (std::same_as<SubRow, UnpitchedNote>) {
-    maybe_warn_reassigned_voices<UnpitchedNote>(
-        parent, reassign_unknown_voices(rows, unpitched_voices),
-        unpitched_voices);
+  if constexpr (NoteInterface<SubRow>) {
+    const auto& voices = get_voices<SubRow>(song);
+    maybe_warn_reassigned_voices<SubRow>(
+        parent, reassign_unknown_voices(rows, voices), voices);
   } else if constexpr (std::same_as<SubRow, Chord>) {
+    const auto& pitched_voices = song.pitched_voices;
+    const auto& unpitched_voices = song.unpitched_voices;
     auto pitched_count = 0;
     auto unpitched_count = 0;
     for (auto& chord : rows) {

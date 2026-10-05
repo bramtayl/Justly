@@ -1,10 +1,12 @@
 #pragma once
 
+#include "rows/Note.hpp"
 #include "rows/PitchedVoice.hpp"
 #include "rows/UnpitchedVoice.hpp"
 #include "sound/PlayState.hpp"
 
 struct Chord;
+struct PitchedNote;
 
 static const auto C_0_MIDI = 12;
 static const auto DEFAULT_STARTING_MIDI = MIDDLE_C_MIDI;
@@ -21,6 +23,16 @@ struct Song {
 
   Song();
 };
+
+// the voices that a SubNote's voice_name refers to
+template <NoteInterface SubNote>
+[[nodiscard]] static auto get_voices(const Song& song) -> const auto& {
+  if constexpr (std::same_as<SubNote, PitchedNote>) {
+    return song.pitched_voices;
+  } else {
+    return song.unpitched_voices;
+  }
+}
 
 [[nodiscard]] auto get_octave_degree(int midi_interval) -> std::tuple<int, int>;
 

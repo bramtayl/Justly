@@ -15,17 +15,10 @@ SwitchColumn::SwitchColumn(QUndoStack& undo_stack, Song& song)
 }
 
 auto get_parent_chord_number(const SwitchTable& switch_table) -> int {
-  switch (switch_table.delegate.current_row_type) {
-    case RowType::chord_type:
-    case RowType::pitched_voice_type:
-    case RowType::unpitched_voice_type:
-      return -1;
-    case RowType::pitched_note_type:
-      return switch_table.pitched_notes_model.parent_chord_number;
-    case RowType::unpitched_note_type:
-      return switch_table.unpitched_notes_model.parent_chord_number;
-  }
-  Q_UNREACHABLE();
+  // -1 for the chords and voices models, which never get a parent chord
+  return dispatch_row_type(switch_table, [](const auto& rows_model) -> int {
+    return rows_model.parent_chord_number;
+  });
 }
 
 auto get_selection_model(const QAbstractItemView& item_view)

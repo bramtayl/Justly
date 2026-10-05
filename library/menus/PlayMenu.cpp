@@ -76,7 +76,7 @@ void play_selection(WindowBody& window_body, const bool to_end) {
     case RowType::pitched_voice_type:
     case RowType::unpitched_voice_type:
       // play_to_end_action is disabled for voice rows; see
-      // ReplaceTable.cpp's update_actions/get_is_voice
+      // ReplaceTable.cpp's update_actions
       Q_ASSERT(!to_end);
       // play_voices has already warned about anything it couldn't play
       static_cast<void>(

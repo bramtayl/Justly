@@ -1,6 +1,5 @@
 #include "menus/EditMenu.hpp"
 
-#include "actions/RemoveVoiceRows.hpp"
 #include "actions/SetCells.hpp"
 #include "menus/MenuAction.hpp"
 #include "widgets/SwitchColumn.hpp"
@@ -85,44 +84,15 @@ EditMenu::EditMenu(WindowBody& window_body)
   QObject::connect(
       &remove_rows_action, &QAction::triggered, this, [&window_body]() -> auto {
         auto& switch_table = window_body.switch_column.switch_table;
-        auto& undo_stack = window_body.undo_stack;
-
         const auto& range = get_only_range(switch_table);
-        const auto first_row_number = range.top();
-        const auto number_of_rows = get_number_of_rows(range);
 
         // remove_rows_action is disabled (see update_actions) whenever the
-        // selection covers every remaining voice row, so the voice cases
-        // below never need to guard against removing the last one
-        QUndoCommand* undo_command = nullptr;
-        switch (switch_table.delegate.current_row_type) {
-          case RowType::chord_type:
-            undo_command = make_remove_command(
-                switch_table.chords_model, first_row_number, number_of_rows);
-            break;
-          case RowType::pitched_note_type:
-            undo_command =
-                make_remove_command(switch_table.pitched_notes_model,
-                                    first_row_number, number_of_rows);
-            break;
-          case RowType::unpitched_note_type:
-            undo_command =
-                make_remove_command(switch_table.unpitched_notes_model,
-                                    first_row_number, number_of_rows);
-            break;
-          case RowType::pitched_voice_type:
-            undo_command =  // NOLINT(cppcoreguidelines-owning-memory)
-                new RemoveVoiceRows<PitchedVoice, PitchedNote>(
-                    switch_table.pitched_voices_model, first_row_number,
-                    number_of_rows);
-            break;
-          case RowType::unpitched_voice_type:
-            undo_command =  // NOLINT(cppcoreguidelines-owning-memory)
-                new RemoveVoiceRows<UnpitchedVoice, UnpitchedNote>(
-                    switch_table.unpitched_voices_model, first_row_number,
-                    number_of_rows);
-            break;
-        }
-        undo_stack.push(undo_command);
+        // selection covers every remaining voice row, so removing voices
+        // never needs to guard against removing the last one
+        window_body.undo_stack.push(dispatch_row_type(
+            switch_table, [&range](auto& rows_model) -> QUndoCommand* {
+              return make_remove_command(rows_model, range.top(),
+                                         get_number_of_rows(range));
+            }));
       });
 }

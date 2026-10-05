@@ -11,13 +11,8 @@ struct NotesModel : public UndoRowsModel<SubNote> {
       : UndoRowsModel<SubNote>(undo_stack, song) {}
 
   [[nodiscard]] auto make_empty_row() const -> SubNote override {
-    const auto& song = this->song;
     SubNote sub_note;
-    if constexpr (std::same_as<SubNote, PitchedNote>) {
-      sub_note.voice_name = song.pitched_voices.at(0).name;
-    } else {
-      sub_note.voice_name = song.unpitched_voices.at(0).name;
-    }
+    sub_note.voice_name = get_voices<SubNote>(this->song).at(0).name;
     return sub_note;
   }
 
