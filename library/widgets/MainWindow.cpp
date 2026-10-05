@@ -10,6 +10,7 @@
 #include "column_numbers/ChordColumn.hpp"
 #include "menus/SongMenuBar.hpp"
 #include "piano_roll/PianoRollWidget.hpp"
+#include "widgets/SongFile.hpp"
 
 namespace {
 

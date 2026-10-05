@@ -1,6 +1,7 @@
 target_sources(JustlyLibrary PUBLIC FILE_SET justly_headers FILES
     "Accidental.hpp"
     "MusicXMLChord.hpp"
+    "MusicXMLImport.hpp"
     "MusicXMLJump.hpp"
     "MusicXMLMeasure.hpp"
     "MusicXMLNote.hpp"
@@ -8,5 +9,6 @@ target_sources(JustlyLibrary PUBLIC FILE_SET justly_headers FILES
 )
 
 target_sources(JustlyLibrary PRIVATE
+    "MusicXMLImport.cpp"
     "MusicXMLPart.cpp"
 )

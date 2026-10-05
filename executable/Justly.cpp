@@ -2,6 +2,7 @@
 // #include "SDL.h"
 
 #include "widgets/MainWindow.hpp"
+#include "widgets/SongFile.hpp"
 #include "widgets/WindowBody.hpp"
 
 auto main(int number_of_arguments, char* arguments[]) -> int {

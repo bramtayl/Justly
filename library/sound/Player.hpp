@@ -60,3 +60,5 @@ struct Player {
 
   NO_MOVE_COPY(Player)
 };
+
+[[nodiscard]] auto get_gain(const Player& player) -> double;

@@ -32,3 +32,7 @@ auto read_xml_document(const QByteArray& bytes) -> XMLDocument {
   return XMLDocument(xmlReadMemory(
       bytes.constData(), static_cast<int>(bytes.size()), nullptr, nullptr, 0));
 }
+
+auto read_xml_file(const QString& filename) -> XMLDocument {
+  return XMLDocument(xmlReadFile(filename.toStdString().c_str(), nullptr, 0));
+}

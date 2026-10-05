@@ -81,3 +81,7 @@ Player::Player(QWidget& parent_input)
 }
 
 Player::~Player() { stop_playing(sequencer, event); }
+
+auto get_gain(const Player& player) -> double {
+  return fluid_synth_get_gain(player.synth.internal_pointer);
+}

@@ -1,6 +1,7 @@
 #include "menus/PlayMenu.hpp"
 
 #include "menus/MenuAction.hpp"
+#include "sound/Playback.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchTable.hpp"
 #include "widgets/WindowBody.hpp"
@@ -44,13 +45,13 @@ void play_selection(WindowBody& window_body, const bool to_end) {
   const auto number_of_rows = selection.number_of_rows;
 
   stop_playing(player.sequencer, player.event);
-  initialize_play(window_body);
+  initialize_play(player, song);
 
   switch (row_type) {
     case RowType::chord_type:
       modulate_before_chord(song, play_state, first_row_number);
       play_chords(
-          window_body, first_row_number,
+          player, song, first_row_number,
           to_end ? number_of_chords - first_row_number : number_of_rows);
       break;
     case RowType::pitched_note_type:
@@ -68,7 +69,7 @@ void play_selection(WindowBody& window_body, const bool to_end) {
       if (played && to_end) {
         move_time(play_state, chord);
         update_final_time(player, play_state.current_time);
-        play_chords(window_body, chord_number + 1,
+        play_chords(player, song, chord_number + 1,
                     number_of_chords - chord_number - 1);
       }
       break;

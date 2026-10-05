@@ -23,3 +23,6 @@ struct XMLDocument : CHandle<xmlDoc, xmlFreeDoc> {
 [[nodiscard]] auto xml_bytes_size_is_safe(qsizetype size) -> bool;
 
 [[nodiscard]] auto read_xml_document(const QByteArray& bytes) -> XMLDocument;
+
+// a null document if the file is missing or isn't well-formed XML
+[[nodiscard]] auto read_xml_file(const QString& filename) -> XMLDocument;

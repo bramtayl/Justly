@@ -1,6 +1,8 @@
 #include "menus/FileMenu.hpp"
 
 #include "menus/MenuAction.hpp"
+#include "sound/Playback.hpp"
+#include "widgets/SongFile.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/WindowBody.hpp"
 
@@ -71,13 +73,13 @@ FileMenu::FileMenu(WindowBody& window_body)
                      }
                    });
 
-  QObject::connect(&export_action, &QAction::triggered, this,
-                   [&window_body]() -> auto {
-                     const auto maybe_file = maybe_choose_file(
-                         window_body, "Export — Justly", "WAV file (*.wav)",
-                         QFileDialog::AcceptSave, ".wav", "Export");
-                     if (maybe_file.has_value()) {
-                       export_to_file(window_body, *maybe_file);
-                     }
-                   });
+  QObject::connect(
+      &export_action, &QAction::triggered, this, [&window_body]() -> auto {
+        const auto maybe_file = maybe_choose_file(
+            window_body, "Export — Justly", "WAV file (*.wav)",
+            QFileDialog::AcceptSave, ".wav", "Export");
+        if (maybe_file.has_value()) {
+          export_to_file(window_body.player, window_body.song, *maybe_file);
+        }
+      });
 }

@@ -158,17 +158,17 @@ void Tester::test_gain() {
   auto& window_body = main_window.window_body;
   auto& gain_editor = window_body.controls_column.spin_boxes.gain_editor;
 
-  const auto old_gain = get_gain(window_body);
+  const auto old_gain = get_gain(window_body.player);
   QCOMPARE_NE(old_gain, NEW_GAIN_1);
   QCOMPARE_NE(old_gain, NEW_GAIN_2);
 
   gain_editor.setValue(NEW_GAIN_1);
-  QCOMPARE(get_gain(window_body), NEW_GAIN_1);
+  QCOMPARE(get_gain(window_body.player), NEW_GAIN_1);
   gain_editor.setValue(NEW_GAIN_2);
-  QCOMPARE(get_gain(window_body), NEW_GAIN_2);
+  QCOMPARE(get_gain(window_body.player), NEW_GAIN_2);
 
   window_body.undo_stack.undo();
-  QCOMPARE(get_gain(window_body), old_gain);
+  QCOMPARE(get_gain(window_body.player), old_gain);
 }
 
 void Tester::test_interval_button_data() {

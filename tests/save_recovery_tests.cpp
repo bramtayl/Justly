@@ -104,7 +104,7 @@ void Tester::test_recovery_timer_debounce() {
   // asserting on that incidental timing
   recovery_timer.stop();
 
-  const auto old_gain = get_gain(window_body);
+  const auto old_gain = get_gain(window_body.player);
   QCOMPARE_NE(old_gain, NEW_GAIN_1);
   gain_editor.setValue(NEW_GAIN_1);
   QVERIFY(recovery_timer.isActive());
@@ -117,7 +117,7 @@ void Tester::test_recovery_timer_debounce() {
   QVERIFY(QFile::exists(get_recovery_file_path()));
 
   window_body.undo_stack.undo();
-  QCOMPARE(get_gain(window_body), old_gain);
+  QCOMPARE(get_gain(window_body.player), old_gain);
   QVERIFY(recovery_timer.isActive());
 
   recovery_timer.start(0);
@@ -133,7 +133,7 @@ void Tester::test_recovery_restore_accepted() {
 
   open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
                        main_window.piano_roll_widget, fixture_file);
-  const auto old_gain = get_gain(window_body);
+  const auto old_gain = get_gain(window_body.player);
   QCOMPARE_NE(old_gain, NEW_GAIN_1);
 
   window_body.controls_column.spin_boxes.gain_editor.setValue(NEW_GAIN_1);
@@ -142,13 +142,13 @@ void Tester::test_recovery_restore_accepted() {
   // recovery file itself is untouched, since only save/open/import/close
   // clear it, not undo
   window_body.undo_stack.undo();
-  QCOMPARE(get_gain(window_body), old_gain);
+  QCOMPARE(get_gain(window_body.player), old_gain);
 
   answer_question_later(main_window, waiting_for_message, RECOVERY_PROMPT_TEXT,
                         QMessageBox::Yes);
   QVERIFY(maybe_restore_recovery(window_body));
 
-  QCOMPARE(get_gain(window_body), NEW_GAIN_1);
+  QCOMPARE(get_gain(window_body.player), NEW_GAIN_1);
   QCOMPARE(window_body.current_file, fixture_file);
   QVERIFY(!window_body.undo_stack.isClean());
   QVERIFY(!QFile::exists(get_recovery_file_path()));
@@ -164,7 +164,7 @@ void Tester::test_recovery_restore_declined() {
 
   open_file_and_reload(main_window.song_menu_bar, main_window.window_body,
                        main_window.piano_roll_widget, fixture_file);
-  const auto old_gain = get_gain(window_body);
+  const auto old_gain = get_gain(window_body.player);
   QCOMPARE_NE(old_gain, NEW_GAIN_1);
 
   window_body.controls_column.spin_boxes.gain_editor.setValue(NEW_GAIN_1);
@@ -175,7 +175,7 @@ void Tester::test_recovery_restore_declined() {
                         QMessageBox::No);
   QVERIFY(!maybe_restore_recovery(window_body));
 
-  QCOMPARE(get_gain(window_body), old_gain);
+  QCOMPARE(get_gain(window_body.player), old_gain);
   QCOMPARE(window_body.current_file, fixture_file);
   QVERIFY(window_body.undo_stack.isClean());
   QVERIFY(!QFile::exists(get_recovery_file_path()));

@@ -12,7 +12,8 @@ void Tester::test_export() {
   QTemporaryFile temp_export_file;
   QVERIFY(temp_export_file.open());
   temp_export_file.close();
-  export_to_file(window_body, temp_export_file.fileName());
+  export_to_file(window_body.player, window_body.song,
+                 temp_export_file.fileName());
 }
 
 // regression test: test_export calls export_to_file directly, which never
@@ -52,7 +53,7 @@ void Tester::test_export_unwritable_path() {
       temp_export_dir.filePath("nonexistent_subdir/export.wav");
 
   close_message_later(main_window, waiting_for_message, "Cannot write to file");
-  export_to_file(window_body, unwritable_path);
+  export_to_file(window_body.player, window_body.song, unwritable_path);
 
   QVERIFY(!QFile::exists(unwritable_path));
 
@@ -61,7 +62,8 @@ void Tester::test_export_unwritable_path() {
   QTemporaryFile temp_export_file;
   QVERIFY(temp_export_file.open());
   temp_export_file.close();
-  export_to_file(window_body, temp_export_file.fileName());
+  export_to_file(window_body.player, window_body.song,
+                 temp_export_file.fileName());
 }
 
 // a file size limit lets the renderer open its output file and then fails
@@ -82,7 +84,8 @@ void Tester::test_export_write_error() {
   QCOMPARE(setrlimit(RLIMIT_FSIZE, &new_limit), 0);
 
   close_message_later(main_window, waiting_for_message, "Error writing file");
-  export_to_file(main_window.window_body, export_filename);
+  export_to_file(main_window.window_body.player, main_window.window_body.song,
+                 export_filename);
 
   QCOMPARE(setrlimit(RLIMIT_FSIZE, &old_limit), 0);
   static_cast<void>(std::signal(SIGXFSZ, old_handler));
