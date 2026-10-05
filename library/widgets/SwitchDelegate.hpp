@@ -16,3 +16,10 @@ struct SwitchDelegate : public QStyledItemDelegate {
   auto createEditor(QWidget* parent_pointer, const QStyleOptionViewItem& option,
                     const QModelIndex& index) const -> QWidget* override;
 };
+
+// the custom editor for column of a row_type table, or nullptr if that
+// column uses the default editor
+[[nodiscard]] auto create_switch_editor(const SwitchDelegate& delegate,
+                                        QWidget* parent_pointer,
+                                        RowType row_type, int column)
+    -> QWidget*;
