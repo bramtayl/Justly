@@ -54,7 +54,9 @@ static const auto F_SHARP_FREQUENCY = 370;
 static const auto G_FREQUENCY = 392;
 static const auto A_FLAT_FREQUENCY = 415;
 
+static const auto FIVE = 5;
 static const auto SIX = 6;
+static const auto SEVEN = 7;
 static const auto EIGHT = 8;
 
 inline auto get_model(QAbstractItemView& table) -> auto& {
@@ -243,7 +245,7 @@ inline auto make_voice_song_xml(
 }
 
 // simulates a user picking a file and accepting a Save/Export dialog,
-// exercising FileMenu's dialog-accept lambdas (get_selected_file and
+// exercising FileMenu's dialog-accept lambdas (maybe_choose_file and
 // whatever it hands the selected path to) instead of only the reject path
 // test_file_dialog_cleanup drives
 inline void accept_file_dialog_later(QWidget& parent,

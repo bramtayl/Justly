@@ -8,6 +8,10 @@
 
 XMLString::~XMLString() { xmlFree(internal_pointer); }
 
+auto to_int(const double value) -> int {
+  return static_cast<int>(std::round(value));
+}
+
 auto get_clipboard() -> QClipboard& {
   return get_reference(QGuiApplication::clipboard());
 }

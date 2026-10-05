@@ -39,6 +39,8 @@ template <typename Thing>
   return *thing_pointer;
 }
 
+[[nodiscard]] auto to_int(double value) -> int;
+
 [[nodiscard]] auto get_clipboard() -> QClipboard&;
 
 [[nodiscard]] auto get_number_of_rows(const QItemSelectionRange& range) -> int;

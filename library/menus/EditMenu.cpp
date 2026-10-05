@@ -41,8 +41,8 @@ EditMenu::EditMenu(WindowBody& window_body)
     : QMenu(EditMenu::tr("&Edit")),
       cut_action(EditMenu::tr("&Cut")),
       copy_action(EditMenu::tr("&Copy")),
-      paste_menu(PasteMenu(window_body)),
-      insert_menu(InsertMenu(window_body)),
+      paste_menu(window_body),
+      insert_menu(window_body),
       delete_cells_action(EditMenu::tr("&Delete cells")),
       remove_rows_action(EditMenu::tr("&Remove rows")) {
   auto& undo_stack = window_body.undo_stack;

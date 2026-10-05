@@ -31,17 +31,39 @@ auto get_int_or_warn(QWidget& parent, const xmlNode& element,
   return get_int_or_warn(parent, get_content(element), title, message);
 }
 
-auto get_duration(QWidget& parent, xmlNode& measure_element)
-    -> std::optional<int> {
-  auto& duration_element = get_xml_child(measure_element, "duration");
-  if (!xml_content_is_integer(duration_element)) {
-    QMessageBox::warning(&parent, QObject::tr("Duration error"),
-                         QObject::tr("Fractional durations are not supported"));
+// for xs:decimal fields, which could hold a fraction Justly can't support
+auto get_whole_int_or_warn(QWidget& parent, const xmlNode& element,
+                           const QString& title,
+                           const QString& fractional_message,
+                           const QString& range_message) -> std::optional<int> {
+  if (!xml_content_is_integer(element)) {
+    QMessageBox::warning(&parent, title, fractional_message);
     return std::nullopt;
   }
-  return get_int_or_warn(parent, duration_element,
-                         QObject::tr("Duration error"),
-                         QObject::tr("Duration is out of range"));
+  return get_int_or_warn(parent, element, title, range_message);
+}
+
+auto get_duration(QWidget& parent, xmlNode& measure_element)
+    -> std::optional<int> {
+  return get_whole_int_or_warn(
+      parent, get_xml_child(measure_element, "duration"),
+      QObject::tr("Duration error"),
+      QObject::tr("Fractional durations are not supported"),
+      QObject::tr("Duration is out of range"));
+}
+
+// skips anything that isn't a number
+auto parse_number_list(const std::string& text) -> QList<int> {
+  QList<int> numbers;
+  for (const auto& token :
+       QString::fromStdString(text).split(',', Qt::SkipEmptyParts)) {
+    bool is_number = false;
+    const auto number = token.trimmed().toInt(&is_number);
+    if (is_number) {
+      numbers.push_back(number);
+    }
+  }
+  return numbers;
 }
 
 const auto STEPS_PER_OCTAVE = 7;
@@ -86,14 +108,9 @@ auto parse_attributes(QWidget& parent, xmlNode& attributes_node,
       }
       part.fifths_changes[time] = maybe_fifths.value();
     } else if (attribute_name == "divisions") {
-      if (!xml_content_is_integer(attribute_element)) {
-        QMessageBox::warning(
-            &parent, QObject::tr("Divisions error"),
-            QObject::tr("Fractional divisions are not supported"));
-        return false;
-      }
-      const auto maybe_divisions = get_int_or_warn(
+      const auto maybe_divisions = get_whole_int_or_warn(
           parent, attribute_element, QObject::tr("Divisions error"),
+          QObject::tr("Fractional divisions are not supported"),
           QObject::tr("Divisions value is out of range"));
       if (!maybe_divisions.has_value()) {
         return false;
@@ -101,15 +118,10 @@ auto parse_attributes(QWidget& parent, xmlNode& attributes_node,
       Q_ASSERT(maybe_divisions.value() > 0);
       part.divisions_changes[time] = maybe_divisions.value();
     } else if (attribute_name == "transpose") {
-      auto& chromatic_element = get_xml_child(attribute_element, "chromatic");
-      if (!xml_content_is_integer(chromatic_element)) {
-        QMessageBox::warning(
-            &parent, QObject::tr("Transpose error"),
-            QObject::tr("Microtonal transpositions are not supported"));
-        return false;
-      }
-      const auto maybe_chromatic = get_int_or_warn(
-          parent, chromatic_element, QObject::tr("Transpose error"),
+      const auto maybe_chromatic = get_whole_int_or_warn(
+          parent, get_xml_child(attribute_element, "chromatic"),
+          QObject::tr("Transpose error"),
+          QObject::tr("Microtonal transpositions are not supported"),
           QObject::tr("Chromatic value is out of range"));
       if (!maybe_chromatic.has_value()) {
         return false;
@@ -186,14 +198,9 @@ auto parse_note(QWidget& parent, xmlNode& note_node,
     } else if (name == "staff") {
       note.staff = get_qstring_content(note_field);
     } else if (name == "duration") {
-      if (!xml_content_is_integer(note_field)) {
-        QMessageBox::warning(
-            &parent, QObject::tr("Note duration error"),
-            QObject::tr("Fractional note durations are not supported"));
-        return false;
-      }
-      const auto maybe_duration = get_int_or_warn(
+      const auto maybe_duration = get_whole_int_or_warn(
           parent, note_field, QObject::tr("Note duration error"),
+          QObject::tr("Fractional note durations are not supported"),
           QObject::tr("Note duration is out of range"));
       if (!maybe_duration.has_value()) {
         return false;
@@ -295,17 +302,8 @@ auto parse_barline(QWidget& parent, xmlNode& barline_node,
       }
       in_ending = is_start;
       if (is_start) {
-        QList<int> ending_numbers;
-        const auto numbers_text =
-            QString::fromStdString(get_property(child, "number"));
-        for (const auto& token : numbers_text.split(',', Qt::SkipEmptyParts)) {
-          bool is_number = false;
-          const auto number = token.trimmed().toInt(&is_number);
-          if (is_number) {
-            ending_numbers.push_back(number);
-          }
-        }
-        for (const auto number : ending_numbers) {
+        for (const auto number :
+             parse_number_list(get_property(child, "number"))) {
           if (!active_ending_numbers.contains(number)) {
             active_ending_numbers.push_back(number);
           }
@@ -323,16 +321,8 @@ auto parse_barline(QWidget& parent, xmlNode& barline_node,
 
 // records jumps, and the segnos and codas they jump to, onto the measure
 void parse_sound(xmlNode& sound_node, MusicXMLMeasure& measure) {
-  QList<int> times;
-  const auto time_only_text = QString::fromStdString(
+  const auto times = parse_number_list(
       maybe_get_property(sound_node, "time-only").value_or(""));
-  for (const auto& token : time_only_text.split(',', Qt::SkipEmptyParts)) {
-    bool is_number = false;
-    const auto time = token.trimmed().toInt(&is_number);
-    if (is_number) {
-      times.push_back(time);
-    }
-  }
   const auto maybe_add_jump = [&sound_node, &measure, &times](
                                   const JumpType type,
                                   const char* name) -> void {

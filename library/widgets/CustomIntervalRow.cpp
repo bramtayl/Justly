@@ -40,8 +40,6 @@ CustomIntervalRow::CustomIntervalRow(QUndoStack& undo_stack_input,
       plus_button(*(new QPushButton("+", this))),
       presets_box(*(new QComboBox(this))) {
   static const auto MINOR_THIRD_HALFSTEPS = 3;
-  static const auto MAJOR_THIRD_HALFSTEPS = 4;
-  static const auto PERFECT_FIFTH_HALFSTEPS = 7;
 
   make_square(minus_button);
   make_square(plus_button);
@@ -53,11 +51,6 @@ CustomIntervalRow::CustomIntervalRow(QUndoStack& undo_stack_input,
   row_layout.addWidget(&interval_editor, 0, 1);
   row_layout.addWidget(&plus_button, 0, 2);
   row_layout.addWidget(&presets_box, 1, 1);
-
-  auto& switch_table_ref = this->switch_table;
-  auto& undo_stack_ref = this->undo_stack;
-  auto& interval_editor_ref = this->interval_editor;
-  auto& presets_box_ref = this->presets_box;
 
   const auto& just_scale = get_just_scale();
   // skip unison, which wouldn't change anything, and the major third and
@@ -78,9 +71,9 @@ CustomIntervalRow::CustomIntervalRow(QUndoStack& undo_stack_input,
 
   QObject::connect(
       &presets_box, &QComboBox::currentIndexChanged, this,
-      [&interval_editor_ref, &presets_box_ref, &just_scale](int index) -> auto {
-        interval_editor_ref.setValue(Interval(
-            just_scale[presets_box_ref.itemData(index).toInt()].ratio, 0));
+      [this, &just_scale](int index) -> auto {
+        interval_editor.setValue(
+            Interval(just_scale[presets_box.itemData(index).toInt()].ratio, 0));
       });
 
   for (auto* const spin_box_pointer :
@@ -88,26 +81,22 @@ CustomIntervalRow::CustomIntervalRow(QUndoStack& undo_stack_input,
         &interval_editor.rational_editor.denominator_box,
         &interval_editor.octave_box}) {
     QObject::connect(spin_box_pointer, &QSpinBox::valueChanged, this,
-                     [&presets_box_ref, &interval_editor_ref]() -> auto {
-                       select_matching_preset(presets_box_ref,
-                                              interval_editor_ref);
+                     [this]() -> auto {
+                       select_matching_preset(presets_box, interval_editor);
                      });
   }
 
   interval_editor.setValue(
       Interval(just_scale[MINOR_THIRD_HALFSTEPS].ratio, 0));
 
-  QObject::connect(
-      &minus_button, &QPushButton::released, this,
-      [&undo_stack_ref, &switch_table_ref, &interval_editor_ref]() -> auto {
-        update_interval(undo_stack_ref, switch_table_ref,
-                        Interval() / interval_editor_ref.value());
-      });
+  QObject::connect(&minus_button, &QPushButton::released, this,
+                   [this]() -> auto {
+                     update_interval(undo_stack, switch_table,
+                                     Interval() / interval_editor.value());
+                   });
 
   QObject::connect(
-      &plus_button, &QPushButton::released, this,
-      [&undo_stack_ref, &switch_table_ref, &interval_editor_ref]() -> auto {
-        update_interval(undo_stack_ref, switch_table_ref,
-                        interval_editor_ref.value());
+      &plus_button, &QPushButton::released, this, [this]() -> auto {
+        update_interval(undo_stack, switch_table, interval_editor.value());
       });
 }

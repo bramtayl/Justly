@@ -52,11 +52,6 @@ SpinBoxes::SpinBoxes(Song& song, FluidSynth& synth, QUndoStack& undo_stack)
   static const auto MAX_KEY = 999;
   static const auto MAX_TEMPO = 999;
 
-  auto& gain_editor_ref = this->gain_editor;
-  auto& starting_key_editor_ref = this->starting_key_editor;
-  auto& starting_velocity_editor_ref = this->starting_velocity_editor;
-  auto& starting_tempo_editor_ref = this->starting_tempo_editor;
-
   auto& spin_boxes_form =  // NOLINT(cppcoreguidelines-owning-memory)
       *(new QFormLayout(this));
   add_control(spin_boxes_form, SpinBoxes::tr("&Gain:"), gain_editor, 0,
@@ -69,36 +64,28 @@ SpinBoxes::SpinBoxes(Song& song, FluidSynth& synth, QUndoStack& undo_stack)
               starting_tempo_editor, 1, MAX_TEMPO, SpinBoxes::tr(" bpm"));
   setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-  QObject::connect(
-      &gain_editor, &QDoubleSpinBox::valueChanged, this,
-      [&undo_stack, &song, &synth, &gain_editor_ref](double new_value) -> auto {
-        add_set_double(undo_stack, song, synth, gain_editor_ref,
-                       ChangeId::gain_id,
-                       fluid_synth_get_gain(synth.internal_pointer), new_value);
-      });
-  QObject::connect(
-      &starting_key_editor, &QDoubleSpinBox::valueChanged, this,
-      [&undo_stack, &song, &synth,
-       &starting_key_editor_ref](double new_value) -> auto {
-        add_set_double(undo_stack, song, synth, starting_key_editor_ref,
-                       ChangeId::starting_key_id, song.starting_key, new_value);
-      });
-  QObject::connect(
-      &starting_velocity_editor, &QDoubleSpinBox::valueChanged, this,
-      [&undo_stack, &song, &synth,
-       &starting_velocity_editor_ref](double new_value) -> auto {
-        add_set_double(undo_stack, song, synth, starting_velocity_editor_ref,
-                       ChangeId::starting_velocity_id, song.starting_velocity,
-                       new_value);
-      });
-  QObject::connect(&starting_tempo_editor, &QDoubleSpinBox::valueChanged, this,
-                   [&undo_stack, &song, &synth,
-                    &starting_tempo_editor_ref](double new_value) -> auto {
-                     add_set_double(undo_stack, song, synth,
-                                    starting_tempo_editor_ref,
-                                    ChangeId::starting_tempo_id,
-                                    song.starting_tempo, new_value);
-                   });
+  // every edit becomes an undoable SetDouble, starting from whatever
+  // get_old_value reads at the time
+  const auto connect_control = [this, &undo_stack, &song, &synth](
+                                   QDoubleSpinBox& spin_box,
+                                   const ChangeId control_id,
+                                   auto get_old_value) -> void {
+    QObject::connect(&spin_box, &QDoubleSpinBox::valueChanged, this,
+                     [&undo_stack, &song, &synth, &spin_box, control_id,
+                      get_old_value](const double new_value) -> auto {
+                       add_set_double(undo_stack, song, synth, spin_box,
+                                      control_id, get_old_value(), new_value);
+                     });
+  };
+  connect_control(gain_editor, ChangeId::gain_id, [&synth]() -> double {
+    return fluid_synth_get_gain(synth.internal_pointer);
+  });
+  connect_control(starting_key_editor, ChangeId::starting_key_id,
+                  [&song]() -> double { return song.starting_key; });
+  connect_control(starting_velocity_editor, ChangeId::starting_velocity_id,
+                  [&song]() -> double { return song.starting_velocity; });
+  connect_control(starting_tempo_editor, ChangeId::starting_tempo_id,
+                  [&song]() -> double { return song.starting_tempo; });
 
   gain_editor.setValue(DEFAULT_GAIN);
   starting_key_editor.setValue(song.starting_key);

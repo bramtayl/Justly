@@ -54,20 +54,27 @@ void set_destination(FluidEvent& event, const fluid_seq_id_t sequencer_id) {
   fluid_event_set_dest(event.internal_pointer, sequencer_id);
 }
 
+void send_event_at(FluidSequencer& sequencer, FluidEvent& event,
+                   const double time) {
+  Q_ASSERT(time >= 0);
+  check_fluid_ok(fluid_sequencer_send_at(
+      sequencer.internal_pointer, event.internal_pointer,
+      static_cast<unsigned int>(std::round(time)), 1));
+}
+
 Player::Player(QWidget& parent_input)
     : parent(parent_input),
-      channel_schedules(QList<double>(NUMBER_OF_MIDI_CHANNELS, 0)),
-      settings(FluidSettings(
-          NUMBER_OF_MIDI_CHANNELS,
-          static_cast<int>(std::thread::hardware_concurrency()),
+      channel_schedules(NUMBER_OF_MIDI_CHANNELS, 0),
+      settings(NUMBER_OF_MIDI_CHANNELS,
+               static_cast<int>(std::thread::hardware_concurrency()),
 #ifdef __linux__
-          "pulseaudio"
+               "pulseaudio"
 #else
-          nullptr
+               nullptr
 #endif
-          )),
-      synth(FluidSynth(settings)),
-      sequencer(FluidSequencer(synth)),
+               ),
+      synth(settings),
+      sequencer(synth),
       soundfont_id(get_soundfont_id(synth)),
       driver(make_audio_driver(parent, settings, synth)) {
   set_destination(event, sequencer.sequencer_id);

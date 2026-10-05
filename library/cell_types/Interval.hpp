@@ -29,6 +29,10 @@ struct NamedRatio {
   Rational ratio;
 };
 
+// indices into get_just_scale() for the intervals with their own rows
+static const auto MAJOR_THIRD_HALFSTEPS = 4;
+static const auto PERFECT_FIFTH_HALFSTEPS = 7;
+
 // a just ratio for each of the 12 halfsteps in an octave, starting at unison
 [[nodiscard]] auto get_just_scale() -> const QList<NamedRatio>&;
 

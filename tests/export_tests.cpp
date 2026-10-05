@@ -16,8 +16,8 @@ void Tester::test_export() {
 }
 
 // regression test: test_export calls export_to_file directly, which never
-// exercises FileMenu's export_action lambda (make_file_dialog,
-// get_selected_file, and the call to export_to_file itself) -- drive it
+// exercises FileMenu's export_action lambda (maybe_choose_file
+// and the call to export_to_file itself) -- drive it
 // through the actual dialog instead
 void Tester::test_export_via_dialog() {
   auto& song_menu_bar = main_window.song_menu_bar;
@@ -91,7 +91,7 @@ void Tester::test_export_write_error() {
 #endif
 }
 
-// regression test: FileMenu's dialogs (make_file_dialog) must not leak --
+// regression test: FileMenu's dialogs (maybe_choose_file) must not leak --
 // Open/Import/Save As/Export used to create a new QFileDialog
 // with no matching deleteLater(), so every use of a file dialog left a
 // live QFileDialog parented to window_body for the rest of the process

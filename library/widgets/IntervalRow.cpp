@@ -124,20 +124,13 @@ IntervalRow::IntervalRow(QUndoStack& undo_stack_input,
       new QLabel(interval_name));  // NOLINT(cppcoreguidelines-owning-memory)
   row_layout.addWidget(&plus_button);
 
-  auto& switch_table_ref = this->switch_table;
-  auto& undo_stack_ref = this->undo_stack;
-  const auto& interval_ref = this->interval;
-
   QObject::connect(
-      &minus_button, &QPushButton::released, this,
-      [&undo_stack_ref, &switch_table_ref, &interval_ref]() -> auto {
-        update_interval(undo_stack_ref, switch_table_ref,
-                        Interval() / interval_ref);
+      &minus_button, &QPushButton::released, this, [this]() -> auto {
+        update_interval(undo_stack, switch_table, Interval() / interval);
       });
 
-  QObject::connect(
-      &plus_button, &QPushButton::released, this,
-      [&undo_stack_ref, &switch_table_ref, &interval_ref]() -> auto {
-        update_interval(undo_stack_ref, switch_table_ref, interval_ref);
-      });
+  QObject::connect(&plus_button, &QPushButton::released, this,
+                   [this]() -> auto {
+                     update_interval(undo_stack, switch_table, interval);
+                   });
 }

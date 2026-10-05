@@ -26,6 +26,8 @@ void set_fluid_string(FluidSettings& settings, const char* field,
 
 void set_destination(FluidEvent& event, fluid_seq_id_t sequencer_id);
 
+void send_event_at(FluidSequencer& sequencer, FluidEvent& event, double time);
+
 struct Player {
   // data
   QWidget& parent;

@@ -3,9 +3,6 @@
 #include "cell_types/Interval.hpp"
 #include "rows/Note.hpp"
 
-struct FluidEvent;
-struct FluidSequencer;
-
 static const auto BEND_PER_HALFSTEP = 4096;
 static const auto HALFSTEPS_PER_OCTAVE = 12;
 static const auto MAX_FREQUENCY = 12911.41;  // MIDI 127 plus half step
@@ -15,10 +12,6 @@ static const auto ZERO_BEND_HALFSTEPS = 2;
 [[nodiscard]] auto frequency_to_midi_number(double key) -> double;
 
 [[nodiscard]] auto midi_number_to_frequency(double midi_number) -> double;
-
-[[nodiscard]] auto to_int(double value) -> int;
-
-void send_event_at(FluidSequencer& sequencer, FluidEvent& event, double time);
 
 struct PitchedNote : Note {
   Interval interval;

@@ -3,11 +3,11 @@
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/WindowBody.hpp"
 
-auto make_file_dialog(WindowBody& window_body, const char* const caption,
-                      const QString& filter,
-                      const QFileDialog::AcceptMode accept_mode,
-                      const QString& suffix,
-                      const QFileDialog::FileMode file_mode) -> QFileDialog& {
+auto maybe_choose_file(WindowBody& window_body, const char* const caption,
+                       const QString& filter,
+                       const QFileDialog::AcceptMode accept_mode,
+                       const QString& suffix, const char* const accept_label)
+    -> std::optional<QString> {
   Q_ASSERT(filter.isValidUtf16());
   Q_ASSERT(suffix.isValidUtf16());
   auto& dialog =  // NOLINT(cppcoreguidelines-owning-memory)
@@ -16,15 +16,20 @@ auto make_file_dialog(WindowBody& window_body, const char* const caption,
 
   dialog.setAcceptMode(accept_mode);
   dialog.setDefaultSuffix(suffix);
-  dialog.setFileMode(file_mode);
+  dialog.setFileMode(accept_mode == QFileDialog::AcceptOpen
+                         ? QFileDialog::ExistingFile
+                         : QFileDialog::AnyFile);
+  if (accept_label != nullptr) {
+    dialog.setLabelText(QFileDialog::Accept, WindowBody::tr(accept_label));
+  }
 
-  return dialog;
-}
-
-auto get_selected_file(WindowBody& window_body, const QFileDialog& dialog)
-    -> QString {
-  window_body.current_folder = dialog.directory().absolutePath();
-  return get_only(dialog.selectedFiles());
+  std::optional<QString> maybe_file;
+  if (dialog.exec() != 0) {
+    window_body.current_folder = dialog.directory().absolutePath();
+    maybe_file = get_only(dialog.selectedFiles());
+  }
+  dialog.deleteLater();
+  return maybe_file;
 }
 
 FileMenu::FileMenu(WindowBody& window_body)
@@ -34,9 +39,8 @@ FileMenu::FileMenu(WindowBody& window_body)
       save_as_action(FileMenu::tr("&Save As...")),
       import_action(FileMenu::tr("&Import MusicXML")),
       export_action(FileMenu::tr("&Export recording")) {
-  auto& save_action_ref = this->save_action;
   add_menu_action(*this, open_action, QKeySequence::Open);
-  add_menu_action(*this, import_action, QKeySequence::UnknownKey, true);
+  add_menu_action(*this, import_action);
   addSeparator();
   add_menu_action(*this, save_action, QKeySequence::Save, false);
   add_menu_action(*this, save_as_action, QKeySequence::SaveAs);
@@ -44,9 +48,9 @@ FileMenu::FileMenu(WindowBody& window_body)
 
   QObject::connect(
       &window_body.undo_stack, &QUndoStack::cleanChanged, this,
-      [&save_action_ref, &window_body]() -> auto {
-        save_action_ref.setEnabled(!window_body.undo_stack.isClean() &&
-                                   !window_body.current_file.isEmpty());
+      [this, &window_body]() -> auto {
+        save_action.setEnabled(!window_body.undo_stack.isClean() &&
+                               !window_body.current_file.isEmpty());
       });
 
   // open_action/import_action are wired in MainWindow's constructor instead,
@@ -59,27 +63,23 @@ FileMenu::FileMenu(WindowBody& window_body)
                      save_as_file(window_body, window_body.current_file);
                    });
 
-  QObject::connect(
-      &save_as_action, &QAction::triggered, this, [&window_body]() -> auto {
-        auto& dialog = make_file_dialog(
-            window_body, "Save As — Justly", "XML file (*.xml)",
-            QFileDialog::AcceptSave, ".xml", QFileDialog::AnyFile);
+  QObject::connect(&save_as_action, &QAction::triggered, this,
+                   [&window_body]() -> auto {
+                     const auto maybe_file = maybe_choose_file(
+                         window_body, "Save As — Justly", "XML file (*.xml)",
+                         QFileDialog::AcceptSave, ".xml");
+                     if (maybe_file.has_value()) {
+                       save_as_file(window_body, *maybe_file);
+                     }
+                   });
 
-        if (dialog.exec() != 0) {
-          save_as_file(window_body, get_selected_file(window_body, dialog));
-        }
-        dialog.deleteLater();
-      });
-
-  QObject::connect(
-      &export_action, &QAction::triggered, this, [&window_body]() -> auto {
-        auto& dialog = make_file_dialog(
-            window_body, "Export — Justly", "WAV file (*.wav)",
-            QFileDialog::AcceptSave, ".wav", QFileDialog::AnyFile);
-        dialog.setLabelText(QFileDialog::Accept, "Export");
-        if (dialog.exec() != 0) {
-          export_to_file(window_body, get_selected_file(window_body, dialog));
-        }
-        dialog.deleteLater();
-      });
+  QObject::connect(&export_action, &QAction::triggered, this,
+                   [&window_body]() -> auto {
+                     const auto maybe_file = maybe_choose_file(
+                         window_body, "Export — Justly", "WAV file (*.wav)",
+                         QFileDialog::AcceptSave, ".wav", "Export");
+                     if (maybe_file.has_value()) {
+                       export_to_file(window_body, *maybe_file);
+                     }
+                   });
 }

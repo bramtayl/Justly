@@ -12,6 +12,7 @@ target_sources(JustlyLibrary PUBLIC FILE_SET justly_headers FILES
 
 target_sources(JustlyLibrary PRIVATE
     "Chord.cpp"
+    "Note.cpp"
     "PitchedNote.cpp"
     "PitchedVoice.cpp"
     "Row.cpp"

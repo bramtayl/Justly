@@ -20,8 +20,7 @@
 #include "xml/ZipArchive.hpp"
 
 WindowBody::WindowBody()
-    : player(Player(*this)),
-      undo_stack(QUndoStack(nullptr)),
+    : player(*this),
       current_folder(
           QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
       recovery_timer(*(new QTimer(this))),
@@ -347,6 +346,11 @@ auto maybe_read_xml_file(const QString& filename) -> XMLDocument {
 // manually)
 void reset_switch_table_to_chords(SwitchColumn& switch_column) {
   auto& switch_table = switch_column.switch_table;
+  // model resets drop the selection without emitting selectionChanged, so
+  // clear it first, while the old rows still exist -- otherwise the piano
+  // roll's mirrored selection would outlive them, and its next rebuild (e.g.
+  // from loading the file's gain) would look up rows the new song lacks
+  get_selection_model(switch_table).clear();
   switch_table.pitched_notes_model.set_rows_pointer();
   switch_table.unpitched_notes_model.set_rows_pointer();
   switch_table.delegate.current_row_type = RowType::chord_type;

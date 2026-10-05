@@ -15,7 +15,7 @@ void Tester::test_save() {
 
   // save into a temp file, driven through the actual Save As dialog
   // (rather than calling save_as_file directly) so FileMenu's
-  // dialog-accept wiring -- make_file_dialog, get_selected_file, and the
+  // dialog-accept wiring -- maybe_choose_file and the
   // save_as_action lambda itself -- gets exercised too
   auto save_filename = test_dir.filePath("test_song_2.xml");
   // must not already exist -- accept() would otherwise pop up an

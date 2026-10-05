@@ -10,9 +10,6 @@ struct SwitchTable;
 struct IntervalRow;
 struct SpinBoxes;
 
-static const auto FIVE = 5;
-static const auto SEVEN = 7;
-
 struct ControlsColumn : public QWidget {
   SpinBoxes& spin_boxes;
   IntervalRow& third_row;

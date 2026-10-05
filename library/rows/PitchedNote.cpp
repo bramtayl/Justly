@@ -21,34 +21,30 @@ auto midi_number_to_frequency(const double midi_number) -> double {
          CONCERT_A_FREQUENCY;
 }
 
-auto to_int(const double value) -> int {
-  return static_cast<int>(std::round(value));
+namespace {
+
+void warn_frequency(QWidget& parent, const double frequency,
+                    const int chord_number, const int note_number,
+                    const QString& comparison, const double limit) {
+  QString message;
+  QTextStream stream(&message);
+  stream << QObject::tr("Frequency ") << QString::number(frequency, 'g', 3);
+  add_note_location<PitchedNote>(stream, chord_number, note_number);
+  stream << comparison << QString::number(limit, 'g', 3);
+  QMessageBox::warning(&parent, QObject::tr("Frequency error"), message);
 }
 
-void send_event_at(FluidSequencer& sequencer, FluidEvent& event,
-                   const double time) {
-  Q_ASSERT(time >= 0);
-  check_fluid_ok(fluid_sequencer_send_at(
-      sequencer.internal_pointer, event.internal_pointer,
-      static_cast<unsigned int>(std::round(time)), 1));
-}
+}  // namespace
 
 void PitchedNote::from_xml(xmlNode& node,
                            const QList<PitchedVoice>& /*pitched_voices*/,
                            const QList<UnpitchedVoice>& /*unpitched_voices*/) {
   for (auto& field_node : get_xml_children(node)) {
     const auto name = get_xml_name(field_node);
-    if (name == "beats") {
-      set_rational_from_xml(beats, field_node);
-    } else if (name == "velocity_ratio") {
-      set_rational_from_xml(velocity_ratio, field_node);
-    } else if (name == "words") {
-      words = get_qstring_content(field_node);
-    } else if (name == "interval") {
+    if (name == "interval") {
       set_interval_from_xml(interval, field_node);
     } else {
-      Q_ASSERT(name == "voice_name");
-      voice_name = get_qstring_content(field_node);
+      note_field_from_xml(name, field_node);
     }
   }
 }
@@ -102,24 +98,16 @@ auto PitchedNote::get_closest_midi(
   static const auto minimum_frequency =
       midi_number_to_frequency(0 - QUARTER_STEP);
   if (frequency < minimum_frequency) {
-    QString message;
-    QTextStream stream(&message);
-    stream << QObject::tr("Frequency ") << QString::number(frequency, 'g', 3);
-    add_note_location<PitchedNote>(stream, chord_number, note_number);
-    stream << QObject::tr(" less than minimum frequency ")
-           << QString::number(minimum_frequency, 'g', 3);
-    QMessageBox::warning(&parent, QObject::tr("Frequency error"), message);
+    warn_frequency(parent, frequency, chord_number, note_number,
+                   QObject::tr(" less than minimum frequency "),
+                   minimum_frequency);
     return {};
   }
 
   if (frequency >= MAX_FREQUENCY) {
-    QString message;
-    QTextStream stream(&message);
-    stream << QObject::tr("Frequency ") << QString::number(frequency, 'g', 3);
-    add_note_location<PitchedNote>(stream, chord_number, note_number);
-    stream << QObject::tr(" greater than or equal to maximum frequency ")
-           << QString::number(MAX_FREQUENCY, 'g', 3);
-    QMessageBox::warning(&parent, QObject::tr("Frequency error"), message);
+    warn_frequency(parent, frequency, chord_number, note_number,
+                   QObject::tr(" greater than or equal to maximum frequency "),
+                   MAX_FREQUENCY);
     return {};
   }
 
@@ -240,7 +228,5 @@ void PitchedNote::to_xml(
     const QList<UnpitchedVoice>& /*unpitched_voices*/) const {
   set_xml_string(node, "voice_name", voice_name.toStdString());
   maybe_add_interval_to_xml(node, "interval", interval);
-  maybe_add_rational_to_xml(node, "beats", beats);
-  maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
-  maybe_add_qstring_to_xml(node, "words", words);
+  note_fields_to_xml(node);
 }

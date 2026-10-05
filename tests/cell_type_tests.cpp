@@ -236,7 +236,6 @@ void Tester::test_interval_button_data() {
 void Tester::test_interval_presets() {
   static const auto CUSTOM_NUMERATOR = 7;
   static const auto CUSTOM_DENOMINATOR = 6;
-  static const auto PERFECT_FIFTH_HALFSTEPS = 7;
   static const auto MINOR_SIXTH_HALFSTEPS = 8;
 
   auto& custom_row = main_window.window_body.controls_column.custom_row;

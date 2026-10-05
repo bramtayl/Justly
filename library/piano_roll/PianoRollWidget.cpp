@@ -1085,13 +1085,18 @@ PianoRollWidget::PianoRollWidget(const WindowBody& window_body_input)
 
 auto PianoRollWidget::eventFilter(QObject* watched_pointer,
                                   QEvent* event_pointer) -> bool {
-  auto& view = piano_roll_scene.view;
+  if (watched_pointer != piano_roll_scene.view.viewport()) {
+    return QWidget::eventFilter(watched_pointer, event_pointer);
+  }
   auto& switch_table = window_body.switch_column.switch_table;
-  if (get_reference(event_pointer).type() == QEvent::Wheel &&
-      watched_pointer == view.viewport()) {
-    auto& wheel_event =
-        get_reference(dynamic_cast<QWheelEvent*>(event_pointer));
-    if (wheel_event.modifiers().testFlag(Qt::ControlModifier)) {
+  auto& event = get_reference(event_pointer);
+  switch (event.type()) {
+    case QEvent::Wheel: {
+      const auto& wheel_event =
+          get_reference(dynamic_cast<QWheelEvent*>(&event));
+      if (!wheel_event.modifiers().testFlag(Qt::ControlModifier)) {
+        break;
+      }
       const auto angle_delta_y = wheel_event.angleDelta().y();
       if (angle_delta_y > 0) {
         zoom_in(piano_roll_scene);
@@ -1100,24 +1105,24 @@ auto PianoRollWidget::eventFilter(QObject* watched_pointer,
       }
       return true;
     }
-  }
-  if (get_reference(event_pointer).type() == QEvent::MouseButtonDblClick &&
-      watched_pointer == view.viewport()) {
-    const auto& mouse_event =
-        get_reference(dynamic_cast<QMouseEvent*>(event_pointer));
-    const auto maybe_event_index =
-        get_event_index_at_viewport_pos(piano_roll_scene, mouse_event.pos());
-    if (maybe_event_index.has_value()) {
-      const auto& event = piano_roll_scene.events.at(*maybe_event_index);
-      emit note_double_clicked(event.chord_number, event.note_number,
-                               event.is_pitched);
+    case QEvent::MouseButtonDblClick: {
+      const auto& mouse_event =
+          get_reference(dynamic_cast<QMouseEvent*>(&event));
+      const auto maybe_event_index =
+          get_event_index_at_viewport_pos(piano_roll_scene, mouse_event.pos());
+      if (maybe_event_index.has_value()) {
+        const auto& note_event = piano_roll_scene.events.at(*maybe_event_index);
+        emit note_double_clicked(note_event.chord_number,
+                                 note_event.note_number, note_event.is_pitched);
+      }
+      break;
     }
-  }
-  if (get_reference(event_pointer).type() == QEvent::MouseButtonPress &&
-      watched_pointer == view.viewport()) {
-    const auto& mouse_event =
-        get_reference(dynamic_cast<QMouseEvent*>(event_pointer));
-    if (mouse_event.button() == Qt::LeftButton) {
+    case QEvent::MouseButtonPress: {
+      const auto& mouse_event =
+          get_reference(dynamic_cast<QMouseEvent*>(&event));
+      if (mouse_event.button() != Qt::LeftButton) {
+        break;
+      }
       // a manual click/drag takes over the cursor from playback's timer-
       // driven animation, the same way it takes over from a stale
       // selection-driven position in drag_playhead_to()
@@ -1148,28 +1153,31 @@ auto PianoRollWidget::eventFilter(QObject* watched_pointer,
       }
       return true;
     }
-  }
-  if (get_reference(event_pointer).type() == QEvent::MouseMove &&
-      piano_roll_scene.playhead_dragging &&
-      watched_pointer == view.viewport()) {
-    const auto& mouse_event =
-        get_reference(dynamic_cast<QMouseEvent*>(event_pointer));
-    const auto current_chord_number =
-        get_chord_number_at_viewport_pos(piano_roll_scene, mouse_event.pos());
-    drag_playhead_to(piano_roll_scene, mouse_event.pos());
-    select_chord_range_at_playhead(
-        switch_table,
-        static_cast<int>(piano_roll_scene.chord_start_times.size()),
-        selecting_chord_from_playhead, drag_start_chord_number,
-        current_chord_number);
-    return true;
-  }
-  if (get_reference(event_pointer).type() == QEvent::MouseButtonRelease &&
-      piano_roll_scene.playhead_dragging &&
-      watched_pointer == view.viewport()) {
-    piano_roll_scene.playhead_dragging = false;
-    drag_start_chord_number = -1;
-    return true;
+    case QEvent::MouseMove: {
+      if (!piano_roll_scene.playhead_dragging) {
+        break;
+      }
+      const auto& mouse_event =
+          get_reference(dynamic_cast<QMouseEvent*>(&event));
+      const auto current_chord_number =
+          get_chord_number_at_viewport_pos(piano_roll_scene, mouse_event.pos());
+      drag_playhead_to(piano_roll_scene, mouse_event.pos());
+      select_chord_range_at_playhead(
+          switch_table,
+          static_cast<int>(piano_roll_scene.chord_start_times.size()),
+          selecting_chord_from_playhead, drag_start_chord_number,
+          current_chord_number);
+      return true;
+    }
+    case QEvent::MouseButtonRelease:
+      if (!piano_roll_scene.playhead_dragging) {
+        break;
+      }
+      piano_roll_scene.playhead_dragging = false;
+      drag_start_chord_number = -1;
+      return true;
+    default:
+      break;
   }
   return QWidget::eventFilter(watched_pointer, event_pointer);
 }

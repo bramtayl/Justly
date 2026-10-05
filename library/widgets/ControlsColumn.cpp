@@ -9,6 +9,16 @@
 
 namespace {
 
+// 7/4, which the just scale's 9/5 minor seventh doesn't cover
+const auto HARMONIC_SEVENTH_NUMERATOR = 7;
+
+auto make_interval_row(QUndoStack& undo_stack, SwitchTable& switch_table,
+                       const int halfsteps) -> IntervalRow& {
+  const auto& named_ratio = get_just_scale()[halfsteps];
+  return *new IntervalRow(undo_stack, switch_table, named_ratio.name,
+                          Interval(named_ratio.ratio, 0));
+}
+
 void set_buttons_are_enabled(QPushButton& minus_button,
                              QPushButton& plus_button, const bool is_enabled) {
   minus_button.setEnabled(is_enabled);
@@ -21,12 +31,13 @@ ControlsColumn::ControlsColumn(Song& song, FluidSynth& synth,
                                QUndoStack& undo_stack,
                                SwitchTable& switch_table)
     : spin_boxes(*new SpinBoxes(song, synth, undo_stack)),
-      third_row(*new IntervalRow(undo_stack, switch_table, "Major third",
-                                 Interval(Rational(FIVE, 4), 0))),
-      fifth_row(*new IntervalRow(undo_stack, switch_table, "Perfect fifth",
-                                 Interval(Rational(3, 2), 0))),
-      seventh_row(*new IntervalRow(undo_stack, switch_table, "Harmonic seventh",
-                                   Interval(Rational(SEVEN, 4), 0))),
+      third_row(
+          make_interval_row(undo_stack, switch_table, MAJOR_THIRD_HALFSTEPS)),
+      fifth_row(
+          make_interval_row(undo_stack, switch_table, PERFECT_FIFTH_HALFSTEPS)),
+      seventh_row(*new IntervalRow(
+          undo_stack, switch_table, "Harmonic seventh",
+          Interval(Rational(HARMONIC_SEVENTH_NUMERATOR, 4), 0))),
       octave_row(*new IntervalRow(undo_stack, switch_table, "Octave",
                                   Interval(Rational(), 1))),
       custom_row(*new CustomIntervalRow(undo_stack, switch_table)) {

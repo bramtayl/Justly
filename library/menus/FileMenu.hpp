@@ -5,15 +5,15 @@
 
 struct WindowBody;
 
-[[nodiscard]] auto make_file_dialog(WindowBody& window_body,
-                                    const char* caption, const QString& filter,
-                                    QFileDialog::AcceptMode accept_mode,
-                                    const QString& suffix,
-                                    QFileDialog::FileMode file_mode)
-    -> QFileDialog&;
-
-[[nodiscard]] auto get_selected_file(WindowBody& window_body,
-                                     const QFileDialog& dialog) -> QString;
+// runs a file dialog starting in, and then remembering, the current folder;
+// nullopt if the user cancels. Open dialogs pick an existing file, save
+// dialogs any file
+[[nodiscard]] auto maybe_choose_file(WindowBody& window_body,
+                                     const char* caption, const QString& filter,
+                                     QFileDialog::AcceptMode accept_mode,
+                                     const QString& suffix,
+                                     const char* accept_label = nullptr)
+    -> std::optional<QString>;
 
 struct FileMenu : public QMenu {
   QAction save_action;

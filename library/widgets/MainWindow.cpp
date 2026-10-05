@@ -145,10 +145,6 @@ MainWindow::MainWindow()
       piano_roll_dock(*(new QDockWidget(MainWindow::tr("Piano Roll"), this))) {
   setWindowIcon(QIcon(QString::fromStdString(get_share_file("Justly.svg"))));
 
-  auto& song_menu_bar_ref = this->song_menu_bar;
-  auto& window_body_ref = this->window_body;
-  auto& piano_roll_widget_ref = this->piano_roll_widget;
-
   auto& switch_table = window_body.switch_column.switch_table;
   auto& undo_stack = window_body.undo_stack;
 
@@ -175,10 +171,9 @@ MainWindow::MainWindow()
 
   QObject::connect(
       &switch_table, &QAbstractItemView::doubleClicked, this,
-      [&song_menu_bar_ref, &window_body_ref,
-       &piano_roll_widget_ref](const QModelIndex& index) -> auto {
-        if (window_body_ref.switch_column.switch_table.delegate
-                .current_row_type == RowType::chord_type) {
+      [this](const QModelIndex& index) -> auto {
+        if (window_body.switch_column.switch_table.delegate.current_row_type ==
+            RowType::chord_type) {
           const auto column = index.column();
           const auto is_pitched =
               column ==
@@ -186,10 +181,10 @@ MainWindow::MainWindow()
           if (is_pitched ||
               (column ==
                static_cast<int>(ChordColumn::chord_unpitched_notes_column))) {
-            add_replace_table(song_menu_bar_ref, window_body_ref,
+            add_replace_table(song_menu_bar, window_body,
                               (is_pitched ? RowType::pitched_note_type
                                           : RowType::unpitched_note_type),
-                              index.row(), piano_roll_widget_ref);
+                              index.row(), piano_roll_widget);
           }
         }
       });
@@ -212,51 +207,45 @@ MainWindow::MainWindow()
                    &show_piano_roll_action, &QAction::setChecked);
 
   QObject::connect(&song_menu_bar.view_menu.zoom_in_action, &QAction::triggered,
-                   &piano_roll_widget_ref, [&piano_roll_widget_ref]() -> auto {
-                     zoom_in_piano_roll(piano_roll_widget_ref);
-                   });
+                   &piano_roll_widget,
+                   [this]() -> auto { zoom_in_piano_roll(piano_roll_widget); });
   QObject::connect(&song_menu_bar.view_menu.zoom_out_action,
-                   &QAction::triggered, &piano_roll_widget_ref,
-                   [&piano_roll_widget_ref]() -> auto {
-                     zoom_out_piano_roll(piano_roll_widget_ref);
+                   &QAction::triggered, &piano_roll_widget, [this]() -> auto {
+                     zoom_out_piano_roll(piano_roll_widget);
                    });
 
-  QObject::connect(&undo_stack, &QUndoStack::indexChanged, this,
-                   [&piano_roll_widget_ref]() -> auto {
-                     rebuild_piano_roll_scene(piano_roll_widget_ref);
-                   });
+  QObject::connect(
+      &undo_stack, &QUndoStack::indexChanged, this,
+      [this]() -> auto { rebuild_piano_roll_scene(piano_roll_widget); });
 
   connect_recovery_timer(window_body);
 
-  QObject::connect(
-      &song_menu_bar.file_menu.open_action, &QAction::triggered, this,
-      [&song_menu_bar_ref, &window_body_ref, &piano_roll_widget_ref]() -> auto {
-        if (can_discard_changes(window_body_ref)) {
-          auto& dialog = make_file_dialog(
-              window_body_ref, "Open — Justly", "XML file (*.xml)",
-              QFileDialog::AcceptOpen, ".xml", QFileDialog::ExistingFile);
-          if (dialog.exec() != 0) {
-            open_file_and_reload(song_menu_bar_ref, window_body_ref,
-                                 piano_roll_widget_ref,
-                                 get_selected_file(window_body_ref, dialog));
-          }
-          dialog.deleteLater();
-        }
-      });
+  QObject::connect(&song_menu_bar.file_menu.open_action, &QAction::triggered,
+                   this, [this]() -> auto {
+                     if (!can_discard_changes(window_body)) {
+                       return;
+                     }
+                     const auto maybe_file = maybe_choose_file(
+                         window_body, "Open — Justly", "XML file (*.xml)",
+                         QFileDialog::AcceptOpen, ".xml");
+                     if (maybe_file.has_value()) {
+                       open_file_and_reload(song_menu_bar, window_body,
+                                            piano_roll_widget, *maybe_file);
+                     }
+                   });
   QObject::connect(
       &song_menu_bar.file_menu.import_action, &QAction::triggered, this,
-      [&song_menu_bar_ref, &window_body_ref, &piano_roll_widget_ref]() -> auto {
-        if (can_discard_changes(window_body_ref)) {
-          auto& dialog = make_file_dialog(
-              window_body_ref, "Import MusicXML — Justly",
-              "MusicXML file (*.musicxml *.mxl)", QFileDialog::AcceptOpen,
-              ".musicxml", QFileDialog::ExistingFile);
-          if (dialog.exec() != 0) {
-            import_musicxml_and_reload(
-                song_menu_bar_ref, window_body_ref, piano_roll_widget_ref,
-                get_selected_file(window_body_ref, dialog));
-          }
-          dialog.deleteLater();
+      [this]() -> auto {
+        if (!can_discard_changes(window_body)) {
+          return;
+        }
+        const auto maybe_file =
+            maybe_choose_file(window_body, "Import MusicXML — Justly",
+                              "MusicXML file (*.musicxml *.mxl)",
+                              QFileDialog::AcceptOpen, ".musicxml");
+        if (maybe_file.has_value()) {
+          import_musicxml_and_reload(song_menu_bar, window_body,
+                                     piano_roll_widget, *maybe_file);
         }
       });
 
@@ -264,14 +253,13 @@ MainWindow::MainWindow()
   // notes table for its chord, scrolled to and highlighting that note --
   // mirroring the chords table's own double-click-into-notes behavior
   QObject::connect(
-      &piano_roll_widget_ref, &PianoRollWidget::note_double_clicked, this,
-      [&song_menu_bar_ref, &window_body_ref, &piano_roll_widget_ref](
-          const int chord_number, const int note_number,
-          const bool is_pitched) -> void {
-        add_replace_table(song_menu_bar_ref, window_body_ref,
+      &piano_roll_widget, &PianoRollWidget::note_double_clicked, this,
+      [this](const int chord_number, const int note_number,
+             const bool is_pitched) -> void {
+        add_replace_table(song_menu_bar, window_body,
                           is_pitched ? RowType::pitched_note_type
                                      : RowType::unpitched_note_type,
-                          chord_number, piano_roll_widget_ref, note_number);
+                          chord_number, piano_roll_widget, note_number);
       });
 
   // wires the piano roll's playhead animation to the existing Play/Stop
@@ -281,24 +269,23 @@ MainWindow::MainWindow()
   // precomputed schedule bounds.
   auto& play_menu = song_menu_bar.play_menu;
   QObject::connect(
-      &play_menu.play_action, &QAction::triggered, this,
-      [&piano_roll_widget_ref, &window_body_ref]() -> auto {
-        const auto selection = get_play_selection(window_body_ref);
+      &play_menu.play_action, &QAction::triggered, this, [this]() -> auto {
+        const auto selection = get_play_selection(window_body);
         if (selection.row_type == RowType::pitched_voice_type ||
             selection.row_type == RowType::unpitched_voice_type) {
           // voice audition/preview has no timeline position
-          stop_piano_roll_playhead(piano_roll_widget_ref);
+          stop_piano_roll_playhead(piano_roll_widget);
           return;
         }
         const auto [baseline_ms, end_ms] =
-            get_selection_time_bounds(window_body_ref.song, selection);
-        start_piano_roll_playhead(piano_roll_widget_ref, baseline_ms, end_ms);
+            get_selection_time_bounds(window_body.song, selection);
+        start_piano_roll_playhead(piano_roll_widget, baseline_ms, end_ms);
       });
   QObject::connect(
       &play_menu.play_to_end_action, &QAction::triggered, this,
-      [&piano_roll_widget_ref, &window_body_ref]() -> auto {
-        const auto& song = window_body_ref.song;
-        const auto selection = get_play_selection(window_body_ref);
+      [this]() -> auto {
+        const auto& song = window_body.song;
+        const auto selection = get_play_selection(window_body);
         // play_to_end_action is disabled for voice rows; see
         // ReplaceTable.cpp's update_actions
         Q_ASSERT(selection.row_type != RowType::pitched_voice_type &&
@@ -317,12 +304,11 @@ MainWindow::MainWindow()
                 song, first_chord_number,
                 static_cast<int>(song.chords.size()) - first_chord_number)
                 .second;
-        start_piano_roll_playhead(piano_roll_widget_ref, baseline_ms, end_ms);
+        start_piano_roll_playhead(piano_roll_widget, baseline_ms, end_ms);
       });
-  QObject::connect(&play_menu.stop_playing_action, &QAction::triggered, this,
-                   [&piano_roll_widget_ref]() -> auto {
-                     stop_piano_roll_playhead(piano_roll_widget_ref);
-                   });
+  QObject::connect(
+      &play_menu.stop_playing_action, &QAction::triggered, this,
+      [this]() -> auto { stop_piano_roll_playhead(piano_roll_widget); });
 
   add_replace_table(song_menu_bar, window_body, RowType::pitched_voice_type, -1,
                     piano_roll_widget);
