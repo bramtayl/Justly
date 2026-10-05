@@ -52,11 +52,11 @@ struct PianoRollNotesScene : public QGraphicsScene {
 
   // the inputs redraw_time_axis_ticks() needs to redraw just the time
   // axis' ticks and labels whenever the zoom changes, without re-running
-  // the full rebuild_scene()
+  // the full rebuild_piano_roll_scene()
   double time_axis_max_time_ms = 0.0;
   double time_axis_y = PIANO_ROLL_DEFAULT_AXIS_Y;
   // the absolute song time (ms) that maps to this view's x == PIANO_ROLL_AXIS_X
-  // -- 0 normally, but in notes mode (rebuild_scene() scoped
+  // -- 0 normally, but in notes mode (rebuild_piano_roll_scene() scoped
   // to one chord's notes) it's that chord's own start time, so the axis
   // only spans the window during which the chord's notes actually play
   // instead of dragging along every silent millisecond since the song
@@ -67,7 +67,7 @@ struct PianoRollNotesScene : public QGraphicsScene {
   // leaving the rest of the scene (notes, pitch axis, playhead) untouched
   QList<QGraphicsItem*> time_axis_items;
 
-  // rebuilt every rebuild_scene() call; each drawn note
+  // rebuilt every rebuild_piano_roll_scene() call; each drawn note
   // rect stores its index into this list (via QGraphicsItem::setData) so a
   // click on the rect can be traced back to the chord/note it represents
   QList<PianoRollNoteEvent> events;

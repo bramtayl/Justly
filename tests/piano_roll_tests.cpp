@@ -606,9 +606,7 @@ void Tester::test_piano_roll_playback_selects_chord() {
   // simulates one playback timer tick without waiting on the real
   // QElapsedTimer -- elapsed() is at least 0, so current_ms is already
   // >= the 1200ms baseline, landing on chord 2
-  update_playhead_position(piano_roll_widget.piano_roll_scene,
-                           piano_roll_widget.axis_scene, switch_table,
-                           piano_roll_widget.selecting_chord_from_playhead);
+  update_playhead_position(piano_roll_widget);
   QCOMPARE(get_only_range(switch_table).top(), 2);
 
   stop_piano_roll_playhead(piano_roll_widget);
@@ -809,9 +807,7 @@ void Tester::test_piano_roll_playhead_reaches_end() {
   // chord 2 starts at 1200ms, per test_piano_roll_time_bounds() above; an
   // end time already reached means the first tick finishes playback
   start_piano_roll_playhead(piano_roll_widget, 1200.0, 1200.0);
-  update_playhead_position(piano_roll_scene, piano_roll_widget.axis_scene,
-                           switch_table,
-                           piano_roll_widget.selecting_chord_from_playhead);
+  update_playhead_position(piano_roll_widget);
   QVERIFY(!piano_roll_scene.playhead_active);
   QCOMPARE(get_only_range(switch_table).top(), 2);
   QCOMPARE(piano_roll_scene.playhead_item.line().x1(),
@@ -819,9 +815,7 @@ void Tester::test_piano_roll_playhead_reaches_end() {
 
   // a stray tick after playback stopped is ignored
   select_cell(switch_table, 0, 0);
-  update_playhead_position(piano_roll_scene, piano_roll_widget.axis_scene,
-                           switch_table,
-                           piano_roll_widget.selecting_chord_from_playhead);
+  update_playhead_position(piano_roll_widget);
   QCOMPARE(get_only_range(switch_table).top(), 0);
 }
 

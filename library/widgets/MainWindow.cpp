@@ -4,14 +4,11 @@
 #include <QtGui/QCloseEvent>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QDockWidget>
-#include <QtWidgets/QGraphicsItem>
-#include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QStatusBar>
 
 #include "actions/ReplaceTable.hpp"
 #include "column_numbers/ChordColumn.hpp"
 #include "menus/SongMenuBar.hpp"
-#include "piano_roll/PianoRollNotesScene.hpp"
 #include "piano_roll/PianoRollWidget.hpp"
 
 namespace {
@@ -54,12 +51,6 @@ void connect_navigate_chord_action(QAction& action, QObject& context,
       });
 }
 
-void rebuild_piano_roll_scene(PianoRollWidget& widget) {
-  rebuild_scene(widget, widget.window_body, widget.piano_roll_scene,
-                widget.axis_scene, widget.legend_scene, widget.row_layout,
-                widget.selection, widget.selecting_chord_from_playhead);
-}
-
 }  // namespace
 
 void song_reloaded(SongMenuBar& song_menu_bar, WindowBody& window_body,
@@ -84,56 +75,6 @@ void import_musicxml_and_reload(SongMenuBar& song_menu_bar,
   if (import_musicxml(window_body, filename)) {
     song_reloaded(song_menu_bar, window_body, piano_roll_widget);
   }
-}
-
-void zoom_in_piano_roll(PianoRollWidget& widget) {
-  zoom_in(widget.piano_roll_scene);
-}
-
-void zoom_out_piano_roll(PianoRollWidget& widget) {
-  zoom_out(widget.piano_roll_scene);
-}
-
-void stop_piano_roll_playhead(PianoRollWidget& widget) {
-  stop_playhead(widget.piano_roll_scene, widget.axis_scene,
-                widget.window_body.song, widget.selection,
-                widget.selecting_chord_from_playhead);
-}
-
-void start_piano_roll_playhead(PianoRollWidget& widget,
-                               const double baseline_ms, const double end_ms) {
-  static const auto PIANO_ROLL_TIMER_INTERVAL_MS = 33;
-
-  set_manual_scrolling_enabled(widget.piano_roll_scene, widget.axis_scene,
-                               false);
-
-  auto& piano_roll_scene = widget.piano_roll_scene;
-  piano_roll_scene.playhead_baseline_ms = baseline_ms;
-  piano_roll_scene.playhead_end_ms = end_ms;
-  piano_roll_scene.playhead_elapsed_timer.restart();
-  piano_roll_scene.playhead_active = true;
-  piano_roll_scene.playhead_item.show();
-
-  // decides which transition position_playhead() should run, based on
-  // where the playhead is starting relative to the view's current
-  // (not-yet-moved) center -- see PlayheadTransition
-  auto& view = piano_roll_scene.view;
-  const auto initial_center_x =
-      view.mapToScene(get_reference(view.viewport()).rect())
-          .boundingRect()
-          .center()
-          .x();
-  const auto playhead_x = to_scene_x(piano_roll_scene, baseline_ms);
-  if (playhead_x <= initial_center_x) {
-    piano_roll_scene.playhead_transition =
-        PlayheadTransition::waiting_to_reach_center;
-  } else {
-    piano_roll_scene.playhead_transition = PlayheadTransition::catching_up;
-    piano_roll_scene.playhead_catchup_start_center_x = initial_center_x;
-  }
-
-  position_playhead(piano_roll_scene, baseline_ms);
-  piano_roll_scene.playhead_timer.start(PIANO_ROLL_TIMER_INTERVAL_MS);
 }
 
 MainWindow::MainWindow()

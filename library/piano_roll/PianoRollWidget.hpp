@@ -10,7 +10,6 @@ struct PianoRollNotesScene;
 class QBoxLayout;
 struct Song;
 struct WindowBody;
-struct SwitchTable;
 
 static const auto PIANO_ROLL_TIME_ZOOM_STEP = 1.25;
 
@@ -58,46 +57,6 @@ void position_playhead(PianoRollNotesScene& notes_scene, double time_ms,
                                              const TableSelection& selection)
     -> std::pair<double, double>;
 
-void zoom_in(PianoRollNotesScene& piano_roll_scene);
-
-void zoom_out(PianoRollNotesScene& piano_roll_scene);
-
-// position_playhead() recenters the view every tick while playing, fighting
-// any manual scroll (drag on the scrollbar, or wheel) the user does at the
-// same time -- the two writes to the same scroll position within one 33ms
-// tick used to leave rendering artifacts behind that read as extra, stuck
-// red cursor lines. Disabling manual scrolling during playback removes the
-// conflicting writer entirely.
-void set_manual_scrolling_enabled(PianoRollNotesScene& piano_roll_scene,
-                                  PianoRollAxisScene& axis_scene, bool enabled);
-
-// reapplies the highlight/cursor implied by selection against
-// piano_roll_scene's current note_items -- called both from
-// update_piano_roll_widget_selection() and from the end of rebuild_scene(),
-// since rebuilding replaces every QGraphicsRectItem (and thus wipes any
-// highlight pen set on the old ones)
-void apply_selection_highlight(const Song& song,
-                               PianoRollNotesScene& piano_roll_scene,
-                               const TableSelection& selection,
-                               bool selecting_chord_from_playhead);
-
-void rebuild_scene(QWidget& widget, const WindowBody& window_body,
-                   PianoRollNotesScene& piano_roll_scene,
-                   PianoRollAxisScene& axis_scene,
-                   PianoRollLegendScene& legend_scene, QBoxLayout& row_layout,
-                   const TableSelection& selection,
-                   bool selecting_chord_from_playhead);
-
-void stop_playhead(PianoRollNotesScene& piano_roll_scene,
-                   PianoRollAxisScene& axis_scene, const Song& song,
-                   const TableSelection& selection,
-                   bool selecting_chord_from_playhead);
-
-void update_playhead_position(PianoRollNotesScene& piano_roll_scene,
-                              PianoRollAxisScene& axis_scene,
-                              SwitchTable& switch_table,
-                              bool& selecting_chord_from_playhead);
-
 struct PianoRollWidget : public QWidget {
   Q_OBJECT
 
@@ -117,7 +76,7 @@ struct PianoRollWidget : public QWidget {
   // true for the duration of select_chord_at_playhead()'s own call to
   // QItemSelectionModel::select() -- that select() re-enters this widget
   // synchronously via ReplaceTable's selectionChanged connection
-  // (update_piano_roll_selection() -> update_piano_roll_widget_selection() ->
+  // (update_piano_roll_selection() -> set_piano_roll_selection() ->
   // apply_selection_highlight()); without this guard,
   // apply_selection_highlight() would treat the sync as an ordinary
   // table-driven selection change and reposition the cursor to the
@@ -126,9 +85,9 @@ struct PianoRollWidget : public QWidget {
   bool selecting_chord_from_playhead = false;
 
   // the switch table's current selection, mirrored here by ReplaceTable.cpp
-  // (via update_piano_roll_widget_selection()) every time it changes, so
-  // rebuild_scene() can reapply the same highlight/cursor after redrawing a
-  // fresh set of items. Starts out empty
+  // (via set_piano_roll_selection()) every time it changes, so
+  // rebuild_piano_roll_scene() can reapply the same highlight/cursor after
+  // redrawing a fresh set of items. Starts out empty
   TableSelection selection;
 
   // the chord under the cursor when the current playhead drag started (-1
@@ -149,3 +108,28 @@ struct PianoRollWidget : public QWidget {
   // note's chord, scrolled to and highlighting that note
   void note_double_clicked(int chord_number, int note_number, bool is_pitched);
 };
+
+// redraws every scene from window_body's song, e.g. after any undoable
+// change, then reapplies the current selection's highlight
+void rebuild_piano_roll_scene(PianoRollWidget& widget);
+
+// mirrors the switch table's selection onto the piano roll: highlights the
+// corresponding note bar(s), jumps the cursor to the selection's start, and
+// scrolls to keep both in view. number_of_rows == 0 clears the highlight and
+// hides the cursor (used both for "nothing selected" and for voice-row
+// selections, which have no timeline position)
+void set_piano_roll_selection(PianoRollWidget& widget,
+                              const TableSelection& selection);
+
+void zoom_in_piano_roll(PianoRollWidget& widget);
+
+void zoom_out_piano_roll(PianoRollWidget& widget);
+
+void start_piano_roll_playhead(PianoRollWidget& widget, double baseline_ms,
+                               double end_ms);
+
+void stop_piano_roll_playhead(PianoRollWidget& widget);
+
+// one playback timer tick: moves the playhead to the elapsed time, and the
+// switch table's chord selection along with it
+void update_playhead_position(PianoRollWidget& widget);

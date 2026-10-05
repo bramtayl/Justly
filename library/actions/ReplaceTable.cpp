@@ -113,21 +113,6 @@ auto removes_every_voice_row(const RowsModel<SubRow>& rows_model,
   }
 }
 
-// applies a selection directly to piano_roll_widget's own fields: highlight
-// the corresponding note bar(s), jump the cursor to the selection's start,
-// and scroll to keep both in view. number_of_rows == 0 clears the highlight
-// and hides the cursor (used both for "nothing selected" and for voice-row
-// selections, which have no timeline position). Only called from
-// update_piano_roll_selection() below, which derives the selection from
-// the switch table's own current selection.
-void update_piano_roll_widget_selection(PianoRollWidget& widget,
-                                        const TableSelection& selection) {
-  widget.selection = selection;
-  apply_selection_highlight(widget.window_body.song, widget.piano_roll_scene,
-                            widget.selection,
-                            widget.selecting_chord_from_playhead);
-}
-
 // mirrors the switch table's current selection onto the piano roll (which
 // note bar(s) get highlighted, where the cursor jumps to); an empty
 // selection clears both, since get_only_range() asserts on an empty range
@@ -142,7 +127,7 @@ void update_piano_roll_selection(PianoRollWidget& piano_roll_widget,
     selection.first_row_number = range.top();
     selection.number_of_rows = get_number_of_rows(range);
   }
-  update_piano_roll_widget_selection(piano_roll_widget, selection);
+  set_piano_roll_selection(piano_roll_widget, selection);
 }
 
 void update_actions(SongMenuBar& song_menu_bar, WindowBody& window_body,

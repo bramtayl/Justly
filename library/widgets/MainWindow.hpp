@@ -25,15 +25,6 @@ void import_musicxml_and_reload(SongMenuBar& song_menu_bar,
                                 PianoRollWidget& piano_roll_widget,
                                 const QString& filename);
 
-void zoom_in_piano_roll(PianoRollWidget& widget);
-
-void zoom_out_piano_roll(PianoRollWidget& widget);
-
-void stop_piano_roll_playhead(PianoRollWidget& widget);
-
-void start_piano_roll_playhead(PianoRollWidget& widget, double baseline_ms,
-                               double end_ms);
-
 struct MainWindow : public QMainWindow {
  public:
   WindowBody& window_body;
