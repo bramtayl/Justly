@@ -13,37 +13,62 @@
 
 namespace {
 
+struct IntervalLimit {
+  const char* name;
+  int value;
+  int maximum;
+  const char* comparison;
+};
+
 auto check_interval(QWidget& parent_widget, const Interval& interval) -> bool {
-  const auto numerator = interval.ratio.numerator;
-  const auto denominator = interval.ratio.denominator;
-  const auto octave = interval.octave;
-  if (std::abs(numerator) > MAX_NUMERATOR) {
-    QString message;
-    QTextStream stream(&message);
-    stream << QObject::tr("Numerator ") << numerator
-           << QObject::tr(" greater than maximum ") << MAX_NUMERATOR;
-    QMessageBox::warning(&parent_widget, QObject::tr("Numerator error"),
-                         message);
-    return false;
-  }
-  if (std::abs(denominator) > MAX_DENOMINATOR) {
-    QString message;
-    QTextStream stream(&message);
-    stream << QObject::tr("Denominator ") << denominator
-           << QObject::tr(" greater than maximum ") << MAX_DENOMINATOR;
-    QMessageBox::warning(&parent_widget, QObject::tr("Denominator error"),
-                         message);
-    return false;
-  }
-  if (std::abs(octave) > MAX_OCTAVE) {
-    QString message;
-    QTextStream stream(&message);
-    stream << QObject::tr("Octave ") << octave
-           << QObject::tr(" (absolutely) greater than maximum ") << MAX_OCTAVE;
-    QMessageBox::warning(&parent_widget, QObject::tr("Octave error"), message);
-    return false;
+  for (const auto& limit :
+       {IntervalLimit{.name = "Numerator",
+                      .value = interval.ratio.numerator,
+                      .maximum = MAX_NUMERATOR,
+                      .comparison = " greater than maximum "},
+        IntervalLimit{.name = "Denominator",
+                      .value = interval.ratio.denominator,
+                      .maximum = MAX_DENOMINATOR,
+                      .comparison = " greater than maximum "},
+        IntervalLimit{.name = "Octave",
+                      .value = interval.octave,
+                      .maximum = MAX_OCTAVE,
+                      .comparison = " (absolutely) greater than maximum "}}) {
+    if (std::abs(limit.value) > limit.maximum) {
+      QString message;
+      QTextStream stream(&message);
+      stream << QObject::tr(limit.name) << " " << limit.value
+             << QObject::tr(limit.comparison) << limit.maximum;
+      QMessageBox::warning(&parent_widget,
+                           QObject::tr("%1 error").arg(QObject::tr(limit.name)),
+                           message);
+      return false;
+    }
   }
   return true;
+}
+
+// multiplies the interval column of each selected row by interval, or returns
+// nullptr (after warning) if any result would be out of range
+template <RowInterface SubRow>
+[[nodiscard]] auto make_update_interval_command(
+    QWidget& parent_widget, RowsModel<SubRow>& rows_model,
+    const QItemSelectionRange& range, const int interval_column,
+    const Interval& interval) -> QUndoCommand* {
+  const auto first_row_number = range.top();
+  const auto number_of_rows = get_number_of_rows(range);
+  auto new_rows =
+      copy_items(rows_model.get_rows(), first_row_number, number_of_rows);
+  for (auto& row : new_rows) {
+    const auto new_interval = row.interval * interval;
+    if (!check_interval(parent_widget, new_interval)) {
+      return nullptr;
+    }
+    row.interval = new_interval;
+  }
+  return new SetCells(  // NOLINT(cppcoreguidelines-owning-memory)
+      rows_model, first_row_number, number_of_rows, interval_column,
+      interval_column, std::move(new_rows));
 }
 
 }  // namespace
@@ -51,48 +76,20 @@ auto check_interval(QWidget& parent_widget, const Interval& interval) -> bool {
 void update_interval(QUndoStack& undo_stack, SwitchTable& switch_table,
                      const Interval& interval) {
   const auto& range = get_only_range(switch_table);
-  const auto first_row_number = range.top();
-  const auto number_of_rows = get_number_of_rows(range);
 
-  const auto current_row_type = switch_table.delegate.current_row_type;
   QUndoCommand* undo_command = nullptr;
-  switch (current_row_type) {
-    case RowType::chord_type: {
-      auto& chords_model = switch_table.chords_model;
-      auto new_chords =
-          copy_items(chords_model.get_rows(), first_row_number, number_of_rows);
-      for (auto& chord : new_chords) {
-        const auto new_interval = chord.interval * interval;
-        if (!check_interval(switch_table, new_interval)) {
-          return;
-        }
-        chord.interval = new_interval;
-      }
-      undo_command = new SetCells(  // NOLINT(cppcoreguidelines-owning-memory)
-          chords_model, first_row_number, number_of_rows,
-          static_cast<int>(ChordColumn::chord_interval_column),
-          static_cast<int>(ChordColumn::chord_interval_column),
-          std::move(new_chords));
+  switch (switch_table.delegate.current_row_type) {
+    case RowType::chord_type:
+      undo_command = make_update_interval_command(
+          switch_table, switch_table.chords_model, range,
+          static_cast<int>(ChordColumn::chord_interval_column), interval);
       break;
-    }
-    case RowType::pitched_note_type: {
-      auto& pitched_notes_model = switch_table.pitched_notes_model;
-      auto new_pitched_notes = copy_items(pitched_notes_model.get_rows(),
-                                          first_row_number, number_of_rows);
-      for (auto& pitched_note : new_pitched_notes) {
-        const auto new_interval = pitched_note.interval * interval;
-        if (!check_interval(switch_table, new_interval)) {
-          return;
-        }
-        pitched_note.interval = new_interval;
-      }
-      undo_command = new SetCells(  // NOLINT(cppcoreguidelines-owning-memory)
-          pitched_notes_model, first_row_number, number_of_rows,
+    case RowType::pitched_note_type:
+      undo_command = make_update_interval_command(
+          switch_table, switch_table.pitched_notes_model, range,
           static_cast<int>(PitchedNoteColumn::pitched_note_interval_column),
-          static_cast<int>(PitchedNoteColumn::pitched_note_interval_column),
-          std::move(new_pitched_notes));
+          interval);
       break;
-    }
     case RowType::unpitched_note_type:
     case RowType::pitched_voice_type:
     case RowType::unpitched_voice_type:
@@ -100,7 +97,9 @@ void update_interval(QUndoStack& undo_stack, SwitchTable& switch_table,
       // ReplaceTable.cpp's update_actions/set_interval_rows_are_enabled
       Q_UNREACHABLE();
   }
-  undo_stack.push(undo_command);
+  if (undo_command != nullptr) {
+    undo_stack.push(undo_command);
+  }
 }
 
 void make_square(QPushButton& button) {
