@@ -97,7 +97,9 @@ void Tester::test_export_write_error() {
 // regression test: FileMenu's dialogs (maybe_choose_file) must not leak --
 // Open/Import/Save As/Export used to create a new QFileDialog
 // with no matching deleteLater(), so every use of a file dialog left a
-// live QFileDialog parented to window_body for the rest of the process
+// live QFileDialog parented to window_body for the rest of the process.
+// dialog_was_shown makes sure the dialog actually existed, so a null pointer
+// afterward means it was destroyed rather than never found
 void Tester::test_file_dialog_cleanup() {
   auto& file_menu = main_window.song_menu_bar.file_menu;
 
@@ -114,10 +116,16 @@ void Tester::test_file_dialog_cleanup() {
                    });
   timer.start(WAIT_TIME);
 
+  auto dialog_was_shown = false;
+  QObject::connect(&timer, &QTimer::timeout, &main_window,
+                   [&dialog_pointer, &dialog_was_shown]() -> auto {
+                     dialog_was_shown = !dialog_pointer.isNull();
+                   });
+
   file_menu.save_as_action.trigger();
 
-  // the dialog is still alive right after trigger() returns -- deleteLater()
-  // only schedules its destruction for the next trip through the event loop
-  QVERIFY(!dialog_pointer.isNull());
-  QTRY_VERIFY(dialog_pointer.isNull());
+  // maybe_choose_file owns its dialog, so it's already destroyed by the time
+  // trigger() returns
+  QVERIFY(dialog_was_shown);
+  QVERIFY(dialog_pointer.isNull());
 }
