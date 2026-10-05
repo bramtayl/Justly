@@ -138,11 +138,8 @@ template <NoteInterface SubNote>
     }
     const auto midi_number = *maybe_midi_number;
 
-    const auto& voice_velocity_ratio =
-        sub_note.get_voice_velocity_ratio(pitched_voices, unpitched_voices);
-    const auto velocity = static_cast<short>(std::round(
-        current_velocity * rational_to_double(sub_note.velocity_ratio) *
-        rational_to_double(voice_velocity_ratio)));
+    const auto velocity = static_cast<short>(std::round(sub_note.get_velocity(
+        current_velocity, pitched_voices, unpitched_voices)));
     if (velocity > MAX_VELOCITY) {
       QString message;
       QTextStream stream(&message);

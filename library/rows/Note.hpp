@@ -33,6 +33,15 @@ struct Note : Row {
       const QList<PitchedVoice>& pitched_voices,
       const QList<UnpitchedVoice>& unpitched_voices) const
       -> const Rational& = 0;
+
+  // scales the chord's velocity by this note's ratio and its voice's ratio
+  [[nodiscard]] auto get_velocity(
+      const double current_velocity, const QList<PitchedVoice>& pitched_voices,
+      const QList<UnpitchedVoice>& unpitched_voices) const -> double {
+    return current_velocity * rational_to_double(velocity_ratio) *
+           rational_to_double(
+               get_voice_velocity_ratio(pitched_voices, unpitched_voices));
+  }
 };
 
 template <typename SubNote>  // type properties

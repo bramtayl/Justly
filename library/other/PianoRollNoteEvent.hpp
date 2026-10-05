@@ -26,16 +26,13 @@ static void append_piano_roll_events(
   for (auto note_number = 0; note_number < sub_notes.size();
        note_number = note_number + 1) {
     const auto& sub_note = sub_notes.at(note_number);
-    const auto& voice_velocity_ratio =
-        sub_note.get_voice_velocity_ratio(pitched_voices, unpitched_voices);
 
     PianoRollNoteEvent event;
     event.start_time_ms = play_state.current_time;
     event.duration_ms = get_duration_in_milliseconds(
         play_state.current_tempo, rational_to_double(sub_note.beats));
-    event.velocity = play_state.current_velocity *
-                     rational_to_double(sub_note.velocity_ratio) *
-                     rational_to_double(voice_velocity_ratio);
+    event.velocity = sub_note.get_velocity(play_state.current_velocity,
+                                           pitched_voices, unpitched_voices);
     event.chord_number = chord_number;
     event.note_number = note_number;
     if constexpr (std::is_same_v<SubNote, PitchedNote>) {
