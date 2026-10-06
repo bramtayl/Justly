@@ -2,6 +2,17 @@ on:
   push:
 env:
   VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/vcpkg_archives,readwrite"
+  # build dependencies, removed before testing so the tests only see what
+  # the deploy script bundled
+  UBUNTU_DEPS: >-
+    fluidsynth
+    libfluidsynth-dev
+    libqt6svg6-dev
+    libxml2-dev
+    libzip-dev
+    qt6-base-dev
+    qt6-gtk-platformtheme
+  BREW_DEPS: fluid-synth qt libxml2 libzip
 jobs:
   main_job:
     strategy:
@@ -29,20 +40,18 @@ jobs:
     - name: Download
       uses: actions/checkout@v7
 
+    # the runtime libraries are the system libraries that
+    # system_lib_exclude_regexes in CMakeLists.txt leaves out of the bundle.
+    # Installing them explicitly marks them as manually installed, so the
+    # autoremove in "Remove dependencies before testing on Ubuntu" keeps them
     - name: Install dependencies on Ubuntu
       if: matrix.family == 'ubuntu'
       run: >
         sudo apt-get update &&
-        sudo apt-get install
+        sudo apt-get install -y
+        $UBUNTU_DEPS
         binutils
         cmake
-        fluidsynth
-        libfluidsynth-dev
-        libqt6svg6-dev
-        libxml2-dev
-        libzip-dev
-        qt6-base-dev
-        qt6-gtk-platformtheme
         libapparmor1
         libasound2t64
         libdbus-1-3
@@ -59,11 +68,11 @@ jobs:
 
     - name: Install dependencies on MacOS
       if: matrix.family == 'macos'
-      run: brew install fluid-synth qt libxml2 libzip
+      run: brew install $BREW_DEPS
 
     - name: Install cmake on Windows
       if: matrix.family == 'windows'
-      uses: lukka/get-cmake@latest
+      uses: lukka/get-cmake@v4.4.2
       with:
         cmakeVersion: "~4.4.0"
 
@@ -87,6 +96,15 @@ jobs:
       with:
         vcpkgGitCommitId: 'f6729a3ac3bfdefc999aa8e3664f8014370886b8'
 
+    # cmake reads CMAKE_TOOLCHAIN_FILE from the environment when configuring
+    # a new build dir, so every configure step below picks this up
+    - name: Use the vcpkg toolchain on Windows
+      if: matrix.family == 'windows'
+      shell: pwsh
+      run: >
+        "CMAKE_TOOLCHAIN_FILE=$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+        | Out-File -FilePath $env:GITHUB_ENV -Append
+
     # CMake downloads the soundfont at configure time if it's missing
     - name: Restore the soundfont from the cache if available
       uses: actions/cache@v6
@@ -94,38 +112,64 @@ jobs:
         path: share/MS_Basic.sf3
         key: ${{matrix.os}}-soundfont_cache-v4
 
+    # everything that needs the dependencies happens before they're removed:
+    # building, and the deploy scripts, which run when the test builds install
+    # themselves into test_install and when cpack packages
+
     - name: Configure with tests
       run: >
         cmake -S . -B with_tests
         -DBUILD_TESTS=ON
         -DCMAKE_BUILD_TYPE=Debug
         -DNO_REALTIME_AUDIO=ON
-        ${{ matrix.family == 'windows' && format('-DCMAKE_TOOLCHAIN_FILE={0}/scripts/buildsystems/vcpkg.cmake', env.VCPKG_ROOT) || '' }}
 
     - name: Build with tests
       run: cmake --build with_tests --config Debug
 
+    # coverage is measured from a separate Release build rather than the
+    # Debug build -- in Release, NDEBUG makes Q_UNREACHABLE() compile to
+    # __builtin_unreachable(), so unreachable arms emit no code instead of
+    # showing up as uncovered lines. gcovr.cfg has the rest of the options.
+    - name: Configure release build with tests for coverage on Ubuntu
+      if: matrix.family == 'ubuntu'
+      run: >
+        cmake -S . -B with_tests_release
+        -DBUILD_TESTS=ON
+        -DCMAKE_BUILD_TYPE=Release
+        -DNO_REALTIME_AUDIO=ON
+        -DTRACK_COVERAGE=ON
+
+    - name: Build release build with tests for coverage on Ubuntu
+      if: matrix.family == 'ubuntu'
+      run: cmake --build with_tests_release --config Release
+
+    - name: Configure without tests
+      run: >
+        cmake -S . -B without_tests
+        -DCMAKE_BUILD_TYPE=Release
+        -DCPACK_GENERATOR=${{ matrix.cpack_generator }}
+        -DCPACK_PACKAGE_FILE_NAME=${{ matrix.package_name }}
+
+    - name: Build without tests
+      run: cmake --build without_tests --config Release
+
+    - name: Package
+      run: cd without_tests; cpack -C Release
+
     # proves the deploy script in CMakeLists.txt actually bundled everything
-    # run_tests needs -- otherwise this and the Release build below would
-    # both silently pass/link against the brew-installed copies regardless of
-    # what macdeployqt actually bundled, since dyld falls back to any
-    # load-command path macdeployqt failed to rewrite to a bundle-relative one
+    # the tests need -- otherwise they'd silently pass against the installed
+    # copies regardless of what got bundled, since dyld falls back to any
+    # load-command path macdeployqt failed to rewrite to a bundle-relative
+    # one, and ld.so falls back to the system library directories
     - name: Remove dependencies before testing on MacOS
       if: matrix.family == 'macos'
-      run: brew uninstall --ignore-dependencies fluid-synth qt libxml2 libzip && brew autoremove
+      run: brew uninstall --ignore-dependencies $BREW_DEPS && brew autoremove
 
     - name: Remove dependencies before testing on Ubuntu
       if: matrix.family == 'ubuntu'
       run: >
-        sudo apt-get remove --purge -y
-        fluidsynth
-        libfluidsynth-dev
-        libqt6svg6-dev
-        libxml2-dev
-        libzip-dev
-        qt6-base-dev
-        qt6-gtk-platformtheme
-        && sudo apt-get autoremove --purge -y
+        sudo apt-get remove --purge -y $UBUNTU_DEPS &&
+        sudo apt-get autoremove --purge -y
 
     - name: Test on MacOS and Ubuntu
       if: matrix.family != 'windows'
@@ -133,35 +177,10 @@ jobs:
         cd with_tests
         ctest --output-on-failure -C Debug
 
-    # the Release build below links against these the same way the Debug
-    # build did, so they have to come back before "Configure without tests
-    # on MacOS"
-    - name: Reinstall dependencies for the release build on MacOS
-      if: matrix.family == 'macos'
-      run: brew install fluid-synth qt libxml2 libzip
-
-    # the Release build below links against these the same way the Debug
-    # build did, so they have to come back before "Configure without tests
-    # on Ubuntu"
-    - name: Reinstall dependencies for the release build on Ubuntu
-      if: matrix.family == 'ubuntu'
-      run: >
-        sudo apt-get install -y
-        fluidsynth
-        libfluidsynth-dev
-        libqt6svg6-dev
-        libxml2-dev
-        libzip-dev
-        qt6-base-dev
-        qt6-gtk-platformtheme
-
-    # same idea as the MacOS/Ubuntu steps above, but ld.so's system-directory
-    # fallback and dyld's load-command rewriting don't apply on Windows --
-    # instead install-qt-action puts Qt's own bin dir on PATH and sets
+    # same idea as the MacOS/Ubuntu steps above, but on Windows
+    # install-qt-action puts Qt's own bin dir on PATH and sets
     # QT_PLUGIN_PATH, either of which could mask a gap in what
-    # qt_generate_deploy_app_script/windeployqt actually deployed. This is
-    # scoped to the step's own process, so no reinstall step is needed --
-    # the Release build below still sees the original PATH/QT_PLUGIN_PATH.
+    # qt_generate_deploy_app_script/windeployqt actually deployed
     - name: Test on Windows
       if: matrix.family == 'windows'
       shell: pwsh
@@ -176,55 +195,18 @@ jobs:
       shell: pwsh
       run: Get-Content with_tests/test_output.txt
 
-    # coverage is measured from a separate Release build rather than the
-    # Debug build tested above -- see the comment on "Run gcovr" for why.
-    - name: Configure release build with tests for coverage on Ubuntu
-      if: matrix.family == 'ubuntu'
-      run: >
-        cmake -S . -B with_tests_release
-        -DBUILD_TESTS=ON
-        -DCMAKE_BUILD_TYPE=Release
-        -DNO_REALTIME_AUDIO=ON
-        -DTRACK_COVERAGE=ON
-
-    - name: Build release build with tests for coverage on Ubuntu
-      if: matrix.family == 'ubuntu'
-      run: cmake --build with_tests_release --config Release
-
     - name: Test release build for coverage on Ubuntu
       if: matrix.family == 'ubuntu'
       run: |
         cd with_tests_release
         ctest --output-on-failure -C Release
 
+    # options live in gcovr.cfg, which gcovr reads from the working directory.
+    # exclude-throw-branches relies on GCC's "(throw)" branch annotation,
+    # which clang's llvm-cov gcov emulation doesn't emit, so recheck it
+    # before switching this build to clang
     - name: Run gcovr
       if: matrix.family == 'ubuntu'
-      # Options live in gcovr.cfg at the repo root (gcovr reads it from the
-      # working directory). Its filter targets library/ (renamed from src/ in
-      # 704b1074, which silently broke the filter -- gcovr matched 0 files and
-      # uploaded an empty report for the past year).
-      #
-      # coverage.xml is generated from with_tests_release (a Release build),
-      # not with_tests (the Debug build tested above). library/ has no
-      # `default: Q_ASSERT(false);` arms -- switches over closed enums
-      # (RowType, Qt::Orientation, the per-row Column enums) are exhaustive,
-      # and the genuinely unreachable branches (schema-validated XML
-      # parsing, UI states disabled via setEnabled) call `Q_UNREACHABLE();`.
-      # In a Debug build that lowers to a real, always-skipped assert call,
-      # which shows up as an uncovered line. In Release, NDEBUG makes it
-      # lower to a bare __builtin_unreachable(), so with optimizations on
-      # the compiler proves the arm dead and emits no code for it at all --
-      # it never shows up as a line in the report. (gcovr.cfg also excludes
-      # Q_UNREACHABLE lines by pattern, for local Debug-build coverage runs.)
-      #
-      # There are no `throw` statements anywhere in library/ --
-      # exclude-throw-branches drops the compiler-generated
-      # exception-unwind edges GCC adds to every call to a non-noexcept
-      # function, which otherwise dominate the branch count and can't be
-      # exercised without deliberately forcing failures like std::bad_alloc.
-      # (this relies on GCC/gcov's "(throw)" branch annotation -- clang's
-      # llvm-cov gcov emulation doesn't emit it, so don't switch this build
-      # to clang without re-checking that the exclusion still works)
       run: gcovr
 
     - name: Upload code coverage
@@ -238,24 +220,31 @@ jobs:
         files: ./coverage.xml
         token: ${{ secrets.CODECOV_TOKEN }}
 
-    - name: Configure without tests
-      run: >
-        cmake -S . -B without_tests
-        -DCMAKE_BUILD_TYPE=Release
-        -DCPACK_GENERATOR=${{ matrix.cpack_generator }}
-        -DCPACK_PACKAGE_FILE_NAME=${{ matrix.package_name }}
-        ${{ matrix.family == 'windows' && format('-DCMAKE_TOOLCHAIN_FILE={0}/scripts/buildsystems/vcpkg.cmake', env.VCPKG_ROOT) || '' }}
+    - name: Upload package
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ matrix.package_name }}
+        path: |
+          without_tests/Justly-*.tar.gz
+          without_tests/Justly-*.zip
+        if-no-files-found: error
 
-    - name: Build without tests
-      run: cmake --build without_tests --config Release
+  # a separate job, so a release only happens if every platform passed,
+  # and the platforms don't race each other to create it
+  release_job:
+    needs: main_job
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: Download packages
+      uses: actions/download-artifact@v8
+      with:
+        path: packages
+        merge-multiple: true
 
-    - name: Package
-      run: cd without_tests; cpack -C Release
-
-    - name: Release on a new tag
-      if: startsWith(github.ref, 'refs/tags/')
+    - name: Release
       uses: softprops/action-gh-release@v3
       with:
-        files: |
-          **/Justly-*.tar.gz
-          **/Justly-*.zip
+        files: packages/*
