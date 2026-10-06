@@ -5,8 +5,8 @@ env:
   VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/vcpkg_archives,readwrite"
 jobs:
   main_job:
-    continue-on-error: true
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: macos-latest
@@ -60,11 +60,7 @@ jobs:
 
     - name: Install dependencies on MacOS
       if: matrix.family == 'macos'
-      run: brew install fluid-synth ninja qt libxml2 libzip
-
-    - name: Add MSVC to path on Windows
-      if: matrix.family == 'windows'
-      uses: ilammy/msvc-dev-cmd@v1
+      run: brew install fluid-synth qt libxml2 libzip
 
     - name: Install cmake on Windows
       if: matrix.family == 'windows'

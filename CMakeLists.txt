@@ -318,10 +318,11 @@ if (BUILD_TESTS)
 
     justly_install_share("${Justly_SOURCE_DIR}/tests/share/" JustlyTests)
 
-    set(test_install_folder "${Justly_SOURCE_DIR}/test_install")
+    # one per build dir, so separate builds can't see each other's leftover files
+    set(test_install_folder "${CMAKE_BINARY_DIR}/test_install")
 
     add_custom_target(install_tests ALL
-        COMMAND cmake --install ${CMAKE_CURRENT_BINARY_DIR}
+        COMMAND ${CMAKE_COMMAND} --install ${CMAKE_CURRENT_BINARY_DIR}
         --prefix ${test_install_folder}
         --config $<CONFIG>
     )

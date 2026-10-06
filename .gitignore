@@ -1,7 +1,6 @@
 /.vscode/
 /.cache/
 /build/
-/test_install/
 /install/
 /coverage/
 /vcpkg/

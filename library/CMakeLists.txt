@@ -10,7 +10,6 @@ target_link_libraries(JustlyLibrary PUBLIC
     Qt6::Widgets
 )
 
-add_compile_definitions(JustlyLibrary PUBLIC "$<$<CONFIG:Release>:QT_NO_DEBUG=1>")
 if (NO_REALTIME_AUDIO)
     target_compile_definitions(JustlyLibrary PUBLIC "NO_REALTIME_AUDIO")
 endif()
