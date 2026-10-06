@@ -10,6 +10,10 @@ static const auto PIANO_ROLL_PIXELS_PER_MS = 0.1;
 static const auto PIANO_ROLL_DEFAULT_AXIS_Y = 0.0;
 static const auto PIANO_ROLL_MIN_TIME_ZOOM = 0.25;
 static const auto PIANO_ROLL_MAX_TIME_ZOOM = 8.0;
+// shared with the pitch axis, which PianoRollWidget draws in its own scene
+static const auto PIANO_ROLL_AXIS_X = 0.0;
+static const auto PIANO_ROLL_AXIS_TICK_LENGTH = 5.0;
+static const auto PIANO_ROLL_AXIS_LABEL_GAP = 4.0;
 
 // the main scrollable graphics view: the note bars, the pitch/time axes,
 // and the playhead cursor + its playback animation all live here
@@ -60,7 +64,7 @@ struct PianoRollNotesScene : public QGraphicsScene {
   // to one chord's notes) it's that chord's own start time, so the axis
   // only spans the window during which the chord's notes actually play
   // instead of dragging along every silent millisecond since the song
-  // began; see to_scene_x() in PianoRollWidget.hpp
+  // began; see to_scene_x() below
   double time_axis_baseline_ms = 0.0;
   // the tick lines + labels currently on screen, so redraw_time_axis_ticks()
   // can remove exactly those before drawing a fresh set at the new spacing,
@@ -85,3 +89,40 @@ struct PianoRollNotesScene : public QGraphicsScene {
 
   NO_MOVE_COPY(PianoRollNotesScene)
 };
+
+// converts an absolute song time (ms) to this scene's x coordinate --
+// offset by time_axis_baseline_ms, which is 0 outside notes mode (see that
+// field above)
+[[nodiscard]] auto to_scene_x(const PianoRollNotesScene& notes_scene,
+                              double time_ms) -> double;
+
+// sets notes_scene's horizontal scale directly (rather than accumulating
+// via QGraphicsView::scale()) so repeated zoom_in()/zoom_out() calls can't
+// drift and clamping is just one std::clamp on the absolute factor; the
+// vertical scale is always left at 1, so the pitch axis (and
+// axis_scene, which is never zoomed) stays visually fixed while
+// only the time axis expands/contracts
+void set_notes_view_time_zoom(PianoRollNotesScene& notes_scene,
+                              double new_zoom_factor);
+
+// follow_view lets a caller move the playhead line without recentering the
+// view on it -- used when playback has already stopped (see
+// apply_selection_highlight()), where forcibly
+// recentering would yank the view away from wherever the user had it
+// scrolled
+void position_playhead(PianoRollNotesScene& notes_scene, double time_ms,
+                       bool follow_view = true);
+
+// draws the time axis line at axis_y, out to max_time_ms, and its ticks
+void draw_time_axis(PianoRollNotesScene& notes_scene, double axis_y,
+                    double max_time_ms);
+
+// moves the playhead to the scene point under viewport_pos, without moving
+// the view, e.g. while the user drags it
+void drag_playhead_to(PianoRollNotesScene& notes_scene,
+                      const QPoint& viewport_pos);
+
+void show_selection_rect(PianoRollNotesScene& notes_scene, double start_x,
+                         double end_x);
+
+void hide_selection_rect(PianoRollNotesScene& notes_scene);

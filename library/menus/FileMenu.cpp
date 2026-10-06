@@ -62,21 +62,22 @@ FileMenu::FileMenu(WindowBody& window_body)
                      save_as_file(window_body, window_body.current_file);
                    });
 
-  QObject::connect(&save_as_action, &QAction::triggered, this,
-                   [&window_body]() -> auto {
-                     const auto maybe_file = maybe_choose_file(
-                         window_body, FileMenu::tr("Save As — Justly"),
-                         "XML file (*.xml)", QFileDialog::AcceptSave, ".xml");
-                     if (maybe_file.has_value()) {
-                       save_as_file(window_body, *maybe_file);
-                     }
-                   });
+  QObject::connect(
+      &save_as_action, &QAction::triggered, this, [&window_body]() -> auto {
+        const auto maybe_file = maybe_choose_file(
+            window_body, FileMenu::tr("Save As — Justly"),
+            FileMenu::tr("XML file (*.xml)"), QFileDialog::AcceptSave, ".xml");
+        if (maybe_file.has_value()) {
+          save_as_file(window_body, *maybe_file);
+        }
+      });
 
   QObject::connect(
       &export_action, &QAction::triggered, this, [&window_body]() -> auto {
         const auto maybe_file = maybe_choose_file(
-            window_body, FileMenu::tr("Export — Justly"), "WAV file (*.wav)",
-            QFileDialog::AcceptSave, ".wav", FileMenu::tr("Export"));
+            window_body, FileMenu::tr("Export — Justly"),
+            FileMenu::tr("WAV file (*.wav)"), QFileDialog::AcceptSave, ".wav",
+            FileMenu::tr("Export"));
         if (maybe_file.has_value()) {
           export_to_file(window_body.player, window_body.song, *maybe_file);
         }

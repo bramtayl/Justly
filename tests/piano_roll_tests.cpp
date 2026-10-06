@@ -107,18 +107,28 @@ void Tester::test_piano_roll_events_total_count() const {
 
 void Tester::test_piano_roll_time_bounds() const {
   const auto [baseline_ms, end_ms] =
-      get_piano_roll_time_bounds(main_window.window_body.song, 1, 1);
+      get_chords_time_bounds(main_window.window_body.song, 1, 1);
   QCOMPARE(baseline_ms, 600.0);
   QCOMPARE(end_ms, 1200.0);
 
-  // a note range with no pitched/unpitched filter spans both kinds of note
+  // selecting every note of each kind spans the whole chord between them
   const auto& song = main_window.window_body.song;
-  const auto pitched_end_ms =
-      get_piano_roll_time_bounds(song, 1, 1, 0, 1, true).second;
+  const auto& chord = song.chords.at(1);
+  const auto get_notes_bounds = [&song](const RowType row_type,
+                                        const int number_of_rows) {
+    return get_selection_time_bounds(song, {.row_type = row_type,
+                                            .chord_number = 1,
+                                            .first_row_number = 0,
+                                            .number_of_rows = number_of_rows});
+  };
+  const auto [pitched_start_ms, pitched_end_ms] = get_notes_bounds(
+      RowType::pitched_note_type, static_cast<int>(chord.pitched_notes.size()));
   const auto unpitched_end_ms =
-      get_piano_roll_time_bounds(song, 1, 1, 0, 1, false).second;
-  QCOMPARE(get_piano_roll_time_bounds(song, 1, 1, 0, 1).second,
-           std::max(pitched_end_ms, unpitched_end_ms));
+      get_notes_bounds(RowType::unpitched_note_type,
+                       static_cast<int>(chord.unpitched_notes.size()))
+          .second;
+  QCOMPARE(pitched_start_ms, baseline_ms);
+  QCOMPARE(std::max(pitched_end_ms, unpitched_end_ms), end_ms);
 }
 
 void Tester::test_piano_roll_dock_toggle() {
@@ -507,7 +517,7 @@ void Tester::test_piano_roll_drag_selects_chord_range() {
   // the box mirrors whatever's selected, so it's already showing chord
   // 0's own extent before any drag happens
   {
-    const auto [start_ms, end_ms] = get_piano_roll_time_bounds(song, 0, 1);
+    const auto [start_ms, end_ms] = get_chords_time_bounds(song, 0, 1);
     QVERIFY(selection_rect_item.isVisible());
     QCOMPARE(selection_rect_item.rect().left(),
              start_ms * PIANO_ROLL_PIXELS_PER_MS);
@@ -534,7 +544,7 @@ void Tester::test_piano_roll_drag_selects_chord_range() {
 
   // the box follows the newly (single-chord) selection
   {
-    const auto [start_ms, end_ms] = get_piano_roll_time_bounds(song, 1, 1);
+    const auto [start_ms, end_ms] = get_chords_time_bounds(song, 1, 1);
     QVERIFY(selection_rect_item.isVisible());
     QCOMPARE(selection_rect_item.rect().left(),
              start_ms * PIANO_ROLL_PIXELS_PER_MS);
@@ -559,7 +569,7 @@ void Tester::test_piano_roll_drag_selects_chord_range() {
 
   // the box now spans the whole selected chord range
   {
-    const auto [start_ms, end_ms] = get_piano_roll_time_bounds(song, 1, 3);
+    const auto [start_ms, end_ms] = get_chords_time_bounds(song, 1, 3);
     QVERIFY(selection_rect_item.isVisible());
     QCOMPARE(selection_rect_item.rect().left(),
              start_ms * PIANO_ROLL_PIXELS_PER_MS);
@@ -576,7 +586,7 @@ void Tester::test_piano_roll_drag_selects_chord_range() {
   // purely in-drag affordance, so it must still be showing the same
   // range after the mouse is released
   {
-    const auto [start_ms, end_ms] = get_piano_roll_time_bounds(song, 1, 3);
+    const auto [start_ms, end_ms] = get_chords_time_bounds(song, 1, 3);
     QVERIFY(selection_rect_item.isVisible());
     QCOMPARE(selection_rect_item.rect().left(),
              start_ms * PIANO_ROLL_PIXELS_PER_MS);

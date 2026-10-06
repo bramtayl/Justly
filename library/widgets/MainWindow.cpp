@@ -157,12 +157,12 @@ MainWindow::MainWindow()
   connect_recovery_timer(window_body);
 
   connect_load_action(song_menu_bar.file_menu.open_action, *this,
-                      MainWindow::tr("Open — Justly"), "XML file (*.xml)",
-                      ".xml", open_file);
+                      MainWindow::tr("Open — Justly"),
+                      MainWindow::tr("XML file (*.xml)"), ".xml", open_file);
   connect_load_action(song_menu_bar.file_menu.import_action, *this,
                       MainWindow::tr("Import MusicXML — Justly"),
-                      "MusicXML file (*.musicxml *.mxl)", ".musicxml",
-                      import_musicxml);
+                      MainWindow::tr("MusicXML file (*.musicxml *.mxl)"),
+                      ".musicxml", import_musicxml);
 
   // double-clicking a note in the piano roll opens the pitched/unpitched
   // notes table for its chord, scrolled to and highlighting that note --
@@ -213,7 +213,7 @@ MainWindow::MainWindow()
         // full, regardless of note-row selection, so the end bound must
         // span the whole remaining song rather than just the selected notes
         const auto end_ms =
-            get_piano_roll_time_bounds(
+            get_chords_time_bounds(
                 song, first_chord_number,
                 static_cast<int>(song.chords.size()) - first_chord_number)
                 .second;

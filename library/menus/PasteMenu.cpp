@@ -6,22 +6,15 @@
 
 auto get_mime_description(const QString& mime_type) -> QString {
   Q_ASSERT(mime_type.isValidUtf16());
-  if (mime_type == Chord::get_cells_mime()) {
-    return QObject::tr("chords cells");
-  }
-  if (mime_type == PitchedNote::get_cells_mime()) {
-    return QObject::tr("pitched notes cells");
-  }
-  if (mime_type == UnpitchedNote::get_cells_mime()) {
-    return QObject::tr("unpitched notes cells");
-  }
-  if (mime_type == PitchedVoice::get_cells_mime()) {
-    return QObject::tr("pitched voices cells");
-  }
-  if (mime_type == UnpitchedVoice::get_cells_mime()) {
-    return QObject::tr("unpitched voices cells");
-  }
-  return mime_type;
+  static const QMap<QString, QString> descriptions{
+      {Chord::get_cells_mime(), QObject::tr("chords cells")},
+      {PitchedNote::get_cells_mime(), QObject::tr("pitched notes cells")},
+      {UnpitchedNote::get_cells_mime(), QObject::tr("unpitched notes cells")},
+      {PitchedVoice::get_cells_mime(), QObject::tr("pitched voices cells")},
+      {UnpitchedVoice::get_cells_mime(), QObject::tr("unpitched voices cells")},
+  };
+  // a type from another program is shown as is
+  return descriptions.value(mime_type, mime_type);
 }
 
 namespace {

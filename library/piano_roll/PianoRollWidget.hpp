@@ -12,45 +12,15 @@ struct WindowBody;
 
 static const auto PIANO_ROLL_TIME_ZOOM_STEP = 1.25;
 
-// the functions below act on the piano roll's scenes, but are declared here
-// rather than in those scenes' own headers since they're all defined in
-// PianoRollWidget.cpp
-
-// converts an absolute song time (ms) to this scene's x coordinate --
-// offset by time_axis_baseline_ms, which is 0 outside notes mode (see that
-// field in PianoRollNotesScene.hpp)
-[[nodiscard]] auto to_scene_x(const PianoRollNotesScene& notes_scene,
-                              double time_ms) -> double;
-
-// sets notes_scene's horizontal scale directly (rather than accumulating
-// via QGraphicsView::scale()) so repeated zoom_in()/zoom_out() calls can't
-// drift and clamping is just one std::clamp on the absolute factor; the
-// vertical scale is always left at 1, so the pitch axis (and
-// axis_scene, which is never zoomed) stays visually fixed while
-// only the time axis expands/contracts
-void set_notes_view_time_zoom(PianoRollNotesScene& notes_scene,
-                              double new_zoom_factor);
-
-// follow_view lets a caller move the playhead line without recentering the
-// view on it -- used when playback has already stopped (see
-// apply_selection_highlight()), where forcibly
-// recentering would yank the view away from wherever the user had it
-// scrolled
-void position_playhead(PianoRollNotesScene& notes_scene, double time_ms,
-                       bool follow_view = true);
-
-// number_of_notes == -1 (default) means "every note in every chord in
-// [first_chord_number, first_chord_number + number_of_chords)". A concrete
-// number_of_notes restricts to a single chord's note list (number_of_chords
-// should be 1 in that case), matching how the Play menu can select either a
-// range of chords or a range of notes within one chord.
-[[nodiscard]] auto get_piano_roll_time_bounds(
-    const Song& song, int first_chord_number, int number_of_chords,
-    int first_note_number = 0, int number_of_notes = -1,
-    std::optional<bool> pitched_filter = std::nullopt)
+// the start of the first chord, and the latest end of any of their notes,
+// for [first_chord_number, first_chord_number + number_of_chords)
+[[nodiscard]] auto get_chords_time_bounds(const Song& song,
+                                          int first_chord_number,
+                                          int number_of_chords)
     -> std::pair<double, double>;
 
-// get_piano_roll_time_bounds for a chord or note selection; voice
+// get_chords_time_bounds for a chord selection, or, for a note selection,
+// the start of its chord and the latest end of the selected notes; voice
 // selections have no timeline position, so callers must rule them out
 [[nodiscard]] auto get_selection_time_bounds(const Song& song,
                                              const TableSelection& selection)
