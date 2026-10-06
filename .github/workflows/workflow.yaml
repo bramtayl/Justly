@@ -1,7 +1,6 @@
 on:
   push:
 env:
-  instruments_url: "https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound"
   VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/vcpkg_archives,readwrite"
 jobs:
   main_job:
@@ -88,26 +87,12 @@ jobs:
       with:
         vcpkgGitCommitId: 'f6729a3ac3bfdefc999aa8e3664f8014370886b8'
 
-    - name: Restore soundfont files from the cache if available
-      id: soundfont_step
+    # CMake downloads the soundfont at configure time if it's missing
+    - name: Restore the soundfont from the cache if available
       uses: actions/cache@v6
       with:
-        path: |
-          share/MS_Basic.sf3
-          share/MS_Basic_License.md
-        key: ${{matrix.os}}-soundfont_cache-v3
-
-    - name: Download the soundfont if not in the cache
-      if: steps.soundfont_step.outputs.cache-hit != 'true'
-      run: >
-        curl -L "${{env.instruments_url}}/MS%20Basic.sf3"
-        --output "share/MS_Basic.sf3"
-
-    - name: Download the soundfont license if not in the cache
-      if: steps.soundfont_step.outputs.cache-hit != 'true'
-      run: >
-        curl -L "${{env.instruments_url}}/MS%20Basic_License.md"
-        --output "share/MS_Basic_License.md"
+        path: share/MS_Basic.sf3
+        key: ${{matrix.os}}-soundfont_cache-v4
 
     - name: Configure with tests
       run: >

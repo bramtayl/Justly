@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.24)
+# 3.25 for the LINUX variable
+cmake_minimum_required(VERSION 3.25)
 
 # on windows, add a path to Qt, e.g.
 # list(APPEND CMAKE_PREFIX_PATH C:/Users/brand/6.5.1/msvc2019_64)
@@ -10,12 +11,23 @@ endif()
 
 project(Justly VERSION 1.2.0 LANGUAGES CXX)
 
-# download https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic.sf3
-# and https://github.com/musescore/MuseScore/blob/v4.7.4/share/sound/MS%20Basic_License.md
-# put it into the share folder as MS_Basic.sf3 abd MS_Basic_License.sf3
-# too big to commit to git
+# the soundfont is too big to commit to git, so download it if it's missing
+# (its license, MS_Basic_License.md, is committed)
+set(soundfont_file "${Justly_SOURCE_DIR}/share/MS_Basic.sf3")
+if (NOT EXISTS "${soundfont_file}")
+    message(STATUS "Downloading MS_Basic.sf3")
+    # download next to the build first, so a failed download doesn't leave
+    # a partial file behind that the EXISTS check above would accept
+    file(DOWNLOAD
+        "https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic.sf3"
+        "${CMAKE_BINARY_DIR}/MS_Basic.sf3"
+        EXPECTED_HASH SHA256=5ea2375e8bd7d8e71def1036978c1621e85b66934169b6a2744b27b9b3c2d99c
+    )
+    # not file(RENAME), which fails if the build dir is on another filesystem
+    file(COPY_FILE "${CMAKE_BINARY_DIR}/MS_Basic.sf3" "${soundfont_file}")
+    file(REMOVE "${CMAKE_BINARY_DIR}/MS_Basic.sf3")
+endif()
 
-include(CTest)
 include(InstallRequiredSystemLibraries)
 
 option(BUILD_TESTS "Build tests" OFF)
@@ -23,62 +35,52 @@ option(NO_REALTIME_AUDIO "Do not start realtime audio" OFF)
 option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
 option(TRACK_COVERAGE "Track coverage" OFF)
 
-if (UNIX AND NOT APPLE)
+if (LINUX)
     # rpath fixes is broken in qt_generate_deploy_app_script
     # because ubuntu installed plugins don't have an rpath
-    # need to set before find_package(Qt6Core)
+    # need to set before find_package(Qt6)
     set(QT_DEPLOY_FORCE_ADJUST_RPATHS OFF)
 endif()
 
 find_package(FluidSynth REQUIRED)
 find_package(LibXml2 REQUIRED)
 find_package(libzip CONFIG REQUIRED)
-find_package(Qt6Core REQUIRED)
-find_package(Qt6Gui REQUIRED)
-find_package(Qt6Svg REQUIRED)
-find_package(Qt6Test REQUIRED)
-find_package(Qt6Widgets REQUIRED)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Svg Widgets)
+if (BUILD_TESTS)
+    find_package(Qt6 REQUIRED COMPONENTS Test)
+endif()
 
-if (UNIX AND NOT APPLE)
+if (LINUX)
     # in Debian, these are separate packages in Qt6Gui_DIR
     list(APPEND CMAKE_PREFIX_PATH "${Qt6Gui_DIR}")
-    # needed for ctest to run offsecreen
-    find_package(Qt6QOffscreenIntegrationPlugin REQUIRED PATHS "${Qt6Gui_DIR}")
     # to look native
     find_package(Qt6QGtk3ThemePlugin REQUIRED PATHS "${Qt6Gui_DIR}")
+    if (BUILD_TESTS)
+        # needed for ctest to run offscreen
+        find_package(Qt6QOffscreenIntegrationPlugin REQUIRED PATHS "${Qt6Gui_DIR}")
+    endif()
 endif()
 
 qt_standard_project_setup()
 
 if (INCLUDE_WHAT_YOU_USE)
-    # headers without  mathching .cpp files won't get checked by default
-    # so specify all header dirs
+    # headers without matching .cpp files won't get checked by default
+    # so specify all header dirs (iwyu's * also matches across /)
     set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE
         include-what-you-use
-        -Xiwyu
-        --mapping_file=${Justly_SOURCE_DIR}/map.imp
-        -Xiwyu
-        --check_also=${Justly_SOURCE_DIR}/library/*
-        -Xiwyu
-        --check_also=${Justly_SOURCE_DIR}/library/*/*
-        -Xiwyu
-        --check_also=${Justly_SOURCE_DIR}/library/*/*/*
-        -Xiwyu
-        --check_also=${Justly_SOURCE_DIR}/executable/*
-        -Xiwyu
-        --check_also=${Justly_SOURCE_DIR}/tests/*
+        -Xiwyu --mapping_file=${Justly_SOURCE_DIR}/map.imp
+        -Xiwyu --check_also=${Justly_SOURCE_DIR}/library/*
+        -Xiwyu --check_also=${Justly_SOURCE_DIR}/executable/*
+        -Xiwyu --check_also=${Justly_SOURCE_DIR}/tests/*
     )
 endif()
 
 if (MSVC)
     add_compile_options("/W4")
 else()
-    add_compile_options("-Wall" "-Wextra" "-Wpedantic")
-    if (TRACK_COVERAGE)
-        add_compile_options("-Og")
-    else()
-        add_compile_options("$<$<CONFIG:Debug>:-Og>")
-    endif()
+    add_compile_options("-Wall" "-Wextra" "-Wpedantic"
+        "$<$<OR:$<CONFIG:Debug>,$<BOOL:${TRACK_COVERAGE}>>:-Og>"
+    )
 endif()
 
 if (TRACK_COVERAGE)
@@ -92,30 +94,26 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 qt_add_library(JustlyLibrary STATIC)
 qt_add_executable(Justly)
-if (BUILD_TESTS)
-   qt_add_executable(JustlyTests)
-   if (APPLE)
-       # need to call before qt_generate_deploy_app_script()
-       set_target_properties(JustlyTests PROPERTIES MACOSX_BUNDLE ON)
-   endif()
-endif()
-
 set(app_targets Justly)
 if (BUILD_TESTS)
+    enable_testing()
+    qt_add_executable(JustlyTests)
     list(APPEND app_targets JustlyTests)
+    if (APPLE)
+        # need to call before qt_generate_deploy_app_script()
+        set_target_properties(JustlyTests PROPERTIES MACOSX_BUNDLE ON)
+    endif()
 endif()
 
 add_subdirectory("library")
 add_subdirectory("executable")
 
-if (UNIX AND NOT APPLE)
+if (LINUX)
     # qt_import_plugins won't work with the offscreen plugin
     qt_import_plugins(Justly INCLUDE Qt6::QGtk3ThemePlugin)
-endif()
 
-# qt will deploy system libraries by default on linux
-# so exclude them manually
-if (UNIX AND NOT APPLE)
+    # qt will deploy system libraries by default on linux
+    # so exclude them manually
     set(system_lib_exclude_regexes
         "^ld-linux"
         "^libEGL"
@@ -124,21 +122,8 @@ if (UNIX AND NOT APPLE)
         "^libICE"
         "^libOpenGL"
         "^libSM"
-        "^libX11"
-        "^libXRes"
-        "^libXau"
-        "^libXcomposite"
-        "^libXcursor"
-        "^libXdamage"
-        "^libXdmcp"
-        "^libXext"
-        "^libXfixes"
-        "^libXi"
-        "^libXinerama"
-        "^libXrandr"
-        "^libXrender"
-        "^libXss"
-        "^libXtst"
+        # all the X11 client libraries (libX11, libXext, libXrandr, ...)
+        "^libX"
         "^libapparmor"
         "^libasound"
         "^libasyncns"
@@ -210,7 +195,7 @@ foreach(app_target ${app_targets})
         BUNDLE DESTINATION .
     )
 
-    if (UNIX AND NOT APPLE)
+    if (LINUX)
         # need to set rpath on linux
         set_target_properties(${app_target} PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
         # if plugins inherit justly's rpath, since they are in a different location, the rpath won't work
@@ -267,9 +252,7 @@ if (WIN32)
         if(unresolved_deps)
             message(WARNING \"Skipping unresolved runtime dependencies (assumed to be optional Windows OS components not bundled anyway): \${unresolved_deps}\")
         endif()
-        foreach(resolved_dep \${resolved_deps})
-            file(INSTALL \"\${resolved_dep}\" DESTINATION \"\${CMAKE_INSTALL_PREFIX}/bin\")
-        endforeach()
+        file(INSTALL \${resolved_deps} DESTINATION \"\${CMAKE_INSTALL_PREFIX}/bin\")
     ")
 endif()
 
@@ -311,9 +294,7 @@ if (BUILD_TESTS)
             )
         ")
     endif()
-endif()
 
-if (BUILD_TESTS)
     add_subdirectory("tests")
 
     justly_install_share("${Justly_SOURCE_DIR}/tests/share/" JustlyTests)
@@ -327,19 +308,15 @@ if (BUILD_TESTS)
         --config $<CONFIG>
     )
 
-    add_dependencies(install_tests JustlyLibrary Justly JustlyTests)
+    add_dependencies(install_tests Justly JustlyTests)
 
+    set(run_tests_subfolder "bin")
+    set(run_tests_args "")
     if (APPLE)
         set(run_tests_subfolder "JustlyTests.app/Contents/MacOS")
-        set(run_tests_args "")
-    else()
-        set(run_tests_subfolder "bin")
-        if (WIN32)
-            # test output doesn't get piped to stdout on windows
-            set(run_tests_args -o test_output.txt,txt)
-        else()
-            set(run_tests_args "")
-        endif()
+    elseif (WIN32)
+        # test output doesn't get piped to stdout on windows
+        set(run_tests_args -o test_output.txt,txt)
     endif()
 
     add_test(NAME run_tests COMMAND "${test_install_folder}/${run_tests_subfolder}/JustlyTests" ${run_tests_args})
