@@ -6,23 +6,22 @@
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/WindowBody.hpp"
 
-auto maybe_choose_file(WindowBody& window_body, const char* const caption,
+auto maybe_choose_file(WindowBody& window_body, const QString& caption,
                        const QString& filter,
                        const QFileDialog::AcceptMode accept_mode,
-                       const QString& suffix, const char* const accept_label)
+                       const QString& suffix, const QString& accept_label)
     -> std::optional<QString> {
   Q_ASSERT(filter.isValidUtf16());
   Q_ASSERT(suffix.isValidUtf16());
-  QFileDialog dialog(&window_body, WindowBody::tr(caption),
-                     window_body.current_folder, filter);
+  QFileDialog dialog(&window_body, caption, window_body.current_folder, filter);
 
   dialog.setAcceptMode(accept_mode);
   dialog.setDefaultSuffix(suffix);
   dialog.setFileMode(accept_mode == QFileDialog::AcceptOpen
                          ? QFileDialog::ExistingFile
                          : QFileDialog::AnyFile);
-  if (accept_label != nullptr) {
-    dialog.setLabelText(QFileDialog::Accept, WindowBody::tr(accept_label));
+  if (!accept_label.isEmpty()) {
+    dialog.setLabelText(QFileDialog::Accept, accept_label);
   }
 
   if (dialog.exec() == 0) {
@@ -66,8 +65,8 @@ FileMenu::FileMenu(WindowBody& window_body)
   QObject::connect(&save_as_action, &QAction::triggered, this,
                    [&window_body]() -> auto {
                      const auto maybe_file = maybe_choose_file(
-                         window_body, "Save As — Justly", "XML file (*.xml)",
-                         QFileDialog::AcceptSave, ".xml");
+                         window_body, FileMenu::tr("Save As — Justly"),
+                         "XML file (*.xml)", QFileDialog::AcceptSave, ".xml");
                      if (maybe_file.has_value()) {
                        save_as_file(window_body, *maybe_file);
                      }
@@ -76,8 +75,8 @@ FileMenu::FileMenu(WindowBody& window_body)
   QObject::connect(
       &export_action, &QAction::triggered, this, [&window_body]() -> auto {
         const auto maybe_file = maybe_choose_file(
-            window_body, "Export — Justly", "WAV file (*.wav)",
-            QFileDialog::AcceptSave, ".wav", "Export");
+            window_body, FileMenu::tr("Export — Justly"), "WAV file (*.wav)",
+            QFileDialog::AcceptSave, ".wav", FileMenu::tr("Export"));
         if (maybe_file.has_value()) {
           export_to_file(window_body.player, window_body.song, *maybe_file);
         }

@@ -22,18 +22,21 @@ struct IntervalLimit {
 
 auto check_interval(QWidget& parent_widget, const Interval& interval) -> bool {
   for (const auto& limit :
-       {IntervalLimit{.name = "Numerator",
+       {IntervalLimit{.name = QT_TRANSLATE_NOOP("QObject", "Numerator"),
                       .value = interval.ratio.numerator,
                       .maximum = MAX_NUMERATOR,
-                      .comparison = " greater than maximum "},
-        IntervalLimit{.name = "Denominator",
+                      .comparison = QT_TRANSLATE_NOOP(
+                          "QObject", " greater than maximum ")},
+        IntervalLimit{.name = QT_TRANSLATE_NOOP("QObject", "Denominator"),
                       .value = interval.ratio.denominator,
                       .maximum = MAX_DENOMINATOR,
-                      .comparison = " greater than maximum "},
-        IntervalLimit{.name = "Octave",
+                      .comparison = QT_TRANSLATE_NOOP(
+                          "QObject", " greater than maximum ")},
+        IntervalLimit{.name = QT_TRANSLATE_NOOP("QObject", "Octave"),
                       .value = interval.octave,
                       .maximum = MAX_OCTAVE,
-                      .comparison = " (absolutely) greater than maximum "}}) {
+                      .comparison = QT_TRANSLATE_NOOP(
+                          "QObject", " (absolutely) greater than maximum ")}}) {
     if (std::abs(limit.value) > limit.maximum) {
       QString message;
       QTextStream stream(&message);
@@ -77,28 +80,28 @@ void update_interval(QUndoStack& undo_stack, SwitchTable& switch_table,
                      const Interval& interval) {
   const auto& range = get_only_range(switch_table);
 
-  QUndoCommand* undo_command = nullptr;
   switch (switch_table.delegate.current_row_type) {
     case RowType::chord_type:
-      undo_command = make_update_interval_command(
-          switch_table, switch_table.chords_model, range,
-          static_cast<int>(ChordColumn::chord_interval_column), interval);
-      break;
+      maybe_push(
+          undo_stack,
+          make_update_interval_command(
+              switch_table, switch_table.chords_model, range,
+              static_cast<int>(ChordColumn::chord_interval_column), interval));
+      return;
     case RowType::pitched_note_type:
-      undo_command = make_update_interval_command(
-          switch_table, switch_table.pitched_notes_model, range,
-          static_cast<int>(PitchedNoteColumn::pitched_note_interval_column),
-          interval);
-      break;
+      maybe_push(
+          undo_stack,
+          make_update_interval_command(
+              switch_table, switch_table.pitched_notes_model, range,
+              static_cast<int>(PitchedNoteColumn::pitched_note_interval_column),
+              interval));
+      return;
     case RowType::unpitched_note_type:
     case RowType::pitched_voice_type:
     case RowType::unpitched_voice_type:
       // interval rows are disabled for these row types; see
       // ReplaceTable.cpp's update_actions/set_interval_rows_are_enabled
       Q_UNREACHABLE();
-  }
-  if (undo_command != nullptr) {
-    undo_stack.push(undo_command);
   }
 }
 

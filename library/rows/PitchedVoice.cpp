@@ -4,7 +4,10 @@
 
 PitchedVoice::PitchedVoice() : Voice() { program = "Grand Piano"; }
 
-auto PitchedVoice::get_pitched() -> const char* { return "pitched"; }
+auto PitchedVoice::get_pitched() -> const char* {
+  // translated where it's shown
+  return QT_TRANSLATE_NOOP("QObject", "pitched");
+}
 
 auto PitchedVoice::is_pitched() -> bool { return true; }
 

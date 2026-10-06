@@ -15,8 +15,6 @@ static const auto NUMBER_OF_MIDI_CHANNELS = 64;
 [[nodiscard]] auto make_audio_driver(QWidget& parent, FluidSettings& settings,
                                      FluidSynth& synth) -> FluidDriver;
 
-void stop_playing(const FluidSequencer& sequencer, const FluidEvent& event);
-
 void set_destination(FluidEvent& event, fluid_seq_id_t sequencer_id);
 
 void send_event_at(FluidSequencer& sequencer, FluidEvent& event, double time);
@@ -53,5 +51,7 @@ struct Player {
 
   NO_MOVE_COPY(Player)
 };
+
+void stop_playing(const Player& player);
 
 [[nodiscard]] auto get_gain(const Player& player) -> double;

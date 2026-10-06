@@ -332,10 +332,9 @@ void Tester::
     select_cell(switch_table, 0, 1);
     const QObject receiver;
     auto call_count = 0;
-    for (auto attempt = 0; attempt < 5; attempt = attempt + 1) {
-      QObject::connect(
-          &selection_model, &QItemSelectionModel::selectionChanged, &receiver,
-          [&call_count]() -> auto { call_count = call_count + 1; });
+    for (auto attempt = 0; attempt < 5; ++attempt) {
+      QObject::connect(&selection_model, &QItemSelectionModel::selectionChanged,
+                       &receiver, [&call_count]() -> auto { ++call_count; });
     }
     select_cell(switch_table, 0, 0);
     QCOMPARE(call_count, 5);
@@ -348,13 +347,12 @@ void Tester::
     select_cell(switch_table, 0, 1);
     const QObject receiver;
     auto call_count = 0;
-    for (auto attempt = 0; attempt < 5; attempt = attempt + 1) {
+    for (auto attempt = 0; attempt < 5; ++attempt) {
       QObject::disconnect(&selection_model,
                           &QItemSelectionModel::selectionChanged, &receiver,
                           nullptr);
-      QObject::connect(
-          &selection_model, &QItemSelectionModel::selectionChanged, &receiver,
-          [&call_count]() -> auto { call_count = call_count + 1; });
+      QObject::connect(&selection_model, &QItemSelectionModel::selectionChanged,
+                       &receiver, [&call_count]() -> auto { ++call_count; });
     }
     select_cell(switch_table, 0, 0);
     QCOMPARE(call_count, 1);

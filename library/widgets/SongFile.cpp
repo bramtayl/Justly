@@ -172,21 +172,16 @@ auto xml_to_double(const xmlNode& element) -> double {
 template <VoiceInterface SubVoice>
 [[nodiscard]] auto check_duplicate_or_empty_voice_names(
     QWidget& parent, const QList<SubVoice>& voices) -> bool {
-  if (std::ranges::any_of(voices, [](const SubVoice& voice) -> auto {
-        return voice.name.isEmpty();
+  if (!std::ranges::all_of(voices, [&parent](const SubVoice& voice) -> bool {
+        return check_voice_name_not_empty(parent, voice.name);
       })) {
-    QMessageBox::warning(&parent, QObject::tr("Voice name error"),
-                         QObject::tr("Voice name is empty!"));
     return false;
   }
   QSet<QString> seen_names;
   for (const auto& voice : voices) {
     if (seen_names.contains(voice.name)) {
-      QString message;
-      QTextStream stream(&message);
-      stream << QObject::tr("Duplicate voice name \"") << voice.name
-             << QObject::tr("\"!");
-      QMessageBox::warning(&parent, QObject::tr("Voice name error"), message);
+      warn_voice_name(
+          parent, QObject::tr("Duplicate voice name \"%1\"!").arg(voice.name));
       return false;
     }
     seen_names.insert(voice.name);
@@ -199,15 +194,14 @@ template <NoteInterface SubNote, VoiceInterface SubVoice>
                                      const QList<SubNote>& notes,
                                      const QList<SubVoice>& voices,
                                      const int chord_number) -> bool {
-  for (auto note_number = 0; note_number < notes.size();
-       note_number = note_number + 1) {
+  for (auto note_number = 0; note_number < notes.size(); ++note_number) {
     if (!has_voice(voices, notes.at(note_number).voice_name)) {
       QString message;
       QTextStream stream(&message);
       stream << QObject::tr("Voice");
       add_note_location<SubNote>(stream, chord_number, note_number);
       stream << QObject::tr(" has no corresponding voice");
-      QMessageBox::warning(&parent, QObject::tr("Voice name error"), message);
+      warn_voice_name(parent, message);
       return false;
     }
   }
@@ -253,7 +247,7 @@ auto open_file(MainWindow& main_window, const QString& filename) -> bool {
       check_duplicate_or_empty_voice_names(window_body, new_unpitched_voices);
   if (names_and_voices_ok) {
     for (auto chord_number = 0; chord_number < new_chords.size();
-         chord_number = chord_number + 1) {
+         ++chord_number) {
       const auto& chord = new_chords.at(chord_number);
       if (!check_note_voices(window_body, chord.pitched_notes,
                              new_pitched_voices, chord_number) ||

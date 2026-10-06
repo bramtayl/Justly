@@ -8,11 +8,9 @@ template <RowInterface SubRow>
 struct RowsModel;
 
 template <RowInterface SubRow>
-static void insert_or_remove(RowsModel<SubRow>& rows_model,
-                             const int first_row_number,
-                             const QList<SubRow>& new_rows,
-                             const int left_column, const int right_column,
-                             const bool should_insert) {
+void insert_or_remove(RowsModel<SubRow>& rows_model, const int first_row_number,
+                      const QList<SubRow>& new_rows, const int left_column,
+                      const int right_column, const bool should_insert) {
   if (should_insert) {
     rows_model.insert_rows(first_row_number, new_rows, left_column,
                            right_column);

@@ -17,9 +17,9 @@ struct OrphanedVoiceNameLocation {
 // from is_clipboard calling out that the latter only affects notes coming
 // from the OS clipboard
 template <NoteInterface SubNote>
-static void warn_reassigned_voices(QWidget& parent, const int reassigned_count,
-                                   const QString& first_voice_name,
-                                   const bool is_clipboard = false) {
+void warn_reassigned_voices(QWidget& parent, const int reassigned_count,
+                            const QString& first_voice_name,
+                            const bool is_clipboard = false) {
   QString message;
   QTextStream stream(&message);
   stream << QObject::tr("Reassigning ") << reassigned_count

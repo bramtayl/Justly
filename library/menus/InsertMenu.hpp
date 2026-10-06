@@ -10,8 +10,8 @@
 struct WindowBody;
 
 template <RowInterface SubRow>
-[[nodiscard]] static auto make_insert_row(RowsModel<SubRow>& rows_model,
-                                          const int row_number, SubRow new_row)
+[[nodiscard]] auto make_insert_row(RowsModel<SubRow>& rows_model,
+                                   const int row_number, SubRow new_row)
     -> QUndoCommand* {
   return new InsertRemoveRows(  // NOLINT(cppcoreguidelines-owning-memory)
       rows_model, row_number, QList<SubRow>({std::move(new_row)}), 0,
@@ -21,16 +21,14 @@ template <RowInterface SubRow>
 // inserts a new row; overloaded below for notes and voices, which need more
 // than make_empty_row
 template <RowInterface SubRow>
-[[nodiscard]] static auto make_insert_command(RowsModel<SubRow>& rows_model,
-                                              const int row_number)
-    -> QUndoCommand* {
+[[nodiscard]] auto make_insert_command(RowsModel<SubRow>& rows_model,
+                                       const int row_number) -> QUndoCommand* {
   return make_insert_row(rows_model, row_number, rows_model.make_empty_row());
 }
 
 template <NoteInterface SubNote>
-[[nodiscard]] static auto make_insert_command(NotesModel<SubNote>& notes_model,
-                                              const int row_number)
-    -> QUndoCommand* {
+[[nodiscard]] auto make_insert_command(NotesModel<SubNote>& notes_model,
+                                       const int row_number) -> QUndoCommand* {
   auto sub_note = notes_model.make_empty_row();
   sub_note.beats =
       notes_model.song.chords.at(notes_model.parent_chord_number).beats;
@@ -38,7 +36,7 @@ template <NoteInterface SubNote>
 }
 
 template <VoiceInterface SubVoice, NoteInterface SubNote>
-[[nodiscard]] static auto make_insert_command(
+[[nodiscard]] auto make_insert_command(
     VoicesModel<SubVoice, SubNote>& voices_model, const int row_number)
     -> QUndoCommand* {
   auto& created_voices = voices_model.created_voices;
@@ -46,7 +44,7 @@ template <VoiceInterface SubVoice, NoteInterface SubNote>
   SubVoice sub_voice;
   // skip names already taken, e.g. by a voice loaded from a file
   do {
-    created_voices = created_voices + 1;
+    ++created_voices;
     sub_voice.name =
         QString("%1 voice %2").arg(SubVoice::get_pitched()).arg(created_voices);
   } while (get_named_index(voices, sub_voice.name) != voices.cend());

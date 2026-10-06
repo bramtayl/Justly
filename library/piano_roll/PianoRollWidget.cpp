@@ -92,7 +92,7 @@ void redraw_time_axis_ticks(PianoRollNotesScene& notes_scene) {
   const auto time_axis_y = notes_scene.time_axis_y;
   const auto time_axis_max_time_ms = notes_scene.time_axis_max_time_ms;
   for (auto step_number = 0; step_number * step_ms <= time_axis_max_time_ms;
-       step_number = step_number + 1) {
+       ++step_number) {
     const auto time_ms = step_number * step_ms;
     const auto tick_x = time_ms * PIANO_ROLL_PIXELS_PER_MS;
     time_axis_items.push_back(
@@ -303,7 +303,7 @@ template <NoteInterface SubNote>
   const auto end_note_number = std::min(first_note_number + number_of_notes,
                                         static_cast<int>(notes.size()));
   for (auto note_number = first_note_number; note_number < end_note_number;
-       note_number = note_number + 1) {
+       ++note_number) {
     end_ms = std::max(end_ms,
                       play_state.current_time +
                           get_duration_in_milliseconds(
@@ -583,8 +583,7 @@ void apply_selection_highlight(PianoRollWidget& widget) {
   QRectF highlighted_bounds;
   auto& note_items = piano_roll_scene.note_items;
   Q_ASSERT(note_items.size() == events.size());
-  for (auto event_index = 0; event_index < note_items.size();
-       event_index = event_index + 1) {
+  for (auto event_index = 0; event_index < note_items.size(); ++event_index) {
     auto& note_item = get_reference(note_items.at(event_index));
     if (is_selected(events.at(event_index))) {
       // cosmetic so the highlight stroke stays a constant device-pixel
@@ -783,8 +782,7 @@ void draw_note_bars(PianoRollNotesScene& notes_scene,
   const auto unpitched_lane_top = axis_y + PIANO_ROLL_UNPITCHED_LANE_GAP;
 
   auto& note_items = notes_scene.note_items;
-  for (auto event_index = 0; event_index < events.size();
-       event_index = event_index + 1) {
+  for (auto event_index = 0; event_index < events.size(); ++event_index) {
     const auto& event = events.at(event_index);
     const auto bar_x = to_scene_x(notes_scene, event.start_time_ms);
     const auto width = std::max(PIANO_ROLL_MIN_BAR_WIDTH,
@@ -909,7 +907,7 @@ void draw_legend(PianoRollColumnScene& legend_scene, const Song& song) {
   const auto voice_names =
       get_names(song.pitched_voices) + get_names(song.unpitched_voices);
   for (auto global_voice_index = 0; global_voice_index < voice_names.size();
-       global_voice_index = global_voice_index + 1) {
+       ++global_voice_index) {
     draw_legend_row(legend_scene, voice_names.at(global_voice_index),
                     global_voice_index,
                     global_voice_index * PIANO_ROLL_LANE_HEIGHT);

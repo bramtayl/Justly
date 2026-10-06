@@ -50,7 +50,10 @@ auto UnpitchedNote::get_cells_mime() -> const char* {
   return "application/prs.unpitched_notes_cells+xml";
 }
 
-auto UnpitchedNote::get_pitched() -> const char* { return "unpitched"; }
+auto UnpitchedNote::get_pitched() -> const char* {
+  // translated where it's shown
+  return QT_TRANSLATE_NOOP("QObject", "unpitched");
+}
 
 auto UnpitchedNote::get_data(const int column_number) const -> QVariant {
   return get_field(to_note_field(column_number));

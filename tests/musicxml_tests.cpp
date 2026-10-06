@@ -636,8 +636,7 @@ namespace {
 auto make_named_parts(const QList<QString>& part_names) -> QString {
   QString part_list;
   QString parts;
-  for (auto part_number = 1; part_number <= part_names.size();
-       part_number = part_number + 1) {
+  for (auto part_number = 1; part_number <= part_names.size(); ++part_number) {
     const auto part_id = QString("P%1").arg(part_number);
     part_list += QString(R"(
     <score-part id="%1"><part-name>%2</part-name></score-part>)")
@@ -748,7 +747,7 @@ namespace {
 // one quarter note per measure, each followed by that measure's extras
 auto make_measures(const QList<QString>& measure_extras) -> QString {
   QString body;
-  for (auto index = 0; index < measure_extras.size(); index = index + 1) {
+  for (auto index = 0; index < measure_extras.size(); ++index) {
     if (index > 0) {
       body += get_next_measure();
     }

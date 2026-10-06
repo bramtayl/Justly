@@ -4,7 +4,10 @@
 
 UnpitchedVoice::UnpitchedVoice() : Voice() { program = "Standard"; }
 
-auto UnpitchedVoice::get_pitched() -> const char* { return "unpitched"; }
+auto UnpitchedVoice::get_pitched() -> const char* {
+  // translated where it's shown
+  return QT_TRANSLATE_NOOP("QObject", "unpitched");
+}
 
 auto UnpitchedVoice::is_pitched() -> bool { return false; }
 

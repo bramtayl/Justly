@@ -20,11 +20,13 @@ auto make_audio_driver(QWidget& parent, FluidSettings& settings,
 #endif
 }
 
-void stop_playing(const FluidSequencer& sequencer, const FluidEvent& event) {
+void stop_playing(const Player& player) {
+  const auto& sequencer = player.sequencer;
+  const auto& event = player.event;
   fluid_sequencer_remove_events(sequencer.internal_pointer, -1, -1, -1);
 
   for (auto channel_number = 0; channel_number < NUMBER_OF_MIDI_CHANNELS;
-       channel_number = channel_number + 1) {
+       ++channel_number) {
     fluid_event_all_sounds_off(event.internal_pointer, channel_number);
     fluid_sequencer_send_now(sequencer.internal_pointer,
                              event.internal_pointer);
@@ -61,7 +63,7 @@ Player::Player(QWidget& parent_input)
   set_destination(event, sequencer.sequencer_id);
 }
 
-Player::~Player() { stop_playing(sequencer, event); }
+Player::~Player() { stop_playing(*this); }
 
 auto get_gain(const Player& player) -> double {
   return fluid_synth_get_gain(player.synth.internal_pointer);

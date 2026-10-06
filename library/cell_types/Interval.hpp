@@ -13,7 +13,8 @@ struct Interval {
   explicit Interval(Rational ratio_input = Rational(1, 1),
                     int octave_input = 0);
 
-  [[nodiscard]] auto operator==(const Interval& other_interval) const -> bool;
+  [[nodiscard]] auto operator==(const Interval& other_interval) const
+      -> bool = default;
 
   [[nodiscard]] auto operator*(const Interval& other_interval) const
       -> Interval;

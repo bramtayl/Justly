@@ -70,12 +70,6 @@ struct RowsModel : public QAbstractTableModel {
   virtual void add_to_status(QTextStream& /*stream*/, const int /*row_number*/,
                              const SubRow& /*row*/) const {}
 
-  [[nodiscard]] virtual auto get_display_data(const int row_number,
-                                              const int column_number) const
-      -> QVariant {
-    return get_rows().at(row_number).get_data(column_number);
-  }
-
   [[nodiscard]] auto data(const QModelIndex& index, const int role) const
       -> QVariant override {
     Q_ASSERT(index.isValid());
@@ -89,11 +83,7 @@ struct RowsModel : public QAbstractTableModel {
       return result;
     }
 
-    if (role == Qt::DisplayRole) {
-      return get_display_data(row_number, index.column());
-    }
-
-    if (role == Qt::EditRole) {
+    if (role == Qt::DisplayRole || role == Qt::EditRole) {
       return get_rows().at(row_number).get_data(index.column());
     }
 
@@ -119,7 +109,6 @@ struct RowsModel : public QAbstractTableModel {
                 QItemSelectionModel::Select | QItemSelectionModel::Clear);
   }
 
-  // don't inline these functions because they use protected methods
   void set_cell(const int row_number, const int column_number,
                 const QVariant& new_value) {
     const auto set_index = index(row_number, column_number);
@@ -169,8 +158,8 @@ struct RowsModel : public QAbstractTableModel {
     std::copy(new_rows.cbegin(), new_rows.cend(),
               std::inserter(rows, rows.begin() + first_row_number));
     endInsertRows();
-    select_only(make_range(*this, first_row_number, number_of_rows,
-                           left_column, right_column));
+    select_only(make_range(*this, first_row_number, number_of_rows, left_column,
+                           right_column));
   }
 
   void remove_rows(const int first_row_number, int number_of_rows) {

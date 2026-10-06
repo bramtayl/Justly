@@ -5,9 +5,9 @@
 #include "menus/PasteMenu.hpp"
 
 template <RowInterface SubRow>
-[[nodiscard]] static auto make_remove_command(RowsModel<SubRow>& rows_model,
-                                              const int first_row_number,
-                                              const int number_of_rows)
+[[nodiscard]] auto make_remove_command(RowsModel<SubRow>& rows_model,
+                                       const int first_row_number,
+                                       const int number_of_rows)
     -> QUndoCommand* {
   return new InsertRemoveRows(  // NOLINT(cppcoreguidelines-owning-memory)
       rows_model, first_row_number,
@@ -17,7 +17,7 @@ template <RowInterface SubRow>
 
 // removing voices also reassigns their notes
 template <VoiceInterface SubVoice, NoteInterface SubNote>
-[[nodiscard]] static auto make_remove_command(
+[[nodiscard]] auto make_remove_command(
     VoicesModel<SubVoice, SubNote>& voices_model, const int first_row_number,
     const int number_of_rows) -> QUndoCommand* {
   return new RemoveVoiceRows<  // NOLINT(cppcoreguidelines-owning-memory)
@@ -25,12 +25,8 @@ template <VoiceInterface SubVoice, NoteInterface SubNote>
 }
 
 template <RowInterface SubRow>
-static void copy_from_model(QMimeData& mime_data,
-                            const RowsModel<SubRow>& rows_model,
-                            const QItemSelectionRange& range) {
-  const auto& rows = rows_model.get_rows();
-
-  const auto first_row_number = range.top();
+void copy_from_model(QMimeData& mime_data, const RowsModel<SubRow>& rows_model,
+                     const QItemSelectionRange& range) {
   const auto left_column = range.left();
   const auto right_column = range.right();
 
@@ -38,16 +34,10 @@ static void copy_from_model(QMimeData& mime_data,
   auto& root_node = make_root(document, "clipboard");
   set_xml_int(root_node, "left_column", left_column);
   set_xml_int(root_node, "right_column", right_column);
-  auto& rows_node = get_new_child(root_node, "rows");
-  for (int index = first_row_number;
-       index < first_row_number + get_number_of_rows(range); index++) {
-    auto& row = rows[index];
-    auto& row_node = get_new_child(rows_node, SubRow::get_xml_field_name());
-    for (auto column_number = left_column; column_number <= right_column;
-         column_number++) {
-      row.column_to_xml(row_node, column_number);
-    }
-  }
+  rows_to_xml(
+      get_new_child(root_node, "rows"),
+      copy_items(rows_model.get_rows(), range.top(), get_number_of_rows(range)),
+      left_column, right_column);
 
   mime_data.setData(SubRow::get_cells_mime(), document_to_byte_array(document));
 }

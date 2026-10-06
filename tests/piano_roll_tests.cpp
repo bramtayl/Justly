@@ -16,8 +16,7 @@ void check_piano_roll_highlight(PianoRollWidget& piano_roll_widget,
                                 const int selection_note_number) {
   const auto& events = piano_roll_widget.piano_roll_scene.events;
   const auto& note_items = piano_roll_widget.piano_roll_scene.note_items;
-  for (auto event_index = 0; event_index < events.size();
-       event_index = event_index + 1) {
+  for (auto event_index = 0; event_index < events.size(); ++event_index) {
     const auto& event = events.at(event_index);
     const auto is_highlighted =
         selection_row_type == RowType::chord_type
@@ -363,8 +362,7 @@ void Tester::test_piano_roll_notes_mode_axis_starts_at_chord_start() {
 
   const auto& events = piano_roll_scene.events;
   const auto& note_items = piano_roll_scene.note_items;
-  for (auto event_index = 0; event_index < events.size();
-       event_index = event_index + 1) {
+  for (auto event_index = 0; event_index < events.size(); ++event_index) {
     const auto& event = events.at(event_index);
     QCOMPARE(get_reference(note_items.at(event_index)).rect().x(),
              (event.start_time_ms - 600.0) * PIANO_ROLL_PIXELS_PER_MS);
@@ -628,13 +626,13 @@ void Tester::test_piano_roll_zoom() {
 
   // clamped rather than unbounded, so repeated zooming can't shrink/grow
   // the time axis into something unusable
-  for (auto zoom_count = 0; zoom_count < 20; zoom_count = zoom_count + 1) {
+  for (auto zoom_count = 0; zoom_count < 20; ++zoom_count) {
     zoom_out_piano_roll(piano_roll_widget);
   }
   QCOMPARE(piano_roll_widget.piano_roll_scene.time_zoom_factor,
            PIANO_ROLL_MIN_TIME_ZOOM);
 
-  for (auto zoom_count = 0; zoom_count < 40; zoom_count = zoom_count + 1) {
+  for (auto zoom_count = 0; zoom_count < 40; ++zoom_count) {
     zoom_in_piano_roll(piano_roll_widget);
   }
   QCOMPARE(piano_roll_widget.piano_roll_scene.time_zoom_factor,

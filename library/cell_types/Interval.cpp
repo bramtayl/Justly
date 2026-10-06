@@ -10,11 +10,11 @@ Interval::Interval(Rational ratio_input, const int octave_input)
   Q_ASSERT(ratio.denominator != 0);
   while (ratio.numerator % 2 == 0) {
     ratio.numerator = ratio.numerator / 2;
-    octave = octave + 1;
+    ++octave;
   }
   while (ratio.denominator % 2 == 0) {
     ratio.denominator = ratio.denominator / 2;
-    octave = octave - 1;
+    --octave;
   }
 }
 
@@ -33,10 +33,6 @@ auto get_just_scale() -> const QList<NamedRatio>& {
       {.name = "Minor seventh", .ratio = Rational(9, 5)},
       {.name = "Major seventh", .ratio = Rational(15, 8)}};
   return scale;
-}
-
-auto Interval::operator==(const Interval& other_interval) const -> bool {
-  return ratio == other_interval.ratio && octave == other_interval.octave;
 }
 
 auto Interval::operator*(const Interval& other_interval) const -> Interval {
@@ -78,11 +74,9 @@ void set_interval_from_xml(Interval& interval, xmlNode& node) {
 
 void maybe_add_interval_to_xml(xmlNode& node, const char* const column_name,
                                const Interval& interval) {
-  const auto& ratio = interval.ratio;
-  const auto octave = interval.octave;
-  if (!rational_is_default(ratio) || octave != 0) {
+  if (interval != Interval()) {
     auto& interval_node = get_new_child(node, column_name);
-    maybe_add_rational_to_xml(interval_node, "ratio", ratio);
-    maybe_add_int_to_xml(interval_node, "octave", octave, 0);
+    maybe_add_rational_to_xml(interval_node, "ratio", interval.ratio);
+    maybe_add_int_to_xml(interval_node, "octave", interval.octave, 0);
   }
 }

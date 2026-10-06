@@ -9,6 +9,7 @@
 class QClipboard;
 class QAbstractItemModel;
 class QItemSelectionRange;
+class QUndoCommand;
 class QUndoStack;
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
@@ -69,7 +70,7 @@ struct XMLString {
 };
 
 template <typename Thing>
-[[nodiscard]] static auto get_reference(Thing* thing_pointer) -> auto& {
+[[nodiscard]] auto get_reference(Thing* thing_pointer) -> auto& {
   Q_ASSERT(thing_pointer != nullptr);
   return *thing_pointer;
 }
@@ -82,6 +83,9 @@ template <typename Thing>
 // loading a song
 void clear_and_clean(QUndoStack& undo_stack);
 
+// pushes undo_command unless it's null, e.g. because making it was cancelled
+void maybe_push(QUndoStack& undo_stack, QUndoCommand* undo_command);
+
 [[nodiscard]] auto get_number_of_rows(const QItemSelectionRange& range) -> int;
 
 [[nodiscard]] auto make_range(QAbstractItemModel& model, int first_row_number,
@@ -89,9 +93,9 @@ void clear_and_clean(QUndoStack& undo_stack);
                               int right_column) -> QItemSelectionRange;
 
 template <typename Item>
-[[nodiscard]] static auto copy_items(const QList<Item>& items,
-                                     const int first_row_number,
-                                     const int number_of_rows) {
+[[nodiscard]] auto copy_items(const QList<Item>& items,
+                              const int first_row_number,
+                              const int number_of_rows) {
   Q_ASSERT(first_row_number >= 0);
   Q_ASSERT(number_of_rows >= 0);
   Q_ASSERT(first_row_number + number_of_rows <= items.size());
@@ -104,7 +108,7 @@ template <typename Item>
 }
 
 template <typename SubType>
-[[nodiscard]] static auto variant_to(const QVariant& variant) {
+[[nodiscard]] auto variant_to(const QVariant& variant) {
   Q_ASSERT(variant.canConvert<SubType>());
   return variant.value<SubType>();
 }
@@ -120,7 +124,7 @@ auto get_named_index(const QList<Named>& nameds, const QString& name) -> auto {
 }
 
 template <NamedInterface Named>
-[[nodiscard]] static auto get_names(const QList<Named>& nameds) {
+[[nodiscard]] auto get_names(const QList<Named>& nameds) {
   QList<QString> names;
   std::transform(nameds.cbegin(), nameds.cend(), std::back_inserter(names),
                  [](const Named& named) -> auto { return named.name; });
@@ -172,6 +176,9 @@ void set_xml_string(xmlNode& node, const char* field_name,
                     const std::string& contents);
 
 void set_xml_int(xmlNode& node, const char* field_name, int value);
+
+void maybe_add_int_to_xml(xmlNode& node, const char* field_name, int value,
+                          int default_value);
 
 // installed layout is <prefix>/share next to the binary's folder, except
 // inside a macOS app bundle, where resources live in Contents/Resources

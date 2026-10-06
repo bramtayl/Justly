@@ -9,7 +9,12 @@ static const auto MAX_VELOCITY = 127;
 
 // the columns every note has; PitchedNote and UnpitchedNote map their own
 // column numbers onto these, and only handle their other columns themselves
-enum class NoteField : std::uint8_t { voice_name, beats, velocity_ratio, words };
+enum class NoteField : std::uint8_t {
+  voice_name,
+  beats,
+  velocity_ratio,
+  words
+};
 
 struct Note {
   QString voice_name;
@@ -36,8 +41,8 @@ concept NoteInterface = std::derived_from<SubNote, Note> && requires() {
 };
 
 template <NoteInterface SubNote>
-static void add_note_location(QTextStream& stream, const int chord_number,
-                              const int note_number) {
+void add_note_location(QTextStream& stream, const int chord_number,
+                       const int note_number) {
   stream << QObject::tr(" for chord ") << chord_number + 1 << QObject::tr(", ")
          << QObject::tr(SubNote::get_pitched()) << QObject::tr(" note ")
          << note_number + 1;

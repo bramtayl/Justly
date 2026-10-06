@@ -22,6 +22,12 @@ void clear_and_clean(QUndoStack& undo_stack) {
   undo_stack.setClean();
 }
 
+void maybe_push(QUndoStack& undo_stack, QUndoCommand* const undo_command) {
+  if (undo_command != nullptr) {
+    undo_stack.push(undo_command);
+  }
+}
+
 auto get_number_of_rows(const QItemSelectionRange& range) -> int {
   Q_ASSERT(range.isValid());
   return range.bottom() - range.top() + 1;
@@ -150,6 +156,13 @@ void set_xml_string(xmlNode& node, const char* const field_name,
 
 void set_xml_int(xmlNode& node, const char* const field_name, int value) {
   set_xml_string(node, field_name, std::to_string(value));
+}
+
+void maybe_add_int_to_xml(xmlNode& node, const char* const field_name,
+                          const int value, const int default_value) {
+  if (value != default_value) {
+    set_xml_int(node, field_name, value);
+  }
 }
 
 auto get_share_folder() -> QDir {

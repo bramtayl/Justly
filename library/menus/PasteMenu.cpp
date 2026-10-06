@@ -30,15 +30,13 @@ void add_paste_insert(WindowBody& window_body, const int row_number) {
   auto& switch_column = window_body.switch_column;
   auto& switch_table = switch_column.switch_table;
 
-  auto* undo_command = dispatch_row_type(
-      switch_table,
-      [&switch_table, row_number](auto& rows_model) -> QUndoCommand* {
-        return make_paste_insert_command(switch_table, rows_model, row_number);
-      });
-  if (undo_command == nullptr) {
-    return;
-  }
-  window_body.undo_stack.push(undo_command);
+  maybe_push(window_body.undo_stack,
+             dispatch_row_type(switch_table,
+                               [&switch_table,
+                                row_number](auto& rows_model) -> QUndoCommand* {
+                                 return make_paste_insert_command(
+                                     switch_table, rows_model, row_number);
+                               }));
 }
 
 }  // namespace
@@ -60,17 +58,14 @@ PasteMenu::PasteMenu(WindowBody& window_body)
 
         const auto first_row_number = get_only_range(switch_table).top();
 
-        auto* undo_command =
-            dispatch_row_type(switch_table,
-                              [&switch_table, first_row_number](
-                                  auto& rows_model) -> QUndoCommand* {
-                                return make_paste_cells_command(
-                                    switch_table, first_row_number, rows_model);
-                              });
-        if (undo_command == nullptr) {
-          return;
-        }
-        window_body.undo_stack.push(undo_command);
+        maybe_push(window_body.undo_stack,
+                   dispatch_row_type(switch_table,
+                                     [&switch_table, first_row_number](
+                                         auto& rows_model) -> QUndoCommand* {
+                                       return make_paste_cells_command(
+                                           switch_table, first_row_number,
+                                           rows_model);
+                                     }));
       });
 
   QObject::connect(

@@ -1,5 +1,4 @@
 #include <QtWidgets/QApplication>
-// #include "SDL.h"
 
 #include "widgets/MainWindow.hpp"
 #include "widgets/SongFile.hpp"

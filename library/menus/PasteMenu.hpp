@@ -20,8 +20,8 @@
 // or before their voice was renamed or removed; returns how many were the
 // latter, so the caller can warn about them
 template <NoteInterface SubNote, VoiceInterface SubVoice>
-[[nodiscard]] static auto reassign_unknown_voices(QList<SubNote>& notes,
-                                                  const QList<SubVoice>& voices)
+[[nodiscard]] auto reassign_unknown_voices(QList<SubNote>& notes,
+                                           const QList<SubVoice>& voices)
     -> int {
   auto reassigned_count = 0;
   for (auto& note : notes) {
@@ -30,7 +30,7 @@ template <NoteInterface SubNote, VoiceInterface SubVoice>
       continue;
     }
     if (!voice_name.isEmpty()) {
-      reassigned_count = reassigned_count + 1;
+      ++reassigned_count;
     }
     voice_name = voices.at(0).name;
   }
@@ -38,9 +38,8 @@ template <NoteInterface SubNote, VoiceInterface SubVoice>
 }
 
 template <NoteInterface SubNote, VoiceInterface SubVoice>
-static void maybe_warn_reassigned_voices(QWidget& parent,
-                                         const int reassigned_count,
-                                         const QList<SubVoice>& voices) {
+void maybe_warn_reassigned_voices(QWidget& parent, const int reassigned_count,
+                                  const QList<SubVoice>& voices) {
   if (reassigned_count > 0) {
     warn_reassigned_voices<SubNote>(parent, reassigned_count, voices.at(0).name,
                                     /*is_clipboard=*/true);
@@ -50,8 +49,8 @@ static void maybe_warn_reassigned_voices(QWidget& parent,
 // pasted notes, including any nested in pasted chords, whose voice no longer
 // exists land on the first voice, with a warning
 template <RowInterface SubRow>
-static void reassign_unknown_pasted_voices(QWidget& parent, const Song& song,
-                                           QList<SubRow>& rows) {
+void reassign_unknown_pasted_voices(QWidget& parent, const Song& song,
+                                    QList<SubRow>& rows) {
   if constexpr (NoteInterface<SubRow>) {
     const auto& voices = get_voices<SubRow>(song);
     maybe_warn_reassigned_voices<SubRow>(
@@ -76,7 +75,7 @@ static void reassign_unknown_pasted_voices(QWidget& parent, const Song& song,
 }
 
 template <RowInterface SubRow>
-[[nodiscard]] static auto parse_clipboard(
+[[nodiscard]] auto parse_clipboard(
     QWidget& parent, const Song& song,
     const int max_rows = std::numeric_limits<int>::max())
     -> std::optional<Cells<SubRow>> {
@@ -124,12 +123,7 @@ template <RowInterface SubRow>
       right_column = xml_to_int(field_node);
     } else {
       Q_ASSERT(name == "rows");
-      for (auto& xml_row :
-           get_xml_children(field_node) | std::views::take(max_rows)) {
-        SubRow child_row;
-        child_row.from_xml(xml_row);
-        new_rows.push_back(std::move(child_row));
-      }
+      xml_to_rows(new_rows, field_node, max_rows);
     }
   }
   reassign_unknown_pasted_voices(parent, song, new_rows);
@@ -137,8 +131,9 @@ template <RowInterface SubRow>
 }
 
 template <RowInterface SubRow>
-[[nodiscard]] static auto make_paste_insert_command(
-    QWidget& parent, RowsModel<SubRow>& rows_model, const int row_number)
+[[nodiscard]] auto make_paste_insert_command(QWidget& parent,
+                                             RowsModel<SubRow>& rows_model,
+                                             const int row_number)
     -> QUndoCommand* {
   auto maybe_cells = parse_clipboard<SubRow>(parent, rows_model.song);
   if (!maybe_cells.has_value()) {
@@ -151,8 +146,9 @@ template <RowInterface SubRow>
 }
 
 template <RowInterface SubRow>
-[[nodiscard]] static auto make_paste_cells_command(
-    QWidget& parent, const int first_row_number, RowsModel<SubRow>& rows_model)
+[[nodiscard]] auto make_paste_cells_command(QWidget& parent,
+                                            const int first_row_number,
+                                            RowsModel<SubRow>& rows_model)
     -> QUndoCommand* {
   auto& rows = rows_model.get_rows();
   auto maybe_cells =

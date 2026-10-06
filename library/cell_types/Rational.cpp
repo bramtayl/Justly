@@ -24,19 +24,10 @@ auto Rational::operator/(const Rational& other_rational) const -> Rational {
                   denominator * other_rational.numerator);
 }
 
-auto Rational::operator==(const Rational& other_rational) const -> bool {
-  return numerator == other_rational.numerator &&
-         denominator == other_rational.denominator;
-}
-
 auto rational_to_double(const Rational& rational) -> double {
   const auto denominator = rational.denominator;
   Q_ASSERT(denominator != 0);
   return (1.0 * rational.numerator) / denominator;
-}
-
-auto rational_is_default(const Rational& rational) -> bool {
-  return rational.numerator == 1 && rational.denominator == 1;
 }
 
 auto rational_to_qstring(const Rational& rational) -> QString {
@@ -65,21 +56,14 @@ void set_rational_from_xml(Rational& rational, xmlNode& node) {
   }
   // the schema only bounds numerator/denominator to [1, 999], not that
   // they're coprime, so route through the reducing constructor to match the
-  // canonical form every other Rational comes in (operator== and
-  // rational_is_default both assume reduced form)
+  // canonical form every other Rational comes in (operator== assumes
+  // reduced form)
   rational = Rational(numerator, denominator);
-}
-
-void maybe_add_int_to_xml(xmlNode& node, const char* const field_name,
-                          const int value, const int default_value) {
-  if (value != default_value) {
-    set_xml_int(node, field_name, value);
-  }
 }
 
 void maybe_add_rational_to_xml(xmlNode& node, const char* const column_name,
                                const Rational& rational) {
-  if (!rational_is_default(rational)) {
+  if (rational != Rational()) {
     auto& rational_node = get_new_child(node, column_name);
     maybe_add_int_to_xml(rational_node, "numerator", rational.numerator, 1);
     maybe_add_int_to_xml(rational_node, "denominator", rational.denominator, 1);

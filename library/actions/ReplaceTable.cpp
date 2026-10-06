@@ -193,8 +193,8 @@ void replace_table(SongMenuBar& song_menu_bar, WindowBody& window_body,
                                          new_chord_number < chords.size() - 1);
   view_menu.back_to_chords_action.setEnabled(new_row_type !=
                                              RowType::chord_type);
-  view_menu.edit_pitched_voices_action.setEnabled(
-      new_row_type != RowType::pitched_voice_type);
+  view_menu.edit_pitched_voices_action.setEnabled(new_row_type !=
+                                                  RowType::pitched_voice_type);
   view_menu.edit_unpitched_voices_action.setEnabled(
       new_row_type != RowType::unpitched_voice_type);
 
@@ -230,8 +230,7 @@ void replace_table(SongMenuBar& song_menu_bar, WindowBody& window_body,
     show_model(switch_table, switch_table.pitched_voices_model, new_row_type);
   } else if (new_row_type == RowType::unpitched_voice_type) {
     stream << SongMenuBar::tr("Unpitched voices");
-    show_model(switch_table, switch_table.unpitched_voices_model,
-               new_row_type);
+    show_model(switch_table, switch_table.unpitched_voices_model, new_row_type);
   } else {
     auto& chord = chords[new_chord_number];
     if (new_row_type == RowType::pitched_note_type) {
@@ -273,9 +272,7 @@ void replace_table(SongMenuBar& song_menu_bar, WindowBody& window_body,
       });
 }
 
-auto ReplaceTable::id() const -> int {
-  return static_cast<int>(ChangeId::replace_table_id);
-}
+auto ReplaceTable::id() const -> int { return REPLACE_TABLE_ID; }
 
 auto ReplaceTable::mergeWith(const QUndoCommand* const next_command_pointer)
     -> bool {

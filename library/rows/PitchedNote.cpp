@@ -1,9 +1,6 @@
 #include "rows/PitchedNote.hpp"
 
-#include <QtWidgets/QMessageBox>
-
 #include "column_numbers/PitchedNoteColumn.hpp"
-#include "sound/Player.hpp"
 
 namespace {
 const auto CONCERT_A_FREQUENCY = 440;
@@ -23,17 +20,6 @@ auto midi_number_to_frequency(const double midi_number) -> double {
 }
 
 namespace {
-
-void warn_frequency(QWidget& parent, const double frequency,
-                    const int chord_number, const int note_number,
-                    const QString& comparison, const double limit) {
-  QString message;
-  QTextStream stream(&message);
-  stream << QObject::tr("Frequency ") << QString::number(frequency, 'g', 3);
-  add_note_location<PitchedNote>(stream, chord_number, note_number);
-  stream << comparison << QString::number(limit, 'g', 3);
-  QMessageBox::warning(&parent, QObject::tr("Frequency error"), message);
-}
 
 auto is_interval_column(const int column_number) -> bool {
   return column_number ==
@@ -92,40 +78,9 @@ auto PitchedNote::get_cells_mime() -> const char* {
   return "application/prs.pitched_notes_cells+xml";
 }
 
-auto PitchedNote::get_pitched() -> const char* { return "pitched"; }
-
-auto PitchedNote::get_closest_midi(QWidget& parent, Player& player,
-                                   const int channel_number,
-                                   const int chord_number,
-                                   const int note_number) const
-    -> std::optional<short> {
-  const auto& play_state = player.play_state;
-  auto& event = player.event;
-  const auto frequency = play_state.current_key * interval_to_double(interval);
-  static const auto minimum_frequency =
-      midi_number_to_frequency(0 - QUARTER_STEP);
-  if (frequency < minimum_frequency) {
-    warn_frequency(parent, frequency, chord_number, note_number,
-                   QObject::tr(" less than minimum frequency "),
-                   minimum_frequency);
-    return {};
-  }
-
-  if (frequency >= MAX_FREQUENCY) {
-    warn_frequency(parent, frequency, chord_number, note_number,
-                   QObject::tr(" greater than or equal to maximum frequency "),
-                   MAX_FREQUENCY);
-    return {};
-  }
-
-  const auto midi_float = frequency_to_midi_number(frequency);
-  const auto closest_midi = static_cast<short>(round(midi_float));
-  fluid_event_pitch_bend(
-      event.internal_pointer, channel_number,
-      to_int((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
-             BEND_PER_HALFSTEP));
-  send_event_at(player.sequencer, event, play_state.current_time);
-  return closest_midi;
+auto PitchedNote::get_pitched() -> const char* {
+  // translated where it's shown
+  return QT_TRANSLATE_NOOP("QObject", "pitched");
 }
 
 auto PitchedNote::get_data(const int column_number) const -> QVariant {

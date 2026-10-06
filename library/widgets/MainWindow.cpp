@@ -54,7 +54,7 @@ void connect_navigate_chord_action(QAction& action, QObject& context,
 
 // asks to discard unsaved changes, then loads the chosen file with load
 void connect_load_action(QAction& action, MainWindow& main_window,
-                         const char* const caption, const QString& filter,
+                         const QString& caption, const QString& filter,
                          const QString& suffix,
                          auto (*load)(MainWindow&, const QString&)->bool) {
   QObject::connect(&action, &QAction::triggered, &main_window,
@@ -157,10 +157,12 @@ MainWindow::MainWindow()
   connect_recovery_timer(window_body);
 
   connect_load_action(song_menu_bar.file_menu.open_action, *this,
-                      "Open — Justly", "XML file (*.xml)", ".xml", open_file);
-  connect_load_action(
-      song_menu_bar.file_menu.import_action, *this, "Import MusicXML — Justly",
-      "MusicXML file (*.musicxml *.mxl)", ".musicxml", import_musicxml);
+                      MainWindow::tr("Open — Justly"), "XML file (*.xml)",
+                      ".xml", open_file);
+  connect_load_action(song_menu_bar.file_menu.import_action, *this,
+                      MainWindow::tr("Import MusicXML — Justly"),
+                      "MusicXML file (*.musicxml *.mxl)", ".musicxml",
+                      import_musicxml);
 
   // double-clicking a note in the piano roll opens the pitched/unpitched
   // notes table for its chord, scrolled to and highlighting that note --

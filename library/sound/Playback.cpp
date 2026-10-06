@@ -34,9 +34,10 @@ auto channel_is_free(QWidget& parent, const QList<double>& channel_end_times,
 
 }  // namespace
 
-auto get_channel_number(QWidget& parent, Player& player, const Program& program,
+auto get_channel_number(Player& player, const Program& program,
                         const double current_time) -> std::optional<int> {
-  if (!is_pitched_bank_number(program.bank_number)) {
+  const auto is_pitched = is_pitched_bank_number(program.bank_number);
+  if (!is_pitched) {
     auto& percussion_channels = player.percussion_channels;
     const auto existing = percussion_channels.constFind(&program);
     if (existing != percussion_channels.constEnd()) {
@@ -45,12 +46,12 @@ auto get_channel_number(QWidget& parent, Player& player, const Program& program,
   }
 
   const auto channel_number = pick_channel_index(player.channel_schedules);
-  if (!channel_is_free(parent, player.channel_schedules, channel_number,
+  if (!channel_is_free(player.parent, player.channel_schedules, channel_number,
                        current_time)) {
     return std::nullopt;
   }
 
-  if (!is_pitched_bank_number(program.bank_number)) {
+  if (!is_pitched) {
     // claimed forever: play_note skips the usual release-time reschedule for
     // percussion channels, so this channel drops out of the pool for good
     player.channel_schedules[channel_number] =
@@ -58,6 +59,60 @@ auto get_channel_number(QWidget& parent, Player& player, const Program& program,
     player.percussion_channels[&program] = channel_number;
   }
   return channel_number;
+}
+
+namespace {
+
+void warn_frequency(QWidget& parent, const double frequency,
+                    const int chord_number, const int note_number,
+                    const QString& comparison, const double limit) {
+  QString message;
+  QTextStream stream(&message);
+  stream << QObject::tr("Frequency ") << QString::number(frequency, 'g', 3);
+  add_note_location<PitchedNote>(stream, chord_number, note_number);
+  stream << comparison << QString::number(limit, 'g', 3);
+  QMessageBox::warning(&parent, QObject::tr("Frequency error"), message);
+}
+
+}  // namespace
+
+auto get_closest_midi(Player& player, const PitchedNote& note,
+                      const int channel_number, const int chord_number,
+                      const int note_number) -> std::optional<short> {
+  static const auto BEND_PER_HALFSTEP = 4096;
+  static const auto MAX_FREQUENCY = 12911.41;  // MIDI 127 plus half step
+  static const auto QUARTER_STEP = 0.5;
+  static const auto ZERO_BEND_HALFSTEPS = 2;
+
+  auto& parent = player.parent;
+  const auto& play_state = player.play_state;
+  auto& event = player.event;
+  const auto frequency =
+      play_state.current_key * interval_to_double(note.interval);
+  static const auto minimum_frequency =
+      midi_number_to_frequency(0 - QUARTER_STEP);
+  if (frequency < minimum_frequency) {
+    warn_frequency(parent, frequency, chord_number, note_number,
+                   QObject::tr(" less than minimum frequency "),
+                   minimum_frequency);
+    return {};
+  }
+
+  if (frequency >= MAX_FREQUENCY) {
+    warn_frequency(parent, frequency, chord_number, note_number,
+                   QObject::tr(" greater than or equal to maximum frequency "),
+                   MAX_FREQUENCY);
+    return {};
+  }
+
+  const auto midi_float = frequency_to_midi_number(frequency);
+  const auto closest_midi = static_cast<short>(round(midi_float));
+  fluid_event_pitch_bend(
+      event.internal_pointer, channel_number,
+      to_int((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
+             BEND_PER_HALFSTEP));
+  send_event_at(player.sequencer, event, play_state.current_time);
+  return closest_midi;
 }
 
 void play_note(Player& player, const int channel_number, const Program& program,
@@ -121,7 +176,7 @@ void export_to_file(Player& player, const Song& song,
   auto& sequencer = player.sequencer;
   auto& driver = player.driver;
 
-  stop_playing(sequencer, event);
+  stop_playing(player);
 
   driver.reset();
 

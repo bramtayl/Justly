@@ -8,14 +8,13 @@
 #include "widgets/SwitchDelegate.hpp"
 
 template <RowInterface SubRow>
-static void set_model(QAbstractItemView& item_view,
-                      RowsModel<SubRow>& rows_model) {
+void set_model(QAbstractItemView& item_view, RowsModel<SubRow>& rows_model) {
   item_view.setModel(&rows_model);
   rows_model.selection_model_pointer = item_view.selectionModel();
 }
 
 template <std::derived_from<QWidget> SubWidget>
-[[nodiscard]] static auto get_minimum_size() -> const auto& {
+[[nodiscard]] auto get_minimum_size() -> const auto& {
   static const auto minimum_size = SubWidget(nullptr).minimumSizeHint();
   return minimum_size;
 }
@@ -37,7 +36,7 @@ struct SwitchTable : public QTableView {
 // dispatches on the current row type, calling visitor with a reference to
 // the matching model member; Table may be SwitchTable or const SwitchTable
 template <typename Table, typename Visitor>
-static auto dispatch_row_type(Table& switch_table, Visitor visitor) {
+auto dispatch_row_type(Table& switch_table, Visitor visitor) {
   switch (switch_table.delegate.current_row_type) {
     case RowType::chord_type:
       return visitor(switch_table.chords_model);

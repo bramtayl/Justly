@@ -14,12 +14,11 @@ struct PianoRollNoteEvent {
 };
 
 template <NoteInterface SubNote>
-static void append_piano_roll_events(QList<PianoRollNoteEvent>& events,
-                                     const PlayState& play_state,
-                                     const Song& song, const int chord_number,
-                                     const QList<SubNote>& sub_notes) {
-  for (auto note_number = 0; note_number < sub_notes.size();
-       note_number = note_number + 1) {
+void append_piano_roll_events(QList<PianoRollNoteEvent>& events,
+                              const PlayState& play_state, const Song& song,
+                              const int chord_number,
+                              const QList<SubNote>& sub_notes) {
+  for (auto note_number = 0; note_number < sub_notes.size(); ++note_number) {
     const auto& sub_note = sub_notes.at(note_number);
 
     PianoRollNoteEvent event;

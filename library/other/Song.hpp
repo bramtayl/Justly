@@ -26,7 +26,7 @@ struct Song {
 
 // the voices that a SubNote's voice_name refers to
 template <NoteInterface SubNote>
-[[nodiscard]] static auto get_voices(const Song& song) -> const auto& {
+[[nodiscard]] auto get_voices(const Song& song) -> const auto& {
   if constexpr (std::same_as<SubNote, PitchedNote>) {
     return song.pitched_voices;
   } else {
@@ -36,14 +36,13 @@ template <NoteInterface SubNote>
 
 // the voice a note's voice_name refers to; see get_voice
 template <NoteInterface SubNote>
-[[nodiscard]] static auto get_note_voice(const Song& song, const SubNote& note)
+[[nodiscard]] auto get_note_voice(const Song& song, const SubNote& note)
     -> const auto& {
   return get_voice(get_voices<SubNote>(song), note.voice_name);
 }
 
 template <NoteInterface SubNote>
-[[nodiscard]] static auto get_note_program(const Song& song,
-                                           const SubNote& note)
+[[nodiscard]] auto get_note_program(const Song& song, const SubNote& note)
     -> const Program& {
   const auto& voice = get_note_voice(song, note);
   return get_voice_program(
@@ -53,10 +52,8 @@ template <NoteInterface SubNote>
 
 // scales the chord's velocity by the note's ratio and its voice's ratio
 template <NoteInterface SubNote>
-[[nodiscard]] static auto get_note_velocity(const Song& song,
-                                            const SubNote& note,
-                                            const double current_velocity)
-    -> double {
+[[nodiscard]] auto get_note_velocity(const Song& song, const SubNote& note,
+                                     const double current_velocity) -> double {
   return current_velocity * rational_to_double(note.velocity_ratio) *
          rational_to_double(get_note_voice(song, note).velocity_ratio);
 }

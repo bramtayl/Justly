@@ -21,7 +21,7 @@ concept RowInterface =
 // every column is editable, unless the row has its own is_column_editable,
 // e.g. a chord's notes, which are edited in their own table
 template <RowInterface SubRow>
-[[nodiscard]] static auto column_is_editable(const int column_number) -> bool {
+[[nodiscard]] auto column_is_editable(const int column_number) -> bool {
   if constexpr (requires { SubRow::is_column_editable(column_number); }) {
     return SubRow::is_column_editable(column_number);
   } else {
@@ -32,8 +32,8 @@ template <RowInterface SubRow>
 // copies through get_data/set_data, unless the row has its own
 // copy_column_from for columns that don't round-trip, e.g. a chord's notes
 template <RowInterface SubRow>
-static void copy_column(SubRow& target_row, const SubRow& template_row,
-                        const int column_number) {
+void copy_column(SubRow& target_row, const SubRow& template_row,
+                 const int column_number) {
   if constexpr (requires {
                   target_row.copy_column_from(template_row, column_number);
                 }) {
@@ -43,18 +43,26 @@ static void copy_column(SubRow& target_row, const SubRow& template_row,
   }
 }
 
-// writes every column, in column order
+// writes columns [left_column, right_column] of each row, in column order,
+// by default every column
 template <RowInterface SubRow>
-static void row_to_xml(const SubRow& row, xmlNode& node) {
-  for (auto column_number = 0; column_number < SubRow::get_number_of_columns();
-       column_number++) {
-    row.column_to_xml(node, column_number);
+void rows_to_xml(xmlNode& rows_node, const QList<SubRow>& rows,
+                 const int left_column = 0,
+                 const int right_column = SubRow::get_number_of_columns() - 1) {
+  for (const auto& row : rows) {
+    auto& row_node = get_new_child(rows_node, SubRow::get_xml_field_name());
+    for (auto column_number = left_column; column_number <= right_column;
+         column_number++) {
+      row.column_to_xml(row_node, column_number);
+    }
   }
 }
 
+// reads at most max_rows rows
 template <RowInterface SubRow>
-static void xml_to_rows(QList<SubRow>& new_rows, xmlNode& node) {
-  for (auto& xml_row : get_xml_children(node)) {
+void xml_to_rows(QList<SubRow>& new_rows, xmlNode& node,
+                 const int max_rows = std::numeric_limits<int>::max()) {
+  for (auto& xml_row : get_xml_children(node) | std::views::take(max_rows)) {
     SubRow child_row;
     child_row.from_xml(xml_row);
     new_rows.push_back(std::move(child_row));
@@ -62,18 +70,12 @@ static void xml_to_rows(QList<SubRow>& new_rows, xmlNode& node) {
 }
 
 template <RowInterface SubRow>
-static void maybe_set_xml_rows(xmlNode& node, const char* const array_name,
-                               const QList<SubRow>& rows) {
+void maybe_set_xml_rows(xmlNode& node, const char* const array_name,
+                        const QList<SubRow>& rows) {
   if (!rows.empty()) {
-    auto& rows_node = get_new_child(node, array_name);
-    for (const auto& row : rows) {
-      row_to_xml(row, get_new_child(rows_node, SubRow::get_xml_field_name()));
-    }
+    rows_to_xml(get_new_child(node, array_name), rows);
   }
 }
 
 void maybe_add_qstring_to_xml(xmlNode& node, const char* field_name,
                               const QString& words);
-
-[[nodiscard]] auto get_duration_in_milliseconds(double beats_per_minute,
-                                                double beats_double) -> double;

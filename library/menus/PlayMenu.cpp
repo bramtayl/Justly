@@ -42,7 +42,7 @@ void play_selection(WindowBody& window_body, const bool to_end) {
   const auto first_row_number = selection.first_row_number;
   const auto number_of_rows = selection.number_of_rows;
 
-  stop_playing(player.sequencer, player.event);
+  stop_playing(player);
   initialize_play(player, song);
 
   switch (row_type) {
@@ -118,7 +118,6 @@ PlayMenu::PlayMenu(WindowBody& window_body)
       &play_to_end_action, &QAction::triggered, this,
       [&window_body]() -> auto { play_selection(window_body, true); });
 
-  QObject::connect(
-      &stop_playing_action, &QAction::triggered, this,
-      [&player]() -> auto { stop_playing(player.sequencer, player.event); });
+  QObject::connect(&stop_playing_action, &QAction::triggered, this,
+                   [&player]() -> auto { stop_playing(player); });
 }

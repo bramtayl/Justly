@@ -56,6 +56,21 @@ template <VoiceInterface SubVoice>
   return get_named_index(voices, name) != voices.cend();
 }
 
+inline void warn_voice_name(QWidget& parent, const QString& message) {
+  QMessageBox::warning(&parent, QObject::tr("Voice name error"), message);
+}
+
+// warns and returns false if name is empty
+[[nodiscard]] inline auto check_voice_name_not_empty(QWidget& parent,
+                                                     const QString& name)
+    -> bool {
+  if (name.isEmpty()) {
+    warn_voice_name(parent, QObject::tr("Voice name is empty!"));
+    return false;
+  }
+  return true;
+}
+
 template <VoiceInterface SubVoice>
 [[nodiscard]] auto check_voice_name(QWidget& parent,
                                     const QList<SubVoice>& voices,
@@ -65,18 +80,12 @@ template <VoiceInterface SubVoice>
     return true;
   }
   const auto new_string = variant_to<QString>(new_value);
-  if (new_string.isEmpty()) {
-    QString message;
-    QTextStream stream(&message);
-    stream << QObject::tr("Voice name is empty!");
-    QMessageBox::warning(&parent, QObject::tr("Voice name error"), message);
+  if (!check_voice_name_not_empty(parent, new_string)) {
     return false;
   }
-  if (get_named_index(voices, new_string) != voices.cend()) {
-    QString message;
-    QTextStream stream(&message);
-    stream << "Voice \"" << new_string << QObject::tr("\" already exists!");
-    QMessageBox::warning(&parent, QObject::tr("Voice name error"), message);
+  if (has_voice(voices, new_string)) {
+    warn_voice_name(
+        parent, QObject::tr("Voice \"%1\" already exists!").arg(new_string));
     return false;
   }
   return true;

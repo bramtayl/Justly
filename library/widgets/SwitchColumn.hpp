@@ -20,7 +20,7 @@ struct SwitchColumn : public QWidget {
     -> int;
 
 template <typename Iterable>
-[[nodiscard]] static auto get_only(const Iterable& iterable) -> const auto& {
+[[nodiscard]] auto get_only(const Iterable& iterable) -> const auto& {
   Q_ASSERT(iterable.size() == 1);
   return iterable.at(0);
 }

@@ -114,7 +114,7 @@ auto deduplicate_voice_names(QList<QString> voice_names) -> QList<QString> {
     }
     auto candidate_name = voice_name;
     for (auto suffix_number = 2; used_names.contains(candidate_name);
-         suffix_number = suffix_number + 1) {
+         ++suffix_number) {
       candidate_name = voice_name + QString(" (%1)").arg(suffix_number);
     }
     voice_name = candidate_name;
