@@ -463,13 +463,11 @@ void select_chord_range_at_playhead(PianoRollWidget& widget,
 
   auto& chords_model = switch_table.chords_model;
   widget.selecting_chord_from_playhead = true;
-  selection_model.select(
-      QItemSelection(chords_model.index(first_chord_number, 0),
-                     chords_model.index(last_chord_number, 0)),
-      QItemSelectionModel::Select | QItemSelectionModel::Clear |
-          QItemSelectionModel::Rows);
+  select_rows_and_scroll(switch_table,
+                         chords_model.index(first_chord_number, 0),
+                         chords_model.index(last_chord_number, 0),
+                         chords_model.index(current_chord_number, 0));
   widget.selecting_chord_from_playhead = false;
-  switch_table.scrollTo(chords_model.index(current_chord_number, 0));
 }
 
 void select_chord_at_playhead(PianoRollWidget& widget, const double time_ms) {
@@ -501,19 +499,15 @@ void select_note_at_bar(SwitchTable& switch_table,
                 : switch_table.unpitched_notes_model.parent_chord_number) ==
            event.chord_number);
 
-  auto& selection_model = get_selection_model(switch_table);
   const auto note_index =
       is_pitched
           ? switch_table.pitched_notes_model.index(event.note_number, 0)
           : switch_table.unpitched_notes_model.index(event.note_number, 0);
-  const auto selected_rows = selection_model.selectedRows();
+  const auto selected_rows = get_selection_model(switch_table).selectedRows();
   if (selected_rows.size() == 1 && selected_rows.at(0) == note_index) {
     return;
   }
-  selection_model.select(note_index, QItemSelectionModel::Select |
-                                         QItemSelectionModel::Clear |
-                                         QItemSelectionModel::Rows);
-  switch_table.scrollTo(note_index);
+  select_row_and_scroll(switch_table, note_index);
 }
 
 }  // namespace

@@ -29,3 +29,19 @@ auto get_selection_model(const QAbstractItemView& item_view)
 auto get_only_range(const QAbstractItemView& table) -> QItemSelectionRange {
   return get_only(get_selection_model(table).selection());
 }
+
+void select_rows_and_scroll(QAbstractItemView& item_view,
+                            const QModelIndex& first_index,
+                            const QModelIndex& last_index,
+                            const QModelIndex& scroll_index) {
+  get_selection_model(item_view).select(
+      QItemSelection(first_index, last_index),
+      QItemSelectionModel::Select | QItemSelectionModel::Clear |
+          QItemSelectionModel::Rows);
+  item_view.scrollTo(scroll_index);
+}
+
+void select_row_and_scroll(QAbstractItemView& item_view,
+                           const QModelIndex& row_index) {
+  select_rows_and_scroll(item_view, row_index, row_index, row_index);
+}

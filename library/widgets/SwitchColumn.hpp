@@ -30,3 +30,13 @@ template <typename Iterable>
 
 [[nodiscard]] auto get_only_range(const QAbstractItemView& table)
     -> QItemSelectionRange;
+
+// replaces the selection with the whole rows from first_index's through
+// last_index's, then scrolls to scroll_index
+void select_rows_and_scroll(QAbstractItemView& item_view,
+                            const QModelIndex& first_index,
+                            const QModelIndex& last_index,
+                            const QModelIndex& scroll_index);
+
+void select_row_and_scroll(QAbstractItemView& item_view,
+                           const QModelIndex& row_index);

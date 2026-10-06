@@ -112,6 +112,13 @@ struct RowsModel : public QAbstractTableModel {
     return true;
   }
 
+  // replaces the selection with range, e.g. the cells an edit just changed
+  void select_only(const QItemSelectionRange& range) const {
+    get_reference(selection_model_pointer)
+        .select(QItemSelection(range.topLeft(), range.bottomRight()),
+                QItemSelectionModel::Select | QItemSelectionModel::Clear);
+  }
+
   // don't inline these functions because they use protected methods
   void set_cell(const int row_number, const int column_number,
                 const QVariant& new_value) {
@@ -119,9 +126,7 @@ struct RowsModel : public QAbstractTableModel {
 
     get_rows()[row_number].set_data(column_number, new_value);
     dataChanged(set_index, set_index);
-    get_reference(selection_model_pointer)
-        .select(set_index,
-                QItemSelectionModel::Select | QItemSelectionModel::Clear);
+    select_only(QItemSelectionRange(set_index));
   }
 
   void set_cells(const QItemSelectionRange& range,
@@ -130,9 +135,6 @@ struct RowsModel : public QAbstractTableModel {
 
     auto& rows = get_rows();
     const auto number_of_new_rows = new_rows.size();
-
-    const auto& top_left_index = range.topLeft();
-    const auto& bottom_right_index = range.bottomRight();
 
     const auto first_row_number = range.top();
     const auto left_column = range.left();
@@ -147,10 +149,8 @@ struct RowsModel : public QAbstractTableModel {
         copy_column(row, new_row, column_number);
       }
     }
-    dataChanged(top_left_index, bottom_right_index);
-    get_reference(selection_model_pointer)
-        .select(QItemSelection(top_left_index, bottom_right_index),
-                QItemSelectionModel::Select | QItemSelectionModel::Clear);
+    dataChanged(range.topLeft(), range.bottomRight());
+    select_only(range);
   }
 
   // swaps in every row at once, e.g. when loading a file
@@ -169,11 +169,8 @@ struct RowsModel : public QAbstractTableModel {
     std::copy(new_rows.cbegin(), new_rows.cend(),
               std::inserter(rows, rows.begin() + first_row_number));
     endInsertRows();
-    get_reference(selection_model_pointer)
-        .select(QItemSelection(
-                    index(first_row_number, left_column),
-                    index(first_row_number + number_of_rows - 1, right_column)),
-                QItemSelectionModel::Select | QItemSelectionModel::Clear);
+    select_only(make_range(*this, first_row_number, number_of_rows,
+                           left_column, right_column));
   }
 
   void remove_rows(const int first_row_number, int number_of_rows) {

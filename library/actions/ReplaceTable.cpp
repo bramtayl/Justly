@@ -49,15 +49,6 @@ void resize_columns(SwitchTable& switch_table, const RowType row_type) {
   }
 }
 
-void select_row_and_scroll(SwitchTable& switch_table,
-                           const QModelIndex& row_index) {
-  get_selection_model(switch_table)
-      .select(row_index, QItemSelectionModel::Select |
-                             QItemSelectionModel::Clear |
-                             QItemSelectionModel::Rows);
-  switch_table.scrollTo(row_index);
-}
-
 template <RowInterface SubRow>
 void show_model(SwitchTable& switch_table, RowsModel<SubRow>& rows_model,
                 const RowType row_type) {
