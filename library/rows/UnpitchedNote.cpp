@@ -2,6 +2,27 @@
 
 #include "column_numbers/UnpitchedNoteColumn.hpp"
 
+namespace {
+
+// every unpitched note column is one every note has
+auto to_note_field(const int column_number) -> NoteField {
+  switch (static_cast<UnpitchedNoteColumn>(column_number)) {
+    case UnpitchedNoteColumn::unpitched_note_voice_name_column:
+      return NoteField::voice_name;
+    case UnpitchedNoteColumn::unpitched_note_beats_column:
+      return NoteField::beats;
+    case UnpitchedNoteColumn::unpitched_note_velocity_ratio_column:
+      return NoteField::velocity_ratio;
+    case UnpitchedNoteColumn::unpitched_note_words_column:
+      return NoteField::words;
+    case UnpitchedNoteColumn::number_of_unpitched_note_columns:
+      Q_UNREACHABLE();
+  }
+  Q_UNREACHABLE();
+}
+
+}  // namespace
+
 void UnpitchedNote::from_xml(xmlNode& node) {
   for (auto& field_node : get_xml_children(node)) {
     note_field_from_xml(get_xml_name(field_node), field_node);
@@ -21,20 +42,8 @@ auto UnpitchedNote::get_number_of_columns() -> int {
       UnpitchedNoteColumn::number_of_unpitched_note_columns);
 }
 
-auto UnpitchedNote::get_column_name(int column_number) -> const char* {
-  switch (static_cast<UnpitchedNoteColumn>(column_number)) {
-    case UnpitchedNoteColumn::number_of_unpitched_note_columns:
-      Q_UNREACHABLE();
-    case UnpitchedNoteColumn::unpitched_note_voice_name_column:
-      return "Voice";
-    case UnpitchedNoteColumn::unpitched_note_beats_column:
-      return "Beats";
-    case UnpitchedNoteColumn::unpitched_note_velocity_ratio_column:
-      return "Velocity ratio";
-    case UnpitchedNoteColumn::unpitched_note_words_column:
-      return "Words";
-  }
-  Q_UNREACHABLE();
+auto UnpitchedNote::get_column_name(const int column_number) -> const char* {
+  return get_field_name(to_note_field(column_number));
 }
 
 auto UnpitchedNote::get_cells_mime() -> const char* {
@@ -43,62 +52,16 @@ auto UnpitchedNote::get_cells_mime() -> const char* {
 
 auto UnpitchedNote::get_pitched() -> const char* { return "unpitched"; }
 
-auto UnpitchedNote::is_column_editable(int /*column_number*/) -> bool {
-  return true;
-}
-
 auto UnpitchedNote::get_data(const int column_number) const -> QVariant {
-  switch (static_cast<UnpitchedNoteColumn>(column_number)) {
-    case UnpitchedNoteColumn::number_of_unpitched_note_columns:
-      Q_UNREACHABLE();
-    case UnpitchedNoteColumn::unpitched_note_voice_name_column:
-      return voice_name;
-    case UnpitchedNoteColumn::unpitched_note_beats_column:
-      return QVariant::fromValue(beats);
-    case UnpitchedNoteColumn::unpitched_note_velocity_ratio_column:
-      return QVariant::fromValue(velocity_ratio);
-    case UnpitchedNoteColumn::unpitched_note_words_column:
-      return words;
-  }
-  Q_UNREACHABLE();
+  return get_field(to_note_field(column_number));
 }
 
 void UnpitchedNote::set_data(const int column_number,
                              const QVariant& new_value) {
-  switch (static_cast<UnpitchedNoteColumn>(column_number)) {
-    case UnpitchedNoteColumn::number_of_unpitched_note_columns:
-      Q_UNREACHABLE();
-    case UnpitchedNoteColumn::unpitched_note_voice_name_column:
-      voice_name = variant_to<QString>(new_value);
-      break;
-    case UnpitchedNoteColumn::unpitched_note_beats_column:
-      beats = variant_to<Rational>(new_value);
-      break;
-    case UnpitchedNoteColumn::unpitched_note_velocity_ratio_column:
-      velocity_ratio = variant_to<Rational>(new_value);
-      break;
-    case UnpitchedNoteColumn::unpitched_note_words_column:
-      words = variant_to<QString>(new_value);
-      break;
-  }
+  set_field(to_note_field(column_number), new_value);
 }
 
 void UnpitchedNote::column_to_xml(xmlNode& node,
                                   const int column_number) const {
-  switch (static_cast<UnpitchedNoteColumn>(column_number)) {
-    case UnpitchedNoteColumn::number_of_unpitched_note_columns:
-      Q_UNREACHABLE();
-    case UnpitchedNoteColumn::unpitched_note_voice_name_column:
-      set_xml_string(node, "voice_name", voice_name.toStdString());
-      break;
-    case UnpitchedNoteColumn::unpitched_note_beats_column:
-      maybe_add_rational_to_xml(node, "beats", beats);
-      break;
-    case UnpitchedNoteColumn::unpitched_note_velocity_ratio_column:
-      maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
-      break;
-    case UnpitchedNoteColumn::unpitched_note_words_column:
-      maybe_add_qstring_to_xml(node, "words", words);
-      break;
-  }
+  field_to_xml(node, to_note_field(column_number));
 }

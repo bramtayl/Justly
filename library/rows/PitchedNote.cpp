@@ -35,6 +35,29 @@ void warn_frequency(QWidget& parent, const double frequency,
   QMessageBox::warning(&parent, QObject::tr("Frequency error"), message);
 }
 
+auto is_interval_column(const int column_number) -> bool {
+  return column_number ==
+         static_cast<int>(PitchedNoteColumn::pitched_note_interval_column);
+}
+
+// for every column but the interval column
+auto to_note_field(const int column_number) -> NoteField {
+  switch (static_cast<PitchedNoteColumn>(column_number)) {
+    case PitchedNoteColumn::pitched_note_voice_name_column:
+      return NoteField::voice_name;
+    case PitchedNoteColumn::pitched_note_beats_column:
+      return NoteField::beats;
+    case PitchedNoteColumn::pitched_note_velocity_ratio_column:
+      return NoteField::velocity_ratio;
+    case PitchedNoteColumn::pitched_note_words_column:
+      return NoteField::words;
+    case PitchedNoteColumn::pitched_note_interval_column:
+    case PitchedNoteColumn::number_of_pitched_note_columns:
+      Q_UNREACHABLE();
+  }
+  Q_UNREACHABLE();
+}
+
 }  // namespace
 
 void PitchedNote::from_xml(xmlNode& node) {
@@ -58,30 +81,15 @@ auto PitchedNote::get_number_of_columns() -> int {
   return static_cast<int>(PitchedNoteColumn::number_of_pitched_note_columns);
 }
 
-auto PitchedNote::get_column_name(int column_number) -> const char* {
-  switch (static_cast<PitchedNoteColumn>(column_number)) {
-    case PitchedNoteColumn::number_of_pitched_note_columns:
-      Q_UNREACHABLE();
-    case PitchedNoteColumn::pitched_note_voice_name_column:
-      return "Voice";
-    case PitchedNoteColumn::pitched_note_interval_column:
-      return "Interval";
-    case PitchedNoteColumn::pitched_note_beats_column:
-      return "Beats";
-    case PitchedNoteColumn::pitched_note_velocity_ratio_column:
-      return "Velocity ratio";
-    case PitchedNoteColumn::pitched_note_words_column:
-      return "Words";
+auto PitchedNote::get_column_name(const int column_number) -> const char* {
+  if (is_interval_column(column_number)) {
+    return "Interval";
   }
-  Q_UNREACHABLE();
+  return get_field_name(to_note_field(column_number));
 }
 
 auto PitchedNote::get_cells_mime() -> const char* {
   return "application/prs.pitched_notes_cells+xml";
-}
-
-auto PitchedNote::is_column_editable(int /*column_number*/) -> bool {
-  return true;
 }
 
 auto PitchedNote::get_pitched() -> const char* { return "pitched"; }
@@ -121,63 +129,24 @@ auto PitchedNote::get_closest_midi(QWidget& parent, Player& player,
 }
 
 auto PitchedNote::get_data(const int column_number) const -> QVariant {
-  switch (static_cast<PitchedNoteColumn>(column_number)) {
-    case PitchedNoteColumn::number_of_pitched_note_columns:
-      Q_UNREACHABLE();
-    case PitchedNoteColumn::pitched_note_voice_name_column:
-      return voice_name;
-    case PitchedNoteColumn::pitched_note_interval_column:
-      return QVariant::fromValue(interval);
-    case PitchedNoteColumn::pitched_note_beats_column:
-      return QVariant::fromValue(beats);
-    case PitchedNoteColumn::pitched_note_velocity_ratio_column:
-      return QVariant::fromValue(velocity_ratio);
-    case PitchedNoteColumn::pitched_note_words_column:
-      return words;
+  if (is_interval_column(column_number)) {
+    return QVariant::fromValue(interval);
   }
-  Q_UNREACHABLE();
+  return get_field(to_note_field(column_number));
 }
 
 void PitchedNote::set_data(const int column_number, const QVariant& new_value) {
-  switch (static_cast<PitchedNoteColumn>(column_number)) {
-    case PitchedNoteColumn::number_of_pitched_note_columns:
-      Q_UNREACHABLE();
-    case PitchedNoteColumn::pitched_note_voice_name_column:
-      voice_name = variant_to<QString>(new_value);
-      break;
-    case PitchedNoteColumn::pitched_note_interval_column:
-      interval = variant_to<Interval>(new_value);
-      break;
-    case PitchedNoteColumn::pitched_note_beats_column:
-      beats = variant_to<Rational>(new_value);
-      break;
-    case PitchedNoteColumn::pitched_note_velocity_ratio_column:
-      velocity_ratio = variant_to<Rational>(new_value);
-      break;
-    case PitchedNoteColumn::pitched_note_words_column:
-      words = variant_to<QString>(new_value);
-      break;
+  if (is_interval_column(column_number)) {
+    interval = variant_to<Interval>(new_value);
+  } else {
+    set_field(to_note_field(column_number), new_value);
   }
 }
 
 void PitchedNote::column_to_xml(xmlNode& node, const int column_number) const {
-  switch (static_cast<PitchedNoteColumn>(column_number)) {
-    case PitchedNoteColumn::number_of_pitched_note_columns:
-      Q_UNREACHABLE();
-    case PitchedNoteColumn::pitched_note_voice_name_column:
-      set_xml_string(node, "voice_name", voice_name.toStdString());
-      break;
-    case PitchedNoteColumn::pitched_note_interval_column:
-      maybe_add_interval_to_xml(node, "interval", interval);
-      break;
-    case PitchedNoteColumn::pitched_note_beats_column:
-      maybe_add_rational_to_xml(node, "beats", beats);
-      break;
-    case PitchedNoteColumn::pitched_note_velocity_ratio_column:
-      maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
-      break;
-    case PitchedNoteColumn::pitched_note_words_column:
-      maybe_add_qstring_to_xml(node, "words", words);
-      break;
+  if (is_interval_column(column_number)) {
+    maybe_add_interval_to_xml(node, "interval", interval);
+  } else {
+    field_to_xml(node, to_note_field(column_number));
   }
 }

@@ -30,8 +30,6 @@ struct PitchedNote : Note {
 
   [[nodiscard]] static auto get_cells_mime() -> const char*;
 
-  [[nodiscard]] static auto is_column_editable(int /*column_number*/) -> bool;
-
   [[nodiscard]] static auto get_pitched() -> const char*;
 
   // bends channel_number to this note's exact pitch, and returns the nearest

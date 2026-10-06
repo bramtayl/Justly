@@ -65,10 +65,6 @@ auto UnpitchedVoice::get_cells_mime() -> const char* {
   return "application/prs.unpitched_voice_cells+xml";
 }
 
-auto UnpitchedVoice::is_column_editable(int /*column_number*/) -> bool {
-  return true;
-}
-
 auto UnpitchedVoice::get_data(const int column_number) const -> QVariant {
   switch (static_cast<UnpitchedVoiceColumn>(column_number)) {
     case UnpitchedVoiceColumn::number_of_unpitched_voice_columns:
@@ -109,10 +105,12 @@ void UnpitchedVoice::column_to_xml(xmlNode& node,
                                    const int column_number) const {
   switch (static_cast<UnpitchedVoiceColumn>(column_number)) {
     case UnpitchedVoiceColumn::number_of_unpitched_voice_columns:
-    case UnpitchedVoiceColumn::unpitched_voice_name_column:
-      // copy/cut are disabled when a voice name is selected; see
-      // ReplaceTable.cpp's update_actions
       Q_UNREACHABLE();
+    case UnpitchedVoiceColumn::unpitched_voice_name_column:
+      // only reached when saving: copy/cut are disabled when a voice name
+      // is selected; see ReplaceTable.cpp's update_actions
+      maybe_add_qstring_to_xml(node, "name", name);
+      break;
     case UnpitchedVoiceColumn::unpitched_voice_percussion_set_column:
       maybe_add_qstring_to_xml(node, "percussion_set_pointer", program);
       break;
@@ -123,11 +121,4 @@ void UnpitchedVoice::column_to_xml(xmlNode& node,
       maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
       break;
   }
-}
-
-void UnpitchedVoice::to_xml(xmlNode& node) const {
-  maybe_add_qstring_to_xml(node, "name", name);
-  maybe_add_qstring_to_xml(node, "percussion_set_pointer", program);
-  set_xml_int(node, "midi_number", midi_number);
-  maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
 }

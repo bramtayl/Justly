@@ -1,15 +1,29 @@
 #pragma once
 
+#include <cstdint>
+
 #include "cell_types/Rational.hpp"
 #include "rows/Row.hpp"
 
 static const auto MAX_VELOCITY = 127;
+
+// the columns every note has; PitchedNote and UnpitchedNote map their own
+// column numbers onto these, and only handle their other columns themselves
+enum class NoteField : std::uint8_t { voice_name, beats, velocity_ratio, words };
 
 struct Note {
   QString voice_name;
   Rational beats;
   Rational velocity_ratio;
   QString words;
+
+  [[nodiscard]] static auto get_field_name(NoteField field) -> const char*;
+
+  [[nodiscard]] auto get_field(NoteField field) const -> QVariant;
+
+  void set_field(NoteField field, const QVariant& new_value);
+
+  void field_to_xml(xmlNode& node, NoteField field) const;
 
   // reads one of the fields every note has: beats, velocity_ratio, words, or
   // voice_name

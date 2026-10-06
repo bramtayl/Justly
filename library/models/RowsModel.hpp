@@ -62,7 +62,7 @@ struct RowsModel : public QAbstractTableModel {
   [[nodiscard]] auto flags(const QModelIndex& index) const
       -> Qt::ItemFlags override {
     const auto uneditable = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-    return SubRow::is_column_editable(index.column())
+    return column_is_editable<SubRow>(index.column())
                ? (uneditable | Qt::ItemIsEditable)
                : uneditable;
   }

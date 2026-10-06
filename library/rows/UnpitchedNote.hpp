@@ -17,8 +17,6 @@ struct UnpitchedNote : Note {
 
   [[nodiscard]] static auto get_pitched() -> const char*;
 
-  [[nodiscard]] static auto is_column_editable(int /*column_number*/) -> bool;
-
   [[nodiscard]] auto get_data(int column_number) const -> QVariant;
 
   void set_data(int column_number, const QVariant& new_value);

@@ -27,13 +27,9 @@ struct PitchedVoice : Voice {
 
   [[nodiscard]] static auto get_cells_mime() -> const char*;
 
-  [[nodiscard]] static auto is_column_editable(int /*column_number*/) -> bool;
-
   [[nodiscard]] auto get_data(int column_number) const -> QVariant;
 
   void set_data(int column_number, const QVariant& new_value);
 
   void column_to_xml(xmlNode& node, int column_number) const;
-
-  void to_xml(xmlNode& node) const;
 };

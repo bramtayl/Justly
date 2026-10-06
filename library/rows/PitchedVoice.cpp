@@ -58,10 +58,6 @@ auto PitchedVoice::get_cells_mime() -> const char* {
   return "application/prs.pitched_voice_cells+xml";
 }
 
-auto PitchedVoice::is_column_editable(int /*column_number*/) -> bool {
-  return true;
-}
-
 auto PitchedVoice::get_data(const int column_number) const -> QVariant {
   switch (static_cast<PitchedVoiceColumn>(column_number)) {
     case PitchedVoiceColumn::number_of_pitched_voice_columns:
@@ -96,10 +92,12 @@ void PitchedVoice::set_data(const int column_number,
 void PitchedVoice::column_to_xml(xmlNode& node, const int column_number) const {
   switch (static_cast<PitchedVoiceColumn>(column_number)) {
     case PitchedVoiceColumn::number_of_pitched_voice_columns:
-    case PitchedVoiceColumn::pitched_voice_name_column:
-      // copy/cut are disabled when a voice name is selected; see
-      // ReplaceTable.cpp's update_actions
       Q_UNREACHABLE();
+    case PitchedVoiceColumn::pitched_voice_name_column:
+      // only reached when saving: copy/cut are disabled when a voice name
+      // is selected; see ReplaceTable.cpp's update_actions
+      maybe_add_qstring_to_xml(node, "name", name);
+      break;
     case PitchedVoiceColumn::pitched_voice_instrument_column:
       maybe_add_qstring_to_xml(node, "instrument", program);
       break;
@@ -107,10 +105,4 @@ void PitchedVoice::column_to_xml(xmlNode& node, const int column_number) const {
       maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
       break;
   }
-}
-
-void PitchedVoice::to_xml(xmlNode& node) const {
-  maybe_add_qstring_to_xml(node, "name", name);
-  maybe_add_qstring_to_xml(node, "instrument", program);
-  maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
 }

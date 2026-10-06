@@ -16,8 +16,18 @@ concept RowInterface =
       { SubRow::get_clipboard_schema() } -> std::same_as<const char*>;
       { SubRow::get_xml_field_name() } -> std::same_as<const char*>;
       { SubRow::get_cells_mime() } -> std::same_as<const char*>;
-      { SubRow::is_column_editable(column_number) } -> std::same_as<bool>;
     };
+
+// every column is editable, unless the row has its own is_column_editable,
+// e.g. a chord's notes, which are edited in their own table
+template <RowInterface SubRow>
+[[nodiscard]] static auto column_is_editable(const int column_number) -> bool {
+  if constexpr (requires { SubRow::is_column_editable(column_number); }) {
+    return SubRow::is_column_editable(column_number);
+  } else {
+    return true;
+  }
+}
 
 // copies through get_data/set_data, unless the row has its own
 // copy_column_from for columns that don't round-trip, e.g. a chord's notes
@@ -33,17 +43,12 @@ static void copy_column(SubRow& target_row, const SubRow& template_row,
   }
 }
 
-// writes every column, in column order, unless the row has its own to_xml
-// for columns that can't be written alone, e.g. a voice's name
+// writes every column, in column order
 template <RowInterface SubRow>
 static void row_to_xml(const SubRow& row, xmlNode& node) {
-  if constexpr (requires { row.to_xml(node); }) {
-    row.to_xml(node);
-  } else {
-    for (auto column_number = 0;
-         column_number < SubRow::get_number_of_columns(); column_number++) {
-      row.column_to_xml(node, column_number);
-    }
+  for (auto column_number = 0; column_number < SubRow::get_number_of_columns();
+       column_number++) {
+    row.column_to_xml(node, column_number);
   }
 }
 

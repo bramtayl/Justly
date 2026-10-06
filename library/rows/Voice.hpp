@@ -14,18 +14,12 @@ struct Voice {
   Rational velocity_ratio;
 };
 
-// voices write their own to_xml, since a name column can't be written on
-// its own; see row_to_xml
 template <typename SubVoice>  // type properties
-concept VoiceInterface = std::derived_from<SubVoice, Voice> &&
-                         requires(const SubVoice& voice, xmlNode& node) {
-                           {
-                             SubVoice::get_pitched()
-                           } -> std::same_as<const char*>;
-                           { SubVoice::is_pitched() } -> std::same_as<bool>;
-                           { SubVoice::get_name_column() } -> std::same_as<int>;
-                           voice.to_xml(node);
-                         };
+concept VoiceInterface = std::derived_from<SubVoice, Voice> && requires() {
+  { SubVoice::get_pitched() } -> std::same_as<const char*>;
+  { SubVoice::is_pitched() } -> std::same_as<bool>;
+  { SubVoice::get_name_column() } -> std::same_as<int>;
+};
 
 [[nodiscard]] inline auto get_voice_program(const QList<Program>& programs,
                                             const Voice& voice)
