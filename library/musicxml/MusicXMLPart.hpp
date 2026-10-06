@@ -8,10 +8,67 @@
 #include <optional>
 #include <string>
 
-#include "musicxml/MusicXMLChord.hpp"
-#include "musicxml/MusicXMLMeasure.hpp"
-
 class QWidget;
+
+// how an accidental alters a step
+struct Accidental {
+  int chromatic = 0;
+  // Johnston septimal quartertones (36/35): -1 for a 7, +1 for an el
+  int septimal_quartertones = 0;
+};
+
+struct MusicXMLNote {
+  // as written in the file
+  int start_time = 0;
+  int duration = 0;
+  bool is_pitched = true;
+  // the written step and octave, for pitched notes
+  QString step;
+  int octave = 0;
+  std::optional<Accidental> accidental;
+  QString staff = "1";
+  std::string instrument_id;
+  bool tie_start = false;
+  bool tie_stop = false;
+
+  // filled in after parsing
+  int midi_number = 0;
+  // Johnston septimal quartertones (36/35): -1 for a 7, +1 for an el
+  int septimal_quartertones = 0;
+  int voice_number = 0;
+  QString words;
+};
+
+enum class JumpType { da_capo, dal_segno, to_coda, fine };
+
+// a direction to continue somewhere else once a measure ends; a fine
+// continues to the end of the score
+struct MusicXMLJump {
+  JumpType type = JumpType::da_capo;
+  // the name of the segno or coda to jump to
+  QString target;
+  // the times through the measure the jump is taken on. If empty, a da capo
+  // or dal segno is taken the first time, and a to coda or fine only after
+  // a da capo or dal segno
+  QList<int> times;
+};
+
+struct MusicXMLMeasure {
+  int number = 1;
+  int start_time = 0;
+  int end_time = 0;
+  bool has_forward_repeat = false;
+  bool has_backward_repeat = false;
+  int repeat_times = 2;
+  // the passes through a repeat this measure plays on, if it's in an ending
+  QList<int> ending_numbers;
+  // the names of the segnos and codas that mark this measure as a target
+  QList<QString> segnos;
+  QList<QString> codas;
+  QList<MusicXMLJump> jumps;
+  // rests are left out, but the rest of the notes are in written order
+  QList<MusicXMLNote> notes;
+};
 
 struct MusicXMLPart {
   QString id;
@@ -26,9 +83,27 @@ struct MusicXMLPart {
   QMap<int, int> transpose_changes;
 };
 
+struct MusicXMLChord {
+  QList<MusicXMLNote> pitched_notes;
+  QList<MusicXMLNote> unpitched_notes;
+};
+
 struct VoiceNames {
   QList<QString> pitched;
   QList<QString> unpitched;
+};
+
+// every part's notes at sounding pitch, with repeats unrolled and ties
+// combined, all timed in song_divisions per beat
+struct ParsedScore {
+  int song_divisions = 1;
+  // notes that start at the same time, in any part, form a chord
+  QMap<int, MusicXMLChord> chords;
+  // notes name their voices by number from voice_names
+  VoiceNames voice_names;
+  // each keyed by the time of the change
+  QMap<int, int> midi_keys;
+  QMap<int, int> measure_numbers;
 };
 
 // the value of the last change at or before time
@@ -40,55 +115,6 @@ struct VoiceNames {
 [[nodiscard]] auto get_playback_order(const QList<MusicXMLMeasure>& measures)
     -> QList<int>;
 
-// warns and returns false if a forward repeat has no backward repeat, or a
-// dal segno or to coda has nowhere to go
-[[nodiscard]] auto check_navigation(QWidget& parent,
-                                    const QList<MusicXMLMeasure>& measures)
-    -> bool;
-
-// every part's repeats, endings, and jumps, measure by measure, since jumps
-// are often only written in one part. The measures have no notes
-[[nodiscard]] auto get_score_measures(const QList<MusicXMLPart>& parts)
-    -> QList<MusicXMLMeasure>;
-
-// reads each part as written, in its own divisions; warns and returns nullopt
-// if the score has something that can't be imported
-[[nodiscard]] auto parse_musicxml(QWidget& parent, xmlNode& score_partwise)
-    -> std::optional<QList<MusicXMLPart>>;
-
-// spells each pitched note from its accidental, an earlier accidental in the
-// measure, or the key signature
-void fill_in_accidentals(MusicXMLPart& part);
-
-// moves the notes and keys of transposing instruments from written to
-// sounding pitch
-void untranspose(MusicXMLPart& part);
-
-// extends each tie-start note through the notes tied to it, and drops those;
-// warns and returns false if a tie doesn't both start and stop. Ties are
-// followed in the order the measures are played, so repeats should already be
-// unrolled
-[[nodiscard]] auto combine_ties(QWidget& parent, MusicXMLPart& part) -> bool;
-
-// divisions per beat that every part's divisions fit into
-[[nodiscard]] auto get_song_divisions(const QList<MusicXMLPart>& parts) -> int;
-
-// moves times from the part's own divisions, which can change partway
-// through, to the song's divisions, which are the same throughout
-void normalize_divisions(MusicXMLPart& part, int song_divisions);
-
-// lays the measures out in the order they're played
-void unroll_repeats(MusicXMLPart& part, const QList<int>& playback_order);
-
-// each instrument in each part gets its own voice
-[[nodiscard]] auto assign_voices(QList<MusicXMLPart>& parts) -> VoiceNames;
-
-// notes that start at the same time, in any part, form a chord
-[[nodiscard]] auto get_chords(const QList<MusicXMLPart>& parts)
-    -> QMap<int, MusicXMLChord>;
-
-[[nodiscard]] auto get_midi_keys(const QList<MusicXMLPart>& parts)
-    -> QMap<int, int>;
-
-[[nodiscard]] auto get_measure_numbers(const QList<MusicXMLPart>& parts)
-    -> QMap<int, int>;
+// warns and returns nullopt if the score has something that can't be imported
+[[nodiscard]] auto parse_score(QWidget& parent, xmlNode& score_partwise)
+    -> std::optional<ParsedScore>;

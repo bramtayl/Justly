@@ -71,6 +71,26 @@ auto get_max_duration(const QList<MusicXMLNote>& notes) -> int {
       ->duration;
 }
 
+// pitched notes are relative to the chord's key
+template <NoteInterface SubNote>
+auto make_notes(const QList<MusicXMLNote>& parse_notes,
+                const QList<QString>& voice_names, const int key,
+                const int song_divisions) -> QList<SubNote> {
+  QList<SubNote> new_notes;
+  for (const auto& parse_note : parse_notes) {
+    SubNote new_note;
+    new_note.beats = Rational(parse_note.duration, song_divisions);
+    new_note.words = parse_note.words;
+    new_note.voice_name = voice_names.at(parse_note.voice_number);
+    if constexpr (std::same_as<SubNote, PitchedNote>) {
+      new_note.interval = get_interval(parse_note.midi_number - key,
+                                       parse_note.septimal_quartertones);
+    }
+    new_notes.push_back(std::move(new_note));
+  }
+  return new_notes;
+}
+
 auto make_chord(const MusicXMLChord& parse_chord, const VoiceNames& voice_names,
                 const int measure_number, const int key,
                 const int last_midi_key, const int song_divisions,
@@ -79,26 +99,10 @@ auto make_chord(const MusicXMLChord& parse_chord, const VoiceNames& voice_names,
   new_chord.beats = Rational(time_delta, song_divisions);
   new_chord.interval = get_interval(key - last_midi_key);
   new_chord.words = QString::number(measure_number);
-  auto& unpitched_notes = new_chord.unpitched_notes;
-  for (const auto& parse_unpitched_note : parse_chord.unpitched_notes) {
-    UnpitchedNote new_note;
-    new_note.beats = Rational(parse_unpitched_note.duration, song_divisions);
-    new_note.words = parse_unpitched_note.words;
-    new_note.voice_name =
-        voice_names.unpitched.at(parse_unpitched_note.voice_number);
-    unpitched_notes.push_back(std::move(new_note));
-  }
-  auto& pitched_notes = new_chord.pitched_notes;
-  for (const auto& parse_pitched_note : parse_chord.pitched_notes) {
-    PitchedNote new_note;
-    new_note.beats = Rational(parse_pitched_note.duration, song_divisions);
-    new_note.words = parse_pitched_note.words;
-    new_note.interval = get_interval(parse_pitched_note.midi_number - key,
-                                     parse_pitched_note.septimal_quartertones);
-    new_note.voice_name =
-        voice_names.pitched.at(parse_pitched_note.voice_number);
-    pitched_notes.push_back(std::move(new_note));
-  }
+  new_chord.pitched_notes = make_notes<PitchedNote>(
+      parse_chord.pitched_notes, voice_names.pitched, key, song_divisions);
+  new_chord.unpitched_notes = make_notes<UnpitchedNote>(
+      parse_chord.unpitched_notes, voice_names.unpitched, key, song_divisions);
   return new_chord;
 }
 
@@ -137,40 +141,22 @@ auto import_score(QWidget& parent, xmlNode& score_partwise)
     return std::nullopt;
   }
 
-  auto maybe_parts = parse_musicxml(parent, score_partwise);
-  if (!maybe_parts.has_value()) {
+  auto maybe_parsed_score = parse_score(parent, score_partwise);
+  if (!maybe_parsed_score.has_value()) {
     return std::nullopt;
   }
-  auto& parts = maybe_parts.value();
+  auto& parsed_score = maybe_parsed_score.value();
+  const auto song_divisions = parsed_score.song_divisions;
+  auto& voice_names = parsed_score.voice_names;
+  const auto& chords_dict = parsed_score.chords;
+  const auto& midi_keys = parsed_score.midi_keys;
+  const auto& measure_numbers = parsed_score.measure_numbers;
 
-  for (auto& part : parts) {
-    fill_in_accidentals(part);
-    untranspose(part);
-  }
-  const auto score_measures = get_score_measures(parts);
-  if (!check_navigation(parent, score_measures)) {
-    return std::nullopt;
-  }
-  const auto song_divisions = get_song_divisions(parts);
-  const auto playback_order = get_playback_order(score_measures);
-  for (auto& part : parts) {
-    normalize_divisions(part, song_divisions);
-    unroll_repeats(part, playback_order);
-    // in playback order, so e.g. a tie into both endings stops in each
-    if (!combine_ties(parent, part)) {
-      return std::nullopt;
-    }
-  }
-  auto voice_names = assign_voices(parts);
-
-  const auto chords_dict = get_chords(parts);
   if (chords_dict.empty()) {
     QMessageBox::warning(&parent, QObject::tr("Empty MusicXML error"),
                          QObject::tr("No chords"));
     return std::nullopt;
   }
-  const auto midi_keys = get_midi_keys(parts);
-  const auto measure_numbers = get_measure_numbers(parts);
 
   if (voice_names.unpitched.empty()) {
     // a file with no percussion/unpitched notes would otherwise leave

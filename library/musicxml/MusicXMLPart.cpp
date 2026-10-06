@@ -51,6 +51,22 @@ auto get_duration(QWidget& parent, xmlNode& measure_element)
       QObject::tr("Duration is out of range"));
 }
 
+// calls function(measure, note) for every note in part, in order
+template <typename Part, typename Function>
+void for_each_note(Part& part, Function function) {
+  for (auto& measure : part.measures) {
+    for (auto& note : measure.notes) {
+      function(measure, note);
+    }
+  }
+}
+
+// identifies a note's written step and octave within scope, e.g. a staff
+auto get_written_pitch_key(const QString& scope, const MusicXMLNote& note)
+    -> QString {
+  return scope + ":" + note.step + ":" + QString::number(note.octave);
+}
+
 // skips anything that isn't a number
 auto parse_number_list(const std::string& text) -> QList<int> {
   QList<int> numbers;
@@ -572,6 +588,10 @@ auto get_playback_order(const QList<MusicXMLMeasure>& measures) -> QList<int> {
   return playback_order;
 }
 
+namespace {
+
+// warns and returns false if a forward repeat has no backward repeat, or a
+// dal segno or to coda has nowhere to go
 auto check_navigation(QWidget& parent, const QList<MusicXMLMeasure>& measures)
     -> bool {
   const auto number_of_measures = static_cast<int>(measures.size());
@@ -626,6 +646,8 @@ auto check_navigation(QWidget& parent, const QList<MusicXMLMeasure>& measures)
   return true;
 }
 
+// every part's repeats, endings, and jumps, measure by measure, since jumps
+// are often only written in one part. The measures have no notes
 auto get_score_measures(const QList<MusicXMLPart>& parts)
     -> QList<MusicXMLMeasure> {
   QList<MusicXMLMeasure> score_measures;
@@ -657,6 +679,8 @@ auto get_score_measures(const QList<MusicXMLPart>& parts)
   return score_measures;
 }
 
+// reads each part as written, in its own divisions; warns and returns nullopt
+// if the score has something that can't be imported
 auto parse_musicxml(QWidget& parent, xmlNode& score_partwise)
     -> std::optional<QList<MusicXMLPart>> {
   // the part-list comes before the parts
@@ -708,6 +732,8 @@ auto parse_musicxml(QWidget& parent, xmlNode& score_partwise)
   return parts;
 }
 
+// spells each pitched note from its accidental, an earlier accidental in the
+// measure, or the key signature
 void fill_in_accidentals(MusicXMLPart& part) {
   static const QMap<QString, int> step_indices = {
       {"C", 0}, {"D", 1}, {"E", 2}, {"F", 3}, {"G", 4}, {"A", 5}, {"B", 6}};
@@ -724,8 +750,7 @@ void fill_in_accidentals(MusicXMLPart& part) {
       // the schema only allows steps A through G
       Q_ASSERT(step_indices.contains(note.step));
       const auto step_index = step_indices.value(note.step);
-      const auto accidental_key =
-          note.staff + ":" + note.step + ":" + QString::number(note.octave);
+      const auto accidental_key = get_written_pitch_key(note.staff, note);
       Accidental accidental;
       if (note.accidental.has_value()) {
         accidental = note.accidental.value();
@@ -745,19 +770,19 @@ void fill_in_accidentals(MusicXMLPart& part) {
   }
 }
 
+// moves the notes and keys of transposing instruments from written to
+// sounding pitch
 void untranspose(MusicXMLPart& part) {
   // going up a halfstep is going up seven fifths, give or take octaves
   static const auto FIFTHS_PER_HALFSTEP = 7;
   const auto& transpose_changes = part.transpose_changes;
-  for (auto& measure : part.measures) {
-    for (auto& note : measure.notes) {
-      if (note.is_pitched) {
-        note.midi_number =
-            note.midi_number +
-            get_most_recent(transpose_changes, note.start_time, 0);
-      }
+  for_each_note(part, [&transpose_changes](const MusicXMLMeasure& /*measure*/,
+                                           MusicXMLNote& note) -> void {
+    if (note.is_pitched) {
+      note.midi_number = note.midi_number +
+                         get_most_recent(transpose_changes, note.start_time, 0);
     }
-  }
+  });
   // the key changes whenever either the written key or the transposition does
   auto change_times = part.fifths_changes.keys();
   change_times.append(transpose_changes.keys());
@@ -772,6 +797,10 @@ void untranspose(MusicXMLPart& part) {
   part.transpose_changes.clear();
 }
 
+// extends each tie-start note through the notes tied to it, and drops those;
+// warns and returns false if a tie doesn't both start and stop. Ties are
+// followed in the order the measures are played, so repeats should already be
+// unrolled
 auto combine_ties(QWidget& parent, MusicXMLPart& part) -> bool {
   // a tie only ever connects notes within the same voice, so an in-progress
   // tie must be looked up by instrument as well as pitch -- otherwise two
@@ -793,9 +822,8 @@ auto combine_ties(QWidget& parent, MusicXMLPart& part) -> bool {
   };
   for (auto& measure : part.measures) {
     for (auto& note : measure.notes) {
-      const auto tied_note_key = QString::fromStdString(note.instrument_id) +
-                                 ":" + note.step + ":" +
-                                 QString::number(note.octave);
+      const auto tied_note_key = get_written_pitch_key(
+          QString::fromStdString(note.instrument_id), note);
       const auto tied_notes_iterator = tied_notes.find(tied_note_key);
       if (note.tie_stop) {
         if (tied_notes_iterator == tied_notes.end()) {
@@ -833,6 +861,7 @@ auto combine_ties(QWidget& parent, MusicXMLPart& part) -> bool {
   return true;
 }
 
+// divisions per beat that every part's divisions fit into
 auto get_song_divisions(const QList<MusicXMLPart>& parts) -> int {
   auto song_divisions = 1;
   for (const auto& part : parts) {
@@ -842,8 +871,6 @@ auto get_song_divisions(const QList<MusicXMLPart>& parts) -> int {
   }
   return song_divisions;
 }
-
-namespace {
 
 auto get_song_time(const QMap<int, int>& divisions_changes,
                    const int song_divisions, const int time) -> int {
@@ -863,8 +890,8 @@ auto get_song_time(const QMap<int, int>& divisions_changes,
   return song_time + time_per_division * (time - last_change_time);
 }
 
-}  // namespace
-
+// moves times from the part's own divisions, which can change partway
+// through, to the song's divisions, which are the same throughout
 void normalize_divisions(MusicXMLPart& part, const int song_divisions) {
   const auto& divisions_changes = part.divisions_changes;
   const auto to_song_time = [&divisions_changes,
@@ -889,6 +916,7 @@ void normalize_divisions(MusicXMLPart& part, const int song_divisions) {
   part.divisions_changes.clear();
 }
 
+// lays the measures out in the order they're played
 void unroll_repeats(MusicXMLPart& part, const QList<int>& playback_order) {
   const auto& fifths_changes = part.fifths_changes;
   QList<MusicXMLMeasure> unrolled_measures;
@@ -923,37 +951,37 @@ void unroll_repeats(MusicXMLPart& part, const QList<int>& playback_order) {
   part.fifths_changes = std::move(unrolled_fifths_changes);
 }
 
+// each instrument in each part gets its own voice
 auto assign_voices(QList<MusicXMLPart>& parts) -> VoiceNames {
   VoiceNames voice_names;
   QMap<QString, int> pitched_voice_numbers;
   QMap<QString, int> unpitched_voice_numbers;
   for (auto& part : parts) {
-    for (auto& measure : part.measures) {
-      for (auto& note : measure.notes) {
-        const auto instrument_name =
-            part.instrument_names.value(note.instrument_id);
-        QTextStream stream(&note.words);
-        stream << QObject::tr("Part ") << part.name;
-        if (instrument_name != "") {
-          stream << QObject::tr(" instrument ") << instrument_name;
-        }
-        const auto voice_key =
-            part.id + ":" + QString::fromStdString(note.instrument_id);
-        auto& voice_numbers =
-            note.is_pitched ? pitched_voice_numbers : unpitched_voice_numbers;
-        auto& names =
-            note.is_pitched ? voice_names.pitched : voice_names.unpitched;
-        const auto found_voice_number = voice_numbers.find(voice_key);
-        if (found_voice_number != voice_numbers.end()) {
-          note.voice_number = found_voice_number.value();
-        } else {
-          note.voice_number = static_cast<int>(names.size());
-          voice_numbers[voice_key] = note.voice_number;
-          names.push_back(instrument_name.isEmpty() ? part.name
-                                                    : instrument_name);
-        }
+    for_each_note(part, [&](const MusicXMLMeasure& /*measure*/,
+                            MusicXMLNote& note) -> void {
+      const auto instrument_name =
+          part.instrument_names.value(note.instrument_id);
+      QTextStream stream(&note.words);
+      stream << QObject::tr("Part ") << part.name;
+      if (instrument_name != "") {
+        stream << QObject::tr(" instrument ") << instrument_name;
       }
-    }
+      const auto voice_key =
+          part.id + ":" + QString::fromStdString(note.instrument_id);
+      auto& voice_numbers =
+          note.is_pitched ? pitched_voice_numbers : unpitched_voice_numbers;
+      auto& names =
+          note.is_pitched ? voice_names.pitched : voice_names.unpitched;
+      const auto found_voice_number = voice_numbers.find(voice_key);
+      if (found_voice_number != voice_numbers.end()) {
+        note.voice_number = found_voice_number.value();
+      } else {
+        note.voice_number = static_cast<int>(names.size());
+        voice_numbers[voice_key] = note.voice_number;
+        names.push_back(instrument_name.isEmpty() ? part.name
+                                                  : instrument_name);
+      }
+    });
   }
   return voice_names;
 }
@@ -961,13 +989,12 @@ auto assign_voices(QList<MusicXMLPart>& parts) -> VoiceNames {
 auto get_chords(const QList<MusicXMLPart>& parts) -> QMap<int, MusicXMLChord> {
   QMap<int, MusicXMLChord> chords;
   for (const auto& part : parts) {
-    for (const auto& measure : part.measures) {
-      for (const auto& note : measure.notes) {
-        auto& chord = chords[note.start_time];
-        (note.is_pitched ? chord.pitched_notes : chord.unpitched_notes)
-            .push_back(note);
-      }
-    }
+    for_each_note(part, [&chords](const MusicXMLMeasure& /*measure*/,
+                                  const MusicXMLNote& note) -> void {
+      auto& chord = chords[note.start_time];
+      (note.is_pitched ? chord.pitched_notes : chord.unpitched_notes)
+          .push_back(note);
+    });
   }
   return chords;
 }
@@ -992,4 +1019,40 @@ auto get_measure_numbers(const QList<MusicXMLPart>& parts) -> QMap<int, int> {
     }
   }
   return measure_numbers;
+}
+
+}  // namespace
+
+auto parse_score(QWidget& parent, xmlNode& score_partwise)
+    -> std::optional<ParsedScore> {
+  auto maybe_parts = parse_musicxml(parent, score_partwise);
+  if (!maybe_parts.has_value()) {
+    return std::nullopt;
+  }
+  auto& parts = maybe_parts.value();
+
+  for (auto& part : parts) {
+    fill_in_accidentals(part);
+    untranspose(part);
+  }
+  const auto score_measures = get_score_measures(parts);
+  if (!check_navigation(parent, score_measures)) {
+    return std::nullopt;
+  }
+  ParsedScore score;
+  score.song_divisions = get_song_divisions(parts);
+  const auto playback_order = get_playback_order(score_measures);
+  for (auto& part : parts) {
+    normalize_divisions(part, score.song_divisions);
+    unroll_repeats(part, playback_order);
+    // in playback order, so e.g. a tie into both endings stops in each
+    if (!combine_ties(parent, part)) {
+      return std::nullopt;
+    }
+  }
+  score.voice_names = assign_voices(parts);
+  score.chords = get_chords(parts);
+  score.midi_keys = get_midi_keys(parts);
+  score.measure_numbers = get_measure_numbers(parts);
+  return score;
 }
