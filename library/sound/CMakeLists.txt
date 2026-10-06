@@ -10,7 +10,6 @@ target_sources(JustlyLibrary PUBLIC FILE_SET justly_headers FILES
 )
 
 target_sources(JustlyLibrary PRIVATE
-    "FluidDriver.cpp"
     "FluidEvent.cpp"
     "FluidSequencer.cpp"
     "FluidSettings.cpp"

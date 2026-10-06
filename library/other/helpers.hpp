@@ -4,6 +4,7 @@
 
 #include <QtCore/QDir>
 #include <optional>
+#include <utility>
 
 class QClipboard;
 class QAbstractItemModel;
@@ -22,21 +23,36 @@ class QUndoStack;
 // NOLINTEND(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
 
 // owns a pointer from a C library, freeing it with free_function, which is
-// skipped for null since not every library's free function accepts null
+// skipped for null since not every library's free function accepts null;
+// moving leaves the source null
 template <typename Pointee, auto free_function>
 struct CHandle {
-  Pointee* const internal_pointer;
+  Pointee* internal_pointer;
 
   explicit CHandle(Pointee* const internal_pointer_input)
       : internal_pointer(internal_pointer_input) {}
 
-  ~CHandle() {
+  CHandle(CHandle&& other) noexcept
+      : internal_pointer(std::exchange(other.internal_pointer, nullptr)) {}
+
+  auto operator=(CHandle&& other) noexcept -> CHandle& {
+    if (this != &other) {
+      reset();
+      internal_pointer = std::exchange(other.internal_pointer, nullptr);
+    }
+    return *this;
+  }
+
+  ~CHandle() { reset(); }
+
+  void reset() {
     if (internal_pointer != nullptr) {
       free_function(internal_pointer);
     }
+    internal_pointer = nullptr;
   }
 
-  NO_MOVE_COPY(CHandle)
+  NO_COPY(CHandle)
 };
 
 struct XMLString {

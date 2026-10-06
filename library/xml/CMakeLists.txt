@@ -2,9 +2,6 @@
 target_sources(JustlyLibrary PUBLIC FILE_SET justly_headers FILES 
     "XMLChildren.hpp"
     "XMLDocument.hpp"
-    "XMLParserContext.hpp"
-    "XMLSchema.hpp"
-    "XMLValidationContext.hpp"
     "XMLValidator.hpp"
     "ZipArchive.hpp"
 )

@@ -1,5 +1,14 @@
 #include "xml/ZipArchive.hpp"
 
+namespace {
+
+struct ZipFile : CHandle<zip_file_t, zip_fclose> {
+  ZipFile(const ZipArchive& archive, const std::string& entry_name)
+      : CHandle(zip_fopen(archive.internal_pointer, entry_name.c_str(), 0)) {}
+};
+
+}  // namespace
+
 auto zip_entry_size_is_safe(const zip_stat_t& entry_stat) -> bool {
   return (entry_stat.valid & ZIP_STAT_SIZE) != 0 &&
          entry_stat.size <=
@@ -22,16 +31,14 @@ auto read_zip_entry(const ZipArchive& archive, const std::string& entry_name)
     return {};
   }
 
-  auto* file_pointer =
-      zip_fopen(archive.internal_pointer, entry_name.c_str(), 0);
-  if (file_pointer == nullptr) {
+  const ZipFile file(archive, entry_name);
+  if (file.internal_pointer == nullptr) {
     return {};
   }
 
   QByteArray bytes(static_cast<int>(entry_stat.size), '\0');
   const auto bytes_read =
-      zip_fread(file_pointer, bytes.data(), entry_stat.size);
-  zip_fclose(file_pointer);
+      zip_fread(file.internal_pointer, bytes.data(), entry_stat.size);
 
   if (std::cmp_not_equal(bytes_read, entry_stat.size)) {
     return {};

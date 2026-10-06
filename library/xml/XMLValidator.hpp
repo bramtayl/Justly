@@ -1,7 +1,25 @@
 #pragma once
 
+#include <libxml/xmlschemas.h>
+
 #include "xml/XMLDocument.hpp"
-#include "xml/XMLValidationContext.hpp"
+
+struct XMLParserContext
+    : CHandle<_xmlSchemaParserCtxt, xmlSchemaFreeParserCtxt> {
+  explicit XMLParserContext(const char* filename)
+      : CHandle(xmlSchemaNewParserCtxt(filename)) {}
+};
+
+struct XMLSchema : CHandle<_xmlSchema, xmlSchemaFree> {
+  explicit XMLSchema(const XMLParserContext& context)
+      : CHandle(xmlSchemaParse(context.internal_pointer)) {}
+};
+
+struct XMLValidationContext
+    : CHandle<_xmlSchemaValidCtxt, xmlSchemaFreeValidCtxt> {
+  explicit XMLValidationContext(XMLSchema& schema)
+      : CHandle(xmlSchemaNewValidCtxt(schema.internal_pointer)) {}
+};
 
 struct XMLValidator {
   XMLSchema xml_schema;

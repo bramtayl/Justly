@@ -1,8 +1,8 @@
 #include "Tester.hpp"
 #include "xml/ZipArchive.hpp"
 
-// regression test: FluidDriver's move-assignment operator must free any
-// audio driver it already owns before taking on a new one, and must be a
+// regression test: CHandle's (here, FluidDriver's) move-assignment must free
+// any audio driver it already owns before taking on a new one, and must be a
 // no-op on self-move-assignment -- the original bug overwrote
 // internal_pointer unconditionally, which would leak a live driver on
 // reassignment and, on self-move specifically, null out internal_pointer
