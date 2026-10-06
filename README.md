@@ -46,9 +46,7 @@ brew install fluid-synth qt libxml2
 
 On Windows, install dependencies with [vcpkg](https://github.com/microsoft/vcpkg) and pass `-DCMAKE_TOOLCHAIN_FILE=<path to vcpkg>/scripts/buildsystems/vcpkg.cmake` to CMake.
 
-You will also need to download the [MS Basic soundfont](https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic.sf3) and its [license](https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic_License.md) into the `share` folder, named `MS_Basic.sf3` and `MS_Basic_License.md` respectively.
-
-Then configure, build, and install:
+Then configure, build, and install (the first configure downloads the [MS Basic soundfont](https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic.sf3) into the `share` folder, so it needs internet access):
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
