@@ -1,3 +1,4 @@
+#include <QtTest/QSignalSpy>
 #include <QtWidgets/QSpinBox>
 
 #include "Tester.hpp"
@@ -687,8 +688,19 @@ void Tester::test_voice_cell_editors() {
     }
     return "other";
   }();
+  // string pickers commit as soon as the user picks an item
+  auto* const picker_pointer = dynamic_cast<StringPicker*>(editor_pointer);
+  auto commit_count = 0;
+  if (picker_pointer != nullptr) {
+    QSignalSpy commit_spy(&delegate, &QAbstractItemDelegate::commitData);
+    emit picker_pointer->activated(0);
+    commit_count = static_cast<int>(commit_spy.count());
+  }
   delete editor_pointer;  // NOLINT(cppcoreguidelines-owning-memory)
   QCOMPARE(actual_kind, editor_kind);
+  if (picker_pointer != nullptr) {
+    QCOMPARE(commit_count, 1);
+  }
 
   maybe_switch_back_to_chords(main_window.window_body.undo_stack, row_type);
 }

@@ -7,12 +7,19 @@
     },
     "configurePresets": [
         {
-            "name": "debug-tests",
-            "displayName": "Debug with tests",
+            "name": "debug",
+            "displayName": "Debug with realtime audio",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "cacheVariables": {
                 "BUILD_TESTS": "ON",
-                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "debug-tests",
+            "displayName": "Debug with tests (no realtime audio)",
+            "inherits": "debug",
+            "cacheVariables": {
                 "NO_REALTIME_AUDIO": "ON"
             }
         },
@@ -27,6 +34,11 @@
         }
     ],
     "buildPresets": [
+        {
+            "name": "debug",
+            "configurePreset": "debug",
+            "configuration": "Debug"
+        },
         {
             "name": "debug-tests",
             "configurePreset": "debug-tests",
@@ -44,7 +56,9 @@
             "configurePreset": "debug-tests",
             "configuration": "Debug",
             "output": {
-                "outputOnFailure": true
+                "outputOnFailure": true,
+                "maxPassedTestOutputSize": 10000000,
+                "maxFailedTestOutputSize": 10000000
             }
         },
         {
@@ -52,7 +66,9 @@
             "configurePreset": "coverage",
             "configuration": "Release",
             "output": {
-                "outputOnFailure": true
+                "outputOnFailure": true,
+                "maxPassedTestOutputSize": 10000000,
+                "maxFailedTestOutputSize": 10000000
             }
         }
     ]
