@@ -117,7 +117,7 @@ inline void open_text(MainWindow& main_window, const QString& song_text) {
   QVERIFY(temp_file.open());
   temp_file.write(song_text.toStdString().c_str());
   temp_file.close();
-  open_file_and_reload(main_window, temp_file.fileName());
+  open_file(main_window, temp_file.fileName());
 }
 
 // wraps the given voices and chords in a <song> with a fixed gain, key, and

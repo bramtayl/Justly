@@ -378,7 +378,7 @@ void Tester::test_unreduced_ratio_from_xml() {
   QCOMPARE(undo_stack.count(), old_undo_count);
 
   // restore the shared fixture
-  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
 // regression test: some musicxml fields (e.g. fifths, octave-change,

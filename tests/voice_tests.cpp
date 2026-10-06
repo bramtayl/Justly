@@ -176,7 +176,7 @@ void Tester::test_remove_voice_reassigns_notes() {
   maybe_switch_back_to_chords(undo_stack, voice_row_type);
 
   // restore the shared fixture
-  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
 // regression test: RemoveVoiceRows::redo() used to reassign notes and remove
@@ -231,7 +231,7 @@ void Tester::test_remove_voice_row_consistent_during_warning() {
   maybe_switch_back_to_chords(undo_stack, RowType::pitched_voice_type);
 
   // restore the shared fixture
-  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
 void Tester::test_remove_last_voice_disables_action_data() {
@@ -269,7 +269,7 @@ void Tester::test_remove_last_voice_disables_action() {
   maybe_switch_back_to_chords(undo_stack, voice_row_type);
 
   // restore the shared fixture
-  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
 void Tester::test_paste_stale_voice_data() {
@@ -348,7 +348,7 @@ void Tester::test_paste_stale_voice() {
   back_to_chords_action.trigger();
 
   // restore the shared fixture
-  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
 void Tester::test_paste_voice_after_insert_data() {
@@ -411,7 +411,7 @@ void Tester::test_paste_voice_after_insert() {
   back_to_chords_action.trigger();
 
   // restore the shared fixture
-  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
 void Tester::test_paste_chord_voice_after_insert_data() {
@@ -475,7 +475,7 @@ void Tester::test_paste_chord_voice_after_insert() {
            QString(is_pitched ? "B" : "E"));
 
   // restore the shared fixture
-  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
 void Tester::test_voice_velocity_ratio_data() {
@@ -563,7 +563,7 @@ void Tester::test_voice_velocity_ratio() {
   QFile(temp_save_file.fileName()).remove();
 
   // restore the shared fixture
-  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
 void Tester::test_set_voice_name_data() {
@@ -678,7 +678,7 @@ void Tester::test_rename_voice_renames_notes() {
   maybe_switch_back_to_chords(undo_stack, voice_row_type);
 
   // restore the shared fixture
-  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
 void Tester::test_voice_paste_insert_disabled_data() {
@@ -767,7 +767,7 @@ void Tester::test_voice_velocity_ratio_cells() {
   QCOMPARE(second_index.data(Qt::EditRole), default_ratio);
 
   // restore the shared fixture
-  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
 void Tester::test_paste_voice_after_remove_data() {
@@ -830,7 +830,7 @@ void Tester::test_paste_voice_after_remove() {
   back_to_chords_action.trigger();
 
   // restore the shared fixture
-  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
 void Tester::test_paste_unknown_voice_data() {
@@ -913,7 +913,7 @@ void Tester::test_paste_unknown_voice() {
   }
 
   // restore the shared fixture
-  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
 void Tester::test_voice_name_delete_disabled_data() {
@@ -982,7 +982,7 @@ void Tester::test_insert_voice_unique_name() {
   main_window.song_menu_bar.view_menu.back_to_chords_action.trigger();
 
   // restore the shared fixture
-  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
 void Tester::test_paste_voice_name_rejected_data() {

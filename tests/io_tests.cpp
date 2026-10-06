@@ -243,7 +243,7 @@ void Tester::test_save_escapes_text() {
   QVERIFY(temp_file.open());
   temp_file.close();
   save_as_file(window_body, temp_file.fileName());
-  QVERIFY(open_file(window_body, temp_file.fileName()));
+  QVERIFY(open_file(main_window, temp_file.fileName()));
 
   QCOMPARE(song.pitched_voices.at(0).name, QString("R&B <1>"));
   const auto& note = song.chords.at(0).pitched_notes.at(0);
@@ -251,7 +251,7 @@ void Tester::test_save_escapes_text() {
   QCOMPARE(note.words, QString("a & b < c"));
 
   // restore the shared fixture
-  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
 void Tester::test_import_via_dialog() {
@@ -264,7 +264,7 @@ void Tester::test_import_via_dialog() {
   QCOMPARE(get_model(switch_table).rowCount(QModelIndex()), PERCUSSION_ROWS);
 
   // restore the shared fixture
-  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
 void Tester::test_open_asks_to_discard_changes_data() {

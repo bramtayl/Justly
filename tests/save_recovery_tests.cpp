@@ -88,7 +88,7 @@ void Tester::test_recovery_removed_on_save_and_open() {
   QVERIFY(QFile::exists(get_recovery_file_path()));
 
   // reloading also restores current_file/song state for later tests
-  open_file_and_reload(main_window, fixture_file);
+  open_file(main_window, fixture_file);
   QVERIFY(!QFile::exists(get_recovery_file_path()));
 }
 
@@ -130,7 +130,7 @@ void Tester::test_recovery_restore_accepted() {
   auto& window_body = main_window.window_body;
   auto fixture_file = test_dir.filePath("test_song.xml");
 
-  open_file_and_reload(main_window, fixture_file);
+  open_file(main_window, fixture_file);
   const auto old_gain = get_gain(window_body.player);
   QCOMPARE_NE(old_gain, NEW_GAIN_1);
 
@@ -144,7 +144,7 @@ void Tester::test_recovery_restore_accepted() {
 
   answer_question_later(main_window, waiting_for_message, RECOVERY_PROMPT_TEXT,
                         QMessageBox::Yes);
-  QVERIFY(maybe_restore_recovery(window_body));
+  QVERIFY(maybe_restore_recovery(main_window));
 
   QCOMPARE(get_gain(window_body.player), NEW_GAIN_1);
   QCOMPARE(window_body.current_file, fixture_file);
@@ -152,14 +152,14 @@ void Tester::test_recovery_restore_accepted() {
   QVERIFY(!QFile::exists(get_recovery_file_path()));
   QVERIFY(!QSettings().contains("recovery/original_file"));
 
-  open_file_and_reload(main_window, fixture_file);
+  open_file(main_window, fixture_file);
 }
 
 void Tester::test_recovery_restore_declined() {
   auto& window_body = main_window.window_body;
   auto fixture_file = test_dir.filePath("test_song.xml");
 
-  open_file_and_reload(main_window, fixture_file);
+  open_file(main_window, fixture_file);
   const auto old_gain = get_gain(window_body.player);
   QCOMPARE_NE(old_gain, NEW_GAIN_1);
 
@@ -169,7 +169,7 @@ void Tester::test_recovery_restore_declined() {
 
   answer_question_later(main_window, waiting_for_message, RECOVERY_PROMPT_TEXT,
                         QMessageBox::No);
-  QVERIFY(!maybe_restore_recovery(window_body));
+  QVERIFY(!maybe_restore_recovery(main_window));
 
   QCOMPARE(get_gain(window_body.player), old_gain);
   QCOMPARE(window_body.current_file, fixture_file);
@@ -183,7 +183,7 @@ void Tester::test_recovery_no_prompt_when_missing() {
   QVERIFY(!QFile::exists(get_recovery_file_path()));
   // the class-wide unexpected_message_timer watchdog fails the test if a
   // dialog appears here
-  QVERIFY(!maybe_restore_recovery(main_window.window_body));
+  QVERIFY(!maybe_restore_recovery(main_window));
 }
 
 // closing with unsaved changes asks first; declining must keep the window
@@ -206,7 +206,7 @@ void Tester::test_close_event_discard_declined() {
   QVERIFY(QFile::exists(get_recovery_file_path()));
 
   // restore the shared fixture (also removes the recovery file)
-  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
 // a clean shutdown must delete the crash-recovery file, since its presence
@@ -256,7 +256,7 @@ void Tester::test_recovery_restore_invalid_file() {
   // Enter picks the prompt's default Yes button
   close_messages_later(main_window, waiting_for_message,
                        {RECOVERY_PROMPT_TEXT, "Invalid XML file"});
-  QVERIFY(!maybe_restore_recovery(window_body));
+  QVERIFY(!maybe_restore_recovery(main_window));
   QVERIFY(!waiting_for_message);
 
   QCOMPARE(window_body.current_file, old_current_file);

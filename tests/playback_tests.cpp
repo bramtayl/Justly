@@ -209,7 +209,7 @@ void Tester::test_play_velocity_error() {
   maybe_switch_back_to_chords(window_body.undo_stack, row_type);
 
   // restore the shared fixture
-  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
 // every voice preview sounds for a second, so previewing more voices at once
@@ -243,7 +243,7 @@ void Tester::test_play_channel_exhausted() {
                               RowType::pitched_voice_type);
 
   // restore the shared fixture
-  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
 // playing chords stops at the first note that can't get a MIDI channel,
@@ -276,5 +276,5 @@ void Tester::test_play_chord_error() {
   play_menu.stop_playing_action.trigger();
 
   // restore the shared fixture
-  open_file_and_reload(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.xml"));
 }

@@ -4,10 +4,12 @@
 #include <QtCore/QStandardPaths>
 #include <QtCore/QTimer>
 #include <QtWidgets/QDoubleSpinBox>
-#include <QtWidgets/QLabel>
 
+#include "actions/ReplaceTable.hpp"
 #include "musicxml/MusicXMLImport.hpp"
+#include "piano_roll/PianoRollWidget.hpp"
 #include "widgets/ControlsColumn.hpp"
+#include "widgets/MainWindow.hpp"
 #include "widgets/SpinBoxes.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchTable.hpp"
@@ -121,31 +123,22 @@ auto check_document(QWidget& parent, XMLDocument& document,
   return true;
 }
 
-// loading a file replaces song.chords wholesale, which would leave
-// pitched_notes_model/unpitched_notes_model pointing at destroyed Chord
-// members if the switch table was drilled into a chord's notes (mirrors the
-// reset that replace_table performs when the user navigates back to chords
-// manually)
-void reset_switch_table_to_chords(SwitchColumn& switch_column) {
-  auto& switch_table = switch_column.switch_table;
+// swaps in a whole new song, e.g. from a file, bypassing the undo stack;
+// call finish_loading afterward to reset the view
+void replace_song(WindowBody& window_body, QList<Chord> chords,
+                  QList<PitchedVoice> pitched_voices,
+                  QList<UnpitchedVoice> unpitched_voices) {
+  auto& switch_table = window_body.switch_column.switch_table;
   // model resets drop the selection without emitting selectionChanged, so
   // clear it first, while the old rows still exist -- otherwise the piano
   // roll's mirrored selection would outlive them, and its next rebuild (e.g.
   // from loading the file's gain) would look up rows the new song lacks
   get_selection_model(switch_table).clear();
+  // replacing song.chords would leave the notes models pointing at
+  // destroyed Chord members; either may still hold one, e.g. after going
+  // from a chord's notes straight to voices
   switch_table.pitched_notes_model.set_rows_pointer();
   switch_table.unpitched_notes_model.set_rows_pointer();
-  switch_table.delegate.current_row_type = RowType::chord_type;
-  set_model(switch_table, switch_table.chords_model);
-  switch_column.editing_text.setText(SwitchColumn::tr("Chords"));
-}
-
-// swaps in a whole new song, e.g. from a file, bypassing the undo stack
-void replace_song(WindowBody& window_body, QList<Chord> chords,
-                  QList<PitchedVoice> pitched_voices,
-                  QList<UnpitchedVoice> unpitched_voices) {
-  auto& switch_table = window_body.switch_column.switch_table;
-  reset_switch_table_to_chords(window_body.switch_column);
   switch_table.chords_model.replace_all_rows(std::move(chords));
   switch_table.pitched_voices_model.replace_all_rows(std::move(pitched_voices));
   switch_table.unpitched_voices_model.replace_all_rows(
@@ -153,10 +146,17 @@ void replace_song(WindowBody& window_body, QList<Chord> chords,
 }
 
 // the song was replaced wholesale, so there's nothing to undo back to, and
-// nothing unsaved to recover
-void finish_loading(WindowBody& window_body) {
+// nothing unsaved to recover. Bypassing the undo stack also skips the usual
+// indexChanged-driven refresh, so go back to chords the same way switching
+// there manually does, and rebuild the piano roll, which replace_table
+// doesn't do since it doesn't know the song changed
+void finish_loading(MainWindow& main_window) {
+  auto& window_body = main_window.window_body;
   clear_and_clean(window_body.undo_stack);
   remove_recovery_file();
+  replace_table(main_window.song_menu_bar, window_body, RowType::chord_type, -1,
+                main_window.piano_roll_widget);
+  rebuild_piano_roll_scene(main_window.piano_roll_widget);
 }
 
 auto xml_to_double(const xmlNode& element) -> double {
@@ -216,8 +216,9 @@ template <NoteInterface SubNote, VoiceInterface SubVoice>
 
 }  // namespace
 
-auto open_file(WindowBody& window_body, const QString& filename) -> bool {
+auto open_file(MainWindow& main_window, const QString& filename) -> bool {
   Q_ASSERT(filename.isValidUtf16());
+  auto& window_body = main_window.window_body;
   auto& spin_boxes = window_body.controls_column.spin_boxes;
 
   auto document = read_xml_file(filename);
@@ -286,11 +287,12 @@ auto open_file(WindowBody& window_body, const QString& filename) -> bool {
 
   window_body.current_file = filename;
 
-  finish_loading(window_body);
+  finish_loading(main_window);
   return true;
 }
 
-auto maybe_restore_recovery(WindowBody& window_body) -> bool {
+auto maybe_restore_recovery(MainWindow& main_window) -> bool {
+  auto& window_body = main_window.window_body;
   const auto recovery_file = get_recovery_file_path();
   if (!QFile::exists(recovery_file)) {
     return false;
@@ -310,7 +312,7 @@ auto maybe_restore_recovery(WindowBody& window_body) -> bool {
 
   // open_file always points current_file at whatever filename it's given,
   // and removes recovery.xml as a side effect once loaded
-  if (!open_file(window_body, recovery_file)) {
+  if (!open_file(main_window, recovery_file)) {
     return false;
   }
   window_body.current_file = original_file;
@@ -365,7 +367,8 @@ auto make_imported_voices(const QList<QString>& voice_names)
 
 }  // namespace
 
-auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
+auto import_musicxml(MainWindow& main_window, const QString& filename) -> bool {
+  auto& window_body = main_window.window_body;
   auto document = read_musicxml_document(filename);
   static XMLValidator musicxml_validator("musicxml.xsd");
   if (!check_document(window_body, document, musicxml_validator,
@@ -387,6 +390,6 @@ auto import_musicxml(WindowBody& window_body, const QString& filename) -> bool {
   window_body.controls_column.spin_boxes.starting_key_editor.setValue(
       midi_number_to_frequency(score.starting_midi_key));
 
-  finish_loading(window_body);
+  finish_loading(main_window);
   return true;
 }

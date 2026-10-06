@@ -3,7 +3,6 @@
 
 #include "widgets/MainWindow.hpp"
 #include "widgets/SongFile.hpp"
-#include "widgets/WindowBody.hpp"
 
 auto main(int number_of_arguments, char* arguments[]) -> int {
   QApplication const app(number_of_arguments, arguments);
@@ -17,8 +16,6 @@ auto main(int number_of_arguments, char* arguments[]) -> int {
   set_up();
   MainWindow main_window;
   main_window.show();
-  if (maybe_restore_recovery(main_window.window_body)) {
-    song_reloaded(main_window);
-  }
+  maybe_restore_recovery(main_window);
   return QApplication::exec();
 }
