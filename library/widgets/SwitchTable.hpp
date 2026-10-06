@@ -13,12 +13,6 @@ void set_model(QAbstractItemView& item_view, RowsModel<SubRow>& rows_model) {
   rows_model.selection_model_pointer = item_view.selectionModel();
 }
 
-template <std::derived_from<QWidget> SubWidget>
-[[nodiscard]] auto get_minimum_size() -> const auto& {
-  static const auto minimum_size = SubWidget(nullptr).minimumSizeHint();
-  return minimum_size;
-}
-
 struct SwitchTable : public QTableView {
   ChordsModel chords_model;
   PitchedNotesModel pitched_notes_model;

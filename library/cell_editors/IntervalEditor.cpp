@@ -5,6 +5,7 @@
 #include <QtWidgets/QSpinBox>
 
 #include "cell_editors/RationalEditor.hpp"
+#include "other/helpers.hpp"
 
 IntervalEditor::IntervalEditor(QWidget* const parent_pointer)
     : QFrame(parent_pointer),
@@ -14,6 +15,8 @@ IntervalEditor::IntervalEditor(QWidget* const parent_pointer)
   setAutoFillBackground(true);
 
   rational_editor.setFrameShape(QFrame::NoFrame);
+  // this editor's own margins already surround the nested one
+  get_reference(rational_editor.layout()).setContentsMargins(0, 0, 0, 0);
 
   octave_box.setMinimum(-MAX_OCTAVE);
   octave_box.setMaximum(MAX_OCTAVE);

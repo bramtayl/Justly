@@ -1,5 +1,6 @@
 #include "actions/ReplaceTable.hpp"
 
+#include <QtWidgets/QHeaderView>
 #include <QtWidgets/QLabel>
 #include <memory>
 #include <set>
@@ -17,8 +18,9 @@
 namespace {
 
 // fits each column to its contents, but at least as wide as its editor (or,
-// for the text columns, TEXT_WIDTH), so editing a cell doesn't squash it
-void resize_columns(SwitchTable& switch_table, const RowType row_type) {
+// for the text columns, TEXT_WIDTH), and makes rows as tall as the tallest
+// editor, so editing a cell doesn't squash it
+void resize_cells(SwitchTable& switch_table, const RowType row_type) {
   static const auto TEXT_WIDTH = 200;
   static const std::set<std::pair<RowType, int>> TEXT_COLUMNS = {
       {RowType::chord_type, static_cast<int>(ChordColumn::chord_words_column)},
@@ -31,6 +33,9 @@ void resize_columns(SwitchTable& switch_table, const RowType row_type) {
       {RowType::unpitched_voice_type,
        static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column)},
   };
+  // the table takes the grid line out of the cell the editor fills
+  const auto grid_width = switch_table.showGrid() ? 1 : 0;
+  auto row_height = 0;
   const auto number_of_columns =
       get_reference(switch_table.model()).columnCount();
   for (auto column = 0; column < number_of_columns; column++) {
@@ -39,7 +44,9 @@ void resize_columns(SwitchTable& switch_table, const RowType row_type) {
     const std::unique_ptr<QWidget> editor_pointer(
         create_switch_editor(switch_table.delegate, nullptr, row_type, column));
     if (editor_pointer != nullptr) {
-      minimum_width = editor_pointer->sizeHint().width();
+      const auto editor_size = editor_pointer->sizeHint();
+      minimum_width = editor_size.width() + grid_width;
+      row_height = std::max(row_height, editor_size.height() + grid_width);
     }
     if (TEXT_COLUMNS.contains({row_type, column})) {
       minimum_width = std::max(minimum_width, TEXT_WIDTH);
@@ -47,13 +54,15 @@ void resize_columns(SwitchTable& switch_table, const RowType row_type) {
     switch_table.setColumnWidth(
         column, std::max(minimum_width, switch_table.columnWidth(column)));
   }
+  get_reference(switch_table.verticalHeader())
+      .setDefaultSectionSize(row_height);
 }
 
 template <RowInterface SubRow>
 void show_model(SwitchTable& switch_table, RowsModel<SubRow>& rows_model,
                 const RowType row_type) {
   set_model(switch_table, rows_model);
-  resize_columns(switch_table, row_type);
+  resize_cells(switch_table, row_type);
 }
 
 // points notes_model at one chord's notes, swapping it into the table if it

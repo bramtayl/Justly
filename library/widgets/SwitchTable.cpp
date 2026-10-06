@@ -3,7 +3,6 @@
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QScrollBar>
 
-#include "cell_editors/IntervalEditor.hpp"
 #include "other/Song.hpp"
 
 SwitchTable::SwitchTable(QUndoStack& undo_stack, Song& song)
@@ -21,7 +20,6 @@ SwitchTable::SwitchTable(QUndoStack& undo_stack, Song& song)
 
   setItemDelegate(&delegate);
   auto& horizontal_header = get_reference(horizontalHeader());
-  auto& vertical_header = get_reference(verticalHeader());
 
   setSelectionMode(QAbstractItemView::ContiguousSelection);
   setSelectionBehavior(QAbstractItemView::SelectItems);
@@ -29,9 +27,7 @@ SwitchTable::SwitchTable(QUndoStack& undo_stack, Song& song)
 
   horizontal_header.setSectionResizeMode(QHeaderView::Fixed);
   horizontal_header.setStretchLastSection(true);
-  vertical_header.setSectionResizeMode(QHeaderView::Fixed);
-  vertical_header.setDefaultSectionSize(
-      get_minimum_size<IntervalEditor>().height());
+  get_reference(verticalHeader()).setSectionResizeMode(QHeaderView::Fixed);
 
   setMouseTracking(true);
 }
