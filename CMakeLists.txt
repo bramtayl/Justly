@@ -89,7 +89,10 @@ if (NOT python_setup STREQUAL last_python_setup)
     set(python_extract_folder "${CMAKE_BINARY_DIR}/python_extract")
     file(REMOVE_RECURSE "${python_extract_folder}")
     file(ARCHIVE_EXTRACT INPUT "${python_archive}" DESTINATION "${python_extract_folder}")
-    # the archive holds a single python folder
+    # the archive holds a single python folder. A new build folder doesn't
+    # have a share folder for it yet
+    cmake_path(GET python_folder PARENT_PATH python_parent_folder)
+    file(MAKE_DIRECTORY "${python_parent_folder}")
     file(RENAME "${python_extract_folder}/python" "${python_folder}")
     file(REMOVE_RECURSE "${python_extract_folder}")
     file(REMOVE "${python_archive}")
