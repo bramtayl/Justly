@@ -170,8 +170,16 @@ def read_score(filename):
         raise ImportError_(
             "The score's repeats, endings, or jumps can't be followed"
         ) from None
-    # after unrolling, so e.g. a tie into both endings stops in each
-    return score.stripTies(matchByPitch=True)
+    return score
+
+
+def get_tied_notes(part):
+    """The part's notes, with each tied note combined into the note it's
+    tied from. Ties are followed after unrolling, so e.g. a tie into both
+    endings stops in each. music21 can combine the wrong notes when a measure
+    has more than one voice, so each voice is combined separately"""
+    for voice_part in part.voicesToParts().parts:
+        yield from voice_part.stripTies(matchByPitch=True).flatten().notes
 
 
 def convert(filename):
@@ -200,7 +208,7 @@ def convert(filename):
                     quarters_per_minute
                 )
 
-        for element in flat_part.notes:
+        for element in get_tied_notes(part):
             duration = to_fraction(element.quarterLength)
             # e.g. grace notes
             if duration == 0:

@@ -113,6 +113,7 @@ struct Tester : public QObject {
   void test_musicxml_jumps();
   void test_musicxml_jump_in_one_part();
   void test_musicxml_tie_into_endings();
+  void test_musicxml_ties_in_voices();
   static void test_musicxml_accidentals_data();
   void test_musicxml_accidentals();
   void test_import_musicxml_voice_named_like_program();

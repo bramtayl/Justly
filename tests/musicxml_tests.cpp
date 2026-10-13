@@ -811,3 +811,47 @@ void Tester::test_musicxml_tie_into_endings() {
 
   open_file(main_window, test_dir.filePath("test_song.xml"));
 }
+
+// regression test: music21 can combine the wrong notes when a measure has
+// more than one voice, so here it used to leave the low C's second half out,
+// and play the end of the tied B again
+void Tester::test_musicxml_ties_in_voices() {
+  const auto make_note = [](const QString& step, const QString& duration,
+                            const QString& tie_types,
+                            const QString& voice) -> QString {
+    QString ties;
+    for (const auto& tie_type : tie_types.split(" ", Qt::SkipEmptyParts)) {
+      ties += QString(R"(<tie type="%1"/>)").arg(tie_type);
+    }
+    return "<note><pitch><step>" + step +
+           "</step><octave>3</octave></pitch><duration>" + duration +
+           "</duration>" + ties + "<voice>" + voice + "</voice></note>";
+  };
+  // a whole C, written as tied halves, against a rest, then a B tied through
+  // the rest of the measure
+  const auto body =
+      make_note("C", "8", "start", "1") + make_note("C", "8", "stop", "1") +
+      "<backup><duration>16</duration></backup>"
+      "<note><rest/><duration>1</duration><voice>2</voice></note>" +
+      make_note("B", "3", "start", "2") +
+      make_note("B", "4", "stop start", "2") +
+      make_note("B", "8", "stop", "2");
+
+  QTemporaryFile temp_file;
+  QVERIFY(temp_file.open());
+  temp_file.write(
+      make_musicxml("<divisions>4</divisions>", body).toStdString().c_str());
+  temp_file.close();
+
+  import_musicxml(main_window, temp_file.fileName());
+  const auto& chords = main_window.window_body.song.chords;
+  QCOMPARE(chords.size(), 2);
+  const auto& c_notes = chords.at(0).pitched_notes;
+  QCOMPARE(c_notes.size(), 1);
+  QCOMPARE(c_notes.at(0).beats, Rational(4));
+  const auto& b_notes = chords.at(1).pitched_notes;
+  QCOMPARE(b_notes.size(), 1);
+  QCOMPARE(b_notes.at(0).beats, Rational(15, 4));
+
+  open_file(main_window, test_dir.filePath("test_song.xml"));
+}
