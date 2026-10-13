@@ -62,19 +62,19 @@ void Tester::test_voice_name_rejected_data() {
 
   QTest::newRow("pitched voice duplicate name")
       << RowType::pitched_voice_type << -1
-      << static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column)
+      << static_cast<int>(PitchedVoiceColumn::name_column)
       << QVariant(QString("Guitar")) << "Voice \"Guitar\" already exists!";
   QTest::newRow("pitched voice empty name")
       << RowType::pitched_voice_type << -1
-      << static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column)
+      << static_cast<int>(PitchedVoiceColumn::name_column)
       << QVariant(QString()) << "Voice name is empty!";
   QTest::newRow("unpitched voice duplicate name")
       << RowType::unpitched_voice_type << -1
-      << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column)
+      << static_cast<int>(UnpitchedVoiceColumn::name_column)
       << QVariant(QString("Room Kit")) << "Voice \"Room Kit\" already exists!";
   QTest::newRow("unpitched voice empty name")
       << RowType::unpitched_voice_type << -1
-      << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column)
+      << static_cast<int>(UnpitchedVoiceColumn::name_column)
       << QVariant(QString()) << "Voice name is empty!";
 }
 
@@ -305,7 +305,7 @@ void Tester::test_paste_stale_voice() {
       is_pitched ? RowType::pitched_voice_type : RowType::unpitched_voice_type;
   const auto voice_column =
       is_pitched
-          ? static_cast<int>(PitchedNoteColumn::pitched_note_voice_name_column)
+          ? static_cast<int>(PitchedNoteColumn::voice_name_column)
           : static_cast<int>(
                 UnpitchedNoteColumn::unpitched_note_voice_name_column);
   const auto* const remove_warning =
@@ -383,7 +383,7 @@ void Tester::test_paste_voice_after_insert() {
       is_pitched ? RowType::pitched_voice_type : RowType::unpitched_voice_type;
   const auto voice_column =
       is_pitched
-          ? static_cast<int>(PitchedNoteColumn::pitched_note_voice_name_column)
+          ? static_cast<int>(PitchedNoteColumn::voice_name_column)
           : static_cast<int>(
                 UnpitchedNoteColumn::unpitched_note_voice_name_column);
 
@@ -573,11 +573,11 @@ void Tester::test_set_voice_name_data() {
 
   QTest::newRow("pitched voice")
       << RowType::pitched_voice_type
-      << static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column)
+      << static_cast<int>(PitchedVoiceColumn::name_column)
       << "New Pitched Voice Name";
   QTest::newRow("unpitched voice")
       << RowType::unpitched_voice_type
-      << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column)
+      << static_cast<int>(UnpitchedVoiceColumn::name_column)
       << "New Unpitched Voice Name";
 }
 
@@ -638,8 +638,8 @@ void Tester::test_rename_voice_renames_notes() {
       is_pitched ? RowType::pitched_voice_type : RowType::unpitched_voice_type;
   const auto name_column =
       is_pitched
-          ? static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column)
-          : static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column);
+          ? static_cast<int>(PitchedVoiceColumn::name_column)
+          : static_cast<int>(UnpitchedVoiceColumn::name_column);
 
   open_text(main_window,
             make_voice_song_xml({"A", "B"}, {"D", "E"}, {{{0, 1}, {0, 1}}}));
@@ -687,11 +687,11 @@ void Tester::test_voice_paste_insert_disabled_data() {
 
   QTest::newRow("pitched voice instrument")
       << RowType::pitched_voice_type
-      << static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column);
+      << static_cast<int>(PitchedVoiceColumn::instrument_column);
   QTest::newRow("unpitched voice percussion set")
       << RowType::unpitched_voice_type
       << static_cast<int>(
-             UnpitchedVoiceColumn::unpitched_voice_percussion_set_column);
+             UnpitchedVoiceColumn::percussion_set_column);
 }
 
 void Tester::test_voice_paste_insert_disabled() {
@@ -722,11 +722,11 @@ void Tester::test_voice_velocity_ratio_cells_data() {
   QTest::newRow("pitched voice")
       << RowType::pitched_voice_type << -1
       << static_cast<int>(
-             PitchedVoiceColumn::pitched_voice_velocity_ratio_column);
+             PitchedVoiceColumn::velocity_ratio_column);
   QTest::newRow("unpitched voice")
       << RowType::unpitched_voice_type << -1
       << static_cast<int>(
-             UnpitchedVoiceColumn::unpitched_voice_velocity_ratio_column);
+             UnpitchedVoiceColumn::velocity_ratio_column);
 }
 
 void Tester::test_voice_velocity_ratio_cells() {
@@ -802,7 +802,7 @@ void Tester::test_paste_voice_after_remove() {
       is_pitched ? RowType::pitched_voice_type : RowType::unpitched_voice_type;
   const auto voice_column =
       is_pitched
-          ? static_cast<int>(PitchedNoteColumn::pitched_note_voice_name_column)
+          ? static_cast<int>(PitchedNoteColumn::voice_name_column)
           : static_cast<int>(
                 UnpitchedNoteColumn::unpitched_note_voice_name_column);
 
@@ -922,10 +922,10 @@ void Tester::test_voice_name_delete_disabled_data() {
 
   QTest::newRow("pitched voice name")
       << RowType::pitched_voice_type
-      << static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column);
+      << static_cast<int>(PitchedVoiceColumn::name_column);
   QTest::newRow("unpitched voice name")
       << RowType::unpitched_voice_type
-      << static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column);
+      << static_cast<int>(UnpitchedVoiceColumn::name_column);
 }
 
 // deleting a voice name would leave it empty

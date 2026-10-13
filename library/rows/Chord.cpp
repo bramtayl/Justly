@@ -32,26 +32,26 @@ auto Chord::get_clipboard_schema() -> const char* {
 auto Chord::get_xml_field_name() -> const char* { return "chord"; }
 
 auto Chord::get_number_of_columns() -> int {
-  return static_cast<int>(ChordColumn::number_of_chord_columns);
+  return static_cast<int>(ChordColumn::number_of_columns);
 }
 
 auto Chord::get_column_name(int column_number) -> const char* {
   switch (static_cast<ChordColumn>(column_number)) {
-    case ChordColumn::number_of_chord_columns:
+    case ChordColumn::number_of_columns:
       Q_UNREACHABLE();
-    case ChordColumn::chord_interval_column:
+    case ChordColumn::interval_column:
       return "Interval";
-    case ChordColumn::chord_beats_column:
+    case ChordColumn::beats_column:
       return "Beats";
-    case ChordColumn::chord_velocity_ratio_column:
+    case ChordColumn::velocity_ratio_column:
       return "Velocity ratio";
-    case ChordColumn::chord_tempo_ratio_column:
+    case ChordColumn::tempo_ratio_column:
       return "Tempo ratio";
-    case ChordColumn::chord_words_column:
+    case ChordColumn::words_column:
       return "Words";
-    case ChordColumn::chord_pitched_notes_column:
+    case ChordColumn::pitched_notes_column:
       return "Pitched notes";
-    case ChordColumn::chord_unpitched_notes_column:
+    case ChordColumn::unpitched_notes_column:
       return "Unpitched notes";
   }
   Q_UNREACHABLE();
@@ -63,28 +63,28 @@ auto Chord::get_cells_mime() -> const char* {
 
 auto Chord::is_column_editable(int column_number) -> bool {
   return column_number !=
-             static_cast<int>(ChordColumn::chord_pitched_notes_column) &&
+             static_cast<int>(ChordColumn::pitched_notes_column) &&
          column_number !=
-             static_cast<int>(ChordColumn::chord_unpitched_notes_column);
+             static_cast<int>(ChordColumn::unpitched_notes_column);
 }
 
 auto Chord::get_data(const int column_number) const -> QVariant {
   switch (static_cast<ChordColumn>(column_number)) {
-    case ChordColumn::number_of_chord_columns:
+    case ChordColumn::number_of_columns:
       Q_UNREACHABLE();
-    case ChordColumn::chord_interval_column:
+    case ChordColumn::interval_column:
       return QVariant::fromValue(interval);
-    case ChordColumn::chord_beats_column:
+    case ChordColumn::beats_column:
       return QVariant::fromValue(beats);
-    case ChordColumn::chord_velocity_ratio_column:
+    case ChordColumn::velocity_ratio_column:
       return QVariant::fromValue(velocity_ratio);
-    case ChordColumn::chord_tempo_ratio_column:
+    case ChordColumn::tempo_ratio_column:
       return QVariant::fromValue(tempo_ratio);
-    case ChordColumn::chord_words_column:
+    case ChordColumn::words_column:
       return words;
-    case ChordColumn::chord_pitched_notes_column:
+    case ChordColumn::pitched_notes_column:
       return pitched_notes.size();
-    case ChordColumn::chord_unpitched_notes_column:
+    case ChordColumn::unpitched_notes_column:
       return unpitched_notes.size();
   }
   Q_UNREACHABLE();
@@ -92,25 +92,25 @@ auto Chord::get_data(const int column_number) const -> QVariant {
 
 void Chord::set_data(const int column_number, const QVariant& new_value) {
   switch (static_cast<ChordColumn>(column_number)) {
-    case ChordColumn::number_of_chord_columns:
+    case ChordColumn::number_of_columns:
       Q_UNREACHABLE();
-    case ChordColumn::chord_interval_column:
+    case ChordColumn::interval_column:
       interval = variant_to<Interval>(new_value);
       break;
-    case ChordColumn::chord_beats_column:
+    case ChordColumn::beats_column:
       beats = variant_to<Rational>(new_value);
       break;
-    case ChordColumn::chord_velocity_ratio_column:
+    case ChordColumn::velocity_ratio_column:
       velocity_ratio = variant_to<Rational>(new_value);
       break;
-    case ChordColumn::chord_tempo_ratio_column:
+    case ChordColumn::tempo_ratio_column:
       tempo_ratio = variant_to<Rational>(new_value);
       break;
-    case ChordColumn::chord_words_column:
+    case ChordColumn::words_column:
       words = variant_to<QString>(new_value);
       break;
-    case ChordColumn::chord_pitched_notes_column:
-    case ChordColumn::chord_unpitched_notes_column:
+    case ChordColumn::pitched_notes_column:
+    case ChordColumn::unpitched_notes_column:
       // not editable; see is_column_editable
       Q_UNREACHABLE();
   }
@@ -120,10 +120,10 @@ void Chord::copy_column_from(const Chord& template_row,
                              const int column_number) {
   // get_data only has the number of notes, so copy the notes themselves
   switch (static_cast<ChordColumn>(column_number)) {
-    case ChordColumn::chord_pitched_notes_column:
+    case ChordColumn::pitched_notes_column:
       pitched_notes = template_row.pitched_notes;
       break;
-    case ChordColumn::chord_unpitched_notes_column:
+    case ChordColumn::unpitched_notes_column:
       unpitched_notes = template_row.unpitched_notes;
       break;
     default:
@@ -133,27 +133,27 @@ void Chord::copy_column_from(const Chord& template_row,
 
 void Chord::column_to_xml(xmlNode& chord_node, const int column_number) const {
   switch (static_cast<ChordColumn>(column_number)) {
-    case ChordColumn::number_of_chord_columns:
+    case ChordColumn::number_of_columns:
       Q_UNREACHABLE();
-    case ChordColumn::chord_pitched_notes_column:
+    case ChordColumn::pitched_notes_column:
       maybe_set_xml_rows(chord_node, "pitched_notes", pitched_notes);
       break;
-    case ChordColumn::chord_unpitched_notes_column:
+    case ChordColumn::unpitched_notes_column:
       maybe_set_xml_rows(chord_node, "unpitched_notes", unpitched_notes);
       break;
-    case ChordColumn::chord_interval_column:
+    case ChordColumn::interval_column:
       maybe_add_interval_to_xml(chord_node, "interval", interval);
       break;
-    case ChordColumn::chord_beats_column:
+    case ChordColumn::beats_column:
       maybe_add_rational_to_xml(chord_node, "beats", beats);
       break;
-    case ChordColumn::chord_velocity_ratio_column:
+    case ChordColumn::velocity_ratio_column:
       maybe_add_rational_to_xml(chord_node, "velocity_ratio", velocity_ratio);
       break;
-    case ChordColumn::chord_tempo_ratio_column:
+    case ChordColumn::tempo_ratio_column:
       maybe_add_rational_to_xml(chord_node, "tempo_ratio", tempo_ratio);
       break;
-    case ChordColumn::chord_words_column:
+    case ChordColumn::words_column:
       maybe_add_qstring_to_xml(chord_node, "words", words);
       break;
   }

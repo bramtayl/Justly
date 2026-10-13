@@ -18,13 +18,13 @@ void Tester::test_editable_data() {
 
   QTest::newRow("chord interval")
       << RowType::chord_type << -1
-      << static_cast<int>(ChordColumn::chord_interval_column) << true;
+      << static_cast<int>(ChordColumn::interval_column) << true;
   QTest::newRow("chord pitched notes")
       << RowType::chord_type << -1
-      << static_cast<int>(ChordColumn::chord_pitched_notes_column) << false;
+      << static_cast<int>(ChordColumn::pitched_notes_column) << false;
   QTest::newRow("chord unpitched notes")
       << RowType::chord_type << -1
-      << static_cast<int>(ChordColumn::chord_unpitched_notes_column) << false;
+      << static_cast<int>(ChordColumn::unpitched_notes_column) << false;
   QTest::newRow("pitched note") << RowType::pitched_note_type << 1 << 0 << true;
   QTest::newRow("unpitched note")
       << RowType::unpitched_note_type << 1 << 0 << true;
@@ -280,9 +280,9 @@ void Tester::test_interval_button() {
   const auto test_index =
       get_model(switch_table)
           .index(0, row_type == RowType::chord_type
-                        ? static_cast<int>(ChordColumn::chord_interval_column)
+                        ? static_cast<int>(ChordColumn::interval_column)
                         : static_cast<int>(
-                              PitchedNoteColumn::pitched_note_interval_column));
+                              PitchedNoteColumn::interval_column));
   const auto original_data = test_index.data();
   get_selection_model(switch_table).select(test_index, SELECT_AND_CLEAR);
 
@@ -327,20 +327,20 @@ void Tester::test_unreduced_ratio_from_xml_data() {
         <numerator>2</numerator>
         <denominator>2</denominator>
       </velocity_ratio>)")
-      << static_cast<int>(ChordColumn::chord_velocity_ratio_column) << "";
+      << static_cast<int>(ChordColumn::velocity_ratio_column) << "";
   QTest::newRow("unreduced ratio folds by gcd")
       << make_chord_song_xml(R"(
       <velocity_ratio>
         <numerator>4</numerator>
         <denominator>6</denominator>
       </velocity_ratio>)")
-      << static_cast<int>(ChordColumn::chord_velocity_ratio_column) << "2/3";
+      << static_cast<int>(ChordColumn::velocity_ratio_column) << "2/3";
   QTest::newRow("unreduced interval ratio folds into octave")
       << make_chord_song_xml(R"(
       <interval>
         <ratio><numerator>4</numerator></ratio>
       </interval>)")
-      << static_cast<int>(ChordColumn::chord_interval_column) << "o2";
+      << static_cast<int>(ChordColumn::interval_column) << "o2";
 }
 
 // regression test: a chord's ratio/interval loaded from XML whose

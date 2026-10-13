@@ -113,10 +113,10 @@ MainWindow::MainWindow()
           const auto column = index.column();
           const auto is_pitched =
               column ==
-              static_cast<int>(ChordColumn::chord_pitched_notes_column);
+              static_cast<int>(ChordColumn::pitched_notes_column);
           if (is_pitched ||
               (column ==
-               static_cast<int>(ChordColumn::chord_unpitched_notes_column))) {
+               static_cast<int>(ChordColumn::unpitched_notes_column))) {
             add_replace_table(song_menu_bar, window_body,
                               (is_pitched ? RowType::pitched_note_type
                                           : RowType::unpitched_note_type),

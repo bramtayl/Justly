@@ -23,15 +23,15 @@ namespace {
 void resize_cells(SwitchTable& switch_table, const RowType row_type) {
   static const auto TEXT_WIDTH = 200;
   static const std::set<std::pair<RowType, int>> TEXT_COLUMNS = {
-      {RowType::chord_type, static_cast<int>(ChordColumn::chord_words_column)},
+      {RowType::chord_type, static_cast<int>(ChordColumn::words_column)},
       {RowType::pitched_note_type,
-       static_cast<int>(PitchedNoteColumn::pitched_note_words_column)},
+       static_cast<int>(PitchedNoteColumn::words_column)},
       {RowType::unpitched_note_type,
        static_cast<int>(UnpitchedNoteColumn::unpitched_note_words_column)},
       {RowType::pitched_voice_type,
-       static_cast<int>(PitchedVoiceColumn::pitched_voice_name_column)},
+       static_cast<int>(PitchedVoiceColumn::name_column)},
       {RowType::unpitched_voice_type,
-       static_cast<int>(UnpitchedVoiceColumn::unpitched_voice_name_column)},
+       static_cast<int>(UnpitchedVoiceColumn::name_column)},
   };
   // the table takes the grid line out of the cell the editor fills
   const auto grid_width = switch_table.showGrid() ? 1 : 0;

@@ -23,22 +23,22 @@ namespace {
 
 auto is_interval_column(const int column_number) -> bool {
   return column_number ==
-         static_cast<int>(PitchedNoteColumn::pitched_note_interval_column);
+         static_cast<int>(PitchedNoteColumn::interval_column);
 }
 
 // for every column but the interval column
 auto to_note_field(const int column_number) -> NoteField {
   switch (static_cast<PitchedNoteColumn>(column_number)) {
-    case PitchedNoteColumn::pitched_note_voice_name_column:
+    case PitchedNoteColumn::voice_name_column:
       return NoteField::voice_name;
-    case PitchedNoteColumn::pitched_note_beats_column:
+    case PitchedNoteColumn::beats_column:
       return NoteField::beats;
-    case PitchedNoteColumn::pitched_note_velocity_ratio_column:
+    case PitchedNoteColumn::velocity_ratio_column:
       return NoteField::velocity_ratio;
-    case PitchedNoteColumn::pitched_note_words_column:
+    case PitchedNoteColumn::words_column:
       return NoteField::words;
-    case PitchedNoteColumn::pitched_note_interval_column:
-    case PitchedNoteColumn::number_of_pitched_note_columns:
+    case PitchedNoteColumn::interval_column:
+    case PitchedNoteColumn::number_of_columns:
       Q_UNREACHABLE();
   }
   Q_UNREACHABLE();
@@ -64,7 +64,7 @@ auto PitchedNote::get_clipboard_schema() -> const char* {
 auto PitchedNote::get_xml_field_name() -> const char* { return "pitched_note"; }
 
 auto PitchedNote::get_number_of_columns() -> int {
-  return static_cast<int>(PitchedNoteColumn::number_of_pitched_note_columns);
+  return static_cast<int>(PitchedNoteColumn::number_of_columns);
 }
 
 auto PitchedNote::get_column_name(const int column_number) -> const char* {

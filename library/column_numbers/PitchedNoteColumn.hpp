@@ -3,10 +3,10 @@
 #include <cstdint>
 
 enum class PitchedNoteColumn : std::uint8_t {
-  pitched_note_voice_name_column,
-  pitched_note_interval_column,
-  pitched_note_beats_column,
-  pitched_note_velocity_ratio_column,
-  pitched_note_words_column,
-  number_of_pitched_note_columns
+  voice_name_column,
+  interval_column,
+  beats_column,
+  velocity_ratio_column,
+  words_column,
+  number_of_columns
 };

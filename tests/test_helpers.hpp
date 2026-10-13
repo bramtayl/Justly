@@ -86,12 +86,12 @@ inline void switch_to(MainWindow& main_window, const RowType row_type,
     case RowType::pitched_note_type:
       double_click_cell(
           switch_table, chord_number,
-          static_cast<int>(ChordColumn::chord_pitched_notes_column));
+          static_cast<int>(ChordColumn::pitched_notes_column));
       break;
     case RowType::unpitched_note_type:
       double_click_cell(
           switch_table, chord_number,
-          static_cast<int>(ChordColumn::chord_unpitched_notes_column));
+          static_cast<int>(ChordColumn::unpitched_notes_column));
       break;
     case RowType::pitched_voice_type:
       QVERIFY(chord_number == -1);
@@ -385,41 +385,41 @@ inline void add_cells() {
 
   QTest::newRow("chord pitched notes")
       << RowType::chord_type << -1 << 1
-      << static_cast<int>(ChordColumn::chord_pitched_notes_column);
+      << static_cast<int>(ChordColumn::pitched_notes_column);
   QTest::newRow("chord unpitched notes")
       << RowType::chord_type << -1 << 1
-      << static_cast<int>(ChordColumn::chord_unpitched_notes_column);
+      << static_cast<int>(ChordColumn::unpitched_notes_column);
   QTest::newRow("chord interval")
       << RowType::chord_type << -1 << 1
-      << static_cast<int>(ChordColumn::chord_interval_column);
+      << static_cast<int>(ChordColumn::interval_column);
   QTest::newRow("chord beats")
       << RowType::chord_type << -1 << 1
-      << static_cast<int>(ChordColumn::chord_beats_column);
+      << static_cast<int>(ChordColumn::beats_column);
   QTest::newRow("chord velocity ratio")
       << RowType::chord_type << -1 << 1
-      << static_cast<int>(ChordColumn::chord_velocity_ratio_column);
+      << static_cast<int>(ChordColumn::velocity_ratio_column);
   QTest::newRow("chord tempo ratio")
       << RowType::chord_type << -1 << 1
-      << static_cast<int>(ChordColumn::chord_tempo_ratio_column);
+      << static_cast<int>(ChordColumn::tempo_ratio_column);
   QTest::newRow("chord words")
       << RowType::chord_type << -1 << 1
-      << static_cast<int>(ChordColumn::chord_words_column);
+      << static_cast<int>(ChordColumn::words_column);
   QTest::newRow("pitched note voice")
       << RowType::pitched_note_type << 1 << 1
-      << static_cast<int>(PitchedNoteColumn::pitched_note_voice_name_column);
+      << static_cast<int>(PitchedNoteColumn::voice_name_column);
   QTest::newRow("pitched note interval")
       << RowType::pitched_note_type << 1 << 1
-      << static_cast<int>(PitchedNoteColumn::pitched_note_interval_column);
+      << static_cast<int>(PitchedNoteColumn::interval_column);
   QTest::newRow("pitched note beats")
       << RowType::pitched_note_type << 1 << 1
-      << static_cast<int>(PitchedNoteColumn::pitched_note_beats_column);
+      << static_cast<int>(PitchedNoteColumn::beats_column);
   QTest::newRow("pitched note velocity ratio")
       << RowType::pitched_note_type << 1 << 1
       << static_cast<int>(
-             PitchedNoteColumn::pitched_note_velocity_ratio_column);
+             PitchedNoteColumn::velocity_ratio_column);
   QTest::newRow("pitched note words")
       << RowType::pitched_note_type << 1 << 1
-      << static_cast<int>(PitchedNoteColumn::pitched_note_words_column);
+      << static_cast<int>(PitchedNoteColumn::words_column);
   QTest::newRow("unpitched note voice")
       << RowType::unpitched_note_type << 1 << 1
       << static_cast<int>(
@@ -449,35 +449,35 @@ inline void add_editable_cell_pairs() {
 
   QTest::newRow("chord interval")
       << RowType::chord_type << -1 << 0 << 1
-      << static_cast<int>(ChordColumn::chord_interval_column);
+      << static_cast<int>(ChordColumn::interval_column);
   QTest::newRow("chord beats")
       << RowType::chord_type << -1 << 0 << 1
-      << static_cast<int>(ChordColumn::chord_beats_column);
+      << static_cast<int>(ChordColumn::beats_column);
   QTest::newRow("chord velocity ratio")
       << RowType::chord_type << -1 << 0 << 1
-      << static_cast<int>(ChordColumn::chord_velocity_ratio_column);
+      << static_cast<int>(ChordColumn::velocity_ratio_column);
   QTest::newRow("chord tempo ratio")
       << RowType::chord_type << -1 << 0 << 1
-      << static_cast<int>(ChordColumn::chord_tempo_ratio_column);
+      << static_cast<int>(ChordColumn::tempo_ratio_column);
   QTest::newRow("chord words")
       << RowType::chord_type << -1 << 0 << 1
-      << static_cast<int>(ChordColumn::chord_words_column);
+      << static_cast<int>(ChordColumn::words_column);
   QTest::newRow("pitched note voice")
       << RowType::pitched_note_type << 1 << 0 << 1
-      << static_cast<int>(PitchedNoteColumn::pitched_note_voice_name_column);
+      << static_cast<int>(PitchedNoteColumn::voice_name_column);
   QTest::newRow("pitched note interval")
       << RowType::pitched_note_type << 1 << 0 << 1
-      << static_cast<int>(PitchedNoteColumn::pitched_note_interval_column);
+      << static_cast<int>(PitchedNoteColumn::interval_column);
   QTest::newRow("pitched note beats")
       << RowType::pitched_note_type << 1 << 0 << 1
-      << static_cast<int>(PitchedNoteColumn::pitched_note_beats_column);
+      << static_cast<int>(PitchedNoteColumn::beats_column);
   QTest::newRow("pitched note velocity ratio")
       << RowType::pitched_note_type << 1 << 0 << 1
       << static_cast<int>(
-             PitchedNoteColumn::pitched_note_velocity_ratio_column);
+             PitchedNoteColumn::velocity_ratio_column);
   QTest::newRow("pitched note words")
       << RowType::pitched_note_type << 1 << 0 << 1
-      << static_cast<int>(PitchedNoteColumn::pitched_note_words_column);
+      << static_cast<int>(PitchedNoteColumn::words_column);
   QTest::newRow("unpitched note voice")
       << RowType::unpitched_note_type << 1 << 0 << 1
       << static_cast<int>(
@@ -505,25 +505,25 @@ inline void add_editable_cell_pairs() {
 inline void add_voice_column_pairs() {
   QTest::newRow("pitched voice instrument")
       << RowType::pitched_voice_type << -1 << 0 << 1
-      << static_cast<int>(PitchedVoiceColumn::pitched_voice_instrument_column);
+      << static_cast<int>(PitchedVoiceColumn::instrument_column);
   QTest::newRow("unpitched voice percussion set")
       << RowType::unpitched_voice_type << -1 << 0 << 1
       << static_cast<int>(
-             UnpitchedVoiceColumn::unpitched_voice_percussion_set_column);
+             UnpitchedVoiceColumn::percussion_set_column);
   QTest::newRow("unpitched voice midi number")
       << RowType::unpitched_voice_type << -1 << 0 << 1
       << static_cast<int>(
-             UnpitchedVoiceColumn::unpitched_voice_midi_number_column);
+             UnpitchedVoiceColumn::midi_number_column);
 }
 
 inline void add_cell_pairs() {
   add_editable_cell_pairs();
   QTest::newRow("chord pitched notes")
       << RowType::chord_type << -1 << 0 << 1
-      << static_cast<int>(ChordColumn::chord_pitched_notes_column);
+      << static_cast<int>(ChordColumn::pitched_notes_column);
   QTest::newRow("chord unpitched notes")
       << RowType::chord_type << -1 << 0 << 1
-      << static_cast<int>(ChordColumn::chord_unpitched_notes_column);
+      << static_cast<int>(ChordColumn::unpitched_notes_column);
 }
 
 inline auto get_file_text(const QString& filename) {

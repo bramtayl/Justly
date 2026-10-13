@@ -86,14 +86,14 @@ void update_interval(QUndoStack& undo_stack, SwitchTable& switch_table,
           undo_stack,
           make_update_interval_command(
               switch_table, switch_table.chords_model, range,
-              static_cast<int>(ChordColumn::chord_interval_column), interval));
+              static_cast<int>(ChordColumn::interval_column), interval));
       return;
     case RowType::pitched_note_type:
       maybe_push(
           undo_stack,
           make_update_interval_command(
               switch_table, switch_table.pitched_notes_model, range,
-              static_cast<int>(PitchedNoteColumn::pitched_note_interval_column),
+              static_cast<int>(PitchedNoteColumn::interval_column),
               interval));
       return;
     case RowType::unpitched_note_type:
