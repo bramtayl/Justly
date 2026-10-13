@@ -51,6 +51,25 @@ auto get_duration(QWidget& parent, xmlNode& measure_element)
       QObject::tr("Duration is out of range"));
 }
 
+// musicxml numbers midi programs and banks from 1, and the schema keeps them
+// in range
+auto get_midi_program(xmlNode& midi_instrument) -> std::optional<MidiProgram> {
+  auto* const program_pointer =
+      maybe_get_xml_child(midi_instrument, "midi-program");
+  if (program_pointer == nullptr) {
+    return std::nullopt;
+  }
+  MidiProgram midi_program;
+  midi_program.preset_number =
+      static_cast<short>(string_to_int(get_content(*program_pointer)) - 1);
+  auto* const bank_pointer = maybe_get_xml_child(midi_instrument, "midi-bank");
+  if (bank_pointer != nullptr) {
+    midi_program.bank_number =
+        static_cast<short>(string_to_int(get_content(*bank_pointer)) - 1);
+  }
+  return midi_program;
+}
+
 // calls function(measure, note) for every note in part, in order
 template <typename Part, typename Function>
 void for_each_note(Part& part, Function function) {
@@ -699,6 +718,12 @@ auto parse_musicxml(QWidget& parent, xmlNode& score_partwise)
               part.instrument_names[get_property(field_node, "id")] =
                   get_qstring_content(
                       get_xml_child(field_node, "instrument-name"));
+            } else if (child_name == "midi-instrument") {
+              const auto maybe_midi_program = get_midi_program(field_node);
+              if (maybe_midi_program.has_value()) {
+                part.midi_programs[get_property(field_node, "id")] =
+                    maybe_midi_program.value();
+              }
             }
           }
           listed_parts[get_property(score_part, "id")] = std::move(part);
@@ -953,8 +978,8 @@ void unroll_repeats(MusicXMLPart& part, const QList<int>& playback_order) {
 }
 
 // each instrument in each part gets its own voice
-auto assign_voices(QList<MusicXMLPart>& parts) -> VoiceNames {
-  VoiceNames voice_names;
+auto assign_voices(QList<MusicXMLPart>& parts) -> MusicXMLVoices {
+  MusicXMLVoices voices;
   QMap<QString, int> pitched_voice_numbers;
   QMap<QString, int> unpitched_voice_numbers;
   for (auto& part : parts) {
@@ -972,20 +997,30 @@ auto assign_voices(QList<MusicXMLPart>& parts) -> VoiceNames {
               part.id + ":" + QString::fromStdString(note.instrument_id);
           auto& voice_numbers =
               note.is_pitched ? pitched_voice_numbers : unpitched_voice_numbers;
-          auto& names =
-              note.is_pitched ? voice_names.pitched : voice_names.unpitched;
+          auto& some_voices =
+              note.is_pitched ? voices.pitched : voices.unpitched;
           const auto found_voice_number = voice_numbers.find(voice_key);
           if (found_voice_number != voice_numbers.end()) {
             note.voice_number = found_voice_number.value();
           } else {
-            note.voice_number = static_cast<int>(names.size());
+            note.voice_number = static_cast<int>(some_voices.size());
             voice_numbers[voice_key] = note.voice_number;
-            names.push_back(instrument_name.isEmpty() ? part.name
-                                                      : instrument_name);
+            MusicXMLVoice new_voice;
+            new_voice.name =
+                instrument_name.isEmpty() ? part.name : instrument_name;
+            // notes can leave out the instrument if their part only has one
+            const auto& midi_programs = part.midi_programs;
+            if (midi_programs.contains(note.instrument_id)) {
+              new_voice.midi_program = midi_programs.value(note.instrument_id);
+            } else if (note.instrument_id.empty() &&
+                       midi_programs.size() == 1) {
+              new_voice.midi_program = midi_programs.first();
+            }
+            some_voices.push_back(std::move(new_voice));
           }
         });
   }
-  return voice_names;
+  return voices;
 }
 
 auto get_chords(const QList<MusicXMLPart>& parts) -> QMap<int, MusicXMLChord> {
@@ -1054,7 +1089,7 @@ auto parse_score(QWidget& parent, xmlNode& score_partwise)
       return std::nullopt;
     }
   }
-  score.voice_names = assign_voices(parts);
+  score.voices = assign_voices(parts);
   score.chords = get_chords(parts);
   score.midi_keys = get_midi_keys(parts);
   score.measure_numbers = get_measure_numbers(parts);

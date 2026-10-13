@@ -74,14 +74,14 @@ auto get_max_duration(const QList<MusicXMLNote>& notes) -> int {
 // pitched notes are relative to the chord's key
 template <NoteInterface SubNote>
 auto make_notes(const QList<MusicXMLNote>& parse_notes,
-                const QList<QString>& voice_names, const int key,
+                const QList<MusicXMLVoice>& voices, const int key,
                 const int song_divisions) -> QList<SubNote> {
   QList<SubNote> new_notes;
   for (const auto& parse_note : parse_notes) {
     SubNote new_note;
     new_note.beats = Rational(parse_note.duration, song_divisions);
     new_note.words = parse_note.words;
-    new_note.voice_name = voice_names.at(parse_note.voice_number);
+    new_note.voice_name = voices.at(parse_note.voice_number).name;
     if constexpr (std::same_as<SubNote, PitchedNote>) {
       new_note.interval = get_interval(parse_note.midi_number - key,
                                        parse_note.septimal_quartertones);
@@ -91,7 +91,7 @@ auto make_notes(const QList<MusicXMLNote>& parse_notes,
   return new_notes;
 }
 
-auto make_chord(const MusicXMLChord& parse_chord, const VoiceNames& voice_names,
+auto make_chord(const MusicXMLChord& parse_chord, const MusicXMLVoices& voices,
                 const int measure_number, const int key,
                 const int last_midi_key, const int song_divisions,
                 const int time_delta) -> Chord {
@@ -100,15 +100,17 @@ auto make_chord(const MusicXMLChord& parse_chord, const VoiceNames& voice_names,
   new_chord.interval = get_interval(key - last_midi_key);
   new_chord.words = QString::number(measure_number);
   new_chord.pitched_notes = make_notes<PitchedNote>(
-      parse_chord.pitched_notes, voice_names.pitched, key, song_divisions);
+      parse_chord.pitched_notes, voices.pitched, key, song_divisions);
   new_chord.unpitched_notes = make_notes<UnpitchedNote>(
-      parse_chord.unpitched_notes, voice_names.unpitched, key, song_divisions);
+      parse_chord.unpitched_notes, voices.unpitched, key, song_divisions);
   return new_chord;
 }
 
-auto deduplicate_voice_names(QList<QString> voice_names) -> QList<QString> {
+auto deduplicate_voice_names(QList<MusicXMLVoice> voices)
+    -> QList<MusicXMLVoice> {
   QSet<QString> used_names;
-  for (auto& voice_name : voice_names) {
+  for (auto& voice : voices) {
+    auto& voice_name = voice.name;
     if (voice_name.isEmpty()) {
       voice_name = QObject::tr("Unnamed instrument");
     }
@@ -120,7 +122,7 @@ auto deduplicate_voice_names(QList<QString> voice_names) -> QList<QString> {
     voice_name = candidate_name;
     used_names.insert(candidate_name);
   }
-  return voice_names;
+  return voices;
 }
 
 }  // namespace
@@ -147,7 +149,7 @@ auto import_score(QWidget& parent, xmlNode& score_partwise)
   }
   auto& parsed_score = maybe_parsed_score.value();
   const auto song_divisions = parsed_score.song_divisions;
-  auto& voice_names = parsed_score.voice_names;
+  auto& voices = parsed_score.voices;
   const auto& chords_dict = parsed_score.chords;
   const auto& midi_keys = parsed_score.midi_keys;
   const auto& measure_numbers = parsed_score.measure_numbers;
@@ -158,17 +160,19 @@ auto import_score(QWidget& parent, xmlNode& score_partwise)
     return std::nullopt;
   }
 
-  if (voice_names.unpitched.empty()) {
+  if (voices.unpitched.empty()) {
     // a file with no percussion/unpitched notes would otherwise leave
     // song.unpitched_voices completely empty, so manually inserting any
     // unpitched note afterward (which defaults to the first voice) would
     // reference a voice that doesn't exist
-    voice_names.unpitched.push_back(QObject::tr("unpitched voice 1"));
+    MusicXMLVoice default_voice;
+    default_voice.name = QObject::tr("unpitched voice 1");
+    voices.unpitched.push_back(std::move(default_voice));
   }
 
   ImportedScore score;
-  score.voice_names.pitched = deduplicate_voice_names(voice_names.pitched);
-  score.voice_names.unpitched = deduplicate_voice_names(voice_names.unpitched);
+  score.voices.pitched = deduplicate_voice_names(voices.pitched);
+  score.voices.unpitched = deduplicate_voice_names(voices.unpitched);
   score.starting_midi_key =
       get_most_recent(midi_keys, chords_dict.firstKey(), DEFAULT_STARTING_MIDI);
 
@@ -181,7 +185,7 @@ auto import_score(QWidget& parent, xmlNode& score_partwise)
     const auto midi_key =
         get_most_recent(midi_keys, time, DEFAULT_STARTING_MIDI);
     score.chords.push_back(make_chord(
-        chord, score.voice_names, get_most_recent(measure_numbers, time, 1),
+        chord, score.voices, get_most_recent(measure_numbers, time, 1),
         midi_key, last_midi_key, song_divisions,
         next_iterator == chords_dict.cend()
             ? std::max(get_max_duration(chord.pitched_notes),

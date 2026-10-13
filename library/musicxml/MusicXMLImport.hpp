@@ -13,10 +13,10 @@ class QWidget;
 
 // a musicxml score converted to Justly's terms, ready to replace the song
 struct ImportedScore {
-  // unique and non-empty, with at least one unpitched voice
-  VoiceNames voice_names;
+  // uniquely and non-emptily named, with at least one unpitched voice
+  MusicXMLVoices voices;
   int starting_midi_key = 0;
-  // notes name their voices from voice_names
+  // notes name their voices from voices
   QList<Chord> chords;
 };
 

@@ -341,16 +341,55 @@ void connect_recovery_timer(WindowBody& window_body) {
 
 namespace {
 
-// a voice per name, playing the program of the same name if there is one
+auto find_midi_program(const QList<Program>& programs, const short bank_number,
+                       const short preset_number) {
+  return std::ranges::find_if(
+      programs, [bank_number, preset_number](const Program& program) -> auto {
+        return program.bank_number == bank_number &&
+               program.preset_number == preset_number;
+      });
+}
+
+// the program a voice's midi-program and midi-bank point to, or failing that,
+// the one with the voice's name
 template <VoiceInterface SubVoice>
-auto make_imported_voices(const QList<QString>& voice_names)
+auto find_imported_program(const QList<Program>& programs,
+                           const MusicXMLVoice& imported_voice) {
+  // general midi's melodic and percussion banks
+  static const short PITCHED_BANK_NUMBER = 0;
+  static const short UNPITCHED_BANK_NUMBER = 128;
+
+  if (imported_voice.midi_program.has_value()) {
+    const auto& midi_program = imported_voice.midi_program.value();
+    const auto default_bank_number = SubVoice::is_pitched()
+                                         ? PITCHED_BANK_NUMBER
+                                         : UNPITCHED_BANK_NUMBER;
+    // a bank the soundfont doesn't have might still have a general midi
+    // preset with the same number
+    for (const auto bank_number :
+         {midi_program.bank_number.value_or(default_bank_number),
+          default_bank_number}) {
+      const auto matching_program =
+          find_midi_program(programs, bank_number, midi_program.preset_number);
+      if (matching_program != programs.cend()) {
+        return matching_program;
+      }
+    }
+  }
+  return get_named_index(programs, imported_voice.name);
+}
+
+// a voice per imported voice, playing the program it matches if there is one
+template <VoiceInterface SubVoice>
+auto make_imported_voices(const QList<MusicXMLVoice>& imported_voices)
     -> QList<SubVoice> {
   const auto& programs = get_some_programs(SubVoice::is_pitched());
   QList<SubVoice> voices;
-  for (const auto& voice_name : voice_names) {
+  for (const auto& imported_voice : imported_voices) {
     SubVoice new_voice;
-    new_voice.name = voice_name;
-    const auto matching_program = get_named_index(programs, voice_name);
+    new_voice.name = imported_voice.name;
+    const auto matching_program =
+        find_imported_program<SubVoice>(programs, imported_voice);
     if (matching_program != programs.cend()) {
       new_voice.program = matching_program->name;
     }
@@ -378,8 +417,8 @@ auto import_musicxml(MainWindow& main_window, const QString& filename) -> bool {
 
   replace_song(
       window_body, std::move(score.chords),
-      make_imported_voices<PitchedVoice>(score.voice_names.pitched),
-      make_imported_voices<UnpitchedVoice>(score.voice_names.unpitched));
+      make_imported_voices<PitchedVoice>(score.voices.pitched),
+      make_imported_voices<UnpitchedVoice>(score.voices.unpitched));
 
   window_body.controls_column.spin_boxes.starting_key_editor.setValue(
       midi_number_to_frequency(score.starting_midi_key));

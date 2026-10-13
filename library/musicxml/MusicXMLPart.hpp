@@ -70,10 +70,19 @@ struct MusicXMLMeasure {
   QList<MusicXMLNote> notes;
 };
 
+// a midi-instrument's sound, 0-based like a soundfont's
+struct MidiProgram {
+  // if the file doesn't say
+  std::optional<short> bank_number;
+  short preset_number = 0;
+};
+
 struct MusicXMLPart {
   QString id;
   QString name;
   QMap<std::string, QString> instrument_names;
+  // only for instruments with a midi-program
+  QMap<std::string, MidiProgram> midi_programs;
   QList<MusicXMLMeasure> measures;
   // each keyed by the time of the change
   QMap<int, int> divisions_changes;
@@ -88,9 +97,14 @@ struct MusicXMLChord {
   QList<MusicXMLNote> unpitched_notes;
 };
 
-struct VoiceNames {
-  QList<QString> pitched;
-  QList<QString> unpitched;
+struct MusicXMLVoice {
+  QString name;
+  std::optional<MidiProgram> midi_program;
+};
+
+struct MusicXMLVoices {
+  QList<MusicXMLVoice> pitched;
+  QList<MusicXMLVoice> unpitched;
 };
 
 // every part's notes at sounding pitch, with repeats unrolled and ties
@@ -99,8 +113,8 @@ struct ParsedScore {
   int song_divisions = 1;
   // notes that start at the same time, in any part, form a chord
   QMap<int, MusicXMLChord> chords;
-  // notes name their voices by number from voice_names
-  VoiceNames voice_names;
+  // notes name their voices by number from voices
+  MusicXMLVoices voices;
   // each keyed by the time of the change
   QMap<int, int> midi_keys;
   QMap<int, int> measure_numbers;
