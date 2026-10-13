@@ -269,27 +269,13 @@ auto parse_note(QWidget& parent, xmlNode& note_node, const MusicXMLPart& part,
                 MusicXMLMeasure& measure, int& current_time,
                 int& chord_start_time) -> bool {
   // arrows mark Johnston's 7 (down) and el (up)
-  static const QMap<std::string, Accidental> accidentals = {
-      {"triple-flat", {.chromatic = -3, .septimal_quartertones = 0}},
-      {"flat-flat", {.chromatic = -2, .septimal_quartertones = 0}},
-      {"flat-flat-down", {.chromatic = -2, .septimal_quartertones = -1}},
-      {"flat-flat-up", {.chromatic = -2, .septimal_quartertones = 1}},
-      {"flat", {.chromatic = -1, .septimal_quartertones = 0}},
-      {"natural-flat", {.chromatic = -1, .septimal_quartertones = 0}},
-      {"flat-down", {.chromatic = -1, .septimal_quartertones = -1}},
-      {"flat-up", {.chromatic = -1, .septimal_quartertones = 1}},
-      {"natural", {.chromatic = 0, .septimal_quartertones = 0}},
-      {"natural-down", {.chromatic = 0, .septimal_quartertones = -1}},
-      {"natural-up", {.chromatic = 0, .septimal_quartertones = 1}},
-      {"sharp", {.chromatic = 1, .septimal_quartertones = 0}},
-      {"natural-sharp", {.chromatic = 1, .septimal_quartertones = 0}},
-      {"sharp-down", {.chromatic = 1, .septimal_quartertones = -1}},
-      {"sharp-up", {.chromatic = 1, .septimal_quartertones = 1}},
-      {"double-sharp", {.chromatic = 2, .septimal_quartertones = 0}},
-      {"sharp-sharp", {.chromatic = 2, .septimal_quartertones = 0}},
-      {"double-sharp-down", {.chromatic = 2, .septimal_quartertones = -1}},
-      {"double-sharp-up", {.chromatic = 2, .septimal_quartertones = 1}},
-      {"triple-sharp", {.chromatic = 3, .septimal_quartertones = 0}}};
+  static const std::string up_suffix = "-up";
+  static const std::string down_suffix = "-down";
+  static const QMap<std::string, int> chromatics = {
+      {"triple-flat", -3},  {"flat-flat", -2},   {"flat", -1},
+      {"natural-flat", -1}, {"natural", 0},      {"sharp", 1},
+      {"natural-sharp", 1}, {"double-sharp", 2}, {"sharp-sharp", 2},
+      {"triple-sharp", 3}};
 
   MusicXMLNote note;
   auto new_chord = true;
@@ -304,14 +290,24 @@ auto parse_note(QWidget& parent, xmlNode& note_node, const MusicXMLPart& part,
       note.octave = xml_to_int(get_xml_child(note_field, "octave"));
     } else if (name == "accidental") {
       const auto accidental_name = get_content(note_field);
-      const auto found_accidental = accidentals.find(accidental_name);
-      if (found_accidental == accidentals.end()) {
+      auto base_name = accidental_name;
+      auto septimal_quartertones = 0;
+      if (base_name.ends_with(up_suffix)) {
+        base_name.resize(base_name.size() - up_suffix.size());
+        septimal_quartertones = 1;
+      } else if (base_name.ends_with(down_suffix)) {
+        base_name.resize(base_name.size() - down_suffix.size());
+        septimal_quartertones = -1;
+      }
+      const auto found_chromatic = chromatics.find(base_name);
+      if (found_chromatic == chromatics.end()) {
         QMessageBox::warning(&parent, QObject::tr("Pitch error"),
                              QObject::tr("Accidental %1 is not supported")
                                  .arg(QString::fromStdString(accidental_name)));
         return false;
       }
-      note.accidental = found_accidental.value();
+      note.accidental = {.chromatic = found_chromatic.value(),
+                         .septimal_quartertones = septimal_quartertones};
     } else if (name == "staff") {
       note.staff = get_qstring_content(note_field);
     } else if (name == "duration") {
