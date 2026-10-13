@@ -236,6 +236,65 @@ void Tester::test_import_musicxml_voice_named_like_program() {
   open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
+// a midi-program picks the voice's program, and changing it partway through
+// starts a new voice, from where the sound's offset puts the change.
+// Repeating back to before the change goes back to the first voice
+void Tester::test_import_musicxml_midi_program_change() {
+  auto& window_body = main_window.window_body;
+
+  import_musicxml(main_window,
+                  test_dir.filePath("midi_program_change.musicxml"));
+
+  const auto& song = window_body.song;
+  const auto& pitched_voices = song.pitched_voices;
+  QCOMPARE(pitched_voices.size(), 2);
+  QCOMPARE(pitched_voices.at(0).name, QString("Doubler"));
+  QCOMPARE(pitched_voices.at(0).program, QString("Grand Piano"));
+  QCOMPARE(pitched_voices.at(1).name, QString("Doubler (2)"));
+  QCOMPARE(pitched_voices.at(1).program, QString("Flute"));
+
+  // C, D, E, then repeated
+  static const QList<QString> expected_voice_names = {
+      "Doubler", "Doubler", "Doubler (2)",
+      "Doubler", "Doubler", "Doubler (2)"};
+  QCOMPARE(song.chords.size(), expected_voice_names.size());
+  for (auto chord_number = 0; chord_number < song.chords.size();
+       ++chord_number) {
+    QCOMPARE(song.chords.at(chord_number).pitched_notes.at(0).voice_name,
+             expected_voice_names.at(chord_number));
+  }
+
+  open_file(main_window, test_dir.filePath("test_song.xml"));
+}
+
+// a direction's offset only moves a program change if it says it moves the
+// sound
+void Tester::test_import_musicxml_direction_offset() {
+  auto& window_body = main_window.window_body;
+
+  import_musicxml(main_window, test_dir.filePath("direction_offset.musicxml"));
+
+  const auto& song = window_body.song;
+  const auto& pitched_voices = song.pitched_voices;
+  QCOMPARE(pitched_voices.size(), 2);
+  QCOMPARE(pitched_voices.at(0).name, QString("Doubler"));
+  QCOMPARE(pitched_voices.at(0).program, QString("Violin"));
+  QCOMPARE(pitched_voices.at(1).name, QString("Doubler (2)"));
+  QCOMPARE(pitched_voices.at(1).program, QString("Flute"));
+
+  // C, D, E, F
+  static const QList<QString> expected_voice_names = {
+      "Doubler", "Doubler", "Doubler", "Doubler (2)"};
+  QCOMPARE(song.chords.size(), expected_voice_names.size());
+  for (auto chord_number = 0; chord_number < song.chords.size();
+       ++chord_number) {
+    QCOMPARE(song.chords.at(chord_number).pitched_notes.at(0).voice_name,
+             expected_voice_names.at(chord_number));
+  }
+
+  open_file(main_window, test_dir.filePath("test_song.xml"));
+}
+
 namespace {
 
 // wraps one measure of the given <attributes> children and body elements in

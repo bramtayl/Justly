@@ -70,6 +70,15 @@ auto get_midi_program(xmlNode& midi_instrument) -> std::optional<MidiProgram> {
   return midi_program;
 }
 
+void add_midi_program_change(MusicXMLPart& part, xmlNode& midi_instrument,
+                             const int time) {
+  const auto maybe_midi_program = get_midi_program(midi_instrument);
+  if (maybe_midi_program.has_value()) {
+    part.midi_program_changes[get_property(midi_instrument, "id")][time] =
+        maybe_midi_program.value();
+  }
+}
+
 // calls function(measure, note) for every note in part, in order
 template <typename Part, typename Function>
 void for_each_note(Part& part, Function function) {
@@ -351,8 +360,77 @@ auto parse_barline(QWidget& parent, xmlNode& barline_node,
   return true;
 }
 
-// records jumps, and the segnos and codas they jump to, onto the measure
-void parse_sound(xmlNode& sound_node, MusicXMLMeasure& measure) {
+// gives each note the program its instrument has where the note is written,
+// so a repeat back to before a change plays the earlier program again
+void set_midi_programs(MusicXMLPart& part) {
+  const auto& midi_program_changes = part.midi_program_changes;
+  for_each_note(
+      part,
+      [&midi_program_changes](const MusicXMLMeasure& /*measure*/,
+                              MusicXMLNote& note) -> void {
+        // notes can leave out the instrument if their part only has one
+        const auto found_changes =
+            note.instrument_id.empty() && midi_program_changes.size() == 1
+                ? midi_program_changes.cbegin()
+                : midi_program_changes.find(note.instrument_id);
+        if (found_changes == midi_program_changes.cend()) {
+          return;
+        }
+        const auto& changes = found_changes.value();
+        const auto next_change = changes.upperBound(note.start_time);
+        if (next_change != changes.cbegin()) {
+          note.midi_program = std::prev(next_change).value();
+        }
+      });
+}
+
+// when the sound takes effect: offset by its own offset, or failing that, by
+// its direction's, if that says it moves the sound too
+auto get_sound_time(QWidget& parent, xmlNode& sound_node,
+                    xmlNode* const direction_offset_pointer,
+                    const int current_time) -> std::optional<int> {
+  auto* offset_pointer = maybe_get_xml_child(sound_node, "offset");
+  if (offset_pointer == nullptr && direction_offset_pointer != nullptr &&
+      maybe_get_property(*direction_offset_pointer, "sound") == "yes") {
+    offset_pointer = direction_offset_pointer;
+  }
+  if (offset_pointer == nullptr) {
+    return current_time;
+  }
+  const auto maybe_offset = get_whole_int_or_warn(
+      parent, *offset_pointer, QObject::tr("Offset error"),
+      QObject::tr("Fractional offsets are not supported"),
+      QObject::tr("Offset is out of range"));
+  if (!maybe_offset.has_value()) {
+    return std::nullopt;
+  }
+  return current_time + maybe_offset.value();
+}
+
+// records jumps, and the segnos and codas they jump to, onto the measure,
+// and midi program changes onto the part
+auto parse_sound(QWidget& parent, xmlNode& sound_node,
+                 xmlNode* const direction_offset_pointer, MusicXMLPart& part,
+                 MusicXMLMeasure& measure, const int current_time) -> bool {
+  QList<xmlNode*> midi_instrument_pointers;
+  for (auto& sound_child : get_xml_children(sound_node)) {
+    if (node_is(sound_child, "midi-instrument")) {
+      midi_instrument_pointers.push_back(&sound_child);
+    }
+  }
+  // only program changes need the offset, so a fractional one on any other
+  // sound doesn't stop the import
+  if (!midi_instrument_pointers.empty()) {
+    const auto maybe_sound_time = get_sound_time(
+        parent, sound_node, direction_offset_pointer, current_time);
+    if (!maybe_sound_time.has_value()) {
+      return false;
+    }
+    for (auto* const midi_instrument_pointer : midi_instrument_pointers) {
+      add_midi_program_change(part, *midi_instrument_pointer,
+                              maybe_sound_time.value());
+    }
+  }
   const auto times = parse_number_list(
       maybe_get_property(sound_node, "time-only").value_or(""));
   const auto maybe_add_jump = [&sound_node, &measure, &times](
@@ -377,6 +455,7 @@ void parse_sound(xmlNode& sound_node, MusicXMLMeasure& measure) {
   if (maybe_get_property(sound_node, "forward-repeat") == "yes") {
     measure.has_forward_repeat = true;
   }
+  return true;
 }
 
 // times are in the part's own divisions, as written
@@ -430,12 +509,18 @@ auto parse_part(QWidget& parent, xmlNode& part_node, MusicXMLPart& part)
           return false;
         }
       } else if (measure_element_name == "sound") {
-        parse_sound(measure_element, measure);
+        if (!parse_sound(parent, measure_element, nullptr, part, measure,
+                         current_time)) {
+          return false;
+        }
       } else if (measure_element_name == "direction") {
         auto* const sound_pointer =
             maybe_get_xml_child(measure_element, "sound");
-        if (sound_pointer != nullptr) {
-          parse_sound(*sound_pointer, measure);
+        if (sound_pointer != nullptr &&
+            !parse_sound(parent, *sound_pointer,
+                         maybe_get_xml_child(measure_element, "offset"), part,
+                         measure, current_time)) {
+          return false;
         }
       }
     }
@@ -448,6 +533,7 @@ auto parse_part(QWidget& parent, xmlNode& part_node, MusicXMLPart& part)
         QObject::tr("Ending in part %1 never stops").arg(part.name));
     return false;
   }
+  set_midi_programs(part);
   return true;
 }
 
@@ -719,11 +805,7 @@ auto parse_musicxml(QWidget& parent, xmlNode& score_partwise)
                   get_qstring_content(
                       get_xml_child(field_node, "instrument-name"));
             } else if (child_name == "midi-instrument") {
-              const auto maybe_midi_program = get_midi_program(field_node);
-              if (maybe_midi_program.has_value()) {
-                part.midi_programs[get_property(field_node, "id")] =
-                    maybe_midi_program.value();
-              }
+              add_midi_program_change(part, field_node, 0);
             }
           }
           listed_parts[get_property(score_part, "id")] = std::move(part);
@@ -993,8 +1075,15 @@ auto assign_voices(QList<MusicXMLPart>& parts) -> MusicXMLVoices {
           if (instrument_name != "") {
             stream << QObject::tr(" instrument ") << instrument_name;
           }
-          const auto voice_key =
+          // an instrument that changes programs gets a voice per program
+          auto voice_key =
               part.id + ":" + QString::fromStdString(note.instrument_id);
+          if (note.midi_program.has_value()) {
+            const auto& midi_program = note.midi_program.value();
+            voice_key += QString(":%1:%2")
+                             .arg(midi_program.bank_number.value_or(-1))
+                             .arg(midi_program.preset_number);
+          }
           auto& voice_numbers =
               note.is_pitched ? pitched_voice_numbers : unpitched_voice_numbers;
           auto& some_voices =
@@ -1008,14 +1097,7 @@ auto assign_voices(QList<MusicXMLPart>& parts) -> MusicXMLVoices {
             MusicXMLVoice new_voice;
             new_voice.name =
                 instrument_name.isEmpty() ? part.name : instrument_name;
-            // notes can leave out the instrument if their part only has one
-            const auto& midi_programs = part.midi_programs;
-            if (midi_programs.contains(note.instrument_id)) {
-              new_voice.midi_program = midi_programs.value(note.instrument_id);
-            } else if (note.instrument_id.empty() &&
-                       midi_programs.size() == 1) {
-              new_voice.midi_program = midi_programs.first();
-            }
+            new_voice.midi_program = note.midi_program;
             some_voices.push_back(std::move(new_voice));
           }
         });

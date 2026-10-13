@@ -1,0 +1,53 @@
+<score-partwise version="4.0">
+   <part-list>
+      <score-part id="P1">
+         <part-name>Doubler</part-name>
+         <score-instrument id="P1-I1">
+            <instrument-name>Doubler</instrument-name>
+         </score-instrument>
+         <midi-instrument id="P1-I1">
+            <midi-channel>1</midi-channel>
+            <midi-program>1</midi-program>
+         </midi-instrument>
+      </score-part>
+   </part-list>
+   <part id="P1">
+      <measure number="1">
+         <attributes>
+            <divisions>1</divisions>
+         </attributes>
+         <note>
+            <pitch>
+               <step>C</step>
+               <octave>4</octave>
+            </pitch>
+            <duration>4</duration>
+         </note>
+      </measure>
+      <measure number="2">
+         <sound>
+            <midi-instrument id="P1-I1">
+               <midi-program>74</midi-program>
+            </midi-instrument>
+            <offset>2</offset>
+         </sound>
+         <note>
+            <pitch>
+               <step>D</step>
+               <octave>4</octave>
+            </pitch>
+            <duration>2</duration>
+         </note>
+         <note>
+            <pitch>
+               <step>E</step>
+               <octave>4</octave>
+            </pitch>
+            <duration>2</duration>
+         </note>
+         <barline location="right">
+            <repeat direction="backward"/>
+         </barline>
+      </measure>
+   </part>
+</score-partwise>

@@ -119,6 +119,8 @@ struct Tester : public QObject {
   static void test_playback_order_lone_backward_repeat();
   void test_import_musicxml_ties_do_not_cross_voices();
   void test_import_musicxml_voice_named_like_program();
+  void test_import_musicxml_midi_program_change();
+  void test_import_musicxml_direction_offset();
   void test_import_musicxml_unnamed_voice();
   void test_import_musicxml_duplicate_voice_names();
   void test_musicxml_endings();

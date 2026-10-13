@@ -17,6 +17,13 @@ struct Accidental {
   int septimal_quartertones = 0;
 };
 
+// a midi-instrument's sound, 0-based like a soundfont's
+struct MidiProgram {
+  // if the file doesn't say
+  std::optional<short> bank_number;
+  short preset_number = 0;
+};
+
 struct MusicXMLNote {
   // as written in the file
   int start_time = 0;
@@ -28,6 +35,8 @@ struct MusicXMLNote {
   std::optional<Accidental> accidental;
   QString staff = "1";
   std::string instrument_id;
+  // the instrument's sound where the note is written, if the file says
+  std::optional<MidiProgram> midi_program;
   bool tie_start = false;
   bool tie_stop = false;
 
@@ -70,19 +79,12 @@ struct MusicXMLMeasure {
   QList<MusicXMLNote> notes;
 };
 
-// a midi-instrument's sound, 0-based like a soundfont's
-struct MidiProgram {
-  // if the file doesn't say
-  std::optional<short> bank_number;
-  short preset_number = 0;
-};
-
 struct MusicXMLPart {
   QString id;
   QString name;
   QMap<std::string, QString> instrument_names;
-  // only for instruments with a midi-program
-  QMap<std::string, MidiProgram> midi_programs;
+  // keyed by instrument id, then by the time of the change
+  QMap<std::string, QMap<int, MidiProgram>> midi_program_changes;
   QList<MusicXMLMeasure> measures;
   // each keyed by the time of the change
   QMap<int, int> divisions_changes;

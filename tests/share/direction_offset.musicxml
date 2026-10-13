@@ -1,0 +1,73 @@
+<score-partwise version="4.0">
+   <part-list>
+      <score-part id="P1">
+         <part-name>Doubler</part-name>
+         <score-instrument id="P1-I1">
+            <instrument-name>Doubler</instrument-name>
+         </score-instrument>
+         <midi-instrument id="P1-I1">
+            <midi-channel>1</midi-channel>
+            <midi-program>1</midi-program>
+         </midi-instrument>
+      </score-part>
+   </part-list>
+   <part id="P1">
+      <measure number="1">
+         <attributes>
+            <divisions>1</divisions>
+         </attributes>
+         <!-- the offset only moves the words, so the change starts here -->
+         <direction>
+            <direction-type>
+               <words>violin</words>
+            </direction-type>
+            <offset>1</offset>
+            <sound>
+               <midi-instrument id="P1-I1">
+                  <midi-program>41</midi-program>
+               </midi-instrument>
+            </sound>
+         </direction>
+         <!-- the offset moves the change too, to the last beat -->
+         <direction>
+            <direction-type>
+               <words>flute</words>
+            </direction-type>
+            <offset sound="yes">3</offset>
+            <sound>
+               <midi-instrument id="P1-I1">
+                  <midi-program>74</midi-program>
+               </midi-instrument>
+            </sound>
+         </direction>
+         <note>
+            <pitch>
+               <step>C</step>
+               <octave>4</octave>
+            </pitch>
+            <duration>1</duration>
+         </note>
+         <note>
+            <pitch>
+               <step>D</step>
+               <octave>4</octave>
+            </pitch>
+            <duration>1</duration>
+         </note>
+         <note>
+            <pitch>
+               <step>E</step>
+               <octave>4</octave>
+            </pitch>
+            <duration>1</duration>
+         </note>
+         <note>
+            <pitch>
+               <step>F</step>
+               <octave>4</octave>
+            </pitch>
+            <duration>1</duration>
+         </note>
+      </measure>
+   </part>
+</score-partwise>
