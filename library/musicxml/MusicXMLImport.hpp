@@ -36,7 +36,7 @@ struct ImportedScore {
 };
 
 // reads a .musicxml file, or a compressed .mxl file, by running
-// import_score.py, which reads it with music21; warns and returns nullopt if
-// the score can't be imported
+// import_score.py, which reads it with music21, in the python bundled with
+// Justly; warns and returns nullopt if the score can't be imported
 [[nodiscard]] auto import_score(QWidget& parent, const QString& filename)
     -> std::optional<ImportedScore>;

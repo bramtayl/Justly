@@ -1,2 +1,11 @@
-# for share/import_score.py, which reads scores to import
+# for share/import_score.py, which reads scores to import. Installed with
+# --no-deps into the python bundled with Justly, so music21's optional
+# dependencies, like numpy and matplotlib, which it only needs for graphs,
+# stay out of the bundle
+certifi==2026.7.22
+idna==3.20
+more-itertools==11.1.0
 music21==10.5.0
+requests==2.34.2
+urllib3==2.8.0
+webcolors==25.10.0

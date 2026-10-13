@@ -48,16 +48,17 @@ struct ParsedScore {
 // long enough for a big score on a slow computer
 static const auto CONVERTER_TIMEOUT_MILLISECONDS = 5 * 60 * 1000;
 
-// JUSTLY_PYTHON, if it's set, or else the python on the path
+// the python bundled with Justly, which has music21, unless JUSTLY_PYTHON
+// names another
 auto get_python_program() -> QString {
   const auto environment = QProcessEnvironment::systemEnvironment();
   if (environment.contains("JUSTLY_PYTHON")) {
     return environment.value("JUSTLY_PYTHON");
   }
 #ifdef Q_OS_WIN
-  return "python";
+  return QString::fromStdString(get_share_file("python/python.exe"));
 #else
-  return "python3";
+  return QString::fromStdString(get_share_file("python/bin/python3"));
 #endif
 }
 
@@ -83,11 +84,8 @@ auto run_converter(QWidget& parent, const QString& filename)
                   {QString::fromStdString(get_share_file("import_score.py")),
                    filename});
     if (!process.waitForStarted()) {
-      QMessageBox::warning(
-          &parent, QObject::tr("Python error"),
-          QObject::tr("Couldn't run %1. Importing scores needs Python 3 with "
-                      "music21")
-              .arg(python_program));
+      QMessageBox::warning(&parent, QObject::tr("Python error"),
+                           QObject::tr("Couldn't run %1").arg(python_program));
       return std::nullopt;
     }
     if (!process.waitForFinished(CONVERTER_TIMEOUT_MILLISECONDS)) {

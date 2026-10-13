@@ -77,7 +77,7 @@ void Tester::test_musicxml_error_data() {
   // divisions is unbounded xs:decimal with no schema-enforced range
   QTest::newRow("overflowing divisions")
       << "overflowing_divisions.musicxml"
-      << "music21 can't read the score: division by zero";
+      << "music21 can't read the score: float division by zero";
 }
 
 void Tester::test_musicxml_error() {

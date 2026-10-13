@@ -28,6 +28,131 @@ if (NOT EXISTS "${soundfont_file}")
     file(REMOVE "${CMAKE_BINARY_DIR}/MS_Basic.sf3")
 endif()
 
+# importing a score runs share/import_score.py, which reads it with music21,
+# in a python bundled with Justly: a python-build-standalone build, which
+# works from wherever it's installed
+set(python_release "20261009")
+set(python_version "3.13.16")
+if (WIN32)
+    set(python_platform "x86_64-pc-windows-msvc")
+    set(python_hash "3a7adfb69e3ff02a41ed38ac637808532b438ab3c8619af46ca5dbec5c1f5190")
+elseif (APPLE AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
+    set(python_platform "aarch64-apple-darwin")
+    set(python_hash "11785155d0f70e634178219c20925d8f20be00a3da4684fc4f5019dd15602ef7")
+elseif (APPLE)
+    set(python_platform "x86_64-apple-darwin")
+    set(python_hash "bd085c51e960f00ee33b630e2b13ac90fe90cdc3da25a0f0bc0719b1294920bf")
+elseif (LINUX AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+    set(python_platform "x86_64-unknown-linux-gnu")
+    set(python_hash "24801ea31c7d406d559a17e2226325c723d50c56900b9c0da7b62adaae2affc9")
+else()
+    message(FATAL_ERROR "No bundled python for ${CMAKE_SYSTEM_NAME} on ${CMAKE_SYSTEM_PROCESSOR}")
+endif()
+
+# on Linux and Windows, straight into the build tree's share folder, where
+# the targets find it. Mac bundles have their own share folders, so each
+# target copies it in after it builds
+if (APPLE)
+    set(python_folder "${CMAKE_BINARY_DIR}/python")
+else()
+    set(python_folder "${CMAKE_BINARY_DIR}/share/python")
+endif()
+if (WIN32)
+    set(bundled_python "${python_folder}/python.exe")
+    set(python_lib_folder "${python_folder}/Lib")
+else()
+    set(bundled_python "${python_folder}/bin/python3")
+    string(REGEX MATCH "^[0-9]+\\.[0-9]+" python_minor_version "${python_version}")
+    set(python_lib_folder "${python_folder}/lib/python${python_minor_version}")
+endif()
+
+set(requirements_file "${Justly_SOURCE_DIR}/requirements.txt")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${requirements_file}")
+# what the bundled python was last set up from, so it's only set up again
+# when that changes
+file(READ "${requirements_file}" requirements)
+set(python_setup "${python_release} ${python_platform}\n${requirements}")
+set(python_setup_file "${python_folder}/justly_setup.txt")
+set(last_python_setup "")
+if (EXISTS "${python_setup_file}")
+    file(READ "${python_setup_file}" last_python_setup)
+endif()
+if (NOT python_setup STREQUAL last_python_setup)
+    message(STATUS "Setting up the bundled python")
+    set(python_archive "${CMAKE_BINARY_DIR}/python.tar.gz")
+    file(DOWNLOAD
+        "https://github.com/astral-sh/python-build-standalone/releases/download/${python_release}/cpython-${python_version}+${python_release}-${python_platform}-install_only_stripped.tar.gz"
+        "${python_archive}"
+        EXPECTED_HASH SHA256=${python_hash}
+    )
+    file(REMOVE_RECURSE "${python_folder}")
+    set(python_extract_folder "${CMAKE_BINARY_DIR}/python_extract")
+    file(REMOVE_RECURSE "${python_extract_folder}")
+    file(ARCHIVE_EXTRACT INPUT "${python_archive}" DESTINATION "${python_extract_folder}")
+    # the archive holds a single python folder
+    file(RENAME "${python_extract_folder}/python" "${python_folder}")
+    file(REMOVE_RECURSE "${python_extract_folder}")
+    file(REMOVE "${python_archive}")
+
+    execute_process(
+        COMMAND "${bundled_python}" -m pip install
+            --quiet --no-deps --disable-pip-version-check
+            -r "${requirements_file}"
+        COMMAND_ERROR_IS_FATAL ANY
+    )
+
+    # leave out what import_score.py doesn't use: python's own tests,
+    # installers, headers, and gui toolkit, and music21's corpus of scores
+    # and library of scales
+    file(REMOVE_RECURSE
+        "${python_lib_folder}/test"
+        "${python_lib_folder}/idlelib"
+        "${python_lib_folder}/ensurepip"
+        "${python_lib_folder}/tkinter"
+        "${python_lib_folder}/turtledemo"
+        "${python_lib_folder}/site-packages/pip"
+        "${python_folder}/include"
+        "${python_folder}/share"
+        "${python_folder}/tcl"
+        "${python_folder}/lib/pkgconfig"
+    )
+    file(GLOB unused_python_files LIST_DIRECTORIES true
+        "${python_lib_folder}/site-packages/pip-*.dist-info"
+        "${python_folder}/bin/idle*"
+        "${python_folder}/bin/pip*"
+        "${python_folder}/bin/pydoc*"
+        "${python_folder}/bin/*-config"
+        "${python_folder}/lib/libtcl*"
+        "${python_folder}/lib/libtk*"
+        "${python_folder}/lib/tcl*"
+        "${python_folder}/lib/tk*"
+        "${python_folder}/lib/itcl*"
+        "${python_folder}/lib/thread*"
+        "${python_lib_folder}/lib-dynload/_tkinter*"
+        "${python_folder}/DLLs/_tkinter*"
+        "${python_folder}/DLLs/tcl*"
+        "${python_folder}/DLLs/tk*"
+    )
+    if (LINUX)
+        # the python executable links libpython statically
+        file(GLOB libpython "${python_folder}/lib/libpython*")
+        list(APPEND unused_python_files ${libpython})
+    endif()
+    set(music21_folder "${python_lib_folder}/site-packages/music21")
+    # the corpus's scores are in folders, next to its modules
+    file(GLOB corpus_entries LIST_DIRECTORIES true "${music21_folder}/corpus/*")
+    set(corpus_folders "")
+    foreach(corpus_entry ${corpus_entries})
+        if (IS_DIRECTORY "${corpus_entry}")
+            list(APPEND corpus_folders "${corpus_entry}")
+        endif()
+    endforeach()
+    file(GLOB scales "${music21_folder}/scale/scala/scl/*.scl")
+    file(REMOVE_RECURSE ${unused_python_files} ${corpus_folders} ${scales})
+
+    file(WRITE "${python_setup_file}" "${python_setup}")
+endif()
+
 include(InstallRequiredSystemLibraries)
 
 option(BUILD_TESTS "Build tests" OFF)
@@ -180,6 +305,16 @@ function(justly_install_share share_folder bundle_target)
     endif()
 
     install(DIRECTORY "${share_folder}" DESTINATION "${install_sub_folder}${share_sub_folder}")
+    install(DIRECTORY "${python_folder}/"
+        DESTINATION "${install_sub_folder}${share_sub_folder}/python"
+        USE_SOURCE_PERMISSIONS
+    )
+    if (APPLE)
+        add_custom_command(TARGET ${bundle_target} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${python_folder}" "$<TARGET_FILE_DIR:${bundle_target}>/../${share_sub_folder}/python"
+        )
+    endif()
 
     add_custom_command(TARGET ${bundle_target} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -296,36 +431,6 @@ if (BUILD_TESTS)
 
     add_subdirectory("tests")
 
-    # importing a score runs share/import_score.py, which needs music21, so
-    # the tests get a python environment of their own with it
-    find_package(Python3 REQUIRED COMPONENTS Interpreter)
-    set(test_python_folder "${CMAKE_BINARY_DIR}/python")
-    if (WIN32)
-        set(test_python "${test_python_folder}/Scripts/python.exe")
-    else()
-        set(test_python "${test_python_folder}/bin/python")
-    endif()
-    set(requirements_file "${Justly_SOURCE_DIR}/requirements.txt")
-    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${requirements_file}")
-    # a copy of the requirements last installed, so they're only installed
-    # again when they change
-    set(installed_requirements_file "${test_python_folder}/requirements.txt")
-    file(READ "${requirements_file}" requirements)
-    set(installed_requirements "")
-    if (EXISTS "${installed_requirements_file}")
-        file(READ "${installed_requirements_file}" installed_requirements)
-    endif()
-    if (NOT EXISTS "${test_python}" OR NOT requirements STREQUAL installed_requirements)
-        execute_process(
-            COMMAND "${Python3_EXECUTABLE}" -m venv "${test_python_folder}"
-            COMMAND_ERROR_IS_FATAL ANY
-        )
-        execute_process(
-            COMMAND "${test_python}" -m pip install --quiet -r "${requirements_file}"
-            COMMAND_ERROR_IS_FATAL ANY
-        )
-        file(COPY_FILE "${requirements_file}" "${installed_requirements_file}")
-    endif()
 
     justly_install_share("${Justly_SOURCE_DIR}/tests/share/" JustlyTests)
 
@@ -353,9 +458,7 @@ if (BUILD_TESTS)
     # JustlyTests creates real widgets, which needs a display -- CI runners
     # don't have one, so force Qt's software-rendered offscreen backend
     # (see the Qt6QOffscreenIntegrationPlugin find_package() call above)
-    set_tests_properties(run_tests PROPERTIES ENVIRONMENT
-        "QT_QPA_PLATFORM=offscreen;JUSTLY_PYTHON=${test_python}"
-    )
+    set_tests_properties(run_tests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
     if (APPLE)
         # make sure the bundle can open
