@@ -174,6 +174,7 @@ struct Tester : public QObject {
   static void test_play_velocity_error_data();
   void test_play_velocity_error();
   void test_play_channel_exhausted();
+  void test_play_shares_channels();
   static void test_play_chord_error_data();
   void test_play_chord_error();
   void test_ratio_bound_data();

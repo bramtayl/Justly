@@ -246,6 +246,47 @@ void Tester::test_play_channel_exhausted() {
   open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
+// overlapping notes share a channel when program and pitch bend match, unless
+// they're on the same key
+void Tester::test_play_shares_channels() {
+  static const auto NOTE_MILLISECONDS = 1000;
+  static const auto SHARP_BEND = ZERO_PITCH_BEND + 100;
+  static const auto MIDDLE_C = 60;
+  static const auto OCTAVE = 12;
+  static const auto THIRD = 4;
+  static const auto FIFTH = 7;
+
+  auto& window_body = main_window.window_body;
+  auto& player = window_body.player;
+  const auto& programs = get_some_programs(true);
+  const auto& program = programs.at(0);
+  const auto& other_program = programs.at(1);
+
+  initialize_play(player, window_body.song);
+  const auto start_time = player.play_state.current_time;
+  const auto play = [&player, start_time](const Program& note_program,
+                                          const MidiPitch& pitch) -> int {
+    const auto maybe_channel_number =
+        get_channel_number(player, note_program, pitch, start_time);
+    if (!maybe_channel_number.has_value()) {
+      return -1;
+    }
+    play_note(player, *maybe_channel_number, note_program, pitch.midi_number,
+              1, start_time, start_time + NOTE_MILLISECONDS);
+    return *maybe_channel_number;
+  };
+
+  const auto channel_number = play(program, MidiPitch{MIDDLE_C});
+  QVERIFY(channel_number >= 0);
+  QCOMPARE(play(program, MidiPitch{MIDDLE_C + OCTAVE}), channel_number);
+  QVERIFY(play(program, MidiPitch{MIDDLE_C}) != channel_number);
+  QVERIFY(play(program, MidiPitch{MIDDLE_C + THIRD, SHARP_BEND}) !=
+          channel_number);
+  QVERIFY(play(other_program, MidiPitch{MIDDLE_C + FIFTH}) != channel_number);
+
+  stop_playing(player);
+}
+
 // playing chords stops at the first note that can't get a MIDI channel,
 // whether it's pitched or unpitched
 void Tester::test_play_chord_error_data() {

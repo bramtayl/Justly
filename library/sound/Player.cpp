@@ -47,7 +47,7 @@ void send_event_at(FluidSequencer& sequencer, FluidEvent& event,
 
 Player::Player(QWidget& parent_input)
     : parent(parent_input),
-      channel_schedules(NUMBER_OF_MIDI_CHANNELS, 0),
+      channel_states(NUMBER_OF_MIDI_CHANNELS),
       settings(NUMBER_OF_MIDI_CHANNELS,
                static_cast<int>(std::thread::hardware_concurrency()),
 #ifdef __linux__
