@@ -32,6 +32,7 @@ with contextlib.redirect_stdout(io.StringIO()):
     from music21 import bar, converter, note, percussion, repeat, stream, tempo
     from music21 import chord as music21_chord
     from music21 import key as music21_key
+    from music21 import pitch as music21_pitch
 
 MIDDLE_C_MIDI = 60
 MAX_MIDI_NUMBER = 127
@@ -56,21 +57,40 @@ def get_sub_notes(element):
     return [element]
 
 
-def get_septimal_quartertones(accidental_name):
-    # arrows mark Johnston's 7 (down) and el (up)
-    if accidental_name.endswith("-down"):
-        return -1
-    if accidental_name.endswith("-up"):
-        return 1
-    return 0
+# the chromatic alteration of each accidental an arrow can be added to
+ARROW_ALTERS = {
+    "flat-flat": -2,
+    "flat": -1,
+    "natural": 0,
+    "sharp": 1,
+    "sharp-sharp": 2,
+    "double-sharp": 2,
+}
 
 
-def mark_septimal_quartertones(score):
-    """Stores each pitched note's 7 or el in its editorial, while the score is
-    still written, not sounding, so they survive transposition. An accidental
-    lasts until the end of its measure, for notes on the same staff, step,
-    and octave. music21 reads a staff as its own part"""
+def get_arrow_spelling(accidental_name):
+    """The chromatic alteration and the septimal quartertones that an arrow
+    accidental marks, or None if it isn't an arrow. Arrows mark Johnston's 7
+    (down) and el (up)"""
+    for suffix, septimal_quartertones in (("-down", -1), ("-up", 1)):
+        if accidental_name.endswith(suffix):
+            base = accidental_name.removesuffix(suffix)
+            if base in ARROW_ALTERS:
+                return ARROW_ALTERS[base], septimal_quartertones
+    return None
+
+
+def spell_arrows(score):
+    """Spells each pitched note with an arrow from its accidental, and stores
+    its 7 or el in its editorial, while the score is still written, not
+    sounding, so they survive transposition. music21 takes pitches from the
+    file's alters, which can't hold a 7 or el, so files leave them out or get
+    them wrong. An accidental lasts until the end of its measure, for notes on
+    the same staff, step, and octave, and a tied note keeps the spelling it's
+    tied from. music21 reads a staff as its own part"""
     for part in score.parts:
+        # the arrow spelling of each tie in progress
+        tied_spellings = {}
         for measure in part.getElementsByClass(stream.Measure):
             in_effect = {}
             for element in measure.recurse().notes:
@@ -80,22 +100,34 @@ def mark_septimal_quartertones(score):
                     pitch = sub_note.pitch
                     written = (pitch.step, pitch.octave)
                     accidental = pitch.accidental
+                    tie_type = None if sub_note.tie is None else sub_note.tie.type
                     # only an accidental written in the file, not one music21
                     # infers from the note's alter
                     if accidental is not None and accidental.displayStatus is True:
-                        quartertones = get_septimal_quartertones(accidental.name)
-                        in_effect[written] = quartertones
-                        # music21 keeps the arrow's name, but it doesn't
-                        # change the pitch, so only an arrow can make the
-                        # pitch microtonal
-                        if quartertones == 0 and pitch.ps != round(pitch.ps):
+                        spelling = get_arrow_spelling(accidental.name)
+                        in_effect[written] = spelling
+                        # only an arrow can make the pitch microtonal
+                        if spelling is None and pitch.ps != round(pitch.ps):
                             raise ImportError_(
                                 f"Accidental {accidental.name} in measure "
                                 f"{measure.number} is not supported"
                             )
-                    sub_note.editorial.septimal_quartertones = in_effect.get(
-                        written, 0
-                    )
+                    elif tie_type in ("stop", "continue") and written in tied_spellings:
+                        in_effect[written] = tied_spellings[written]
+                    spelling = in_effect.get(written)
+                    if spelling is None:
+                        sub_note.editorial.septimal_quartertones = 0
+                    else:
+                        alter, septimal_quartertones = spelling
+                        pitch.accidental = music21_pitch.Accidental(alter)
+                        pitch.accidental.displayStatus = False
+                        sub_note.editorial.septimal_quartertones = (
+                            septimal_quartertones
+                        )
+                    if tie_type in ("start", "continue"):
+                        tied_spellings[written] = spelling
+                    else:
+                        tied_spellings.pop(written, None)
 
 
 def to_fraction(quarter_length):
@@ -158,7 +190,7 @@ def read_score(filename):
                 f"The repeat in measure {measure.number} plays more than "
                 f"{MAX_REPEAT_TIMES} times"
             )
-    mark_septimal_quartertones(score)
+    spell_arrows(score)
     share_jumps(score)
     # music21 renumbers measures when it unrolls jumps
     for measure in score.recurse().getElementsByClass(stream.Measure):
@@ -171,6 +203,12 @@ def read_score(filename):
             "The score's repeats, endings, or jumps can't be followed"
         ) from None
     return score
+
+
+def get_most_recent(changes, time):
+    """The value of the last change at or before time, or None"""
+    earlier_times = [change_time for change_time in changes if change_time <= time]
+    return changes[max(earlier_times)] if earlier_times else None
 
 
 def get_tied_notes(part):
@@ -189,6 +227,8 @@ def convert(filename):
     voices = {True: [], False: []}
     voice_numbers = {True: {}, False: {}}
     changes = {"midi_keys": {}, "measure_numbers": {}, "tempos": {}}
+    # each pitched part's keys, keyed by the time of the change
+    part_keys = []
 
     for part, part_number in zip(score.parts, get_part_numbers(score)):
         for measure in part.getElementsByClass(stream.Measure):
@@ -196,10 +236,16 @@ def convert(filename):
                 measure.editorial.get("written_number", measure.number)
             )
         flat_part = part.flatten()
-        for key_signature in flat_part.getElementsByClass(music21_key.KeySignature):
-            degree = (FIFTH_HALFSTEPS * key_signature.sharps) % HALFSTEPS_PER_OCTAVE
-            changes["midi_keys"][to_fraction(key_signature.offset)] = (
-                MIDDLE_C_MIDI + degree
+        # unpitched parts' keys don't matter
+        if any(not is_unpitched(element) for element in flat_part.notes):
+            part_keys.append(
+                {
+                    to_fraction(key_signature.offset): MIDDLE_C_MIDI
+                    + (FIFTH_HALFSTEPS * key_signature.sharps) % HALFSTEPS_PER_OCTAVE
+                    for key_signature in flat_part.getElementsByClass(
+                        music21_key.KeySignature
+                    )
+                }
             )
         for metronome_mark in flat_part.getElementsByClass(tempo.MetronomeMark):
             quarters_per_minute = metronome_mark.getQuarterBPM()
@@ -251,6 +297,17 @@ def convert(filename):
                         "septimal_quartertones", 0
                     )
                 notes.append(new_note)
+
+    # Justly has one key at a time, so every part, and every staff of a part,
+    # has to be in the same key whenever any of them changes
+    for time in sorted({time for keys in part_keys for time in keys}):
+        midi_keys = {get_most_recent(keys, time) for keys in part_keys}
+        if len(midi_keys) > 1:
+            raise ImportError_(
+                f"The key signatures in measure "
+                f"{get_most_recent(changes['measure_numbers'], time)} don't match"
+            )
+        changes["midi_keys"][time] = midi_keys.pop()
 
     # the fewest divisions per quarter note that every time fits into
     times = [new_note[field] for new_note in notes for field in ("time", "duration")]

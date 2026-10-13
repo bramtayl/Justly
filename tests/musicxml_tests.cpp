@@ -21,8 +21,6 @@ void Tester::test_musicxml_data() {
   QTest::newRow("prelude") << "prelude.musicxml" << MUSIC_XML_ROWS;
   QTest::newRow("compressed prelude") << "prelude.mxl" << MUSIC_XML_ROWS;
   QTest::newRow("percussion") << "percussion.musicxml" << PERCUSSION_ROWS;
-  QTest::newRow("transposing instruments")
-      << "MozartTrio.musicxml" << MOZART_ROWS;
   QTest::newRow("repeats") << "Saltarello.musicxml" << SALTARELLO_ROWS;
   // grace notes have no duration, so they're left out
   QTest::newRow("grace notes") << "MozartPianoSonata.musicxml" << 24;
@@ -70,6 +68,12 @@ void Tester::test_musicxml_error_data() {
   QTest::newRow("mxl container without rootfile")
       << "mxl_no_rootfile.mxl" << missing_rootfile_message;
   QTest::newRow("empty") << "empty.musicxml" << "No chords";
+  // music21 transposes the A clarinet's key signature as if it were a Bb
+  // clarinet, the instrument its midi program names, while it transposes
+  // its notes by its transpose element
+  QTest::newRow("transposing instrument")
+      << "MozartTrio.musicxml"
+      << "The key signatures in measure 0 don't match";
   QTest::newRow("timewise")
       << "timewise.musicxml"
       << "music21 can't read the score: Cannot parse MusicXML files not in "
@@ -193,13 +197,35 @@ void Tester::test_import_musicxml_voice_named_like_program() {
 // a part's midi-program picks its voice's program, here for a voice named
 // "Violin II", which doesn't match a program by name
 void Tester::test_import_musicxml_midi_program() {
-  auto& window_body = main_window.window_body;
+  QTemporaryFile temp_file;
+  QVERIFY(temp_file.open());
+  temp_file.write(R"(
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Second violin</part-name>
+      <score-instrument id="P1-I1">
+        <instrument-name>Violin II</instrument-name>
+      </score-instrument>
+      <midi-instrument id="P1-I1"><midi-program>41</midi-program></midi-instrument>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes><divisions>1</divisions></attributes>
+      <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration></note>
+    </measure>
+  </part>
+</score-partwise>)");
+  temp_file.close();
 
-  import_musicxml(main_window, test_dir.filePath("MozartTrio.musicxml"));
+  auto& window_body = main_window.window_body;
+  import_musicxml(main_window, temp_file.fileName());
 
   const auto& pitched_voices = window_body.song.pitched_voices;
-  QCOMPARE(pitched_voices.at(2).name, QString("Violin II"));
-  QCOMPARE(pitched_voices.at(2).program, QString("Violin"));
+  QCOMPARE(pitched_voices.size(), 1);
+  QCOMPARE(pitched_voices.at(0).name, QString("Violin II"));
+  QCOMPARE(pitched_voices.at(0).program, QString("Violin"));
 
   open_file(main_window, test_dir.filePath("test_song.xml"));
 }
@@ -350,6 +376,14 @@ void Tester::test_musicxml_inline_error_data() {
              R"(<barline location="left"><repeat direction="forward"/></barline>)" +
              plain_note + R"(<barline><repeat direction="backward"/></barline>)"
       << unfollowable_message;
+  // Justly has one key at a time
+  QTest::newRow("staves in different keys")
+      << get_divisions() + "<staves>2</staves>" +
+             R"(<key number="1"><fifths>1</fifths></key>)" +
+             R"(<key number="2"><fifths>0</fifths></key>)"
+      << make_spelled_note("B", "4", "", "", "", "1") +
+             make_spelled_note("C", "3", "", "", "", "2")
+      << "The key signatures in measure 1 don't match";
   QTest::newRow("dal segno without a segno")
       << get_divisions() << plain_note + get_words("D.S.")
       << unfollowable_message;
@@ -525,6 +559,24 @@ void Tester::test_musicxml_accidentals_data() {
       << make_spelled_note("B", "4", "-1", "flat-down", "start") +
              get_next_measure() +
              make_spelled_note("B", "4", "-1", "", "stop")
+      << Interval(Rational(7, 4));
+  // an alter can't hold a 7 or el, so files leave it out or get it wrong,
+  // and an arrow's accidental spells the note instead
+  QTest::newRow("arrow without an alter")
+      << c_major << make_spelled_note("B", "4", "", "flat-down")
+      << Interval(Rational(7, 4));
+  QTest::newRow("arrow with a wrong alter")
+      << c_major << make_spelled_note("B", "4", "-1.2", "flat-down")
+      << Interval(Rational(7, 4));
+  QTest::newRow("arrow without an alter lasts through the measure")
+      << c_major
+      << make_spelled_note("B", "4", "", "flat-down") +
+             make_spelled_note("B", "4")
+      << Interval(Rational(7, 4));
+  QTest::newRow("arrow without an alter continues across a tie")
+      << c_major
+      << make_spelled_note("B", "4", "", "flat-down", "start") +
+             get_next_measure() + make_spelled_note("B", "4", "", "", "stop")
       << Interval(Rational(7, 4));
 }
 
