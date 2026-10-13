@@ -124,18 +124,26 @@ if (NOT python_setup STREQUAL last_python_setup)
         "${python_folder}/bin/idle*"
         "${python_folder}/bin/pip*"
         "${python_folder}/bin/pydoc*"
-        "${python_folder}/bin/*-config"
-        "${python_folder}/lib/libtcl*"
-        "${python_folder}/lib/libtk*"
-        "${python_folder}/lib/tcl*"
-        "${python_folder}/lib/tk*"
-        "${python_folder}/lib/itcl*"
-        "${python_folder}/lib/thread*"
         "${python_lib_folder}/lib-dynload/_tkinter*"
         "${python_folder}/DLLs/_tkinter*"
         "${python_folder}/DLLs/tcl*"
         "${python_folder}/DLLs/tk*"
     )
+    if (NOT WIN32)
+        # Windows keeps these in the tcl folder. Its file names ignore case,
+        # so these would match python's standard library, in python/Lib,
+        # there instead
+        file(GLOB tcl_files LIST_DIRECTORIES true
+            "${python_folder}/bin/*-config"
+            "${python_folder}/lib/libtcl*"
+            "${python_folder}/lib/libtk*"
+            "${python_folder}/lib/tcl*"
+            "${python_folder}/lib/tk*"
+            "${python_folder}/lib/itcl*"
+            "${python_folder}/lib/thread*"
+        )
+        list(APPEND unused_python_files ${tcl_files})
+    endif()
     if (LINUX)
         # the python executable links libpython statically
         file(GLOB libpython "${python_folder}/lib/libpython*")
