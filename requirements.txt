@@ -1,0 +1,2 @@
+# for share/import_score.py, which reads scores to import
+music21==10.5.0

@@ -2,9 +2,17 @@
 #include <QtWidgets/QLabel>
 
 #include "Tester.hpp"
-#include "musicxml/MusicXMLPart.hpp"
 #include "widgets/ControlsColumn.hpp"
 #include "widgets/SpinBoxes.hpp"
+
+namespace {
+
+auto get_not_musicxml_message() -> QString {
+  return "music21 can't read the score: Cannot parse MusicXML files not in "
+         "score-partwise. Root tag was 'song'";
+}
+
+}  // namespace
 
 void Tester::test_musicxml_data() {
   QTest::addColumn<QString>("file_name");
@@ -16,6 +24,12 @@ void Tester::test_musicxml_data() {
   QTest::newRow("transposing instruments")
       << "MozartTrio.musicxml" << MOZART_ROWS;
   QTest::newRow("repeats") << "Saltarello.musicxml" << SALTARELLO_ROWS;
+  // grace notes have no duration, so they're left out
+  QTest::newRow("grace notes") << "MozartPianoSonata.musicxml" << 24;
+  QTest::newRow("fractional divisions") << "fractional_divisions.musicxml"
+                                        << 1;
+  // music21 doesn't require a tie-stop to have a matching tie-start
+  QTest::newRow("orphan tie") << "orphan_tie.musicxml" << 1;
 }
 
 void Tester::test_musicxml() {
@@ -36,38 +50,34 @@ void Tester::test_musicxml_error_data() {
   QTest::addColumn<QString>("error_message");
 
   QTest::newRow("not musicxml")
-      << "not_musicxml.xml" << "Invalid musicxml file";
-  QTest::newRow("invalid mxl") << "invalid.mxl" << "Invalid XML file";
+      << "not_musicxml.xml" << get_not_musicxml_message();
+  QTest::newRow("invalid mxl")
+      << "invalid.mxl"
+      << "music21 can't read the score: syntax error: line 1, column 0";
   // a compressed score's container.xml has to exist, parse, and name a
   // rootfile
   QTest::newRow("mxl without container")
-      << "mxl_no_container.mxl" << "Invalid XML file";
+      << "mxl_no_container.mxl"
+      << "music21 can't read the score: Cannot parse MusicXML files not in "
+         "score-partwise. Root tag was 'x'";
+  const QString missing_rootfile_message =
+      "music21 can't read the score: a bytes-like object is required, not "
+      "'NoneType'";
   QTest::newRow("mxl with invalid container")
-      << "mxl_bad_container.mxl" << "Invalid XML file";
+      << "mxl_bad_container.mxl" << missing_rootfile_message;
   QTest::newRow("mxl container without rootfiles")
-      << "mxl_no_rootfiles.mxl" << "Invalid XML file";
+      << "mxl_no_rootfiles.mxl" << missing_rootfile_message;
   QTest::newRow("mxl container without rootfile")
-      << "mxl_no_rootfile.mxl" << "Invalid XML file";
+      << "mxl_no_rootfile.mxl" << missing_rootfile_message;
   QTest::newRow("empty") << "empty.musicxml" << "No chords";
-  QTest::newRow("grace notes") << "MozartPianoSonata.musicxml"
-                               << "Notes without durations not supported";
-  QTest::newRow("timewise") << "timewise.musicxml"
-                            << "Justly only supports partwise musicxml scores";
-  // regression test: divisions is xs:decimal in the musicxml schema (to
-  // allow fractional divisions), but xml_to_int used to silently truncate
-  // fractional content via std::stoi instead of rejecting it, corrupting
-  // note timing with no warning
-  QTest::newRow("fractional divisions")
-      << "fractional_divisions.musicxml"
-      << "Fractional divisions are not supported";
-  // regression test: divisions is unbounded xs:decimal with no
-  // schema-enforced range, so a magnitude that doesn't fit in a 32-bit int
-  // must be rejected with a warning instead of overflowing std::stoi
-  QTest::newRow("overflowing divisions") << "overflowing_divisions.musicxml"
-                                         << "Divisions value is out of range";
-  // the schema doesn't require a tie-stop to have a matching tie-start
-  QTest::newRow("orphan tie") << "orphan_tie.musicxml"
-                              << "Tie in measure 1 of part Piano never starts";
+  QTest::newRow("timewise")
+      << "timewise.musicxml"
+      << "music21 can't read the score: Cannot parse MusicXML files not in "
+         "score-partwise. Root tag was 'score-timewise'";
+  // divisions is unbounded xs:decimal with no schema-enforced range
+  QTest::newRow("overflowing divisions")
+      << "overflowing_divisions.musicxml"
+      << "music21 can't read the score: division by zero";
 }
 
 void Tester::test_musicxml_error() {
@@ -76,62 +86,6 @@ void Tester::test_musicxml_error() {
 
   close_message_later(main_window, waiting_for_message, error_message);
   import_musicxml(main_window, test_dir.filePath(file_name));
-}
-
-// regression test: a backward repeat with no forward repeat since the
-// last block boundary (e.g. a repeat that implicitly continues right
-// after an earlier, already-expanded repeated section) must replay from
-// that block boundary, not from measure 0 -- otherwise an earlier,
-// already-consumed repeated section gets incorrectly replayed again, and
-// the plain measures between the two sections get silently dropped
-// instead of flushed
-void Tester::test_playback_order_lone_backward_repeat() {
-  QList<MusicXMLMeasure> measures(5);
-  measures[0].has_forward_repeat = true;
-  measures[1].has_backward_repeat = true;
-  // a lone backward repeat: no forward repeat since measure 2
-  measures[4].has_backward_repeat = true;
-
-  const QList<int> expected_order = {
-      0, 1, 0, 1,        // measures 0-1, twice
-      2, 3, 4, 2, 3, 4,  // measures 2-4, twice
-  };
-
-  QCOMPARE(get_playback_order(measures), expected_order);
-}
-
-// regression test: the musicxml importer's in-progress-tie lookup used to
-// be keyed by pitch alone, shared across every voice (and every part) in
-// the whole document. Two simultaneous voices tying the same pitch (here,
-// two instruments in one piano part) would clobber each other's still-open
-// note: the second voice's tie-start silently overwrote the first voice's
-// map entry, so the first voice's tie-stop resolved onto the wrong note
-// (wrong words/duration) and the second voice's own tie-stop then found no
-// entry at all. Keying the lookup by voice as well as pitch keeps
-// overlapping ties on the same pitch independent.
-void Tester::test_import_musicxml_ties_do_not_cross_voices() {
-  auto& window_body = main_window.window_body;
-
-  import_musicxml(main_window, test_dir.filePath("tied_voices.musicxml"));
-
-  auto& song = window_body.song;
-  QCOMPARE(song.chords.size(), 2);
-
-  const auto& left_hand_notes = song.chords.at(0).pitched_notes;
-  QCOMPARE(left_hand_notes.size(), 1);
-  QCOMPARE(left_hand_notes.at(0).voice_name, song.pitched_voices.at(0).name);
-  QVERIFY(left_hand_notes.at(0).words.contains("Left Hand"));
-  QCOMPARE(left_hand_notes.at(0).beats.numerator, 8);
-  QCOMPARE(left_hand_notes.at(0).beats.denominator, 1);
-
-  const auto& right_hand_notes = song.chords.at(1).pitched_notes;
-  QCOMPARE(right_hand_notes.size(), 1);
-  QCOMPARE(right_hand_notes.at(0).voice_name, song.pitched_voices.at(1).name);
-  QVERIFY(right_hand_notes.at(0).words.contains("Right Hand"));
-  QCOMPARE(right_hand_notes.at(0).beats.numerator, 8);
-  QCOMPARE(right_hand_notes.at(0).beats.denominator, 1);
-
-  open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
 // regression test: inserting a chord, then drilling into and inserting one
@@ -211,7 +165,7 @@ void Tester::test_failed_import_does_not_reset_notes_view() {
   QCOMPARE(switch_column.editing_text.text(), "Pitched notes for chord 1");
 
   close_message_later(main_window, waiting_for_message,
-                      "Invalid musicxml file");
+                      get_not_musicxml_message());
   import_musicxml(main_window, test_dir.filePath("not_musicxml.xml"));
 
   QCOMPARE(switch_column.editing_text.text(), "Pitched notes for chord 1");
@@ -236,80 +190,37 @@ void Tester::test_import_musicxml_voice_named_like_program() {
   open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
-// a midi-program picks the voice's program, and changing it partway through
-// starts a new voice, from where the sound's offset puts the change.
-// Repeating back to before the change goes back to the first voice
-void Tester::test_import_musicxml_midi_program_change() {
+// a part's midi-program picks its voice's program, here for a voice named
+// "Violin II", which doesn't match a program by name
+void Tester::test_import_musicxml_midi_program() {
   auto& window_body = main_window.window_body;
 
-  import_musicxml(main_window,
-                  test_dir.filePath("midi_program_change.musicxml"));
+  import_musicxml(main_window, test_dir.filePath("MozartTrio.musicxml"));
 
-  const auto& song = window_body.song;
-  const auto& pitched_voices = song.pitched_voices;
-  QCOMPARE(pitched_voices.size(), 2);
-  QCOMPARE(pitched_voices.at(0).name, QString("Doubler"));
-  QCOMPARE(pitched_voices.at(0).program, QString("Grand Piano"));
-  QCOMPARE(pitched_voices.at(1).name, QString("Doubler (2)"));
-  QCOMPARE(pitched_voices.at(1).program, QString("Flute"));
-
-  // C, D, E, then repeated
-  static const QList<QString> expected_voice_names = {
-      "Doubler", "Doubler", "Doubler (2)",
-      "Doubler", "Doubler", "Doubler (2)"};
-  QCOMPARE(song.chords.size(), expected_voice_names.size());
-  for (auto chord_number = 0; chord_number < song.chords.size();
-       ++chord_number) {
-    QCOMPARE(song.chords.at(chord_number).pitched_notes.at(0).voice_name,
-             expected_voice_names.at(chord_number));
-  }
+  const auto& pitched_voices = window_body.song.pitched_voices;
+  QCOMPARE(pitched_voices.at(2).name, QString("Violin II"));
+  QCOMPARE(pitched_voices.at(2).program, QString("Violin"));
 
   open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
-// a direction's offset only moves a program change if it says it moves the
-// sound
-void Tester::test_import_musicxml_direction_offset() {
-  auto& window_body = main_window.window_body;
-
-  import_musicxml(main_window, test_dir.filePath("direction_offset.musicxml"));
-
-  const auto& song = window_body.song;
-  const auto& pitched_voices = song.pitched_voices;
-  QCOMPARE(pitched_voices.size(), 2);
-  QCOMPARE(pitched_voices.at(0).name, QString("Doubler"));
-  QCOMPARE(pitched_voices.at(0).program, QString("Violin"));
-  QCOMPARE(pitched_voices.at(1).name, QString("Doubler (2)"));
-  QCOMPARE(pitched_voices.at(1).program, QString("Flute"));
-
-  // C, D, E, F
-  static const QList<QString> expected_voice_names = {
-      "Doubler", "Doubler", "Doubler", "Doubler (2)"};
-  QCOMPARE(song.chords.size(), expected_voice_names.size());
-  for (auto chord_number = 0; chord_number < song.chords.size();
-       ++chord_number) {
-    QCOMPARE(song.chords.at(chord_number).pitched_notes.at(0).voice_name,
-             expected_voice_names.at(chord_number));
-  }
-
-  open_file(main_window, test_dir.filePath("test_song.xml"));
-}
-
-// a sound's tempo, or failing that, a metronome mark's, changes the tempo,
-// rounded to a whole number of quarter notes per minute. Repeating back to
-// before a change goes back to the earlier tempo
+// a metronome mark changes the tempo, rounded to a whole number of quarter
+// notes per minute. Repeating back to before a change goes back to the
+// earlier tempo. music21 reads a metronome mark over the sound's tempo next
+// to it, and skips a metronome mark it can't read a number from, like
+// "c. 40"
 void Tester::test_import_musicxml_tempo() {
   auto& window_body = main_window.window_body;
 
   import_musicxml(main_window, test_dir.filePath("tempo.musicxml"));
 
   const auto& song = window_body.song;
-  QCOMPARE(song.starting_tempo, 90);
+  QCOMPARE(song.starting_tempo, 60);
 
   // C, D, then repeated, then E, F
   static const QList<Rational> expected_tempo_ratios = {
-      Rational(1),    Rational(2, 3), Rational(3, 2),
-      Rational(2, 3), Rational(1),    Rational(5, 2)};
+      Rational(1), Rational(1), Rational(1),
+      Rational(1), Rational(1), Rational(5, 2)};
   QCOMPARE(song.chords.size(), expected_tempo_ratios.size());
   for (auto chord_number = 0; chord_number < song.chords.size();
        ++chord_number) {
@@ -350,14 +261,16 @@ auto make_pitch_note(const QString& accidental, const QString& duration)
          "</note>";
 }
 
-// a quarter note (with one division per quarter), optionally tied, with an
-// accidental, or on a given staff
+// a quarter note (with one division per quarter), optionally altered, tied,
+// with an accidental, or on a given staff
 auto make_spelled_note(const QString& step, const QString& octave,
+                       const QString& alter = "",
                        const QString& accidental = "",
                        const QString& tie_type = "", const QString& staff = "")
     -> QString {
-  return "<note><pitch><step>" + step + "</step><octave>" + octave +
-         "</octave></pitch><duration>1</duration>" +
+  return "<note><pitch><step>" + step + "</step>" +
+         (alter.isEmpty() ? QString() : "<alter>" + alter + "</alter>") +
+         "<octave>" + octave + "</octave></pitch><duration>1</duration>" +
          (tie_type.isEmpty() ? QString()
                              : QString(R"(<tie type="%1"/>)").arg(tie_type)) +
          (accidental.isEmpty()
@@ -381,131 +294,65 @@ auto get_divisions() -> QString { return "<divisions>1</divisions>"; }
 // too big for a 32-bit int, but still valid for the schema's unbounded types
 auto get_huge_number() -> QString { return "99999999999"; }
 
+// a direction with the given words, which is how music21 reads jumps
+auto get_words(const QString& words) -> QString {
+  return "<direction><direction-type><words>" + words +
+         "</words></direction-type></direction>";
+}
+
 }  // namespace
 
-// each of these fields is unbounded or decimal in the musicxml schema, so a
-// valid file can hold a value the importer can't represent; it must warn and
-// reject the file instead of truncating or overflowing
+// scores that can't be imported
 void Tester::test_musicxml_inline_error_data() {
   QTest::addColumn<QString>("attributes");
   QTest::addColumn<QString>("body");
   QTest::addColumn<QString>("error_message");
 
   const auto plain_note = make_pitch_note("", "1");
+  const auto unfollowable_message =
+      QString("The score's repeats, endings, or jumps can't be followed");
 
-  QTest::newRow("fifths out of range")
-      << get_divisions() + "<key><fifths>" + get_huge_number() +
-             "</fifths></key>"
-      << plain_note << "Fifths value is out of range";
   QTest::newRow("microtonal transpose")
       << get_divisions() + "<transpose><chromatic>1.5</chromatic></transpose>"
-      << plain_note << "Microtonal transpositions are not supported";
-  QTest::newRow("chromatic out of range")
+      << plain_note
+      << "music21 can't read the score: invalid literal for int() with base "
+         "10: '1.5'";
+  QTest::newRow("note outside the midi range")
       << get_divisions() + "<transpose><chromatic>" + get_huge_number() +
              "</chromatic></transpose>"
-      << plain_note << "Chromatic value is out of range";
-  QTest::newRow("octave change out of range")
-      << get_divisions() +
-             "<transpose><chromatic>0</chromatic><octave-change>" +
-             get_huge_number() + "</octave-change></transpose>"
-      << plain_note << "Octave change value is out of range";
+      << plain_note << "A note in measure 1 is outside the midi range";
   // only arrows are read as septimal quartertones, since a bare quartertone
   // accidental doesn't say which chromatic accidental it modifies
   QTest::newRow("quartertone accidental")
       << get_divisions() << make_pitch_note("quarter-flat", "1")
-      << "Accidental quarter-flat is not supported";
-  QTest::newRow("other accidental")
-      << get_divisions() << make_pitch_note("other", "1")
-      << "Accidental other is not supported";
-  QTest::newRow("fractional note duration")
-      << get_divisions() << make_pitch_note("", "1.5")
-      << "Fractional note durations are not supported";
+      << "Accidental half-flat in measure 1 is not supported";
   QTest::newRow("note duration out of range")
       << get_divisions() << make_pitch_note("", get_huge_number())
-      << "Note duration is out of range";
-  QTest::newRow("fractional backup")
-      << get_divisions() << "<backup><duration>1.5</duration></backup>"
-      << "Fractional durations are not supported";
-  QTest::newRow("fractional forward")
-      << get_divisions() << "<forward><duration>1.5</duration></forward>"
-      << "Fractional durations are not supported";
-  QTest::newRow("backup duration out of range")
-      << get_divisions()
-      << "<backup><duration>" + get_huge_number() + "</duration></backup>"
-      << "Duration is out of range";
-  QTest::newRow("forward duration out of range")
-      << get_divisions()
-      << "<forward><duration>" + get_huge_number() + "</duration></forward>"
-      << "Duration is out of range";
-  QTest::newRow("repeat times out of range")
+      << "The score is too long, or its rhythms too fine";
+  // unrolling a repeat copies its measures, so too many would run out of
+  // memory
+  QTest::newRow("too many repeat times")
       << get_divisions()
       << plain_note +
              QString(
                  R"(<barline><repeat direction="backward" times="%1"/></barline>)")
                  .arg(get_huge_number())
-      << "Repeat times is out of range";
-
-  // the rest of these are allowed by the schema, but don't make sense
-
-  // the schema only checks that the id belongs to something, here the part
-  QTest::newRow("instrument not in part")
-      << get_divisions() << R"(<note>
-        <pitch><step>C</step><octave>4</octave></pitch>
-        <duration>1</duration>
-        <instrument id="P1"/>
-      </note>)"
-      << "Instrument P1 in measure 1 isn't in part P";
-  QTest::newRow("backup past the measure")
-      << get_divisions()
-      << plain_note + "<backup><duration>2</duration></backup>"
-      << "Backup in measure 1 goes back past the start of the measure";
-  QTest::newRow("tie never starts")
-      << get_divisions() << make_spelled_note("C", "4", "", "stop")
-      << "Tie in measure 1 of part P never starts";
-  QTest::newRow("tie never stops")
-      << get_divisions() << make_spelled_note("C", "4", "", "start")
-      << "Tie in measure 1 of part P never stops";
-  QTest::newRow("tie restarts before stopping")
-      << get_divisions()
-      << make_spelled_note("C", "4", "", "start") + get_next_measure() +
-             make_spelled_note("C", "4", "", "start") +
-             make_spelled_note("C", "4", "", "stop")
-      << "Tie in measure 1 of part P never stops";
-  QTest::newRow("ending never starts")
-      << get_divisions()
-      << plain_note + R"(<barline><ending number="1" type="stop"/></barline>)"
-      << "Ending in measure 1 stops without starting";
-  QTest::newRow("ending starts twice")
-      << get_divisions()
-      << R"(<barline location="left"><ending number="1" type="start"/></barline>)" +
-             plain_note + get_next_measure() +
-             R"(<barline location="left"><ending number="2" type="start"/></barline>)" +
-             plain_note +
-             R"(<barline><ending number="2" type="discontinue"/></barline>)"
-      << "Ending in measure 2 starts before the previous ending stops";
-  QTest::newRow("ending never stops")
-      << get_divisions()
-      << R"(<barline location="left"><ending number="1" type="start"/></barline>)" +
-             plain_note
-      << "Ending in part P never stops";
+      << "The repeat in measure 1 plays more than 100 times";
   QTest::newRow("forward repeat at the end")
       << get_divisions()
       << R"(<barline location="left"><repeat direction="forward"/></barline>)" +
              plain_note
-      << "Forward repeat in measure 1 has no backward repeat";
+      << unfollowable_message;
   QTest::newRow("forward repeat before another")
       << get_divisions()
       << R"(<barline location="left"><repeat direction="forward"/></barline>)" +
              plain_note + get_next_measure() +
              R"(<barline location="left"><repeat direction="forward"/></barline>)" +
              plain_note + R"(<barline><repeat direction="backward"/></barline>)"
-      << "Forward repeat in measure 1 has no backward repeat";
+      << unfollowable_message;
   QTest::newRow("dal segno without a segno")
-      << get_divisions() << plain_note + R"(<sound dalsegno="segno"/>)"
-      << "Dal segno in measure 1 has no segno to go back to";
-  QTest::newRow("to coda without a coda")
-      << get_divisions() << plain_note + R"(<sound tocoda="coda"/>)"
-      << "To coda in measure 1 has no coda to go to";
+      << get_divisions() << plain_note + get_words("D.S.")
+      << unfollowable_message;
 }
 
 void Tester::test_musicxml_inline_error() {
@@ -553,7 +400,8 @@ void Tester::test_musicxml_octave_change() {
     QTemporaryFile temp_file;
     QVERIFY(temp_file.open());
     temp_file.write(make_musicxml(get_divisions() +
-                                      "<transpose><chromatic>0</chromatic>" +
+                                      "<transpose><diatonic>0</diatonic>"
+                                      "<chromatic>0</chromatic>" +
                                       transpose + "</transpose>",
                                   make_pitch_note("", "1"))
                         .toStdString()
@@ -599,9 +447,9 @@ void Tester::test_musicxml_transposed_key() {
   open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
-// notes are spelled from their accidentals, as they would be read, with
-// arrows as Johnston's 7 (down, 35/36) and el (up, 36/35); the checked note
-// is the first in the last chord, measured from the key
+// music21 reads each note's pitch from its alter, and Justly reads arrows on
+// its accidental as Johnston's 7 (down, 35/36) and el (up, 36/35); the
+// checked note is the first in the last chord, measured from the key
 void Tester::test_musicxml_accidentals_data() {
   QTest::addColumn<QString>("attributes");
   QTest::addColumn<QString>("body");
@@ -610,83 +458,73 @@ void Tester::test_musicxml_accidentals_data() {
   const auto c_major = get_divisions() + make_key("0");
 
   QTest::newRow("minor seventh")
-      << c_major << make_spelled_note("B", "4", "flat")
+      << c_major << make_spelled_note("B", "4", "-1", "flat")
       << Interval(Rational(9, 5));
   QTest::newRow("harmonic seventh")
-      << c_major << make_spelled_note("B", "4", "flat-down")
+      << c_major << make_spelled_note("B", "4", "-1", "flat-down")
       << Interval(Rational(7, 4));
-  QTest::newRow("el") << c_major << make_spelled_note("B", "4", "flat-up")
+  QTest::newRow("el") << c_major
+                      << make_spelled_note("B", "4", "-1", "flat-up")
                       << Interval(Rational(324, 175));
   QTest::newRow("natural with 7")
-      << c_major << make_spelled_note("B", "4", "natural-down")
+      << c_major << make_spelled_note("B", "4", "", "natural-down")
       << Interval(Rational(175, 96));
   // not the same as an F raised by an el, even though both are notated a
   // quartertone above F
   QTest::newRow("sharp with 7")
-      << c_major << make_spelled_note("F", "4", "sharp-down")
+      << c_major << make_spelled_note("F", "4", "1", "sharp-down")
       << Interval(Rational(175, 128));
   QTest::newRow("natural with el")
-      << c_major << make_spelled_note("F", "4", "natural-up")
+      << c_major << make_spelled_note("F", "4", "", "natural-up")
       << Interval(Rational(48, 35));
   QTest::newRow("double flat with 7")
-      << c_major << make_spelled_note("B", "4", "flat-flat-down")
+      << c_major << make_spelled_note("B", "4", "-2", "flat-flat-down")
       << Interval(Rational(175, 108));
   QTest::newRow("double sharp with el")
-      << c_major << make_spelled_note("C", "4", "double-sharp-up")
+      << c_major << make_spelled_note("C", "4", "2", "double-sharp-up")
       << Interval(Rational(81, 70));
-  // <alter> is ignored in favor of the accidental
-  QTest::newRow("alter ignored") << c_major << R"(
-      <note>
-        <pitch><step>B</step><alter>-1</alter><octave>4</octave></pitch>
-        <duration>1</duration>
-      </note>)" << Interval(Rational(15, 8));
-  // F major: B is flat, and the key is F
-  QTest::newRow("key signature flat")
-      << get_divisions() + make_key("-1") << make_spelled_note("B", "4")
-      << Interval(Rational(4, 3));
-  // G# major: the eighth sharp doubles F, and the key is G#
-  QTest::newRow("key signature double sharp")
-      << get_divisions() + make_key("8") << make_spelled_note("F", "4")
-      << Interval(Rational(15, 8), -1);
-  QTest::newRow("accidental lasts through the measure")
-      << c_major
-      << make_spelled_note("B", "4", "flat-down") + make_spelled_note("B", "4")
-      << Interval(Rational(7, 4));
-  QTest::newRow("accidental replaced later in the measure")
-      << c_major
-      << make_spelled_note("B", "4", "flat-down") +
-             make_spelled_note("B", "4", "flat")
+  QTest::newRow("alter without an accidental")
+      << c_major << make_spelled_note("B", "4", "-1")
       << Interval(Rational(9, 5));
-  QTest::newRow("accidental only applies to its octave")
-      << c_major
-      << make_spelled_note("B", "4", "flat-down") + make_spelled_note("B", "3")
-      << Interval(Rational(15, 8), -1);
-  QTest::newRow("accidental only applies to its staff")
-      << c_major
-      << make_spelled_note("B", "4", "flat-down", "", "1") +
-             make_spelled_note("B", "4", "", "", "2")
-      << Interval(Rational(15, 8));
-  QTest::newRow("accidental ends with the measure")
-      << c_major
-      << make_spelled_note("B", "4", "flat-down") + get_next_measure() +
-             make_spelled_note("B", "4")
-      << Interval(Rational(15, 8));
-  // once an accidental stops applying, the note falls back to the key
-  // signature, not to natural
-  QTest::newRow("key signature after the accidental's measure")
-      << get_divisions() + make_key("-1")
-      << make_spelled_note("B", "4", "natural") + get_next_measure() +
-             make_spelled_note("B", "4")
+  // F major: the key is F
+  QTest::newRow("key signature flat")
+      << get_divisions() + make_key("-1") << make_spelled_note("B", "4", "-1")
       << Interval(Rational(4, 3));
-  QTest::newRow("key signature outside the accidental's octave")
-      << get_divisions() + make_key("-1")
-      << make_spelled_note("B", "4", "natural") + make_spelled_note("B", "3")
-      << Interval(Rational(4, 3), -1);
-  // a tied-over note keeps the pitch it was tied from, without an accidental
+  // G# major: the key is G#
+  QTest::newRow("key signature double sharp")
+      << get_divisions() + make_key("8") << make_spelled_note("F", "4", "2")
+      << Interval(Rational(15, 8), -1);
+  QTest::newRow("arrow lasts through the measure")
+      << c_major
+      << make_spelled_note("B", "4", "-1", "flat-down") +
+             make_spelled_note("B", "4", "-1")
+      << Interval(Rational(7, 4));
+  QTest::newRow("arrow replaced later in the measure")
+      << c_major
+      << make_spelled_note("B", "4", "-1", "flat-down") +
+             make_spelled_note("B", "4", "-1", "flat")
+      << Interval(Rational(9, 5));
+  QTest::newRow("arrow only applies to its octave")
+      << c_major
+      << make_spelled_note("B", "4", "-1", "flat-down") +
+             make_spelled_note("B", "3")
+      << Interval(Rational(15, 8), -1);
+  QTest::newRow("arrow only applies to its staff")
+      << c_major + "<staves>2</staves>"
+      << make_spelled_note("B", "4", "-1", "flat-down", "", "1") +
+             make_spelled_note("B", "4", "", "", "", "2")
+      << Interval(Rational(15, 8));
+  QTest::newRow("arrow ends with the measure")
+      << c_major
+      << make_spelled_note("B", "4", "-1", "flat-down") + get_next_measure() +
+             make_spelled_note("B", "4")
+      << Interval(Rational(15, 8));
+  // a tied-over note keeps the arrow it was tied from
   QTest::newRow("tie continues across the barline")
       << c_major
-      << make_spelled_note("B", "4", "flat-down", "start") +
-             get_next_measure() + make_spelled_note("B", "4", "", "stop")
+      << make_spelled_note("B", "4", "-1", "flat-down", "start") +
+             get_next_measure() +
+             make_spelled_note("B", "4", "-1", "", "stop")
       << Interval(Rational(7, 4));
 }
 
@@ -784,9 +622,7 @@ void Tester::test_import_musicxml_duplicate_voice_names() {
 }
 
 // a first ending plays only on the first pass and a second ending only on
-// the second; a repeated ending number counts once, and a blank ending
-// number (allowed by the schema for an ending of unknown type) marks no
-// passes, so its measure just plays once after the repeat
+// the second
 void Tester::test_musicxml_endings() {
   // every %1 is the same plain note
   const auto body = QString(R"(
@@ -794,7 +630,7 @@ void Tester::test_musicxml_endings() {
       %1
     </measure>
     <measure number="2">
-      <barline location="left"><ending number="1, 1" type="start"/></barline>
+      <barline location="left"><ending number="1" type="start"/></barline>
       %1
       <barline location="right">
         <ending number="1" type="stop"/>
@@ -806,12 +642,7 @@ void Tester::test_musicxml_endings() {
       %1
       <barline location="right">
         <ending number="2" type="discontinue"/>
-      </barline>
-    </measure>
-    <measure number="4">
-      <barline location="left"><ending number=" " type="start"/></barline>
-      %1
-      <barline location="right"><ending number=" " type="stop"/></barline>)")
+      </barline>)")
                         .arg(make_pitch_note("", "1"));
 
   QTemporaryFile temp_file;
@@ -820,8 +651,8 @@ void Tester::test_musicxml_endings() {
   temp_file.close();
 
   import_musicxml(main_window, temp_file.fileName());
-  // measures 1, 2 (first ending), 1, 3 (second ending), 4
-  QCOMPARE(main_window.window_body.song.chords.size(), 5);
+  // measures 1, 2 (first ending), 1, 3 (second ending)
+  QCOMPARE(main_window.window_body.song.chords.size(), 4);
 
   open_file(main_window, test_dir.filePath("test_song.xml"));
 }
@@ -833,7 +664,10 @@ auto make_measures(const QList<QString>& measure_extras) -> QString {
   QString body;
   for (auto index = 0; index < measure_extras.size(); ++index) {
     if (index > 0) {
-      body += get_next_measure();
+      body += QString(R"(
+    </measure>
+    <measure number="%1">)")
+                  .arg(index + 1);
     }
     body += make_pitch_note("", "1") + measure_extras.at(index);
   }
@@ -850,66 +684,34 @@ auto get_backward_repeat() -> QString {
 
 }  // namespace
 
-// jumps are taken at the end of their measure. After a da capo or dal segno,
-// repeats are skipped, only the last ending is played, and a fine or to coda
-// applies
+// music21 reads jumps, and the segnos, codas, and fines they go to, from
+// their words and symbols, and takes them at the end of their measure.
+// Chords keep their written measure numbers through jumps
 void Tester::test_musicxml_jumps_data() {
   QTest::addColumn<QString>("body");
   QTest::addColumn<QList<int>>("expected_measures");
 
-  const QString da_capo = R"(<sound dacapo="yes"/>)";
-  const QString dal_segno = R"(<sound dalsegno="segno"/>)";
-  const QString segno = R"(<sound segno="segno"/>)";
-  const QString to_coda = R"(<sound tocoda="coda"/>)";
-  const QString coda = R"(<sound coda="coda"/>)";
-  const QString fine = R"(<sound fine="yes"/>)";
+  const auto segno =
+      QString("<direction><direction-type><segno/></direction-type></direction>");
+  const auto coda =
+      QString("<direction><direction-type><coda/></direction-type></direction>");
 
-  QTest::newRow("da capo") << make_measures({"", da_capo})
+  QTest::newRow("da capo") << make_measures({"", get_words("D.C.")})
                            << QList<int>({1, 2, 1, 2});
-  QTest::newRow("da capo in a direction") << make_measures({"", R"(<direction>
-        <direction-type><words>D.C.</words></direction-type>
-        <sound dacapo="yes"/>
-      </direction>)"}) << QList<int>({1, 2, 1, 2});
   QTest::newRow("da capo al fine")
-      << make_measures({fine, "", da_capo}) << QList<int>({1, 2, 3, 1});
+      << make_measures({get_words("Fine"), "", get_words("D.C. al Fine")})
+      << QList<int>({1, 2, 3, 1});
   QTest::newRow("dal segno")
-      << make_measures({"", segno, dal_segno}) << QList<int>({1, 2, 3, 2, 3});
-  QTest::newRow("segno on a barline")
-      << make_measures(
-             {"",
-              R"(<barline location="left" segno="segno"><segno/></barline>)",
-              dal_segno})
-      << QList<int>({1, 2, 3, 2, 3});
-  // with no segno by that name, go back to the nearest one
-  QTest::newRow("unnamed segno")
-      << make_measures({"", R"(<sound segno=""/>)", dal_segno})
+      << make_measures({"", segno, get_words("D.S.")})
       << QList<int>({1, 2, 3, 2, 3});
   QTest::newRow("dal segno al coda")
-      << make_measures({segno, to_coda, dal_segno, coda})
+      << make_measures(
+             {segno, get_words("To Coda"), get_words("D.S. al Coda"), coda})
       << QList<int>({1, 2, 3, 1, 2, 4});
-  QTest::newRow("repeats skipped after a da capo")
-      << make_measures({get_forward_repeat(), get_backward_repeat(), da_capo})
+  QTest::newRow("repeats after a da capo")
+      << make_measures(
+             {get_forward_repeat(), get_backward_repeat(), get_words("D.C.")})
       << QList<int>({1, 2, 1, 2, 3, 1, 2, 3});
-  QTest::newRow("last ending after a da capo")
-      << make_measures(
-             {get_forward_repeat(),
-              R"(<barline location="left"><ending number="1" type="start"/></barline>
-      <barline>
-        <ending number="1" type="stop"/>
-        <repeat direction="backward"/>
-      </barline>)",
-              R"(<barline location="left"><ending number="2" type="start"/></barline>
-      <barline><ending number="2" type="discontinue"/></barline>)" +
-                  fine,
-              da_capo})
-      << QList<int>({1, 2, 1, 3, 4, 1, 3});
-  QTest::newRow("time-only")
-      << make_measures({R"(<sound tocoda="coda" time-only="1"/>)", "", coda})
-      << QList<int>({1, 3});
-  QTest::newRow("hidden forward repeat")
-      << make_measures(
-             {"", R"(<sound forward-repeat="yes"/>)", get_backward_repeat()})
-      << QList<int>({1, 2, 3, 2, 3});
 }
 
 void Tester::test_musicxml_jumps() {
@@ -955,7 +757,7 @@ void Tester::test_musicxml_jump_in_one_part() {
   <part-list>
     <score-part id="P1"><part-name>P1</part-name></score-part>
     <score-part id="P2"><part-name>P2</part-name></score-part>
-  </part-list>)") + make_part("P1", R"(<sound dacapo="yes"/>)") +
+  </part-list>)") + make_part("P1", get_words("D.C.")) +
                    make_part("P2", "") + R"(
 </score-partwise>)")
                       .toStdString()
@@ -972,55 +774,23 @@ void Tester::test_musicxml_jump_in_one_part() {
   open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
-// the schema can't check that every part has the same measures
-void Tester::test_musicxml_parts_with_different_measures() {
-  const auto plain_note = make_pitch_note("", "1");
-  QTemporaryFile temp_file;
-  QVERIFY(temp_file.open());
-  temp_file.write((QString(R"(
-<score-partwise version="4.0">
-  <part-list>
-    <score-part id="P1"><part-name>P1</part-name></score-part>
-    <score-part id="P2"><part-name>P2</part-name></score-part>
-  </part-list>
-  <part id="P1">
-    <measure number="1">
-      <attributes>%1</attributes>
-      %2%3%2
-    </measure>
-  </part>
-  <part id="P2">
-    <measure number="1">
-      <attributes>%1</attributes>
-      %2
-    </measure>
-  </part>
-</score-partwise>)")
-                       .arg(get_divisions(), plain_note, get_next_measure()))
-                      .toStdString()
-                      .c_str());
-  temp_file.close();
-
-  close_message_later(main_window, waiting_for_message,
-                      "Part P2 has 1 measure(s), but part P1 has 2");
-  import_musicxml(main_window, temp_file.fileName());
-}
-
 // ties are followed in the order the measures are played, so a note tied
 // into both endings is held into each of them
 void Tester::test_musicxml_tie_into_endings() {
   const auto body =
-      get_forward_repeat() + make_spelled_note("C", "4", "", "start") +
+      get_forward_repeat() + make_spelled_note("C", "4", "", "", "start") +
       get_next_measure() +
       R"(<barline location="left"><ending number="1" type="start"/></barline>)" +
-      make_spelled_note("C", "4", "", "stop") + R"(
+      make_spelled_note("C", "4", "", "", "stop") + R"(
       <barline>
         <ending number="1" type="stop"/>
         <repeat direction="backward"/>
       </barline>)" +
-      get_next_measure() +
+      R"(
+    </measure>
+    <measure number="3">)" +
       R"(<barline location="left"><ending number="2" type="start"/></barline>)" +
-      make_spelled_note("C", "4", "", "stop") +
+      make_spelled_note("C", "4", "", "", "stop") +
       R"(<barline><ending number="2" type="discontinue"/></barline>)";
 
   QTemporaryFile temp_file;

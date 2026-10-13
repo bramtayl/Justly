@@ -9,10 +9,6 @@
                 "sndfile"
             ]
         },
-        {
-            "name": "libzip",
-            "default-features": false
-        },
         "libxml2"
     ]
 }

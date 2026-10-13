@@ -1,15 +1,29 @@
 #pragma once
 
-#include <libxml/tree.h>
-
 #include <QtCore/QList>
+#include <QtCore/QString>
 #include <optional>
 
-#include "musicxml/MusicXMLPart.hpp"
 #include "rows/Chord.hpp"
-#include "xml/XMLDocument.hpp"
 
 class QWidget;
+
+// a midi-instrument's sound, 0-based like a soundfont's
+struct MidiProgram {
+  // if the file doesn't say
+  std::optional<short> bank_number;
+  short preset_number = 0;
+};
+
+struct MusicXMLVoice {
+  QString name;
+  std::optional<MidiProgram> midi_program;
+};
+
+struct MusicXMLVoices {
+  QList<MusicXMLVoice> pitched;
+  QList<MusicXMLVoice> unpitched;
+};
 
 // a musicxml score converted to Justly's terms, ready to replace the song
 struct ImportedScore {
@@ -21,11 +35,8 @@ struct ImportedScore {
   QList<Chord> chords;
 };
 
-// reads a .musicxml file, or the score inside a compressed .mxl file; a null
-// document if it can't be read
-[[nodiscard]] auto read_musicxml_document(const QString& filename)
-    -> XMLDocument;
-
-// warns and returns nullopt if the score has something that can't be imported
-[[nodiscard]] auto import_score(QWidget& parent, xmlNode& score_partwise)
+// reads a .musicxml file, or a compressed .mxl file, by running
+// import_score.py, which reads it with music21; warns and returns nullopt if
+// the score can't be imported
+[[nodiscard]] auto import_score(QWidget& parent, const QString& filename)
     -> std::optional<ImportedScore>;

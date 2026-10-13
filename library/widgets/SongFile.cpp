@@ -402,14 +402,7 @@ auto make_imported_voices(const QList<MusicXMLVoice>& imported_voices)
 
 auto import_musicxml(MainWindow& main_window, const QString& filename) -> bool {
   auto& window_body = main_window.window_body;
-  auto document = read_musicxml_document(filename);
-  static XMLValidator musicxml_validator("musicxml.xsd");
-  if (!check_document(window_body, document, musicxml_validator,
-                      QObject::tr("Invalid musicxml file"))) {
-    return false;
-  }
-
-  auto maybe_score = import_score(window_body, get_root(document));
+  auto maybe_score = import_score(window_body, filename);
   if (!maybe_score.has_value()) {
     return false;
   }

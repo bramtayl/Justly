@@ -44,7 +44,6 @@ endif()
 
 find_package(FluidSynth REQUIRED)
 find_package(LibXml2 REQUIRED)
-find_package(libzip CONFIG REQUIRED)
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Svg Widgets)
 if (BUILD_TESTS)
     find_package(Qt6 REQUIRED COMPONENTS Test)
@@ -297,6 +296,37 @@ if (BUILD_TESTS)
 
     add_subdirectory("tests")
 
+    # importing a score runs share/import_score.py, which needs music21, so
+    # the tests get a python environment of their own with it
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    set(test_python_folder "${CMAKE_BINARY_DIR}/python")
+    if (WIN32)
+        set(test_python "${test_python_folder}/Scripts/python.exe")
+    else()
+        set(test_python "${test_python_folder}/bin/python")
+    endif()
+    set(requirements_file "${Justly_SOURCE_DIR}/requirements.txt")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${requirements_file}")
+    # a copy of the requirements last installed, so they're only installed
+    # again when they change
+    set(installed_requirements_file "${test_python_folder}/requirements.txt")
+    file(READ "${requirements_file}" requirements)
+    set(installed_requirements "")
+    if (EXISTS "${installed_requirements_file}")
+        file(READ "${installed_requirements_file}" installed_requirements)
+    endif()
+    if (NOT EXISTS "${test_python}" OR NOT requirements STREQUAL installed_requirements)
+        execute_process(
+            COMMAND "${Python3_EXECUTABLE}" -m venv "${test_python_folder}"
+            COMMAND_ERROR_IS_FATAL ANY
+        )
+        execute_process(
+            COMMAND "${test_python}" -m pip install --quiet -r "${requirements_file}"
+            COMMAND_ERROR_IS_FATAL ANY
+        )
+        file(COPY_FILE "${requirements_file}" "${installed_requirements_file}")
+    endif()
+
     justly_install_share("${Justly_SOURCE_DIR}/tests/share/" JustlyTests)
 
     # one per build dir, so separate builds can't see each other's leftover files
@@ -323,7 +353,9 @@ if (BUILD_TESTS)
     # JustlyTests creates real widgets, which needs a display -- CI runners
     # don't have one, so force Qt's software-rendered offscreen backend
     # (see the Qt6QOffscreenIntegrationPlugin find_package() call above)
-    set_tests_properties(run_tests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    set_tests_properties(run_tests PROPERTIES ENVIRONMENT
+        "QT_QPA_PLATFORM=offscreen;JUSTLY_PYTHON=${test_python}"
+    )
 
     if (APPLE)
         # make sure the bundle can open

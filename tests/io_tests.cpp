@@ -1,5 +1,4 @@
 #include "Tester.hpp"
-#include "xml/ZipArchive.hpp"
 
 // regression test: CHandle's (here, FluidDriver's) move-assignment must free
 // any audio driver it already owns before taking on a new one, and must be a
@@ -47,79 +46,6 @@ void Tester::test_fluid_driver_move_assign() {
   // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved)
   QCOMPARE(empty_driver.internal_pointer,
            static_cast<fluid_audio_driver_t*>(nullptr));
-}
-
-// regression test: read_zip_entry casts a zip entry's reported size down
-// to int before allocating its buffer, but reads however many bytes the
-// (uncast, 64-bit) size claims -- an entry whose declared size doesn't fit
-// in an int, or whose size libzip couldn't report at all, must be rejected
-// up front instead of under-allocating the destination buffer
-void Tester::test_zip_entry_size_is_safe_data() {
-  QTest::addColumn<unsigned int>("valid_flags");
-  QTest::addColumn<zip_uint64_t>("size");
-  QTest::addColumn<bool>("is_safe");
-
-  QTest::newRow("ordinary small entry")
-      << ZIP_STAT_SIZE << zip_uint64_t{13} << true;
-  QTest::newRow("largest int-sized entry")
-      << ZIP_STAT_SIZE
-      << static_cast<zip_uint64_t>(std::numeric_limits<int>::max()) << true;
-  QTest::newRow("just over int-sized entry")
-      << ZIP_STAT_SIZE
-      << static_cast<zip_uint64_t>(std::numeric_limits<int>::max()) + 1
-      << false;
-  QTest::newRow("size libzip couldn't report")
-      << static_cast<unsigned int>(0) << zip_uint64_t{13} << false;
-}
-
-void Tester::test_zip_entry_size_is_safe() {
-  QFETCH(const unsigned int, valid_flags);
-  QFETCH(const zip_uint64_t, size);
-  QFETCH(const bool, is_safe);
-
-  zip_stat_t entry_stat;
-  zip_stat_init(&entry_stat);
-  entry_stat.valid = valid_flags;
-  entry_stat.size = size;
-
-  QCOMPARE(zip_entry_size_is_safe(entry_stat), is_safe);
-}
-
-// regression test: read_zip_entry used to only Q_ASSERT that
-// internal_pointer wasn't null before dereferencing it -- an assert that
-// compiles away in release builds. A ZipArchive constructed from a file
-// that doesn't exist (or isn't a zip) leaves internal_pointer null, and
-// read_zip_entry must degrade to its documented "empty QByteArray" return
-// instead of crashing.
-void Tester::test_read_zip_entry_null_archive() const {
-  const ZipArchive archive(test_dir.filePath("does_not_exist.zip"));
-  QCOMPARE(archive.internal_pointer, nullptr);
-  QCOMPARE(read_zip_entry(archive, "anything"), QByteArray());
-}
-
-// every way read_zip_entry can fail on an archive that opened fine must give
-// the documented empty QByteArray instead of a partial or garbage buffer
-void Tester::test_read_zip_entry_error_data() {
-  QTest::addColumn<QString>("archive_name");
-  QTest::addColumn<QString>("entry_name");
-
-  QTest::newRow("missing entry") << "prelude.mxl" << "does_not_exist.xml";
-  // the central directory claims a size that doesn't fit in an int
-  QTest::newRow("oversized entry") << "zip_oversized_entry.zip" << "a.txt";
-  // the entry is flagged as encrypted and no password is available, so it
-  // shows up in the archive but can't be opened
-  QTest::newRow("encrypted entry") << "zip_encrypted_entry.zip" << "a.txt";
-  // the entry's data ends before the size the central directory claims
-  QTest::newRow("short entry") << "zip_short_entry.zip" << "a.txt";
-}
-
-void Tester::test_read_zip_entry_error() const {
-  QFETCH(const QString, archive_name);
-  QFETCH(const QString, entry_name);
-
-  const ZipArchive archive(test_dir.filePath(archive_name));
-  QVERIFY(archive.internal_pointer != nullptr);
-  QCOMPARE(read_zip_entry(archive, entry_name.toStdString()), QByteArray());
 }
 
 // regression test: read_xml_document casts a QByteArray's size down to int

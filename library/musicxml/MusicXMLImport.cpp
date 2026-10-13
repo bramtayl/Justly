@@ -1,46 +1,211 @@
 #include "musicxml/MusicXMLImport.hpp"
 
+#include <QtCore/QJsonArray>
+#include <QtCore/QJsonDocument>
+#include <QtCore/QJsonObject>
+#include <QtCore/QMap>
+#include <QtCore/QProcess>
+#include <QtCore/QProcessEnvironment>
 #include <QtCore/QSet>
+#include <QtWidgets/QApplication>
 #include <QtWidgets/QMessageBox>
 
 #include "other/Song.hpp"
-#include "xml/XMLChildren.hpp"
-#include "xml/ZipArchive.hpp"
+#include "other/helpers.hpp"
 
 namespace {
 
-auto maybe_read_compressed_musicxml_bytes(const QString& filename)
-    -> QByteArray {
-  const ZipArchive archive(filename);
-  if (archive.internal_pointer == nullptr) {
-    return {};
+struct ParsedNote {
+  int duration = 0;
+  int voice_number = 0;
+  // for pitched notes, at sounding pitch
+  int midi_number = 0;
+  // Johnston septimal quartertones (36/35): -1 for a 7, +1 for an el
+  int septimal_quartertones = 0;
+  QString words;
+};
+
+struct ParsedChord {
+  QList<ParsedNote> pitched_notes;
+  QList<ParsedNote> unpitched_notes;
+};
+
+// every part's notes at sounding pitch, with repeats unrolled and ties
+// combined, all timed in song_divisions per beat
+struct ParsedScore {
+  int song_divisions = 1;
+  // notes that start at the same time, in any part, form a chord
+  QMap<int, ParsedChord> chords;
+  // notes name their voices by number from voices
+  MusicXMLVoices voices;
+  // each keyed by the time of the change
+  QMap<int, int> midi_keys;
+  QMap<int, int> measure_numbers;
+  // in quarter notes per minute
+  QMap<int, int> tempos;
+};
+
+// long enough for a big score on a slow computer
+static const auto CONVERTER_TIMEOUT_MILLISECONDS = 5 * 60 * 1000;
+
+// JUSTLY_PYTHON, if it's set, or else the python on the path
+auto get_python_program() -> QString {
+  const auto environment = QProcessEnvironment::systemEnvironment();
+  if (environment.contains("JUSTLY_PYTHON")) {
+    return environment.value("JUSTLY_PYTHON");
+  }
+#ifdef Q_OS_WIN
+  return "python";
+#else
+  return "python3";
+#endif
+}
+
+// shows a wait cursor until it goes out of scope
+struct WaitCursor {
+  WaitCursor() { QApplication::setOverrideCursor(Qt::WaitCursor); }
+  ~WaitCursor() { QApplication::restoreOverrideCursor(); }
+  WaitCursor(const WaitCursor&) = delete;
+  auto operator=(const WaitCursor&) -> WaitCursor& = delete;
+  WaitCursor(WaitCursor&&) = delete;
+  auto operator=(WaitCursor&&) -> WaitCursor& = delete;
+};
+
+// warns and returns nullopt if the converter doesn't run, or can't convert
+// the score
+auto run_converter(QWidget& parent, const QString& filename)
+    -> std::optional<QJsonObject> {
+  const auto python_program = get_python_program();
+  QProcess process;
+  {
+    const WaitCursor wait_cursor;
+    process.start(python_program,
+                  {QString::fromStdString(get_share_file("import_score.py")),
+                   filename});
+    if (!process.waitForStarted()) {
+      QMessageBox::warning(
+          &parent, QObject::tr("Python error"),
+          QObject::tr("Couldn't run %1. Importing scores needs Python 3 with "
+                      "music21")
+              .arg(python_program));
+      return std::nullopt;
+    }
+    if (!process.waitForFinished(CONVERTER_TIMEOUT_MILLISECONDS)) {
+      process.kill();
+      process.waitForFinished();
+      QMessageBox::warning(&parent, QObject::tr("Python error"),
+                           QObject::tr("Reading the score took too long"));
+      return std::nullopt;
+    }
+  }
+  if (process.exitStatus() != QProcess::NormalExit ||
+      process.exitCode() != 0) {
+    // e.g. music21 isn't installed
+    QMessageBox::warning(
+        &parent, QObject::tr("Python error"),
+        QObject::tr("Couldn't read the score with music21:\n%1")
+            .arg(QString::fromUtf8(process.readAllStandardError()).trimmed()));
+    return std::nullopt;
+  }
+  const auto document = QJsonDocument::fromJson(process.readAllStandardOutput());
+  if (!document.isObject()) {
+    QMessageBox::warning(&parent, QObject::tr("Python error"),
+                         QObject::tr("Couldn't understand music21's output"));
+    return std::nullopt;
+  }
+  auto result = document.object();
+  if (result.contains("error")) {
+    QMessageBox::warning(&parent, QObject::tr("Import error"),
+                         result.value("error").toString());
+    return std::nullopt;
+  }
+  return result;
+}
+
+// each [time, value] pair, keyed by time
+auto get_changes(const QJsonObject& result, const char* const field_name)
+    -> QMap<int, int> {
+  QMap<int, int> changes;
+  for (const auto& change_value : result.value(field_name).toArray()) {
+    const auto change = change_value.toArray();
+    changes[change.at(0).toInt()] = change.at(1).toInt();
+  }
+  return changes;
+}
+
+// a voice is named for its instrument, or failing that, its part
+auto get_voices(const QJsonArray& voice_values, QList<QString>& voice_words)
+    -> QList<MusicXMLVoice> {
+  QList<MusicXMLVoice> voices;
+  for (const auto& voice_value : voice_values) {
+    const auto voice_object = voice_value.toObject();
+    const auto part_name = voice_object.value("part_name").toString();
+    const auto instrument_name =
+        voice_object.value("instrument_name").toString();
+    auto words = QObject::tr("Part ") + part_name;
+    if (!instrument_name.isEmpty()) {
+      words += QObject::tr(" instrument ") + instrument_name;
+    }
+    voice_words.push_back(words);
+
+    MusicXMLVoice voice;
+    voice.name = instrument_name.isEmpty() ? part_name : instrument_name;
+    const auto midi_program_value = voice_object.value("midi_program");
+    if (midi_program_value.isDouble()) {
+      voice.midi_program = MidiProgram{
+          .bank_number = std::nullopt,
+          .preset_number = static_cast<short>(midi_program_value.toInt())};
+    }
+    voices.push_back(std::move(voice));
+  }
+  return voices;
+}
+
+auto parse_result(const QJsonObject& result) -> ParsedScore {
+  ParsedScore score;
+  score.song_divisions = result.value("divisions").toInt(1);
+
+  const auto voices_object = result.value("voices").toObject();
+  QList<QString> pitched_words;
+  QList<QString> unpitched_words;
+  score.voices.pitched =
+      get_voices(voices_object.value("pitched").toArray(), pitched_words);
+  score.voices.unpitched =
+      get_voices(voices_object.value("unpitched").toArray(), unpitched_words);
+
+  for (const auto& note_value : result.value("notes").toArray()) {
+    const auto note_object = note_value.toObject();
+    const auto is_pitched = note_object.value("is_pitched").toBool();
+    ParsedNote note;
+    note.duration = note_object.value("duration").toInt();
+    note.voice_number = note_object.value("voice").toInt();
+    note.words =
+        (is_pitched ? pitched_words : unpitched_words).at(note.voice_number);
+    auto& chord = score.chords[note_object.value("time").toInt()];
+    if (is_pitched) {
+      note.midi_number = note_object.value("midi_number").toInt();
+      note.septimal_quartertones =
+          note_object.value("septimal_quartertones").toInt();
+      chord.pitched_notes.push_back(std::move(note));
+    } else {
+      chord.unpitched_notes.push_back(std::move(note));
+    }
   }
 
-  const auto container_bytes =
-      read_zip_entry(archive, "META-INF/container.xml");
-  if (container_bytes.isEmpty()) {
-    return {};
+  score.midi_keys = get_changes(result, "midi_keys");
+  score.measure_numbers = get_changes(result, "measure_numbers");
+  score.tempos = get_changes(result, "tempos");
+  return score;
+}
+
+// the value of the last change at or before time
+auto get_most_recent(const QMap<int, int>& changes, const int time,
+                     const int default_value) -> int {
+  auto iterator = changes.upperBound(time);
+  if (iterator == changes.cbegin()) {
+    return default_value;
   }
-
-  const auto container_document = read_xml_document(container_bytes);
-  if (container_document.internal_pointer == nullptr) {
-    return {};
-  }
-
-  auto* rootfiles_pointer =
-      maybe_get_xml_child(get_root(container_document), "rootfiles");
-  auto* rootfile_pointer =
-      rootfiles_pointer == nullptr
-          ? nullptr
-          : maybe_get_xml_child(get_reference(rootfiles_pointer), "rootfile");
-  if (rootfile_pointer == nullptr) {
-    return {};
-  }
-
-  const auto root_path =
-      get_property(get_reference(rootfile_pointer), "full-path");
-
-  return read_zip_entry(archive, root_path);
+  return std::prev(iterator).value();
 }
 
 auto get_interval(const int midi_interval, const int septimal_quartertones = 0)
@@ -58,13 +223,13 @@ auto get_interval(const int midi_interval, const int septimal_quartertones = 0)
   return Interval(ratio, octave);
 }
 
-auto get_max_duration(const QList<MusicXMLNote>& notes) -> int {
+auto get_max_duration(const QList<ParsedNote>& notes) -> int {
   if (notes.empty()) {
     return 0;
   }
   return std::ranges::max_element(notes,
-                                  [](const MusicXMLNote& first_note,
-                                     const MusicXMLNote& second_note) -> auto {
+                                  [](const ParsedNote& first_note,
+                                     const ParsedNote& second_note) -> auto {
                                     return first_note.duration <
                                            second_note.duration;
                                   })
@@ -73,7 +238,7 @@ auto get_max_duration(const QList<MusicXMLNote>& notes) -> int {
 
 // pitched notes are relative to the chord's key
 template <NoteInterface SubNote>
-auto make_notes(const QList<MusicXMLNote>& parse_notes,
+auto make_notes(const QList<ParsedNote>& parse_notes,
                 const QList<MusicXMLVoice>& voices, const int key,
                 const int song_divisions) -> QList<SubNote> {
   QList<SubNote> new_notes;
@@ -91,7 +256,7 @@ auto make_notes(const QList<MusicXMLNote>& parse_notes,
   return new_notes;
 }
 
-auto make_chord(const MusicXMLChord& parse_chord, const MusicXMLVoices& voices,
+auto make_chord(const ParsedChord& parse_chord, const MusicXMLVoices& voices,
                 const int measure_number, const int key,
                 const int last_midi_key, const int tempo,
                 const int last_tempo, const int song_divisions,
@@ -129,27 +294,13 @@ auto deduplicate_voice_names(QList<MusicXMLVoice> voices)
 
 }  // namespace
 
-auto read_musicxml_document(const QString& filename) -> XMLDocument {
-  if (filename.endsWith(".mxl", Qt::CaseInsensitive)) {
-    return read_xml_document(maybe_read_compressed_musicxml_bytes(filename));
-  }
-  return read_xml_file(filename);
-}
-
-auto import_score(QWidget& parent, xmlNode& score_partwise)
+auto import_score(QWidget& parent, const QString& filename)
     -> std::optional<ImportedScore> {
-  if (!node_is(score_partwise, "score-partwise")) {
-    QMessageBox::warning(
-        &parent, QObject::tr("Partwise error"),
-        QObject::tr("Justly only supports partwise musicxml scores"));
+  const auto maybe_result = run_converter(parent, filename);
+  if (!maybe_result.has_value()) {
     return std::nullopt;
   }
-
-  auto maybe_parsed_score = parse_score(parent, score_partwise);
-  if (!maybe_parsed_score.has_value()) {
-    return std::nullopt;
-  }
-  auto& parsed_score = maybe_parsed_score.value();
+  auto parsed_score = parse_result(maybe_result.value());
   const auto song_divisions = parsed_score.song_divisions;
   auto& voices = parsed_score.voices;
   const auto& chords_dict = parsed_score.chords;

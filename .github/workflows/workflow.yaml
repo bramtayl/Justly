@@ -9,10 +9,9 @@ env:
     libfluidsynth-dev
     libqt6svg6-dev
     libxml2-dev
-    libzip-dev
     qt6-base-dev
     qt6-gtk-platformtheme
-  BREW_DEPS: fluid-synth qt libxml2 libzip
+  BREW_DEPS: fluid-synth qt libxml2
 jobs:
   main_job:
     strategy:
