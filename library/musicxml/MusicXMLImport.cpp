@@ -93,11 +93,13 @@ auto make_notes(const QList<MusicXMLNote>& parse_notes,
 
 auto make_chord(const MusicXMLChord& parse_chord, const MusicXMLVoices& voices,
                 const int measure_number, const int key,
-                const int last_midi_key, const int song_divisions,
+                const int last_midi_key, const int tempo,
+                const int last_tempo, const int song_divisions,
                 const int time_delta) -> Chord {
   Chord new_chord;
   new_chord.beats = Rational(time_delta, song_divisions);
   new_chord.interval = get_interval(key - last_midi_key);
+  new_chord.tempo_ratio = Rational(tempo, last_tempo);
   new_chord.words = QString::number(measure_number);
   new_chord.pitched_notes = make_notes<PitchedNote>(
       parse_chord.pitched_notes, voices.pitched, key, song_divisions);
@@ -153,6 +155,7 @@ auto import_score(QWidget& parent, xmlNode& score_partwise)
   const auto& chords_dict = parsed_score.chords;
   const auto& midi_keys = parsed_score.midi_keys;
   const auto& measure_numbers = parsed_score.measure_numbers;
+  const auto& tempos = parsed_score.tempos;
 
   if (chords_dict.empty()) {
     QMessageBox::warning(&parent, QObject::tr("Empty MusicXML error"),
@@ -175,8 +178,11 @@ auto import_score(QWidget& parent, xmlNode& score_partwise)
   score.voices.unpitched = deduplicate_voice_names(voices.unpitched);
   score.starting_midi_key =
       get_most_recent(midi_keys, chords_dict.firstKey(), DEFAULT_STARTING_MIDI);
+  score.starting_tempo = get_most_recent(tempos, chords_dict.firstKey(),
+                                         DEFAULT_STARTING_TEMPO);
 
   auto last_midi_key = score.starting_midi_key;
+  auto last_tempo = score.starting_tempo;
   for (auto iterator = chords_dict.cbegin(); iterator != chords_dict.cend();
        ++iterator) {
     const auto time = iterator.key();
@@ -184,14 +190,16 @@ auto import_score(QWidget& parent, xmlNode& score_partwise)
     const auto next_iterator = std::next(iterator);
     const auto midi_key =
         get_most_recent(midi_keys, time, DEFAULT_STARTING_MIDI);
+    const auto tempo = get_most_recent(tempos, time, DEFAULT_STARTING_TEMPO);
     score.chords.push_back(make_chord(
         chord, score.voices, get_most_recent(measure_numbers, time, 1),
-        midi_key, last_midi_key, song_divisions,
+        midi_key, last_midi_key, tempo, last_tempo, song_divisions,
         next_iterator == chords_dict.cend()
             ? std::max(get_max_duration(chord.pitched_notes),
                        get_max_duration(chord.unpitched_notes))
             : next_iterator.key() - time));
     last_midi_key = midi_key;
+    last_tempo = tempo;
   }
   return score;
 }

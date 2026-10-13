@@ -121,6 +121,7 @@ struct Tester : public QObject {
   void test_import_musicxml_voice_named_like_program();
   void test_import_musicxml_midi_program_change();
   void test_import_musicxml_direction_offset();
+  void test_import_musicxml_tempo();
   void test_import_musicxml_unnamed_voice();
   void test_import_musicxml_duplicate_voice_names();
   void test_musicxml_endings();

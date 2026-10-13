@@ -16,6 +16,7 @@ struct ImportedScore {
   // uniquely and non-emptily named, with at least one unpitched voice
   MusicXMLVoices voices;
   int starting_midi_key = 0;
+  int starting_tempo = 0;
   // notes name their voices from voices
   QList<Chord> chords;
 };

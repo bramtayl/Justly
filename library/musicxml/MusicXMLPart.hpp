@@ -92,6 +92,8 @@ struct MusicXMLPart {
   QMap<int, int> fifths_changes;
   // in halfsteps
   QMap<int, int> transpose_changes;
+  // in quarter notes per minute
+  QMap<int, int> tempo_changes;
 };
 
 struct MusicXMLChord {
@@ -120,6 +122,8 @@ struct ParsedScore {
   // each keyed by the time of the change
   QMap<int, int> midi_keys;
   QMap<int, int> measure_numbers;
+  // in quarter notes per minute
+  QMap<int, int> tempos;
 };
 
 // the value of the last change at or before time

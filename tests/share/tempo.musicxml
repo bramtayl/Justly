@@ -1,0 +1,70 @@
+<score-partwise version="4.0">
+   <part-list>
+      <score-part id="P1">
+         <part-name>Piano</part-name>
+      </score-part>
+   </part-list>
+   <part id="P1">
+      <measure number="1">
+         <attributes>
+            <divisions>1</divisions>
+         </attributes>
+         <!-- the sound's tempo wins over the metronome mark -->
+         <direction>
+            <direction-type>
+               <metronome>
+                  <beat-unit>quarter</beat-unit>
+                  <per-minute>60</per-minute>
+               </metronome>
+            </direction-type>
+            <sound tempo="90"/>
+         </direction>
+         <note>
+            <pitch>
+               <step>C</step>
+               <octave>4</octave>
+            </pitch>
+            <duration>4</duration>
+         </note>
+      </measure>
+      <measure number="2">
+         <!-- a dotted quarter at about 40 is 60 quarters a minute -->
+         <direction>
+            <direction-type>
+               <metronome>
+                  <beat-unit>quarter</beat-unit>
+                  <beat-unit-dot/>
+                  <per-minute>c. 40</per-minute>
+               </metronome>
+            </direction-type>
+         </direction>
+         <note>
+            <pitch>
+               <step>D</step>
+               <octave>4</octave>
+            </pitch>
+            <duration>4</duration>
+         </note>
+         <barline location="right">
+            <repeat direction="backward"/>
+         </barline>
+      </measure>
+      <measure number="3">
+         <note>
+            <pitch>
+               <step>E</step>
+               <octave>4</octave>
+            </pitch>
+            <duration>2</duration>
+         </note>
+         <sound tempo="149.6"/>
+         <note>
+            <pitch>
+               <step>F</step>
+               <octave>4</octave>
+            </pitch>
+            <duration>2</duration>
+         </note>
+      </measure>
+   </part>
+</score-partwise>

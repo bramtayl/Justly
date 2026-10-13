@@ -422,6 +422,8 @@ auto import_musicxml(MainWindow& main_window, const QString& filename) -> bool {
 
   window_body.controls_column.spin_boxes.starting_key_editor.setValue(
       midi_number_to_frequency(score.starting_midi_key));
+  window_body.controls_column.spin_boxes.starting_tempo_editor.setValue(
+      score.starting_tempo);
 
   finish_loading(main_window);
   return true;

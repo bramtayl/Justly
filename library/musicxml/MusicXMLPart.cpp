@@ -1,10 +1,12 @@
 #include "musicxml/MusicXMLPart.hpp"
 
+#include <QtCore/QRegularExpression>
 #include <QtCore/QSet>
 #include <QtCore/QTextStream>
 #include <QtWidgets/QMessageBox>
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <numeric>
 
 #include "other/Song.hpp"
@@ -77,6 +79,79 @@ void add_midi_program_change(MusicXMLPart& part, xmlNode& midi_instrument,
     part.midi_program_changes[get_property(midi_instrument, "id")][time] =
         maybe_midi_program.value();
   }
+}
+
+// rounded to a whole number of beats per minute; a tempo that rounds to 0
+// is skipped
+void add_tempo_change(MusicXMLPart& part, const double quarters_per_minute,
+                      const int time) {
+  const auto rounded_tempo = static_cast<int>(std::lround(quarters_per_minute));
+  if (rounded_tempo > 0) {
+    part.tempo_changes[time] = rounded_tempo;
+  }
+}
+
+// the length of a note type in quarter notes, lengthened by its dots
+auto get_note_type_quarters(const std::string& note_type, const int dots)
+    -> double {
+  static const QMap<std::string, double> note_type_quarters = {
+      {"1024th", 1.0 / 256}, {"512th", 1.0 / 128}, {"256th", 1.0 / 64},
+      {"128th", 1.0 / 32},   {"64th", 1.0 / 16},   {"32nd", 1.0 / 8},
+      {"16th", 1.0 / 4},     {"eighth", 1.0 / 2},  {"quarter", 1.0},
+      {"half", 2.0},         {"whole", 4.0},       {"breve", 8.0},
+      {"long", 16.0},        {"maxima", 32.0}};
+  // the schema only allows these note types
+  Q_ASSERT(note_type_quarters.contains(note_type));
+  // each dot adds half as much as the last
+  return note_type_quarters.value(note_type) * (2 - std::pow(0.5, dots));
+}
+
+// the length in quarter notes of the beat units in a metronome mark, plus
+// the beat units tied to them
+auto get_beat_units_quarters(xmlNode& node) -> double {
+  auto quarters = 0.0;
+  std::string note_type;
+  auto dots = 0;
+  const auto add_beat_unit = [&quarters, &note_type, &dots]() -> void {
+    if (!note_type.empty()) {
+      quarters = quarters + get_note_type_quarters(note_type, dots);
+    }
+  };
+  for (auto& child : get_xml_children(node)) {
+    const auto child_name = get_xml_name(child);
+    if (child_name == "beat-unit") {
+      add_beat_unit();
+      note_type = get_content(child);
+      dots = 0;
+    } else if (child_name == "beat-unit-dot") {
+      ++dots;
+    } else if (child_name == "beat-unit-tied") {
+      quarters = quarters + get_beat_units_quarters(child);
+    }
+  }
+  add_beat_unit();
+  return quarters;
+}
+
+// the quarter notes per minute a metronome mark sets, if it has a number per
+// minute, unlike e.g. a metric modulation
+auto maybe_get_metronome_tempo(xmlNode& metronome_node)
+    -> std::optional<double> {
+  auto* const per_minute_pointer =
+      maybe_get_xml_child(metronome_node, "per-minute");
+  if (per_minute_pointer == nullptr) {
+    return std::nullopt;
+  }
+  // per-minute can be text, like "c. 60" or "60-72", so the tempo is the
+  // first number in it
+  static const QRegularExpression number_pattern(R"(\d+(?:\.\d+)?)");
+  const auto number_match =
+      number_pattern.match(get_qstring_content(*per_minute_pointer));
+  if (!number_match.hasMatch()) {
+    return std::nullopt;
+  }
+  return number_match.captured().toDouble() *
+         get_beat_units_quarters(metronome_node);
 }
 
 // calls function(measure, note) for every note in part, in order
@@ -384,12 +459,15 @@ void set_midi_programs(MusicXMLPart& part) {
       });
 }
 
-// when the sound takes effect: offset by its own offset, or failing that, by
-// its direction's, if that says it moves the sound too
-auto get_sound_time(QWidget& parent, xmlNode& sound_node,
+// when the sound, or a direction's sound with no sound element, takes effect:
+// offset by its own offset, or failing that, by its direction's, if that
+// says it moves the sound too
+auto get_sound_time(QWidget& parent, xmlNode* const sound_pointer,
                     xmlNode* const direction_offset_pointer,
                     const int current_time) -> std::optional<int> {
-  auto* offset_pointer = maybe_get_xml_child(sound_node, "offset");
+  auto* offset_pointer = sound_pointer == nullptr
+                             ? nullptr
+                             : maybe_get_xml_child(*sound_pointer, "offset");
   if (offset_pointer == nullptr && direction_offset_pointer != nullptr &&
       maybe_get_property(*direction_offset_pointer, "sound") == "yes") {
     offset_pointer = direction_offset_pointer;
@@ -408,7 +486,7 @@ auto get_sound_time(QWidget& parent, xmlNode& sound_node,
 }
 
 // records jumps, and the segnos and codas they jump to, onto the measure,
-// and midi program changes onto the part
+// and midi program and tempo changes onto the part
 auto parse_sound(QWidget& parent, xmlNode& sound_node,
                  xmlNode* const direction_offset_pointer, MusicXMLPart& part,
                  MusicXMLMeasure& measure, const int current_time) -> bool {
@@ -418,17 +496,24 @@ auto parse_sound(QWidget& parent, xmlNode& sound_node,
       midi_instrument_pointers.push_back(&sound_child);
     }
   }
-  // only program changes need the offset, so a fractional one on any other
-  // sound doesn't stop the import
-  if (!midi_instrument_pointers.empty()) {
+  const auto maybe_tempo = maybe_get_property(sound_node, "tempo");
+  // only program and tempo changes need the offset, so a fractional one on
+  // any other sound doesn't stop the import
+  if (!midi_instrument_pointers.empty() || maybe_tempo.has_value()) {
     const auto maybe_sound_time = get_sound_time(
-        parent, sound_node, direction_offset_pointer, current_time);
+        parent, &sound_node, direction_offset_pointer, current_time);
     if (!maybe_sound_time.has_value()) {
       return false;
     }
+    const auto sound_time = maybe_sound_time.value();
     for (auto* const midi_instrument_pointer : midi_instrument_pointers) {
-      add_midi_program_change(part, *midi_instrument_pointer,
-                              maybe_sound_time.value());
+      add_midi_program_change(part, *midi_instrument_pointer, sound_time);
+    }
+    if (maybe_tempo.has_value()) {
+      // the schema keeps the tempo a non-negative decimal
+      add_tempo_change(
+          part, QString::fromStdString(maybe_tempo.value()).toDouble(),
+          sound_time);
     }
   }
   const auto times = parse_number_list(
@@ -454,6 +539,34 @@ auto parse_sound(QWidget& parent, xmlNode& sound_node,
   // a forward repeat that isn't drawn, e.g. at the start of a trio
   if (maybe_get_property(sound_node, "forward-repeat") == "yes") {
     measure.has_forward_repeat = true;
+  }
+  return true;
+}
+
+// records the tempos the direction's metronome marks set onto the part,
+// timed like a sound in the direction would be
+auto parse_metronomes(QWidget& parent, xmlNode& direction_node,
+                      xmlNode* const direction_offset_pointer,
+                      MusicXMLPart& part, const int current_time) -> bool {
+  for (auto& direction_type : get_xml_children(direction_node)) {
+    if (!node_is(direction_type, "direction-type")) {
+      continue;
+    }
+    for (auto& metronome : get_xml_children(direction_type)) {
+      if (!node_is(metronome, "metronome")) {
+        continue;
+      }
+      const auto maybe_tempo = maybe_get_metronome_tempo(metronome);
+      if (!maybe_tempo.has_value()) {
+        continue;
+      }
+      const auto maybe_sound_time = get_sound_time(
+          parent, nullptr, direction_offset_pointer, current_time);
+      if (!maybe_sound_time.has_value()) {
+        return false;
+      }
+      add_tempo_change(part, maybe_tempo.value(), maybe_sound_time.value());
+    }
   }
   return true;
 }
@@ -516,10 +629,18 @@ auto parse_part(QWidget& parent, xmlNode& part_node, MusicXMLPart& part)
       } else if (measure_element_name == "direction") {
         auto* const sound_pointer =
             maybe_get_xml_child(measure_element, "sound");
+        auto* const offset_pointer =
+            maybe_get_xml_child(measure_element, "offset");
         if (sound_pointer != nullptr &&
-            !parse_sound(parent, *sound_pointer,
-                         maybe_get_xml_child(measure_element, "offset"), part,
-                         measure, current_time)) {
+            !parse_sound(parent, *sound_pointer, offset_pointer, part, measure,
+                         current_time)) {
+          return false;
+        }
+        // the sound's tempo is the one to play, if it has one
+        if ((sound_pointer == nullptr ||
+             !maybe_get_property(*sound_pointer, "tempo").has_value()) &&
+            !parse_metronomes(parent, measure_element, offset_pointer, part,
+                              current_time)) {
           return false;
         }
       }
@@ -1016,47 +1137,68 @@ void normalize_divisions(MusicXMLPart& part, const int song_divisions) {
     measure.start_time = to_song_time(measure.start_time);
     measure.end_time = to_song_time(measure.end_time);
   }
-  QMap<int, int> fifths_changes;
-  for (const auto [time, fifths] : part.fifths_changes.asKeyValueRange()) {
-    fifths_changes[to_song_time(time)] = fifths;
-  }
-  part.fifths_changes = std::move(fifths_changes);
+  const auto changes_to_song_time =
+      [&to_song_time](const QMap<int, int>& changes) -> QMap<int, int> {
+    QMap<int, int> song_time_changes;
+    for (const auto [time, value] : changes.asKeyValueRange()) {
+      song_time_changes[to_song_time(time)] = value;
+    }
+    return song_time_changes;
+  };
+  part.fifths_changes = changes_to_song_time(part.fifths_changes);
+  part.tempo_changes = changes_to_song_time(part.tempo_changes);
   part.divisions_changes.clear();
+}
+
+// lays the changes out in the order the measures are played. Jumping to
+// another part of the score jumps to the value there too
+auto unroll_changes(const QMap<int, int>& changes,
+                    const QList<MusicXMLMeasure>& measures,
+                    const QList<int>& playback_order, const int default_value)
+    -> QMap<int, int> {
+  QMap<int, int> unrolled_changes;
+  auto time = 0;
+  auto previous_index = -1;
+  for (const auto measure_index : playback_order) {
+    // parse_musicxml checks that every part has the same measures
+    Q_ASSERT(measure_index < measures.size());
+    const auto& measure = measures.at(measure_index);
+    const auto offset = time - measure.start_time;
+    if (measure_index != previous_index + 1) {
+      unrolled_changes[time] =
+          get_most_recent(changes, measure.start_time, default_value);
+    }
+    for (auto iterator = changes.lowerBound(measure.start_time);
+         iterator != changes.cend() && iterator.key() < measure.end_time;
+         ++iterator) {
+      unrolled_changes[iterator.key() + offset] = iterator.value();
+    }
+    time = measure.end_time + offset;
+    previous_index = measure_index;
+  }
+  return unrolled_changes;
 }
 
 // lays the measures out in the order they're played
 void unroll_repeats(MusicXMLPart& part, const QList<int>& playback_order) {
-  const auto& fifths_changes = part.fifths_changes;
+  part.fifths_changes =
+      unroll_changes(part.fifths_changes, part.measures, playback_order, 0);
   QList<MusicXMLMeasure> unrolled_measures;
-  QMap<int, int> unrolled_fifths_changes;
   auto time = 0;
-  auto previous_index = -1;
   for (const auto measure_index : playback_order) {
     // parse_musicxml checks that every part has the same measures
     Q_ASSERT(measure_index < part.measures.size());
     auto measure = part.measures.at(measure_index);
     const auto offset = time - measure.start_time;
-    if (measure_index != previous_index + 1) {
-      // jumping to another part of the score jumps to its key too
-      unrolled_fifths_changes[time] =
-          get_most_recent(fifths_changes, measure.start_time, 0);
-    }
-    for (auto iterator = fifths_changes.lowerBound(measure.start_time);
-         iterator != fifths_changes.cend() && iterator.key() < measure.end_time;
-         ++iterator) {
-      unrolled_fifths_changes[iterator.key() + offset] = iterator.value();
-    }
     for (auto& note : measure.notes) {
       note.start_time = note.start_time + offset;
     }
     measure.start_time = time;
     measure.end_time = measure.end_time + offset;
     time = measure.end_time;
-    previous_index = measure_index;
     unrolled_measures.push_back(std::move(measure));
   }
   part.measures = std::move(unrolled_measures);
-  part.fifths_changes = std::move(unrolled_fifths_changes);
 }
 
 // each instrument in each part gets its own voice
@@ -1132,6 +1274,22 @@ auto get_midi_keys(const QList<MusicXMLPart>& parts) -> QMap<int, int> {
   return midi_keys;
 }
 
+// tempos apply to the whole score, wherever they're written; laid out in the
+// order the measures are played
+auto get_tempos(const QList<MusicXMLPart>& parts,
+                const QList<int>& playback_order) -> QMap<int, int> {
+  if (parts.empty()) {
+    return {};
+  }
+  QMap<int, int> tempo_changes;
+  for (const auto& part : parts) {
+    tempo_changes.insert(part.tempo_changes);
+  }
+  // parse_musicxml checks that every part has the same measures
+  return unroll_changes(tempo_changes, parts.at(0).measures, playback_order,
+                        DEFAULT_STARTING_TEMPO);
+}
+
 auto get_measure_numbers(const QList<MusicXMLPart>& parts) -> QMap<int, int> {
   QMap<int, int> measure_numbers;
   for (const auto& part : parts) {
@@ -1165,6 +1323,9 @@ auto parse_score(QWidget& parent, xmlNode& score_partwise)
   const auto playback_order = get_playback_order(score_measures);
   for (auto& part : parts) {
     normalize_divisions(part, score.song_divisions);
+  }
+  score.tempos = get_tempos(parts, playback_order);
+  for (auto& part : parts) {
     unroll_repeats(part, playback_order);
     // in playback order, so e.g. a tie into both endings stops in each
     if (!combine_ties(parent, part)) {

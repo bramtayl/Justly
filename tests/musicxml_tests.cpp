@@ -295,6 +295,31 @@ void Tester::test_import_musicxml_direction_offset() {
   open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
+// a sound's tempo, or failing that, a metronome mark's, changes the tempo,
+// rounded to a whole number of quarter notes per minute. Repeating back to
+// before a change goes back to the earlier tempo
+void Tester::test_import_musicxml_tempo() {
+  auto& window_body = main_window.window_body;
+
+  import_musicxml(main_window, test_dir.filePath("tempo.musicxml"));
+
+  const auto& song = window_body.song;
+  QCOMPARE(song.starting_tempo, 90);
+
+  // C, D, then repeated, then E, F
+  static const QList<Rational> expected_tempo_ratios = {
+      Rational(1),    Rational(2, 3), Rational(3, 2),
+      Rational(2, 3), Rational(1),    Rational(5, 2)};
+  QCOMPARE(song.chords.size(), expected_tempo_ratios.size());
+  for (auto chord_number = 0; chord_number < song.chords.size();
+       ++chord_number) {
+    QCOMPARE(song.chords.at(chord_number).tempo_ratio,
+             expected_tempo_ratios.at(chord_number));
+  }
+
+  open_file(main_window, test_dir.filePath("test_song.xml"));
+}
+
 namespace {
 
 // wraps one measure of the given <attributes> children and body elements in
