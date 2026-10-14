@@ -8,6 +8,9 @@
 
 - [Installation](#installation)
   - [Building from source](#building-from-source)
+    - [Ubuntu](#ubuntu)
+    - [MacOS](#macos)
+    - [Windows](#windows)
 - [Motivation](#motivation)
 - [Notation](#notation)
 - [Interface](#interface)
@@ -27,34 +30,85 @@ The Justly executable is in the "bin" subfolder (if not a MacOS bundle).
 
 Justly is built with CMake and requires:
 
-- CMake 3.24+
 - Qt6 (Core, Gui, Svg, Test, Widgets)
 - FluidSynth
 - libxml2
+- A relocatable python with the music21 package
+- The musescore soundfont
 
-On Ubuntu:
+Run all the commands below from the Justly folder.
 
-```sh
-sudo apt-get install cmake fluidsynth libfluidsynth-dev libqt6svg6-dev libxml2-dev qt6-base-dev
-```
+#### Ubuntu
 
-On MacOS:
-
-```sh
-brew install fluid-synth qt libxml2
-```
-
-On Windows, install dependencies with [vcpkg](https://github.com/microsoft/vcpkg) and pass `-DCMAKE_TOOLCHAIN_FILE=<path to vcpkg>/scripts/buildsystems/vcpkg.cmake` to CMake.
-
-Then configure, build, and install (the first configure downloads the [MS Basic soundfont](https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic.sf3) into the `share` folder, so it needs internet access):
+Run:
 
 ```sh
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --config Release
-cmake --install build --config Release --prefix <install location>
+sudo apt-get install -y build-essential # to compile C++
+sudo apt-get install -y cmake # install cmake
+sudo apt-get install -y libfluidsynth-dev # install fluidsynth with headers
+sudo apt-get install -y qt6-base-dev # install qt with headers
+sudo apt-get install -y libqt6svg6-dev # install the qt svg add-on with headers
+sudo apt-get install -y qt6-gtk-platformtheme # install the gtk qt theme, to look native
+sudo apt-get install -y libxml2-dev # install libxml2 with headers
+sudo apt-get install -y curl # to download the musescore soundfont
+sudo snap install astral-uv --classic # to install python
+uv python install 3.13 --install-dir python --no-bin # install python
+uv pip install --python python/cpython-3.13.* --break-system-packages music21==10.5.0 # install music21
+curl --fail --location --output share/MS_Basic.sf3 "https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic.sf3" # install the musescore soundfont
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release # configure cmake
+cmake --build build # build justly
+cmake --install build --prefix install # install justly
 ```
 
-The Justly executable will be in the "bin" subfolder of `<install location>` (or a MacOS bundle directly inside it).
+The Justly executable will be in the `bin` subfolder of the `install` folder.
+
+#### MacOS
+
+Install [Homebrew](https://brew.sh). Then run:
+
+```sh
+brew install cmake # install cmake
+brew install fluid-synth # install fluidsynth
+brew install libxml2 # install libxml2
+brew install qt # install qt
+brew install uv # install python
+uv python install 3.13 --install-dir python --no-bin # install python
+uv pip install --python python/cpython-3.13.* --break-system-packages music21==10.5.0 # install music21
+curl --fail --location --output share/MS_Basic.sf3 "https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic.sf3" # install the musescore soundfont
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release # configure cmake
+cmake --build build # build justly
+cmake --install build --prefix install # install justly
+```
+
+The Justly bundle will be directly in the `install` folder.
+
+#### Windows
+
+In PowerShell:
+
+```powershell
+winget install --accept-source-agreements --accept-package-agreements Microsoft.VisualStudio.2022.Community --override "--add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --passive" # to compile C++
+winget install Git.Git # to install vcpkg
+winget install Kitware.CMake # install cmake
+winget install astral-sh.uv # to install python
+winget install miurahr.aqtinstall # to install qt
+```
+
+Open a new PowerShell to find the new dependencies. Then:
+
+```powershell
+aqt install-qt windows desktop 6.10.1 win64_msvc2022_64 --outputdir C:\Qt # install qt
+git clone https://github.com/microsoft/vcpkg C:\vcpkg # download vcpkg
+C:\vcpkg\bootstrap-vcpkg.bat # install vcpkg
+uv python install 3.13 --install-dir python --no-bin --no-registry # install python
+uv pip install --python (Get-Item python/cpython-3.13.*).FullName --break-system-packages music21==10.5.0 # install music21
+curl.exe --fail --location --output share/MS_Basic.sf3 "https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic.sf3" # install the musescore soundfont
+cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DQt6_ROOT=C:/Qt/6.10.1/msvc2022_64 # configure cmake
+cmake --build build --config Release # build justly
+cmake --install build --config Release --prefix install # install justly
+```
+
+The Justly executable will be in the `bin` subfolder of the `install` folder.
 
 ## Motivation
 

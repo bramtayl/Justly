@@ -1,8 +1,7 @@
 # 3.25 for the LINUX variable
 cmake_minimum_required(VERSION 3.25)
 
-# on windows, add a path to Qt, e.g.
-# list(APPEND CMAKE_PREFIX_PATH C:/Users/brand/6.5.1/msvc2019_64)
+# on windows, pass the path to Qt, e.g. -DQt6_ROOT=C:/Qt/6.10.1/msvc2022_64
 
 # must be set before project(), otherwise CMake defaults to build version
 if (APPLE)
@@ -11,42 +10,54 @@ endif()
 
 project(Justly VERSION 1.2.0 LANGUAGES CXX)
 
-# the soundfont is too big to commit to git, so download it if it's missing
-# (its license, MS_Basic_License.md, is committed)
+# MuseScore's MS Basic soundfont, too big to commit to git, so users put it
+# in the share folder (its license, MS_Basic_License.md, is committed)
+set(soundfont_url "https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic.sf3")
 set(soundfont_file "${Justly_SOURCE_DIR}/share/MS_Basic.sf3")
 if (NOT EXISTS "${soundfont_file}")
-    message(STATUS "Downloading MS_Basic.sf3")
-    # download next to the build first, so a failed download doesn't leave
-    # a partial file behind that the EXISTS check above would accept
-    file(DOWNLOAD
-        "https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic.sf3"
-        "${CMAKE_BINARY_DIR}/MS_Basic.sf3"
-        EXPECTED_HASH SHA256=5ea2375e8bd7d8e71def1036978c1621e85b66934169b6a2744b27b9b3c2d99c
-    )
-    # not file(RENAME), which fails if the build dir is on another filesystem
-    file(COPY_FILE "${CMAKE_BINARY_DIR}/MS_Basic.sf3" "${soundfont_file}")
-    file(REMOVE "${CMAKE_BINARY_DIR}/MS_Basic.sf3")
+    message(FATAL_ERROR "Download ${soundfont_url} to ${soundfont_file}")
+endif()
+file(SHA256 "${soundfont_file}" soundfont_hash)
+if (NOT soundfont_hash STREQUAL "5ea2375e8bd7d8e71def1036978c1621e85b66934169b6a2744b27b9b3c2d99c")
+    message(FATAL_ERROR "${soundfont_file} isn't ${soundfont_url}")
 endif()
 
 # importing a score runs share/import_score.py, which reads it with music21,
-# in a python bundled with Justly: a python-build-standalone build, which
-# works from wherever it's installed
-set(python_release "20261009")
-set(python_version "3.13.16")
+# in a python bundled with Justly. It has to be a python-build-standalone
+# build, which works from wherever it's copied. Users install one with uv
+# into the python folder, apart from any other python, and music21 into it
+set(python_install_folder "${Justly_SOURCE_DIR}/python")
+set(music21_version "10.5.0")
+set(python_instructions "See Building from source in README.md for how to install it")
+# uv also adds a cpython-3.13-<platform> link to the newest 3.13, which this
+# leaves out
+file(GLOB python_source_folders LIST_DIRECTORIES true
+    "${python_install_folder}/cpython-3.13.*")
+list(LENGTH python_source_folders python_count)
+if (NOT python_count EQUAL 1)
+    message(FATAL_ERROR "Expected one python 3.13 in ${python_install_folder}, found ${python_count}. ${python_instructions}")
+endif()
 if (WIN32)
-    set(python_platform "x86_64-pc-windows-msvc")
-    set(python_hash "3a7adfb69e3ff02a41ed38ac637808532b438ab3c8619af46ca5dbec5c1f5190")
-elseif (APPLE AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
-    set(python_platform "aarch64-apple-darwin")
-    set(python_hash "11785155d0f70e634178219c20925d8f20be00a3da4684fc4f5019dd15602ef7")
-elseif (APPLE)
-    set(python_platform "x86_64-apple-darwin")
-    set(python_hash "bd085c51e960f00ee33b630e2b13ac90fe90cdc3da25a0f0bc0719b1294920bf")
-elseif (LINUX AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
-    set(python_platform "x86_64-unknown-linux-gnu")
-    set(python_hash "24801ea31c7d406d559a17e2226325c723d50c56900b9c0da7b62adaae2affc9")
+    set(python_source "${python_source_folders}/python.exe")
 else()
-    message(FATAL_ERROR "No bundled python for ${CMAKE_SYSTEM_NAME} on ${CMAKE_SYSTEM_PROCESSOR}")
+    set(python_source "${python_source_folders}/bin/python3")
+endif()
+
+# packages no other package needs. Everything else is one of music21's
+# dependencies
+execute_process(
+    COMMAND "${python_source}" -m pip list
+        --not-required --format=freeze --disable-pip-version-check
+    OUTPUT_VARIABLE top_level_packages
+    COMMAND_ERROR_IS_FATAL ANY
+)
+string(REPLACE "\r" "" top_level_packages "${top_level_packages}")
+# pip itself comes with python
+string(REGEX REPLACE "(^|\n)pip==[^\n]*" "" top_level_packages "${top_level_packages}")
+string(STRIP "${top_level_packages}" top_level_packages)
+if (NOT top_level_packages STREQUAL "music21==${music21_version}")
+    string(REPLACE "\n" ", " top_level_packages "${top_level_packages}")
+    message(FATAL_ERROR "The python in ${python_install_folder} needs music21 ${music21_version} and nothing else, but has: ${top_level_packages}. ${python_instructions}")
 endif()
 
 # on Linux and Windows, straight into the build tree's share folder, where
@@ -59,109 +70,19 @@ else()
 endif()
 if (WIN32)
     set(bundled_python "${python_folder}/python.exe")
-    set(python_lib_folder "${python_folder}/Lib")
 else()
     set(bundled_python "${python_folder}/bin/python3")
-    string(REGEX MATCH "^[0-9]+\\.[0-9]+" python_minor_version "${python_version}")
-    set(python_lib_folder "${python_folder}/lib/python${python_minor_version}")
 endif()
 
-set(requirements_file "${Justly_SOURCE_DIR}/requirements.txt")
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${requirements_file}")
-# what the bundled python was last set up from, so it's only set up again
-# when that changes
-file(READ "${requirements_file}" requirements)
-set(python_setup "${python_release} ${python_platform}\n${requirements}")
-set(python_setup_file "${python_folder}/justly_setup.txt")
-set(last_python_setup "")
-if (EXISTS "${python_setup_file}")
-    file(READ "${python_setup_file}" last_python_setup)
-endif()
-if (NOT python_setup STREQUAL last_python_setup)
-    message(STATUS "Setting up the bundled python")
-    set(python_archive "${CMAKE_BINARY_DIR}/python.tar.gz")
-    file(DOWNLOAD
-        "https://github.com/astral-sh/python-build-standalone/releases/download/${python_release}/cpython-${python_version}+${python_release}-${python_platform}-install_only_stripped.tar.gz"
-        "${python_archive}"
-        EXPECTED_HASH SHA256=${python_hash}
-    )
+# copied again, over the whole folder, only when it's a different python or
+# music21
+set(python_copy "${python_source_folders} music21 ${music21_version}")
+if (NOT python_copy STREQUAL last_python_copy
+    OR NOT EXISTS "${bundled_python}")
+    message(STATUS "Copying ${python_source_folders}")
     file(REMOVE_RECURSE "${python_folder}")
-    set(python_extract_folder "${CMAKE_BINARY_DIR}/python_extract")
-    file(REMOVE_RECURSE "${python_extract_folder}")
-    file(ARCHIVE_EXTRACT INPUT "${python_archive}" DESTINATION "${python_extract_folder}")
-    # the archive holds a single python folder. A new build folder doesn't
-    # have a share folder for it yet
-    cmake_path(GET python_folder PARENT_PATH python_parent_folder)
-    file(MAKE_DIRECTORY "${python_parent_folder}")
-    file(RENAME "${python_extract_folder}/python" "${python_folder}")
-    file(REMOVE_RECURSE "${python_extract_folder}")
-    file(REMOVE "${python_archive}")
-
-    execute_process(
-        COMMAND "${bundled_python}" -m pip install
-            --quiet --no-deps --disable-pip-version-check
-            -r "${requirements_file}"
-        COMMAND_ERROR_IS_FATAL ANY
-    )
-
-    # leave out what import_score.py doesn't use: python's own tests,
-    # installers, headers, and gui toolkit, and music21's corpus of scores
-    # and library of scales
-    file(REMOVE_RECURSE
-        "${python_lib_folder}/test"
-        "${python_lib_folder}/idlelib"
-        "${python_lib_folder}/ensurepip"
-        "${python_lib_folder}/tkinter"
-        "${python_lib_folder}/turtledemo"
-        "${python_lib_folder}/site-packages/pip"
-        "${python_folder}/include"
-        "${python_folder}/share"
-        "${python_folder}/tcl"
-        "${python_folder}/lib/pkgconfig"
-    )
-    file(GLOB unused_python_files LIST_DIRECTORIES true
-        "${python_lib_folder}/site-packages/pip-*.dist-info"
-        "${python_folder}/bin/idle*"
-        "${python_folder}/bin/pip*"
-        "${python_folder}/bin/pydoc*"
-        "${python_lib_folder}/lib-dynload/_tkinter*"
-        "${python_folder}/DLLs/_tkinter*"
-        "${python_folder}/DLLs/tcl*"
-        "${python_folder}/DLLs/tk*"
-    )
-    if (NOT WIN32)
-        # Windows keeps these in the tcl folder. Its file names ignore case,
-        # so these would match python's standard library, in python/Lib,
-        # there instead
-        file(GLOB tcl_files LIST_DIRECTORIES true
-            "${python_folder}/bin/*-config"
-            "${python_folder}/lib/libtcl*"
-            "${python_folder}/lib/libtk*"
-            "${python_folder}/lib/tcl*"
-            "${python_folder}/lib/tk*"
-            "${python_folder}/lib/itcl*"
-            "${python_folder}/lib/thread*"
-        )
-        list(APPEND unused_python_files ${tcl_files})
-    endif()
-    if (LINUX)
-        # the python executable links libpython statically
-        file(GLOB libpython "${python_folder}/lib/libpython*")
-        list(APPEND unused_python_files ${libpython})
-    endif()
-    set(music21_folder "${python_lib_folder}/site-packages/music21")
-    # the corpus's scores are in folders, next to its modules
-    file(GLOB corpus_entries LIST_DIRECTORIES true "${music21_folder}/corpus/*")
-    set(corpus_folders "")
-    foreach(corpus_entry ${corpus_entries})
-        if (IS_DIRECTORY "${corpus_entry}")
-            list(APPEND corpus_folders "${corpus_entry}")
-        endif()
-    endforeach()
-    file(GLOB scales "${music21_folder}/scale/scala/scl/*.scl")
-    file(REMOVE_RECURSE ${unused_python_files} ${corpus_folders} ${scales})
-
-    file(WRITE "${python_setup_file}" "${python_setup}")
+    file(COPY "${python_source_folders}/" DESTINATION "${python_folder}")
+    set(last_python_copy "${python_copy}" CACHE INTERNAL "")
 endif()
 
 include(InstallRequiredSystemLibraries)
