@@ -1,7 +1,7 @@
 #pragma once
 
-#include "other/helpers.hpp"
-#include "xml/XMLChildren.hpp"
+#include "common/helpers.hpp"
+#include "io/XMLChildren.hpp"
 
 template <typename SubRow>
 concept RowInterface =

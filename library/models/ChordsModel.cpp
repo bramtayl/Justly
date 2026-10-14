@@ -1,6 +1,6 @@
 #include "models/ChordsModel.hpp"
 
-#include "other/Song.hpp"
+#include "song/Song.hpp"
 
 void ChordsModel::add_to_status(QTextStream& stream, const int row_number,
                                 const Chord& chord) const {

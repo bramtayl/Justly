@@ -2,8 +2,8 @@
 
 #include <QtWidgets/QMessageBox>
 
-#include "other/Song.hpp"
 #include "rows/Note.hpp"
+#include "song/Song.hpp"
 #include "sound/Player.hpp"
 
 void initialize_play(Player& player, const Song& song);

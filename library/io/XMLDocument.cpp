@@ -1,4 +1,4 @@
-#include "xml/XMLDocument.hpp"
+#include "io/XMLDocument.hpp"
 
 auto get_root(const XMLDocument& document) -> xmlNode& {
   return get_reference(xmlDocGetRootElement(document.internal_pointer));

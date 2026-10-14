@@ -1,7 +1,7 @@
 #include <QtWidgets/QApplication>
 
 #include "widgets/MainWindow.hpp"
-#include "widgets/SongFile.hpp"
+#include "io/song_file.hpp"
 
 auto main(int number_of_arguments, char* arguments[]) -> int {
   QApplication const app(number_of_arguments, arguments);

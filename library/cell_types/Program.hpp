@@ -3,7 +3,7 @@
 #include <QtCore/QList>
 #include <QtCore/QMetaType>
 
-#include "other/helpers.hpp"
+#include "common/helpers.hpp"
 
 struct FluidSynth;
 

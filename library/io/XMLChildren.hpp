@@ -2,7 +2,7 @@
 
 #include <ranges>
 
-#include "other/helpers.hpp"
+#include "io/xml_helpers.hpp"
 
 // visits only element children, skipping text and comment nodes
 struct XMLChildIterator {

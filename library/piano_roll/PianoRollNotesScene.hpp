@@ -3,7 +3,7 @@
 #include <QtCore/QElapsedTimer>
 #include <QtWidgets/QGraphicsScene>
 
-#include "other/PianoRollNoteEvent.hpp"
+#include "piano_roll/PianoRollNoteEvent.hpp"
 #include "piano_roll/PlayheadTransition.hpp"
 
 static const auto PIANO_ROLL_PIXELS_PER_MS = 0.1;

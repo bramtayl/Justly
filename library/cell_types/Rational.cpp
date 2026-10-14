@@ -2,8 +2,8 @@
 
 #include <QtCore/QTextStream>
 
-#include "other/helpers.hpp"
-#include "xml/XMLChildren.hpp"
+#include "common/helpers.hpp"
+#include "io/XMLChildren.hpp"
 
 Rational::Rational(const int numerator_input, const int denominator_input) {
   Q_ASSERT(numerator_input != 0);

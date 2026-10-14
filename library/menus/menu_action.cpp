@@ -1,4 +1,4 @@
-#include "menus/MenuAction.hpp"
+#include "menus/menu_action.hpp"
 
 #include <QtWidgets/QMenu>
 

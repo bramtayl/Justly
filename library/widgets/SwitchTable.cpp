@@ -3,7 +3,7 @@
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QScrollBar>
 
-#include "other/Song.hpp"
+#include "song/Song.hpp"
 
 SwitchTable::SwitchTable(QUndoStack& undo_stack, Song& song)
     : chords_model(undo_stack, song),

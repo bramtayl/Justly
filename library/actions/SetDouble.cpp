@@ -5,7 +5,7 @@
 #include <QtWidgets/QSpinBox>
 
 #include "actions/ChangeId.hpp"
-#include "other/Song.hpp"
+#include "song/Song.hpp"
 #include "sound/FluidSynth.hpp"
 
 namespace {

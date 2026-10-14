@@ -2,7 +2,7 @@
 
 #include <QtWidgets/QWidget>
 
-#include "other/TableSelection.hpp"
+#include "models/TableSelection.hpp"
 
 struct PianoRollColumnScene;
 struct PianoRollNotesScene;

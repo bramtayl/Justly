@@ -1,4 +1,4 @@
-#include "widgets/SongFile.hpp"
+#include "io/song_file.hpp"
 
 #include <QtCore/QSettings>
 #include <QtCore/QStandardPaths>
@@ -6,7 +6,10 @@
 #include <QtWidgets/QDoubleSpinBox>
 
 #include "actions/ReplaceTable.hpp"
-#include "musicxml/MusicXMLImport.hpp"
+#include "io/musicxml_import.hpp"
+#include "io/XMLChildren.hpp"
+#include "io/XMLDocument.hpp"
+#include "io/XMLValidator.hpp"
 #include "piano_roll/PianoRollWidget.hpp"
 #include "widgets/ControlsColumn.hpp"
 #include "widgets/MainWindow.hpp"
@@ -14,9 +17,6 @@
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchTable.hpp"
 #include "widgets/WindowBody.hpp"
-#include "xml/XMLChildren.hpp"
-#include "xml/XMLDocument.hpp"
-#include "xml/XMLValidator.hpp"
 
 auto can_discard_changes(WindowBody& window_body) -> bool {
   return window_body.undo_stack.isClean() ||
@@ -361,9 +361,8 @@ auto find_imported_program(const QList<Program>& programs,
 
   if (imported_voice.midi_program.has_value()) {
     const auto& midi_program = imported_voice.midi_program.value();
-    const auto default_bank_number = SubVoice::is_pitched()
-                                         ? PITCHED_BANK_NUMBER
-                                         : UNPITCHED_BANK_NUMBER;
+    const auto default_bank_number =
+        SubVoice::is_pitched() ? PITCHED_BANK_NUMBER : UNPITCHED_BANK_NUMBER;
     // a bank the soundfont doesn't have might still have a general midi
     // preset with the same number
     for (const auto bank_number :
@@ -408,10 +407,9 @@ auto import_musicxml(MainWindow& main_window, const QString& filename) -> bool {
   }
   auto& score = maybe_score.value();
 
-  replace_song(
-      window_body, std::move(score.chords),
-      make_imported_voices<PitchedVoice>(score.voices.pitched),
-      make_imported_voices<UnpitchedVoice>(score.voices.unpitched));
+  replace_song(window_body, std::move(score.chords),
+               make_imported_voices<PitchedVoice>(score.voices.pitched),
+               make_imported_voices<UnpitchedVoice>(score.voices.unpitched));
 
   window_body.controls_column.spin_boxes.starting_key_editor.setValue(
       midi_number_to_frequency(score.starting_midi_key));

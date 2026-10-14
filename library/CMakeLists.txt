@@ -19,15 +19,15 @@ add_subdirectory("actions")
 add_subdirectory("cell_editors")
 add_subdirectory("cell_types")
 add_subdirectory("column_numbers")
+add_subdirectory("common")
+add_subdirectory("io")
 add_subdirectory("menus")
 add_subdirectory("models")
-add_subdirectory("musicxml")
-add_subdirectory("other")
 add_subdirectory("piano_roll")
 add_subdirectory("rows")
+add_subdirectory("song")
 add_subdirectory("sound")
 add_subdirectory("widgets")
-add_subdirectory("xml")
 
 target_include_directories(JustlyLibrary PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"

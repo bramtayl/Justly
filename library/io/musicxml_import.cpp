@@ -1,4 +1,4 @@
-#include "musicxml/MusicXMLImport.hpp"
+#include "io/musicxml_import.hpp"
 
 #include <QtCore/QJsonArray>
 #include <QtCore/QJsonDocument>
@@ -10,8 +10,8 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMessageBox>
 
-#include "other/Song.hpp"
-#include "other/helpers.hpp"
+#include "common/helpers.hpp"
+#include "song/Song.hpp"
 
 namespace {
 
@@ -80,9 +80,9 @@ auto run_converter(QWidget& parent, const QString& filename)
   QProcess process;
   {
     const WaitCursor wait_cursor;
-    process.start(python_program,
-                  {QString::fromStdString(get_share_file("import_score.py")),
-                   filename});
+    process.start(
+        python_program,
+        {QString::fromStdString(get_share_file("import_score.py")), filename});
     if (!process.waitForStarted()) {
       QMessageBox::warning(&parent, QObject::tr("Python error"),
                            QObject::tr("Couldn't run %1").arg(python_program));
@@ -96,8 +96,7 @@ auto run_converter(QWidget& parent, const QString& filename)
       return std::nullopt;
     }
   }
-  if (process.exitStatus() != QProcess::NormalExit ||
-      process.exitCode() != 0) {
+  if (process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0) {
     // e.g. music21 isn't installed
     QMessageBox::warning(
         &parent, QObject::tr("Python error"),
@@ -105,7 +104,8 @@ auto run_converter(QWidget& parent, const QString& filename)
             .arg(QString::fromUtf8(process.readAllStandardError()).trimmed()));
     return std::nullopt;
   }
-  const auto document = QJsonDocument::fromJson(process.readAllStandardOutput());
+  const auto document =
+      QJsonDocument::fromJson(process.readAllStandardOutput());
   if (!document.isObject()) {
     QMessageBox::warning(&parent, QObject::tr("Python error"),
                          QObject::tr("Couldn't understand music21's output"));
@@ -256,9 +256,8 @@ auto make_notes(const QList<ParsedNote>& parse_notes,
 
 auto make_chord(const ParsedChord& parse_chord, const MusicXMLVoices& voices,
                 const int measure_number, const int key,
-                const int last_midi_key, const int tempo,
-                const int last_tempo, const int song_divisions,
-                const int time_delta) -> Chord {
+                const int last_midi_key, const int tempo, const int last_tempo,
+                const int song_divisions, const int time_delta) -> Chord {
   Chord new_chord;
   new_chord.beats = Rational(time_delta, song_divisions);
   new_chord.interval = get_interval(key - last_midi_key);
@@ -327,8 +326,8 @@ auto import_score(QWidget& parent, const QString& filename)
   score.voices.unpitched = deduplicate_voice_names(voices.unpitched);
   score.starting_midi_key =
       get_most_recent(midi_keys, chords_dict.firstKey(), DEFAULT_STARTING_MIDI);
-  score.starting_tempo = get_most_recent(tempos, chords_dict.firstKey(),
-                                         DEFAULT_STARTING_TEMPO);
+  score.starting_tempo =
+      get_most_recent(tempos, chords_dict.firstKey(), DEFAULT_STARTING_TEMPO);
 
   auto last_midi_key = score.starting_midi_key;
   auto last_tempo = score.starting_tempo;

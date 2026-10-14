@@ -2,7 +2,7 @@
 
 #include <fluidsynth.h>
 
-#include "other/helpers.hpp"
+#include "common/helpers.hpp"
 
 struct FluidSettings;
 

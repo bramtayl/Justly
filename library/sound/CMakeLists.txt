@@ -5,7 +5,7 @@ target_sources(JustlyLibrary PUBLIC FILE_SET justly_headers FILES
     "FluidSettings.hpp"
     "FluidSynth.hpp"
     "PlayState.hpp"
-    "Playback.hpp"
+    "playback.hpp"
     "Player.hpp"
 )
 
@@ -14,6 +14,6 @@ target_sources(JustlyLibrary PRIVATE
     "FluidSequencer.cpp"
     "FluidSettings.cpp"
     "FluidSynth.cpp"
-    "Playback.cpp"
+    "playback.cpp"
     "Player.cpp"
 )

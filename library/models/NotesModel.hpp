@@ -1,9 +1,9 @@
 #pragma once
 
 #include "models/UndoRowsModel.hpp"
-#include "other/Song.hpp"
 #include "rows/PitchedNote.hpp"
 #include "rows/UnpitchedNote.hpp"
+#include "song/Song.hpp"
 
 template <NoteInterface SubNote>
 struct NotesModel : public UndoRowsModel<SubNote> {

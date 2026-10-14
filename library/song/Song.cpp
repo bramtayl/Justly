@@ -1,4 +1,4 @@
-#include "other/Song.hpp"
+#include "song/Song.hpp"
 
 #include "rows/Chord.hpp"
 

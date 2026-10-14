@@ -1,7 +1,7 @@
 #include "cell_types/Interval.hpp"
 
-#include "other/helpers.hpp"
-#include "xml/XMLChildren.hpp"
+#include "common/helpers.hpp"
+#include "io/XMLChildren.hpp"
 
 Interval::Interval(Rational ratio_input, const int octave_input)
     : ratio(ratio_input), octave(octave_input) {

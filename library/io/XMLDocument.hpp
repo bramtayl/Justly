@@ -1,6 +1,6 @@
 #pragma once
 
-#include "other/helpers.hpp"
+#include "io/xml_helpers.hpp"
 
 struct XMLDocument : CHandle<xmlDoc, xmlFreeDoc> {
   XMLDocument() : CHandle(xmlNewDoc(nullptr)) {}

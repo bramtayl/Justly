@@ -7,8 +7,8 @@
 
 #include "actions/ChangeId.hpp"
 #include "actions/SetDouble.hpp"
-#include "other/Song.hpp"
 #include "rows/Note.hpp"
+#include "song/Song.hpp"
 #include "sound/FluidSynth.hpp"
 
 namespace {

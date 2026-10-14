@@ -2,7 +2,7 @@
 
 #include <QtGui/QUndoStack>
 
-#include "other/Song.hpp"
+#include "song/Song.hpp"
 #include "sound/Player.hpp"
 
 struct ControlsColumn;

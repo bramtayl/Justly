@@ -8,9 +8,9 @@
 
 #include "actions/ReplaceTable.hpp"
 #include "column_numbers/ChordColumn.hpp"
+#include "io/song_file.hpp"
 #include "menus/SongMenuBar.hpp"
 #include "piano_roll/PianoRollWidget.hpp"
-#include "widgets/SongFile.hpp"
 
 namespace {
 
@@ -112,8 +112,7 @@ MainWindow::MainWindow()
             RowType::chord_type) {
           const auto column = index.column();
           const auto is_pitched =
-              column ==
-              static_cast<int>(ChordColumn::pitched_notes_column);
+              column == static_cast<int>(ChordColumn::pitched_notes_column);
           if (is_pitched ||
               (column ==
                static_cast<int>(ChordColumn::unpitched_notes_column))) {

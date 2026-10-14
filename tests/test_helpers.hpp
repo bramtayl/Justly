@@ -12,9 +12,9 @@
 #include "column_numbers/UnpitchedNoteColumn.hpp"
 #include "column_numbers/UnpitchedVoiceColumn.hpp"
 #include "menus/SongMenuBar.hpp"
-#include "sound/Playback.hpp"
+#include "sound/playback.hpp"
 #include "widgets/MainWindow.hpp"
-#include "widgets/SongFile.hpp"
+#include "io/song_file.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/SwitchTable.hpp"
 

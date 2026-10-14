@@ -7,11 +7,11 @@
 #include "actions/InsertRemoveRows.hpp"
 #include "actions/OrphanedVoiceNameLocation.hpp"
 #include "actions/SetCells.hpp"
-#include "other/Cells.hpp"
+#include "io/XMLChildren.hpp"
+#include "io/XMLDocument.hpp"
+#include "io/XMLValidator.hpp"
+#include "models/Cells.hpp"
 #include "widgets/WindowBody.hpp"
-#include "xml/XMLChildren.hpp"
-#include "xml/XMLDocument.hpp"
-#include "xml/XMLValidator.hpp"
 
 [[nodiscard]] auto get_mime_description(const QString& mime_type) -> QString;
 

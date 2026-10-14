@@ -5,7 +5,7 @@
 #include <QtWidgets/QSpinBox>
 
 #include "cell_editors/RationalEditor.hpp"
-#include "other/helpers.hpp"
+#include "common/helpers.hpp"
 
 IntervalEditor::IntervalEditor(QWidget* const parent_pointer)
     : QFrame(parent_pointer),

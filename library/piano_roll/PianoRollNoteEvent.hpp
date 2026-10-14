@@ -1,6 +1,6 @@
 #pragma once
 
-#include "other/Song.hpp"
+#include "song/Song.hpp"
 
 struct PianoRollNoteEvent {
   double start_time_ms = 0;

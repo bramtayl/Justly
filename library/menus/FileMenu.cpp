@@ -1,8 +1,8 @@
 #include "menus/FileMenu.hpp"
 
-#include "menus/MenuAction.hpp"
-#include "sound/Playback.hpp"
-#include "widgets/SongFile.hpp"
+#include "io/song_file.hpp"
+#include "menus/menu_action.hpp"
+#include "sound/playback.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "widgets/WindowBody.hpp"
 

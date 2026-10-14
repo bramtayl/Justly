@@ -2,7 +2,7 @@
 
 #include <libxml/xmlschemas.h>
 
-#include "xml/XMLDocument.hpp"
+#include "io/XMLDocument.hpp"
 
 struct XMLParserContext
     : CHandle<_xmlSchemaParserCtxt, xmlSchemaFreeParserCtxt> {

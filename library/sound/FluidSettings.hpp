@@ -2,7 +2,7 @@
 
 #include <fluidsynth.h>
 
-#include "other/helpers.hpp"
+#include "common/helpers.hpp"
 
 struct FluidSettings : CHandle<fluid_settings_t, delete_fluid_settings> {
   // midi_channels/cpu_cores/audio_driver must be set (when wanted) before

@@ -2,7 +2,7 @@
 
 #include <QtWidgets/QMenu>
 
-#include "other/TableSelection.hpp"
+#include "models/TableSelection.hpp"
 
 struct WindowBody;
 

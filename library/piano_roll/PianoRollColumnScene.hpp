@@ -2,7 +2,7 @@
 
 #include <QtWidgets/QGraphicsScene>
 
-#include "other/helpers.hpp"
+#include "common/helpers.hpp"
 
 // a scene/view for a fixed-width column beside the main PianoRollNotesScene
 // view -- the pitch axis on the left and the voice legend on the right --
