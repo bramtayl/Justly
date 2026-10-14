@@ -11,7 +11,7 @@ endif()
 project(Justly VERSION 1.2.0 LANGUAGES CXX)
 
 # MuseScore's MS Basic soundfont, too big to commit to git, so users put it
-# in the share folder (its license, MS_Basic_License.md, is committed)
+# in the share folder (its license, licenses/MS_Basic.md, is committed)
 set(soundfont_url "https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic.sf3")
 set(soundfont_file "${Justly_SOURCE_DIR}/share/MS_Basic.sf3")
 if (NOT EXISTS "${soundfont_file}")
@@ -237,6 +237,11 @@ function(justly_install_share share_folder bundle_target)
     endif()
 
     install(DIRECTORY "${share_folder}" DESTINATION "${install_sub_folder}${share_sub_folder}")
+    # next to the third-party licenses in share/licenses
+    install(FILES "${Justly_SOURCE_DIR}/LICENSE.md"
+        DESTINATION "${install_sub_folder}${share_sub_folder}/licenses"
+        RENAME "Justly.md"
+    )
     install(DIRECTORY "${python_folder}/"
         DESTINATION "${install_sub_folder}${share_sub_folder}/python"
         USE_SOURCE_PERMISSIONS

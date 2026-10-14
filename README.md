@@ -436,3 +436,5 @@ The pitched notes in the third chord are the tonic (≈A3), third (≈C#4), and 
 ## License
 
 Justly is licensed under the [MIT License](LICENSE.md).
+
+Justly is bundled with libraries that are licensed separately, listed in [share/licenses](share/licenses/README.md).
