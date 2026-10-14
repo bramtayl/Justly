@@ -78,10 +78,6 @@ void Tester::test_musicxml_error_data() {
       << "timewise.musicxml"
       << "music21 can't read the score: Cannot parse MusicXML files not in "
          "score-partwise. Root tag was 'score-timewise'";
-  // divisions is unbounded xs:decimal with no schema-enforced range
-  QTest::newRow("overflowing divisions")
-      << "overflowing_divisions.musicxml"
-      << "music21 can't read the score: float division by zero";
 }
 
 void Tester::test_musicxml_error() {
@@ -90,6 +86,22 @@ void Tester::test_musicxml_error() {
 
   close_message_later(main_window, waiting_for_message, error_message);
   import_musicxml(main_window, test_dir.filePath(file_name));
+}
+
+// divisions is unbounded xs:decimal with no schema-enforced range. Python
+// 3.14 dropped the "float" from the error message, and on Linux, the
+// system's python could be either
+void Tester::test_musicxml_overflowing_divisions() {
+  check_message_later(
+      main_window, waiting_for_message,
+      [](const QString& actual_text) -> auto {
+        QVERIFY(QStringList(
+                    {"music21 can't read the score: float division by zero",
+                     "music21 can't read the score: division by zero"})
+                    .contains(actual_text));
+      });
+  import_musicxml(main_window,
+                  test_dir.filePath("overflowing_divisions.musicxml"));
 }
 
 // regression test: inserting a chord, then drilling into and inserting one

@@ -22,67 +22,94 @@ if (NOT soundfont_hash STREQUAL "5ea2375e8bd7d8e71def1036978c1621e85b66934169b6a
     message(FATAL_ERROR "${soundfont_file} isn't ${soundfont_url}")
 endif()
 
-# importing a score runs share/import_score.py, which reads it with music21,
-# in a python bundled with Justly. It has to be a python-build-standalone
-# build, which works from wherever it's copied. Users install one with uv
-# into the python folder, apart from any other python, and music21 into it
-set(python_install_folder "${Justly_SOURCE_DIR}/python")
-set(music21_version "10.5.0")
-set(python_instructions "See Building from source in README.md for how to install it")
-# uv also adds a cpython-3.13-<platform> link to the newest 3.13, which this
-# leaves out
-file(GLOB python_source_folders LIST_DIRECTORIES true
-    "${python_install_folder}/cpython-3.13.*")
-list(LENGTH python_source_folders python_count)
-if (NOT python_count EQUAL 1)
-    message(FATAL_ERROR "Expected one python 3.13 in ${python_install_folder}, found ${python_count}. ${python_instructions}")
-endif()
-if (WIN32)
-    set(python_source "${python_source_folders}/python.exe")
-else()
-    set(python_source "${python_source_folders}/bin/python3")
-endif()
-
-# packages no other package needs. Everything else is one of music21's
-# dependencies
-execute_process(
-    COMMAND "${python_source}" -m pip list
-        --not-required --format=freeze --disable-pip-version-check
-    OUTPUT_VARIABLE top_level_packages
-    COMMAND_ERROR_IS_FATAL ANY
-)
-string(REPLACE "\r" "" top_level_packages "${top_level_packages}")
-# pip itself comes with python
-string(REGEX REPLACE "(^|\n)pip==[^\n]*" "" top_level_packages "${top_level_packages}")
-string(STRIP "${top_level_packages}" top_level_packages)
-if (NOT top_level_packages STREQUAL "music21==${music21_version}")
-    string(REPLACE "\n" ", " top_level_packages "${top_level_packages}")
-    message(FATAL_ERROR "The python in ${python_install_folder} needs music21 ${music21_version} and nothing else, but has: ${top_level_packages}. ${python_instructions}")
-endif()
-
-# on Linux and Windows, straight into the build tree's share folder, where
-# the targets find it. Mac bundles have their own share folders, so each
-# target copies it in after it builds
+# on Linux, the package manager (or Flatpak) provides Qt, FluidSynth, and a
+# python with music21, so Justly bundles none of them, and its share folder
+# goes in share/Justly alongside other apps'. On MacOS and Windows, Justly
+# bundles them all
 if (APPLE)
-    set(python_folder "${CMAKE_BINARY_DIR}/python")
+    set(share_sub_folder "Resources")
+elseif (LINUX)
+    set(share_sub_folder "share/Justly")
 else()
-    set(python_folder "${CMAKE_BINARY_DIR}/share/python")
-endif()
-if (WIN32)
-    set(bundled_python "${python_folder}/python.exe")
-else()
-    set(bundled_python "${python_folder}/bin/python3")
+    set(share_sub_folder "share")
 endif()
 
-# copied again, over the whole folder, only when it's a different python or
-# music21
-set(python_copy "${python_source_folders} music21 ${music21_version}")
-if (NOT python_copy STREQUAL last_python_copy
-    OR NOT EXISTS "${bundled_python}")
-    message(STATUS "Copying ${python_source_folders}")
-    file(REMOVE_RECURSE "${python_folder}")
-    file(COPY "${python_source_folders}/" DESTINATION "${python_folder}")
-    set(last_python_copy "${python_copy}" CACHE INTERNAL "")
+set(music21_version "10.5.0")
+
+# importing a score runs share/import_score.py, which reads it with music21
+if (LINUX)
+    # prefers the python of an active virtual environment
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    execute_process(
+        COMMAND "${Python3_EXECUTABLE}" -c "import music21; print(music21.__version__)"
+        OUTPUT_VARIABLE system_music21_version
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE music21_missing
+    )
+    if (music21_missing OR NOT system_music21_version STREQUAL music21_version)
+        message(FATAL_ERROR "${Python3_EXECUTABLE} needs music21 ${music21_version}. See Building from source in README.md")
+    endif()
+else()
+    # a python bundled with Justly. It has to be a python-build-standalone
+    # build, which works from wherever it's copied. Users install one with uv
+    # into the python folder, apart from any other python, and music21 into it
+    set(python_install_folder "${Justly_SOURCE_DIR}/python")
+    set(python_instructions "See Building from source in README.md for how to install it")
+    # uv also adds a cpython-3.13-<platform> link to the newest 3.13, which this
+    # leaves out
+    file(GLOB python_source_folders LIST_DIRECTORIES true
+        "${python_install_folder}/cpython-3.13.*")
+    list(LENGTH python_source_folders python_count)
+    if (NOT python_count EQUAL 1)
+        message(FATAL_ERROR "Expected one python 3.13 in ${python_install_folder}, found ${python_count}. ${python_instructions}")
+    endif()
+    if (WIN32)
+        set(python_source "${python_source_folders}/python.exe")
+    else()
+        set(python_source "${python_source_folders}/bin/python3")
+    endif()
+
+    # packages no other package needs. Everything else is one of music21's
+    # dependencies
+    execute_process(
+        COMMAND "${python_source}" -m pip list
+            --not-required --format=freeze --disable-pip-version-check
+        OUTPUT_VARIABLE top_level_packages
+        COMMAND_ERROR_IS_FATAL ANY
+    )
+    string(REPLACE "\r" "" top_level_packages "${top_level_packages}")
+    # pip itself comes with python
+    string(REGEX REPLACE "(^|\n)pip==[^\n]*" "" top_level_packages "${top_level_packages}")
+    string(STRIP "${top_level_packages}" top_level_packages)
+    if (NOT top_level_packages STREQUAL "music21==${music21_version}")
+        string(REPLACE "\n" ", " top_level_packages "${top_level_packages}")
+        message(FATAL_ERROR "The python in ${python_install_folder} needs music21 ${music21_version} and nothing else, but has: ${top_level_packages}. ${python_instructions}")
+    endif()
+
+    # on Windows, straight into the build tree's share folder, where the
+    # targets find it. Mac bundles have their own share folders, so each
+    # target copies it in after it builds
+    if (APPLE)
+        set(python_folder "${CMAKE_BINARY_DIR}/python")
+    else()
+        set(python_folder "${CMAKE_BINARY_DIR}/share/python")
+    endif()
+    if (WIN32)
+        set(bundled_python "${python_folder}/python.exe")
+    else()
+        set(bundled_python "${python_folder}/bin/python3")
+    endif()
+
+    # copied again, over the whole folder, only when it's a different python or
+    # music21
+    set(python_copy "${python_source_folders} music21 ${music21_version}")
+    if (NOT python_copy STREQUAL last_python_copy
+        OR NOT EXISTS "${bundled_python}")
+        message(STATUS "Copying ${python_source_folders}")
+        file(REMOVE_RECURSE "${python_folder}")
+        file(COPY "${python_source_folders}/" DESTINATION "${python_folder}")
+        set(last_python_copy "${python_copy}" CACHE INTERNAL "")
+    endif()
 endif()
 
 include(InstallRequiredSystemLibraries)
@@ -92,29 +119,11 @@ option(NO_REALTIME_AUDIO "Do not start realtime audio" OFF)
 option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
 option(TRACK_COVERAGE "Track coverage" OFF)
 
-if (LINUX)
-    # rpath fixes is broken in qt_generate_deploy_app_script
-    # because ubuntu installed plugins don't have an rpath
-    # need to set before find_package(Qt6)
-    set(QT_DEPLOY_FORCE_ADJUST_RPATHS OFF)
-endif()
-
 find_package(FluidSynth REQUIRED)
 find_package(LibXml2 REQUIRED)
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Svg Widgets)
 if (BUILD_TESTS)
     find_package(Qt6 REQUIRED COMPONENTS Test)
-endif()
-
-if (LINUX)
-    # in Debian, these are separate packages in Qt6Gui_DIR
-    list(APPEND CMAKE_PREFIX_PATH "${Qt6Gui_DIR}")
-    # to look native
-    find_package(Qt6QGtk3ThemePlugin REQUIRED PATHS "${Qt6Gui_DIR}")
-    if (BUILD_TESTS)
-        # needed for ctest to run offscreen
-        find_package(Qt6QOffscreenIntegrationPlugin REQUIRED PATHS "${Qt6Gui_DIR}")
-    endif()
 endif()
 
 qt_standard_project_setup()
@@ -164,75 +173,11 @@ endif()
 add_subdirectory("library")
 add_subdirectory("executable")
 
-if (LINUX)
-    # qt_import_plugins won't work with the offscreen plugin
-    qt_import_plugins(Justly INCLUDE Qt6::QGtk3ThemePlugin)
-
-    # qt will deploy system libraries by default on linux
-    # so exclude them manually
-    set(system_lib_exclude_regexes
-        "^ld-linux"
-        "^libEGL"
-        "^libGLX"
-        "^libGLdispatch"
-        "^libICE"
-        "^libOpenGL"
-        "^libSM"
-        # all the X11 client libraries (libX11, libXext, libXrandr, ...)
-        "^libX"
-        "^libapparmor"
-        "^libasound"
-        "^libasyncns"
-        "^libbz2"
-        "^libc[.]"
-        "^libcrypto[.]"
-        "^libdb-"
-        "^libdbus-1"
-        "^libdrm"
-        "^libepoxy"
-        "^libexpat"
-        "^libffi"
-        "^libgbm"
-        "^libgcc_s"
-        "^libgmp"
-        "^libgnutls"
-        "^libgssapi_krb5"
-        "^libhogweed"
-        "^libidn2"
-        "^libm[.]"
-        "^libmount"
-        "^libmvec"
-        "^libnettle"
-        "^libnghttp2"
-        "^libpcre2-8"
-        "^libpipewire"
-        "^libpsl"
-        "^libpulse"
-        "^libreadline"
-        "^libseccomp"
-        "^libselinux"
-        "^libssl[.]"
-        "^libstdc[+][+]"
-        "^libsystemd"
-        "^libudev"
-        "^libwayland-"
-        "^libxcb"
-        "^libxkbcommon"
-        "^libxml2"
-        "^libz[.]"
-        "^libzstd"
-    )
-else()
-    set(system_lib_exclude_regexes "")
-endif()
-
 # install the share folder, and also put it into the build dir so the target works there too
 function(justly_install_share share_folder bundle_target)
     if (APPLE)
-        set(share_sub_folder "Resources")
         set(install_sub_folder "${bundle_target}.app/Contents/")
     else()
-        set(share_sub_folder "share")
         set(install_sub_folder "")
     endif()
 
@@ -242,10 +187,12 @@ function(justly_install_share share_folder bundle_target)
         DESTINATION "${install_sub_folder}${share_sub_folder}/licenses"
         RENAME "Justly.md"
     )
-    install(DIRECTORY "${python_folder}/"
-        DESTINATION "${install_sub_folder}${share_sub_folder}/python"
-        USE_SOURCE_PERMISSIONS
-    )
+    if (NOT LINUX)
+        install(DIRECTORY "${python_folder}/"
+            DESTINATION "${install_sub_folder}${share_sub_folder}/python"
+            USE_SOURCE_PERMISSIONS
+        )
+    endif()
     if (APPLE)
         add_custom_command(TARGET ${bundle_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -266,24 +213,31 @@ foreach(app_target ${app_targets})
         BUNDLE DESTINATION .
     )
 
-    if (LINUX)
-        # need to set rpath on linux
-        set_target_properties(${app_target} PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
-        # if plugins inherit justly's rpath, since they are in a different location, the rpath won't work
-        # so disable rpath inheritance
-        target_link_options(${app_target} PRIVATE "LINKER:--disable-new-dtags")
+    # on Linux, the installed targets use the system's libraries where they
+    # are, so there's nothing to deploy
+    if (NOT LINUX)
+        qt_generate_deploy_app_script(
+            TARGET ${app_target}
+            OUTPUT_SCRIPT deploy_script
+            NO_TRANSLATIONS
+        )
+        install(SCRIPT ${deploy_script})
     endif()
-
-    qt_generate_deploy_app_script(
-        TARGET ${app_target}
-        OUTPUT_SCRIPT deploy_script
-        NO_TRANSLATIONS
-        PRE_EXCLUDE_REGEXES ${system_lib_exclude_regexes}
-    )
-    install(SCRIPT ${deploy_script})
 
     justly_install_share("${Justly_SOURCE_DIR}/share/" ${app_target})
 endforeach()
+
+# so desktops can find and launch Justly
+if (LINUX)
+    set(app_id "io.github.bramtayl.Justly")
+    install(FILES "${Justly_SOURCE_DIR}/linux/${app_id}.desktop"
+        DESTINATION "share/applications")
+    install(FILES "${Justly_SOURCE_DIR}/linux/${app_id}.metainfo.xml"
+        DESTINATION "share/metainfo")
+    install(FILES "${Justly_SOURCE_DIR}/share/Justly.svg"
+        DESTINATION "share/icons/hicolor/scalable/apps"
+        RENAME "${app_id}.svg")
+endif()
 
 if (WIN32)
     # normalize path separators
@@ -328,33 +282,29 @@ if (WIN32)
 endif()
 
 if (BUILD_TESTS)
-    # qt_import_plugins won't work for platform plugins
-    # so the offscreen plugin needs to be deployed manually
+    # qt_import_plugins won't work for platform plugins, so where Qt is
+    # bundled, the offscreen plugin needs to be deployed manually. On Linux,
+    # the system's Qt finds its own
     if (APPLE)
         set(platform_plugin_subfolder "JustlyTests.app/Contents/PlugIns/platforms")
     elseif (WIN32)
         set(platform_plugin_subfolder "bin/platforms")
-    else()
-        if (CMAKE_LIBRARY_ARCHITECTURE)
-            set(architecture_folder "${CMAKE_LIBRARY_ARCHITECTURE}/")
-        else()
-            set(architecture_folder "")
-        endif()
-        set(platform_plugin_subfolder "lib/${architecture_folder}qt6/plugins/platforms")
     endif()
 
-    set(platform_plugin_folder "\${CMAKE_INSTALL_PREFIX}/${platform_plugin_subfolder}")
-    set(platform_plugin_path "${platform_plugin_folder}/$<TARGET_FILE_NAME:Qt6::QOffscreenIntegrationPlugin>")
+    if (NOT LINUX)
+        set(platform_plugin_folder "\${CMAKE_INSTALL_PREFIX}/${platform_plugin_subfolder}")
+        set(platform_plugin_path "${platform_plugin_folder}/$<TARGET_FILE_NAME:Qt6::QOffscreenIntegrationPlugin>")
 
-    # install(IMPORTED_RUNTIME_ARTIFACTS) doesn't reliably resolve this
-    # plugin's location, so copy it manually via $<TARGET_FILE:...>
-    install(CODE "
-        file(MAKE_DIRECTORY \"${platform_plugin_folder}\")
-        file(COPY_FILE
-            \"$<TARGET_FILE:Qt6::QOffscreenIntegrationPlugin>\"
-            \"${platform_plugin_path}\"
-        )
-    ")
+        # install(IMPORTED_RUNTIME_ARTIFACTS) doesn't reliably resolve this
+        # plugin's location, so copy it manually via $<TARGET_FILE:...>
+        install(CODE "
+            file(MAKE_DIRECTORY \"${platform_plugin_folder}\")
+            file(COPY_FILE
+                \"$<TARGET_FILE:Qt6::QOffscreenIntegrationPlugin>\"
+                \"${platform_plugin_path}\"
+            )
+        ")
+    endif()
 
     if (APPLE)
         # set the rpath for the platform plugin

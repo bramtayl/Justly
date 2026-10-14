@@ -39,11 +39,7 @@ auto make_range(QAbstractItemModel& model, const int first_row_number,
 auto get_share_folder() -> QDir {
   QDir folder(QCoreApplication::applicationDirPath());
   folder.cdUp();
-  if (folder.dirName() == "Contents") {
-    folder.cd("Resources");
-  } else {
-    folder.cd("share");
-  }
+  folder.cd(JUSTLY_SHARE_SUB_FOLDER);
   return folder;
 }
 

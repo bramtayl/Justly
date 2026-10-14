@@ -4,13 +4,6 @@ env:
   VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/vcpkg_archives,readwrite"
   # build dependencies, removed before testing so the tests only see what
   # the deploy script bundled
-  UBUNTU_DEPS: >-
-    fluidsynth
-    libfluidsynth-dev
-    libqt6svg6-dev
-    libxml2-dev
-    qt6-base-dev
-    qt6-gtk-platformtheme
   BREW_DEPS: fluid-synth qt libxml2
 jobs:
   main_job:
@@ -26,10 +19,10 @@ jobs:
             family: macos
             cpack_generator: ZIP
             package_name: Justly-MacOS-Intel
+          # Linux users get Justly from Flathub (see linux/), so this only
+          # tests, and measures coverage
           - os: ubuntu-26.04
             family: ubuntu
-            cpack_generator: TGZ
-            package_name: Justly-Linux
           - os: windows-latest
             family: windows
             cpack_generator: ZIP
@@ -55,32 +48,31 @@ jobs:
 
     # into the python folder, where CMake finds it and copies it into the build
     - name: Install the python to bundle
+      if: matrix.family != 'ubuntu'
       shell: bash
       run: |
         uv python install ${{ matrix.python || '3.13' }} --install-dir python --no-bin --no-registry
         uv pip install --python python/cpython-3.13.* --break-system-packages music21==10.5.0
 
-    # the runtime libraries are the system libraries that
-    # system_lib_exclude_regexes in CMakeLists.txt leaves out of the bundle.
-    # Installing them explicitly marks them as manually installed, so the
-    # autoremove in "Remove dependencies before testing on Ubuntu" keeps them
     - name: Install dependencies on Ubuntu
       if: matrix.family == 'ubuntu'
       run: >
         sudo apt-get update &&
         sudo apt-get install -y
-        $UBUNTU_DEPS
-        binutils
         cmake
-        libapparmor1
-        libasound2t64
-        libdbus-1-3
-        libpipewire-0.3-0t64
-        libpulse0
-        libsystemd0
-        libwayland-client0
-        libx11-6
-        libxcb1
+        libfluidsynth-dev
+        libqt6svg6-dev
+        libxml2-dev
+        qt6-base-dev
+
+    # CMake's FindPython prefers the python of the virtual environment that
+    # VIRTUAL_ENV names
+    - name: Install music21 on Ubuntu
+      if: matrix.family == 'ubuntu'
+      run: |
+        uv venv
+        uv pip install music21==10.5.0
+        echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
 
     - name: Install gcovr on Ubuntu
       if: matrix.family == 'ubuntu'
@@ -141,9 +133,9 @@ jobs:
           curl --fail --location --output share/MS_Basic.sf3 "https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic.sf3"
         fi
 
-    # everything that needs the dependencies happens before they're removed:
-    # building, and the deploy scripts, which run when the test builds install
-    # themselves into test_install and when cpack packages
+    # on MacOS, everything that needs the dependencies happens before they're
+    # removed: building, and the deploy scripts, which run when the test builds
+    # install themselves into test_install and when cpack packages
 
     - name: Configure with tests
       run: cmake --preset debug-tests
@@ -164,6 +156,7 @@ jobs:
       run: cmake --build --preset coverage
 
     - name: Configure without tests
+      if: matrix.family != 'ubuntu'
       run: >
         cmake -S . -B without_tests
         -DCMAKE_BUILD_TYPE=Release
@@ -171,31 +164,27 @@ jobs:
         -DCPACK_PACKAGE_FILE_NAME=${{ matrix.package_name }}
 
     - name: Build without tests
+      if: matrix.family != 'ubuntu'
       run: cmake --build without_tests --config Release
 
     - name: Package
+      if: matrix.family != 'ubuntu'
       run: cd without_tests; cpack -C Release
 
     # proves the deploy script in CMakeLists.txt actually bundled everything
     # the tests need -- otherwise they'd silently pass against the installed
     # copies regardless of what got bundled, since dyld falls back to any
     # load-command path macdeployqt failed to rewrite to a bundle-relative
-    # one, and ld.so falls back to the system library directories
+    # one
     - name: Remove dependencies before testing on MacOS
       if: matrix.family == 'macos'
       run: brew uninstall --ignore-dependencies $BREW_DEPS && brew autoremove
-
-    - name: Remove dependencies before testing on Ubuntu
-      if: matrix.family == 'ubuntu'
-      run: >
-        sudo apt-get remove --purge -y $UBUNTU_DEPS &&
-        sudo apt-get autoremove --purge -y
 
     - name: Test on MacOS and Ubuntu
       if: matrix.family != 'windows'
       run: ctest --preset debug-tests
 
-    # same idea as the MacOS/Ubuntu steps above, but on Windows
+    # same idea as the MacOS step above, but on Windows
     # install-qt-action puts Qt's own bin dir on PATH and sets
     # QT_PLUGIN_PATH, either of which could mask a gap in what
     # qt_generate_deploy_app_script/windeployqt actually deployed
@@ -236,18 +225,46 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Upload package
+      if: matrix.family != 'ubuntu'
       uses: actions/upload-artifact@v7
       with:
         name: ${{ matrix.package_name }}
         path: |
-          without_tests/Justly-*.tar.gz
           without_tests/Justly-*.zip
         if-no-files-found: error
+
+  # builds the Flatpak the way Flathub will, and uploads it as a bundle that
+  # the release includes
+  flatpak_job:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            arch: x86_64
+          - os: ubuntu-24.04-arm
+            arch: aarch64
+    runs-on: ${{matrix.os}}
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.11
+      # flatpak-builder needs to make its own sandboxes
+      options: --privileged
+    steps:
+    - name: Download
+      uses: actions/checkout@v7
+
+    - name: Build
+      uses: flatpak/flatpak-github-actions/flatpak-builder@v6.8
+      with:
+        manifest-path: linux/io.github.bramtayl.Justly.yml
+        arch: ${{matrix.arch}}
+        bundle: Justly-Linux-${{matrix.arch}}.flatpak
+        cache-key: flatpak-builder-${{ hashFiles('linux/*.yml', 'linux/*.yaml') }}
 
   # a separate job, so a release only happens if every platform passed,
   # and the platforms don't race each other to create it
   release_job:
-    needs: main_job
+    needs: [main_job, flatpak_job]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:

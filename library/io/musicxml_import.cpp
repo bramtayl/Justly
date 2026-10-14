@@ -51,14 +51,16 @@ struct ParsedScore {
 // long enough for a big score on a slow computer
 static const auto CONVERTER_TIMEOUT_MILLISECONDS = 5 * 60 * 1000;
 
-// the python bundled with Justly, which has music21, unless JUSTLY_PYTHON
-// names another
+// the python bundled with Justly (or on Linux, the system's), which has
+// music21, unless JUSTLY_PYTHON names another
 auto get_python_program() -> QString {
   const auto environment = QProcessEnvironment::systemEnvironment();
   if (environment.contains("JUSTLY_PYTHON")) {
     return environment.value("JUSTLY_PYTHON");
   }
-#ifdef Q_OS_WIN
+#if defined(JUSTLY_SYSTEM_PYTHON)
+  return QStringLiteral(JUSTLY_SYSTEM_PYTHON);
+#elif defined(Q_OS_WIN)
   return QString::fromStdString(get_share_file("python/python.exe"));
 #else
   return QString::fromStdString(get_share_file("python/bin/python3"));

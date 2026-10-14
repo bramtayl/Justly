@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Justly
+Comment=Compose and play music in just intonation
+Exec=Justly
+Icon=io.github.bramtayl.Justly
+Terminal=false
+Categories=AudioVideo;Audio;Music;
+Keywords=just intonation;microtonal;composition;music;

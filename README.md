@@ -8,6 +8,7 @@
 
 - [Installation](#installation)
   - [Building from source](#building-from-source)
+    - [Flatpak](#flatpak)
     - [Ubuntu](#ubuntu)
     - [MacOS](#macos)
     - [Windows](#windows)
@@ -23,8 +24,9 @@
 
 ## Installation
 
-You can download binaries for Justly [here](https://github.com/bramtayl/Justly/releases/latest).
-The Justly executable is in the "bin" subfolder (if not a MacOS bundle).
+You can download binaries for MacOS and Windows [here](https://github.com/bramtayl/Justly/releases/latest).
+On Windows, the Justly executable is in the "bin" subfolder.
+On Linux, build the [Flatpak](#flatpak), or build from source.
 
 ### Building from source
 
@@ -33,10 +35,20 @@ Justly is built with CMake and requires:
 - Qt6 (Core, Gui, Svg, Test, Widgets)
 - FluidSynth
 - libxml2
-- A relocatable python with the music21 package
+- A python with the music21 package (on MacOS and Windows, a relocatable one, which Justly bundles)
 - The musescore soundfont
 
 Run all the commands below from the Justly folder.
+
+#### Flatpak
+
+Install [Flatpak](https://flatpak.org/setup/) and Flathub, and flatpak-builder (on Ubuntu, `sudo apt-get install -y flatpak-builder`). Then run:
+
+```sh
+flatpak install flathub org.kde.Sdk//6.11 # install the KDE SDK
+flatpak-builder --user --install --force-clean flatpak-build linux/io.github.bramtayl.Justly.yml # build and install justly
+flatpak run io.github.bramtayl.Justly # run justly
+```
 
 #### Ubuntu
 
@@ -48,12 +60,12 @@ sudo apt-get install -y cmake # install cmake
 sudo apt-get install -y libfluidsynth-dev # install fluidsynth with headers
 sudo apt-get install -y qt6-base-dev # install qt with headers
 sudo apt-get install -y libqt6svg6-dev # install the qt svg add-on with headers
-sudo apt-get install -y qt6-gtk-platformtheme # install the gtk qt theme, to look native
 sudo apt-get install -y libxml2-dev # install libxml2 with headers
 sudo apt-get install -y curl # to download the musescore soundfont
-sudo snap install astral-uv --classic # to install python
-uv python install 3.13 --install-dir python --no-bin # install python
-uv pip install --python python/cpython-3.13.* --break-system-packages music21==10.5.0 # install music21
+sudo snap install astral-uv --classic # to install music21
+uv venv # make a virtual environment for music21 in .venv
+uv pip install music21==10.5.0 # install music21
+source .venv/bin/activate # so cmake finds the python with music21
 curl --fail --location --output share/MS_Basic.sf3 "https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic.sf3" # install the musescore soundfont
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release # configure cmake
 cmake --build build # build justly
@@ -61,6 +73,8 @@ cmake --install build --prefix install # install justly
 ```
 
 The Justly executable will be in the `bin` subfolder of the `install` folder.
+It uses the python in `.venv` to import scores, so keep the Justly folder.
+For a native look, install `qt6-gtk-platformtheme`.
 
 #### MacOS
 

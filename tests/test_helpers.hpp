@@ -271,26 +271,36 @@ inline void accept_file_dialog_later(QWidget& parent,
   timer.start(WAIT_TIME);
 }
 
-inline void close_message_later(QWidget& parent, bool& waiting_for_message,
-                                const QString& expected_text) {
+// closes the next message box, then passes its text to check_text
+template <typename CheckText>
+inline void check_message_later(QWidget& parent, bool& waiting_for_message,
+                                CheckText check_text) {
   const auto waiting_before = waiting_for_message;
   waiting_for_message = true;
   auto& timer =  // NOLINT(cppcoreguidelines-owning-memory)
       *(new QTimer(&parent));
   timer.setSingleShot(true);
   QObject::connect(&timer, &QTimer::timeout, &parent,
-                   [expected_text, &waiting_for_message]() -> auto {
+                   [check_text, &waiting_for_message]() -> auto {
                      auto* const box_pointer = find_top_level_message_box();
                      if (box_pointer != nullptr) {
                        auto actual_text = box_pointer->text();
                        waiting_for_message = false;
                        QTest::keyEvent(QTest::Press, box_pointer,
                                        Qt::Key_Enter);
-                       QCOMPARE(actual_text, expected_text);
+                       check_text(actual_text);
                      }
                    });
   timer.start(WAIT_TIME);
   QVERIFY(!waiting_before);
+};
+
+inline void close_message_later(QWidget& parent, bool& waiting_for_message,
+                                const QString& expected_text) {
+  check_message_later(parent, waiting_for_message,
+                      [expected_text](const QString& actual_text) -> auto {
+                        QCOMPARE(actual_text, expected_text);
+                      });
 };
 
 // like close_message_later, but for an action that pops up several message

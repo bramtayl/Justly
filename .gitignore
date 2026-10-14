@@ -6,3 +6,6 @@
 /coverage/
 /vcpkg/
 /share/MS_Basic.sf3
+/.flatpak-builder/
+/flatpak-build/
+/.venv/

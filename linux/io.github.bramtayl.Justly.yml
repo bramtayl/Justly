@@ -1,0 +1,91 @@
+id: io.github.bramtayl.Justly
+runtime: org.kde.Platform
+runtime-version: '6.11'
+sdk: org.kde.Sdk
+command: Justly
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  # FluidSynth plays through PulseAudio (or PipeWire's PulseAudio server)
+  - --socket=pulseaudio
+cleanup:
+  - /include
+  - /lib/cmake
+  - /lib/pkgconfig
+  - /share/man
+  - '*.a'
+modules:
+  - name: fluidsynth
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DLIB_SUFFIX=
+      # Justly only plays through PulseAudio, and the rest aren't in the runtime
+      - -Denable-alsa=OFF
+      - -Denable-jack=OFF
+      - -Denable-oss=OFF
+      - -Denable-pipewire=OFF
+      - -Denable-sdl3=OFF
+      - -Denable-readline=OFF
+      - -Denable-ladspa=OFF
+      - -Denable-network=OFF
+      # an alternative reverb engine and a limiter, which Justly doesn't use,
+      # and which would download more code while configuring
+      - -Denable-signalsmith=OFF
+    cleanup:
+      - /bin
+    sources:
+      # the release tarballs leave out the gcem submodule
+      - type: git
+        url: https://github.com/FluidSynth/fluidsynth.git
+        tag: v2.6.1
+        commit: 71e85b2ca6bf48641ba7e2261d8f2640ae473773
+
+  # generated with flatpak-builder-tools' flatpak-pip-generator:
+  # flatpak-pip-generator --runtime org.kde.Sdk//6.11 --yaml --cleanup=scripts
+  #   --prefer-wheels numpy,matplotlib,contourpy,kiwisolver,pillow
+  #   -o python3-music21 music21==10.5.0
+  - python3-music21.yaml
+
+  - name: Justly
+    buildsystem: cmake-ninja
+    # otherwise the build copies the share folder into the source's share
+    # folder, which then gets installed too
+    builddir: true
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+    sources:
+      # builds this folder, for testing. To submit to Flathub, make a pull
+      # request to the new-pr branch of github.com/flathub/flathub with this
+      # manifest and python3-music21.yaml, but with this source instead:
+      #
+      #   - type: git
+      #     url: https://github.com/bramtayl/Justly.git
+      #     tag: v1.2.0
+      #     commit: <the commit v1.2.0 points to>
+      #     # Flathub's flatpak-external-data-checker bot opens a pull request
+      #     # for each new v* tag, and merging it publishes the release
+      #     x-checker-data:
+      #       type: git
+      #       tag-pattern: ^v([\d.]+)$
+      #
+      # Flathub reads the release notes from the tagged metainfo, so add each
+      # release to io.github.bramtayl.Justly.metainfo.xml before tagging it
+      - type: dir
+        path: ..
+        skip:
+          - .venv
+          - build
+          - coverage
+          - python
+          - test_install
+          - .flatpak-builder
+          - flatpak-build
+      # too big to commit to git, so CMake expects it in the share folder
+      - type: file
+        url: https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic.sf3
+        sha256: 5ea2375e8bd7d8e71def1036978c1621e85b66934169b6a2744b27b9b3c2d99c
+        dest: share
+        dest-filename: MS_Basic.sf3

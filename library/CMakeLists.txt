@@ -13,6 +13,15 @@ if (NO_REALTIME_AUDIO)
     target_compile_definitions(JustlyLibrary PUBLIC "NO_REALTIME_AUDIO")
 endif()
 
+target_compile_definitions(JustlyLibrary PRIVATE
+    "JUSTLY_SHARE_SUB_FOLDER=\"${share_sub_folder}\""
+)
+if (LINUX)
+    target_compile_definitions(JustlyLibrary PRIVATE
+        "JUSTLY_SYSTEM_PYTHON=\"${Python3_EXECUTABLE}\""
+    )
+endif()
+
 target_sources(JustlyLibrary PUBLIC FILE_SET justly_headers TYPE HEADERS)
 
 add_subdirectory("actions")

@@ -104,6 +104,7 @@ struct Tester : public QObject {
   void test_musicxml();
   static void test_musicxml_error_data();
   void test_musicxml_error();
+  void test_musicxml_overflowing_divisions();
   static void test_musicxml_inline_error_data();
   void test_musicxml_inline_error();
   void test_musicxml_repeat_times();
