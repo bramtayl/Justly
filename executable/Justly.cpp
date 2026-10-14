@@ -1,7 +1,8 @@
 #include <QtWidgets/QApplication>
 
-#include "widgets/MainWindow.hpp"
+#include "io/FileOpener.hpp"
 #include "io/song_file.hpp"
+#include "widgets/MainWindow.hpp"
 
 auto main(int number_of_arguments, char* arguments[]) -> int {
   QApplication const app(number_of_arguments, arguments);
@@ -15,6 +16,17 @@ auto main(int number_of_arguments, char* arguments[]) -> int {
   set_up();
   MainWindow main_window;
   main_window.show();
+
+  // a file to open, e.g. from double-clicking a song, comes on the command
+  // line on Linux and Windows, or in a file open event on macOS
+  FileOpener file_opener(main_window);
+  QApplication::instance()->installEventFilter(&file_opener);
+  const auto command_line = QApplication::arguments();
+  if (command_line.size() > 1) {
+    file_opener.open(command_line.at(1));
+  }
+
   maybe_restore_recovery(main_window);
+  file_opener.start();
   return QApplication::exec();
 }

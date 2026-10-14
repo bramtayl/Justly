@@ -234,6 +234,10 @@ if (LINUX)
         DESTINATION "share/applications")
     install(FILES "${Justly_SOURCE_DIR}/linux/${app_id}.metainfo.xml"
         DESTINATION "share/metainfo")
+    # file types, so desktops can open songs and scores with Justly
+    install(FILES "${Justly_SOURCE_DIR}/linux/${app_id}.mime.xml"
+        DESTINATION "share/mime/packages"
+        RENAME "${app_id}.xml")
     install(FILES "${Justly_SOURCE_DIR}/share/Justly.svg"
         DESTINATION "share/icons/hicolor/scalable/apps"
         RENAME "${app_id}.svg")

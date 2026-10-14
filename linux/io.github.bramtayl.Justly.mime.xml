@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/prs.justly_song+xml">
+    <comment>Justly song</comment>
+    <sub-class-of type="application/xml"/>
+    <glob pattern="*.justly"/>
+  </mime-type>
+  <!-- some systems don't know MusicXML yet -->
+  <mime-type type="application/vnd.recordare.musicxml+xml">
+    <comment>MusicXML score</comment>
+    <sub-class-of type="application/xml"/>
+    <glob pattern="*.musicxml"/>
+    <root-XML namespaceURI="" localName="score-partwise"/>
+  </mime-type>
+  <mime-type type="application/vnd.recordare.musicxml">
+    <comment>Compressed MusicXML score</comment>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.mxl"/>
+  </mime-type>
+</mime-info>

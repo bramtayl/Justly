@@ -33,15 +33,21 @@
     <category>AudioVideo</category>
     <category>Audio</category>
   </categories>
+  <provides>
+    <mediatype>application/prs.justly_song+xml</mediatype>
+    <mediatype>application/vnd.recordare.musicxml+xml</mediatype>
+    <mediatype>application/vnd.recordare.musicxml</mediatype>
+  </provides>
   <content_rating type="oars-1.1"/>
   <releases>
     <release version="2.0.0" date="2026-10-14">
       <description>
         <p>
-          Song files from older versions of Justly won't open. To update one,
-          rename each percussion_set_pointer element in it to percussion_set.
-          Unsaved work from an older version that can't be restored is kept
-          in unrestored.xml.
+          Songs are now .justly files, and song files from older versions of
+          Justly won't open. To update one, change its extension from .xml to
+          .justly, and rename each percussion_set_pointer element in it to
+          percussion_set. Unsaved work from an older version that can't be
+          restored is kept in unrestored.justly.
         </p>
         <ul>
           <li>Octaves can go from -20 to 20</li>
@@ -50,6 +56,8 @@
           <li>Importing a score with a rhythm or tempo that doesn't fit shows
           a warning instead of saving a song that won't reopen</li>
           <li>Importing a score with only percussion adds a pitched voice</li>
+          <li>Justly can open songs and import MusicXML scores from your
+          file manager on Linux and macOS</li>
           <li>Pasting malformed cells shows a warning instead of crashing</li>
         </ul>
       </description>

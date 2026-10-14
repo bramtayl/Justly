@@ -11,13 +11,13 @@ void Tester::test_save() {
   auto& window_body = main_window.window_body;
   auto& song_menu_bar = main_window.song_menu_bar;
 
-  auto original_text = get_file_text(test_dir.filePath("test_song.xml"));
+  auto original_text = get_file_text(test_dir.filePath("test_song.justly"));
 
   // save into a temp file, driven through the actual Save As dialog
   // (rather than calling save_as_file directly) so FileMenu's
   // dialog-accept wiring -- maybe_choose_file and the
   // save_as_action lambda itself -- gets exercised too
-  auto save_filename = test_dir.filePath("test_song_2.xml");
+  auto save_filename = test_dir.filePath("test_song_2.justly");
   // must not already exist -- accept() would otherwise pop up an
   // overwrite-confirmation box nobody is waiting to close
   QFile::remove(save_filename);
@@ -74,12 +74,12 @@ void Tester::test_save_error_does_not_lose_work() {
 
 void Tester::test_recovery_removed_on_save_and_open() {
   auto& window_body = main_window.window_body;
-  auto fixture_file = test_dir.filePath("test_song.xml");
+  auto fixture_file = test_dir.filePath("test_song.justly");
 
   write_recovery_file(window_body);
   QVERIFY(QFile::exists(get_recovery_file_path()));
 
-  auto save_filename = test_dir.filePath("test_recovery_save.xml");
+  auto save_filename = test_dir.filePath("test_recovery_save.justly");
   save_as_file(window_body, save_filename);
   QVERIFY(!QFile::exists(get_recovery_file_path()));
   QFile(save_filename).remove();
@@ -128,7 +128,7 @@ void Tester::test_recovery_timer_debounce() {
 
 void Tester::test_recovery_restore_accepted() {
   auto& window_body = main_window.window_body;
-  auto fixture_file = test_dir.filePath("test_song.xml");
+  auto fixture_file = test_dir.filePath("test_song.justly");
 
   open_file(main_window, fixture_file);
   const auto old_gain = get_gain(window_body.player);
@@ -157,7 +157,7 @@ void Tester::test_recovery_restore_accepted() {
 
 void Tester::test_recovery_restore_declined() {
   auto& window_body = main_window.window_body;
-  auto fixture_file = test_dir.filePath("test_song.xml");
+  auto fixture_file = test_dir.filePath("test_song.justly");
 
   open_file(main_window, fixture_file);
   const auto old_gain = get_gain(window_body.player);
@@ -206,7 +206,7 @@ void Tester::test_close_event_discard_declined() {
   QVERIFY(QFile::exists(get_recovery_file_path()));
 
   // restore the shared fixture (also removes the recovery file)
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }
 
 // a clean shutdown must delete the crash-recovery file, since its presence

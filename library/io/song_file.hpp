@@ -30,6 +30,11 @@ auto open_file(MainWindow& main_window, const QString& filename) -> bool;
 
 auto import_musicxml(MainWindow& main_window, const QString& filename) -> bool;
 
+// for a file passed on the command line, e.g. by a desktop's "Open With":
+// imports a .musicxml or .mxl score, or else opens a song, asking first if
+// there are unsaved changes, e.g. just restored from recovery.xml
+auto open_or_import(MainWindow& main_window, const QString& filename) -> bool;
+
 // call after MainWindow is constructed and shown: recovery.xml only exists
 // if the previous session didn't reach a clean shutdown (see
 // connect_recovery_timer and MainWindow::closeEvent)

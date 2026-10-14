@@ -64,9 +64,10 @@ FileMenu::FileMenu(WindowBody& window_body)
 
   QObject::connect(
       &save_as_action, &QAction::triggered, this, [&window_body]() -> auto {
-        const auto maybe_file = maybe_choose_file(
-            window_body, FileMenu::tr("Save As — Justly"),
-            FileMenu::tr("XML file (*.xml)"), QFileDialog::AcceptSave, ".xml");
+        const auto maybe_file =
+            maybe_choose_file(window_body, FileMenu::tr("Save As — Justly"),
+                              FileMenu::tr("Justly song (*.justly)"),
+                              QFileDialog::AcceptSave, ".justly");
         if (maybe_file.has_value()) {
           save_as_file(window_body, *maybe_file);
         }

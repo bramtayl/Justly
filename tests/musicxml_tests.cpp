@@ -47,7 +47,7 @@ void Tester::test_musicxml() {
   QVERIFY(open_file(main_window, temp_file.fileName()));
   QCOMPARE(window_body.song.chords.size(), number_of_chords);
 
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }
 
 void Tester::test_musicxml_error_data() {
@@ -128,7 +128,7 @@ void Tester::test_import_musicxml_after_editing_chord_notes() {
   import_musicxml(main_window, test_dir.filePath("prelude.musicxml"));
   QCOMPARE(get_model(switch_table).rowCount(QModelIndex()), MUSIC_XML_ROWS);
 
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }
 
 // regression test: opening/importing a file bypasses the undo stack, so
@@ -146,7 +146,7 @@ void Tester::test_open_after_editing_chord_notes_resets_menu() {
   QCOMPARE(switch_column.editing_text.text(), "Pitched notes for chord 1");
   QVERIFY(view_menu.back_to_chords_action.isEnabled());
 
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 
   QCOMPARE(switch_column.editing_text.text(), "Chords");
   QVERIFY(!view_menu.back_to_chords_action.isEnabled());
@@ -210,7 +210,7 @@ void Tester::test_import_musicxml_voice_named_like_program() {
   QCOMPARE(pitched_voices.at(0).name, QString("Marimba"));
   QCOMPARE(pitched_voices.at(0).program, QString("Marimba"));
 
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }
 
 // a part's midi-program picks its voice's program, here for a voice named
@@ -246,7 +246,7 @@ void Tester::test_import_musicxml_midi_program() {
   QCOMPARE(pitched_voices.at(0).name, QString("Violin II"));
   QCOMPARE(pitched_voices.at(0).program, QString("Violin"));
 
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }
 
 // a metronome mark changes the tempo, rounded to a whole number of quarter
@@ -273,7 +273,7 @@ void Tester::test_import_musicxml_tempo() {
              expected_tempo_ratios.at(chord_number));
   }
 
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }
 
 namespace {
@@ -451,7 +451,7 @@ void Tester::test_musicxml_repeat_times() {
   import_musicxml(main_window, temp_file.fileName());
   QCOMPARE(window_body.song.chords.size(), 3);
 
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }
 
 // a transposing part's <octave-change> shifts every pitched note by that many
@@ -481,7 +481,7 @@ void Tester::test_musicxml_octave_change() {
   import_first_note_octave("<octave-change>1</octave-change>", shifted_octave);
   QCOMPARE(shifted_octave, plain_octave + 1);
 
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }
 
 // a transposing part's key sounds transposed, like its notes: an A clarinet
@@ -508,7 +508,7 @@ void Tester::test_musicxml_transposed_key() {
   QCOMPARE(interval.ratio.denominator, 1);
   QCOMPARE(interval.octave, -1);
 
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }
 
 // music21 reads each note's pitch from its alter, and Justly reads arrows on
@@ -631,7 +631,7 @@ void Tester::test_musicxml_accidentals() {
   QCOMPARE(interval.ratio.denominator, expected_interval.ratio.denominator);
   QCOMPARE(interval.octave, expected_interval.octave);
 
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }
 
 namespace {
@@ -679,7 +679,7 @@ void Tester::test_import_musicxml_unnamed_voice() {
   QCOMPARE(pitched_voices.at(0).name, QString("Unnamed instrument"));
   QCOMPARE(pitched_voices.at(1).name, QString("Flute"));
 
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }
 
 // voices are looked up by name, so a repeated part name, or a second unnamed
@@ -700,7 +700,7 @@ void Tester::test_import_musicxml_duplicate_voice_names() {
   QCOMPARE(pitched_voices.at(2).name, QString("Flute (2)"));
   QCOMPARE(pitched_voices.at(3).name, QString("Unnamed instrument (2)"));
 
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }
 
 // a first ending plays only on the first pass and a second ending only on
@@ -736,7 +736,7 @@ void Tester::test_musicxml_endings() {
   // measures 1, 2 (first ending), 1, 3 (second ending)
   QCOMPARE(main_window.window_body.song.chords.size(), 4);
 
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }
 
 namespace {
@@ -813,7 +813,7 @@ void Tester::test_musicxml_jumps() {
   }
   QCOMPARE(measures, expected_measures);
 
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }
 
 // jumps are often only written in the top part, but every part follows them
@@ -853,7 +853,7 @@ void Tester::test_musicxml_jump_in_one_part() {
     QCOMPARE(chord.pitched_notes.size(), 2);
   }
 
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }
 
 // ties are followed in the order the measures are played, so a note tied
@@ -891,7 +891,7 @@ void Tester::test_musicxml_tie_into_endings() {
     QCOMPARE(chord.pitched_notes.at(0).beats.denominator, 1);
   }
 
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }
 
 // regression test: music21 can combine the wrong notes when a measure has
@@ -935,5 +935,5 @@ void Tester::test_musicxml_ties_in_voices() {
   QCOMPARE(b_notes.size(), 1);
   QCOMPARE(b_notes.at(0).beats, Rational(15, 4));
 
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }

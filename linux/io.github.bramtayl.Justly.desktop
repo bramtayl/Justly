@@ -2,8 +2,9 @@
 Type=Application
 Name=Justly
 Comment=Compose and play music in just intonation
-Exec=Justly
+Exec=Justly %f
 Icon=io.github.bramtayl.Justly
 Terminal=false
 Categories=AudioVideo;Audio;Music;
 Keywords=just intonation;microtonal;composition;music;
+MimeType=application/prs.justly_song+xml;application/vnd.recordare.musicxml+xml;application/vnd.recordare.musicxml;

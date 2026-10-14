@@ -184,7 +184,7 @@ void Tester::test_piano_roll_double_click_selects_note() {
   auto& switch_table = main_window.window_body.switch_column.switch_table;
   auto& undo_stack = main_window.window_body.undo_stack;
 
-  // chord number 1 (from test_song.xml) has both pitched and unpitched
+  // chord number 1 (from test_song.justly) has both pitched and unpitched
   // notes, matching the fixture used by the other piano-roll tests above
   const auto& events = piano_roll_widget.piano_roll_scene.events;
   const auto event_iterator = std::ranges::find_if(
@@ -349,7 +349,7 @@ void Tester::test_piano_roll_notes_mode_shows_only_chord_notes() {
   QCOMPARE(piano_roll_widget.piano_roll_scene.events.size(), 2);
 
   // restore the fixture used by the other tests
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }
 
 void Tester::test_piano_roll_notes_mode_axis_starts_at_chord_start() {
@@ -386,7 +386,7 @@ void Tester::test_piano_roll_selection_highlights_chord() {
   auto& piano_roll_widget = main_window.piano_roll_widget;
   auto& switch_table = main_window.window_body.switch_column.switch_table;
 
-  // chord number 1 (from test_song.xml) has both pitched and unpitched
+  // chord number 1 (from test_song.justly) has both pitched and unpitched
   // notes, matching the fixture used by the other piano-roll tests above
   select_cell(switch_table, 1, 0);
 
@@ -986,7 +986,7 @@ void Tester::test_piano_roll_click_empty_song() {
       piano_roll_widget, QEvent::MouseButtonRelease, QPointF(), Qt::NoButton));
 
   // restore the shared fixture
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }
 
 // a note too short to see at the current zoom still gets a visible bar
@@ -1005,5 +1005,5 @@ void Tester::test_piano_roll_minimum_bar_width() {
   QCOMPARE(get_reference(note_items.at(0)).rect().width(), 1.0);
 
   // restore the shared fixture
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }

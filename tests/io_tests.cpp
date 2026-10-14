@@ -1,4 +1,7 @@
+#include <QtGui/QFileOpenEvent>
+
 #include "Tester.hpp"
+#include "io/FileOpener.hpp"
 
 // regression test: CHandle's (here, FluidDriver's) move-assignment must free
 // any audio driver it already owns before taking on a new one, and must be a
@@ -140,7 +143,7 @@ void Tester::test_file_dialog_reject() {
 
 void Tester::test_open_via_dialog() {
   auto& window_body = main_window.window_body;
-  const auto fixture_file = test_dir.filePath("test_song.xml");
+  const auto fixture_file = test_dir.filePath("test_song.justly");
 
   // start from a different song, so reopening the fixture visibly replaces it
   open_text(main_window, make_voice_song_xml({"A"}, {"D"}, {{{0}, {}}}));
@@ -177,7 +180,7 @@ void Tester::test_save_escapes_text() {
   QCOMPARE(note.words, QString("a & b < c"));
 
   // restore the shared fixture
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }
 
 void Tester::test_import_via_dialog() {
@@ -190,7 +193,7 @@ void Tester::test_import_via_dialog() {
   QCOMPARE(get_model(switch_table).rowCount(QModelIndex()), PERCUSSION_ROWS);
 
   // restore the shared fixture
-  open_file(main_window, test_dir.filePath("test_song.xml"));
+  open_file(main_window, test_dir.filePath("test_song.justly"));
 }
 
 void Tester::test_open_asks_to_discard_changes_data() {
@@ -251,4 +254,52 @@ void Tester::test_open_asks_to_discard_changes() {
   QCOMPARE(window_body.song.chords.size(), number_of_chords);
   undo_stack.undo();
   QVERIFY(undo_stack.isClean());
+}
+
+// a file from the command line, e.g. a desktop's "Open With", is imported
+// or opened by its extension, after asking about unsaved changes
+void Tester::test_open_or_import() {
+  auto& window_body = main_window.window_body;
+  auto& undo_stack = window_body.undo_stack;
+  const auto song_file = test_dir.filePath("test_song.justly");
+
+  QVERIFY(open_or_import(main_window, test_dir.filePath("prelude.musicxml")));
+  QCOMPARE(window_body.song.chords.size(), MUSIC_XML_ROWS);
+
+  QVERIFY(open_or_import(main_window, song_file));
+  QCOMPARE(window_body.current_file, song_file);
+
+  select_cell(window_body.switch_column.switch_table, 0, 0);
+  main_window.song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();
+  QVERIFY(!undo_stack.isClean());
+  answer_question_later(main_window, waiting_for_message,
+                        "Discard unsaved changes?", QMessageBox::No);
+  QVERIFY(!open_or_import(main_window, test_dir.filePath("prelude.musicxml")));
+  QVERIFY(!undo_stack.isClean());
+
+  // restore the shared fixture
+  open_file(main_window, song_file);
+}
+
+// a file the system asks Justly to open waits for the recovery prompt, then
+// opens; on macOS, it comes in a file open event
+void Tester::test_file_opener() {
+  auto& window_body = main_window.window_body;
+  const auto song_file = test_dir.filePath("test_song.justly");
+
+  FileOpener file_opener(main_window);
+  QCoreApplication::instance()->installEventFilter(&file_opener);
+  QFileOpenEvent file_open_event(test_dir.filePath("prelude.musicxml"));
+  QCoreApplication::sendEvent(QCoreApplication::instance(), &file_open_event);
+  QCOMPARE(window_body.current_file, song_file);
+  QVERIFY(file_opener.pending_file.has_value());
+
+  file_opener.start();
+  QCOMPARE(window_body.song.chords.size(), MUSIC_XML_ROWS);
+  QVERIFY(!file_opener.pending_file.has_value());
+
+  // once started, opens right away
+  file_opener.open(song_file);
+  QCOMPARE(window_body.current_file, song_file);
+  QCoreApplication::instance()->removeEventFilter(&file_opener);
 }

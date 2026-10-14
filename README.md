@@ -297,7 +297,7 @@ Select "Zoom in" or "Zoom out" from the "View" menu, or hold Ctrl and scroll the
 
 In the "File" menu, you can choose among the following options:
 
-- "Open" to open a previously saved song.
+- "Open" to open a previously saved song (a .justly file). On Linux and MacOS, you can also open a song, or import a MusicXML file, from your file manager.
 - "Import MusicXML" to import a MusicXML file, compressed (.mxl) or uncompressed (see [Import](#import) below). 
 - "Save" to save the song in the previous location.
 - "Save As" to save the song in a new location.
@@ -417,7 +417,7 @@ Here are some tips for importing music written in standard notation:
 
 ## Example
 
-This example is the [simple.xml](examples/simple.xml) file in the examples folder.
+This example is the [simple.justly](examples/simple.justly) file in the examples folder.
 
 Here is screenshot of the chords in the song:
 

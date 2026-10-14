@@ -64,7 +64,9 @@ auto get_recovery_file_path() -> QString {
 }
 
 auto get_unrestored_file_path() -> QString {
-  return QFileInfo(get_recovery_file_path()).dir().filePath("unrestored.xml");
+  return QFileInfo(get_recovery_file_path())
+      .dir()
+      .filePath("unrestored.justly");
 }
 
 void remove_recovery_file() {
@@ -287,6 +289,20 @@ auto open_file(MainWindow& main_window, const QString& filename) -> bool {
 
   finish_loading(main_window);
   return true;
+}
+
+auto open_or_import(MainWindow& main_window, const QString& filename) -> bool {
+  if (!can_discard_changes(main_window.window_body)) {
+    return false;
+  }
+  // relative to the working directory now, which might change
+  const QFileInfo file_info(filename);
+  const auto absolute_path = file_info.absoluteFilePath();
+  const auto suffix = file_info.suffix().toLower();
+  if (suffix == "musicxml" || suffix == "mxl") {
+    return import_musicxml(main_window, absolute_path);
+  }
+  return open_file(main_window, absolute_path);
 }
 
 auto maybe_restore_recovery(MainWindow& main_window) -> bool {

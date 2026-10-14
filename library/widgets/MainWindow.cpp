@@ -157,7 +157,8 @@ MainWindow::MainWindow()
 
   connect_load_action(song_menu_bar.file_menu.open_action, *this,
                       MainWindow::tr("Open — Justly"),
-                      MainWindow::tr("XML file (*.xml)"), ".xml", open_file);
+                      MainWindow::tr("Justly song (*.justly)"), ".justly",
+                      open_file);
   connect_load_action(song_menu_bar.file_menu.import_action, *this,
                       MainWindow::tr("Import MusicXML — Justly"),
                       MainWindow::tr("MusicXML file (*.musicxml *.mxl)"),

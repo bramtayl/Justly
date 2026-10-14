@@ -23,7 +23,7 @@ struct Tester : public QObject {
     // recovery file left behind by a real crashed session
     QStandardPaths::setTestModeEnabled(true);
     set_up();
-    const auto fixture_file = test_dir.filePath("test_song.xml");
+    const auto fixture_file = test_dir.filePath("test_song.justly");
     // fail fast here instead of letting open_file's "Invalid XML file"
     // QMessageBox block forever with no user around to dismiss it
     Q_ASSERT(QFile::exists(fixture_file));
@@ -196,6 +196,8 @@ struct Tester : public QObject {
   void test_recovery_no_prompt_when_missing();
   void test_recovery_write_failure();
   void test_recovery_restore_invalid_file();
+  void test_open_or_import();
+  void test_file_opener();
   void test_close_event_discard_declined();
   void test_close_event_removes_recovery_file();
   void test_starting_control_data();
