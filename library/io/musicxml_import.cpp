@@ -9,6 +9,9 @@
 #include <QtCore/QSet>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMessageBox>
+#include <limits>
+#include <numeric>
+#include <set>
 
 #include "common/helpers.hpp"
 #include "song/Song.hpp"
@@ -120,26 +123,103 @@ auto run_converter(QWidget& parent, const QString& filename)
   return result;
 }
 
-// each [time, value] pair, keyed by time
-auto get_changes(const QJsonObject& result, const char* const field_name)
-    -> QMap<int, int> {
-  QMap<int, int> changes;
-  for (const auto& change_value : result.value(field_name).toArray()) {
+// e.g. a key, measure number, or tempo; the last change at or before time,
+// or nullopt if there isn't one
+auto get_most_recent(const QMap<int, int>& changes, const int time)
+    -> std::optional<int> {
+  auto iterator = changes.upperBound(time);
+  if (iterator == changes.cbegin()) {
+    return std::nullopt;
+  }
+  return std::prev(iterator).value();
+}
+
+void warn_import_error(QWidget& parent, const QString& message) {
+  QMessageBox::warning(&parent, QObject::tr("Import error"), message);
+}
+
+// of a [numerator, denominator] fraction of quarter notes
+auto get_denominator(const QJsonValue& time_value) -> qint64 {
+  return time_value.toArray().at(1).toInteger(1);
+}
+
+// converts times to divisions per quarter note, noting if any doesn't fit in
+// an int
+struct TimeConverter {
+  qint64 divisions = 1;
+  bool overflowed = false;
+
+  // the fewest divisions per quarter note that every time fits into
+  explicit TimeConverter(const QJsonObject& result) {
+    const auto add_time = [this](const QJsonValue& time_value) {
+      divisions = std::lcm(divisions, get_denominator(time_value));
+      if (divisions > std::numeric_limits<int>::max()) {
+        overflowed = true;
+        divisions = 1;
+      }
+    };
+    const auto add_change_times = [&add_time](const QJsonValue& changes_value) {
+      for (const auto& change_value : changes_value.toArray()) {
+        add_time(change_value.toArray().at(0));
+      }
+    };
+    for (const auto& note_value : result.value("notes").toArray()) {
+      const auto note_object = note_value.toObject();
+      add_time(note_object.value("time"));
+      add_time(note_object.value("duration"));
+    }
+    for (const auto& staff_value : result.value("staves").toArray()) {
+      add_change_times(staff_value.toObject().value("key_signatures"));
+    }
+    add_change_times(result.value("measure_numbers"));
+    add_change_times(result.value("tempos"));
+  }
+
+  auto operator()(const QJsonValue& time_value) -> int {
+    static const qint64 MAX_TIME = std::numeric_limits<int>::max();
+    const auto numerator = time_value.toArray().at(0).toInteger();
+    const auto scale = divisions / get_denominator(time_value);
+    if (numerator > MAX_TIME || numerator * scale > MAX_TIME) {
+      overflowed = true;
+      return 0;
+    }
+    return static_cast<int>(numerator * scale);
+  }
+};
+
+// [time, value] pairs, keyed by time
+auto get_changes(TimeConverter& to_divisions, const QJsonValue& changes_value)
+    -> QMap<int, double> {
+  QMap<int, double> changes;
+  for (const auto& change_value : changes_value.toArray()) {
     const auto change = change_value.toArray();
-    changes[change.at(0).toInt()] = change.at(1).toInt();
+    changes[to_divisions(change.at(0))] = change.at(1).toDouble();
   }
   return changes;
 }
 
-// a voice is named for its instrument, or failing that, its part
-auto get_voices(const QJsonArray& voice_values, QList<QString>& voice_words)
-    -> QList<MusicXMLVoice> {
+// each instrument in each part gets its own voice
+struct VoiceNumbers {
   QList<MusicXMLVoice> voices;
-  for (const auto& voice_value : voice_values) {
-    const auto voice_object = voice_value.toObject();
-    const auto part_name = voice_object.value("part_name").toString();
+  // describes each voice, for its notes' words
+  QList<QString> voice_words;
+  QMap<std::pair<int, QString>, int> numbers;
+
+  // a voice is named for its instrument, or failing that, its part
+  auto get_voice_number(const QJsonObject& staff_object,
+                        const QJsonObject& note_object) -> int {
+    const auto part_name = staff_object.value("part_name").toString();
     const auto instrument_name =
-        voice_object.value("instrument_name").toString();
+        note_object.value("instrument_name").toString();
+    const auto key = std::make_pair(staff_object.value("part_number").toInt(),
+                                    instrument_name);
+    const auto iterator = numbers.constFind(key);
+    if (iterator != numbers.cend()) {
+      return iterator.value();
+    }
+    const auto voice_number = static_cast<int>(voices.size());
+    numbers.insert(key, voice_number);
+
     auto words = QObject::tr("Part ") + part_name;
     if (!instrument_name.isEmpty()) {
       words += QObject::tr(" instrument ") + instrument_name;
@@ -148,40 +228,96 @@ auto get_voices(const QJsonArray& voice_values, QList<QString>& voice_words)
 
     MusicXMLVoice voice;
     voice.name = instrument_name.isEmpty() ? part_name : instrument_name;
-    const auto midi_program_value = voice_object.value("midi_program");
+    const auto midi_program_value = note_object.value("midi_program");
     if (midi_program_value.isDouble()) {
       voice.midi_program = MidiProgram{
           .bank_number = std::nullopt,
           .preset_number = static_cast<short>(midi_program_value.toInt())};
     }
     voices.push_back(std::move(voice));
+    return voice_number;
   }
-  return voices;
+};
+
+// Justly has one key at a time, so every pitched staff has to be in the same
+// key whenever any of them changes; warns and returns nullopt if they aren't
+auto get_midi_keys(QWidget& parent, const QList<QMap<int, int>>& staff_keys,
+                   const QMap<int, int>& measure_numbers)
+    -> std::optional<QMap<int, int>> {
+  std::set<int> times;
+  for (const auto& keys : staff_keys) {
+    for (const auto time : keys.keys()) {
+      times.insert(time);
+    }
+  }
+  QMap<int, int> midi_keys;
+  for (const auto time : times) {
+    const auto midi_key = get_most_recent(staff_keys.first(), time);
+    for (const auto& keys : staff_keys) {
+      if (get_most_recent(keys, time) != midi_key) {
+        warn_import_error(
+            parent,
+            QObject::tr("The key signatures in measure %1 don't match")
+                .arg(get_most_recent(measure_numbers, time).value_or(1)));
+        return std::nullopt;
+      }
+    }
+    midi_keys[time] = midi_key.value();
+  }
+  return midi_keys;
 }
 
-auto parse_result(const QJsonObject& result) -> ParsedScore {
+// warns and returns nullopt if the score doesn't fit in Justly
+auto parse_result(QWidget& parent, const QJsonObject& result)
+    -> std::optional<ParsedScore> {
+  static const auto FIFTH_HALFSTEPS = 7;
+  static const auto MAX_MIDI_NUMBER = 127;
+
   ParsedScore score;
-  score.song_divisions = result.value("divisions").toInt(1);
+  TimeConverter to_divisions(result);
+  const auto measure_numbers =
+      get_changes(to_divisions, result.value("measure_numbers"));
+  for (auto iterator = measure_numbers.cbegin();
+       iterator != measure_numbers.cend(); ++iterator) {
+    score.measure_numbers[iterator.key()] = to_int(iterator.value());
+  }
+  const auto tempos = get_changes(to_divisions, result.value("tempos"));
+  for (auto iterator = tempos.cbegin(); iterator != tempos.cend(); ++iterator) {
+    const auto tempo = to_int(iterator.value());
+    if (tempo > 0) {
+      score.tempos[iterator.key()] = tempo;
+    }
+  }
 
-  const auto voices_object = result.value("voices").toObject();
-  QList<QString> pitched_words;
-  QList<QString> unpitched_words;
-  score.voices.pitched =
-      get_voices(voices_object.value("pitched").toArray(), pitched_words);
-  score.voices.unpitched =
-      get_voices(voices_object.value("unpitched").toArray(), unpitched_words);
-
+  const auto staves = result.value("staves").toArray();
+  // unpitched staves' keys don't matter
+  QSet<int> pitched_staff_numbers;
+  VoiceNumbers pitched_voices;
+  VoiceNumbers unpitched_voices;
   for (const auto& note_value : result.value("notes").toArray()) {
     const auto note_object = note_value.toObject();
+    const auto time = to_divisions(note_object.value("time"));
+    const auto staff_number = note_object.value("staff").toInt();
     const auto is_pitched = note_object.value("is_pitched").toBool();
+    auto& voice_numbers = is_pitched ? pitched_voices : unpitched_voices;
     ParsedNote note;
-    note.duration = note_object.value("duration").toInt();
-    note.voice_number = note_object.value("voice").toInt();
-    note.words =
-        (is_pitched ? pitched_words : unpitched_words).at(note.voice_number);
-    auto& chord = score.chords[note_object.value("time").toInt()];
+    note.duration = to_divisions(note_object.value("duration"));
+    note.voice_number = voice_numbers.get_voice_number(
+        staves.at(staff_number).toObject(), note_object);
+    note.words = voice_numbers.voice_words.at(note.voice_number);
+    auto& chord = score.chords[time];
     if (is_pitched) {
-      note.midi_number = note_object.value("midi_number").toInt();
+      pitched_staff_numbers.insert(staff_number);
+      // checked as a double, since toInt is 0 for anything too big for an int
+      const auto midi_number = note_object.value("midi_number").toDouble();
+      if (midi_number < 0 || midi_number > MAX_MIDI_NUMBER) {
+        warn_import_error(
+            parent,
+            QObject::tr("A note in measure %1 is outside the midi range")
+                .arg(get_most_recent(score.measure_numbers, time).value_or(1)));
+        return std::nullopt;
+      }
+      note.midi_number = static_cast<int>(midi_number);
       note.septimal_quartertones =
           note_object.value("septimal_quartertones").toInt();
       chord.pitched_notes.push_back(std::move(note));
@@ -189,21 +325,41 @@ auto parse_result(const QJsonObject& result) -> ParsedScore {
       chord.unpitched_notes.push_back(std::move(note));
     }
   }
+  score.voices.pitched = std::move(pitched_voices.voices);
+  score.voices.unpitched = std::move(unpitched_voices.voices);
 
-  score.midi_keys = get_changes(result, "midi_keys");
-  score.measure_numbers = get_changes(result, "measure_numbers");
-  score.tempos = get_changes(result, "tempos");
-  return score;
-}
-
-// the value of the last change at or before time
-auto get_most_recent(const QMap<int, int>& changes, const int time,
-                     const int default_value) -> int {
-  auto iterator = changes.upperBound(time);
-  if (iterator == changes.cbegin()) {
-    return default_value;
+  QList<QMap<int, int>> staff_keys;
+  for (auto staff_number = 0; staff_number < staves.size(); ++staff_number) {
+    if (!pitched_staff_numbers.contains(staff_number)) {
+      continue;
+    }
+    const auto sharps_changes =
+        get_changes(to_divisions,
+                    staves.at(staff_number).toObject().value("key_signatures"));
+    QMap<int, int> keys;
+    for (auto iterator = sharps_changes.cbegin();
+         iterator != sharps_changes.cend(); ++iterator) {
+      keys[iterator.key()] =
+          MIDDLE_C_MIDI + std::get<1>(get_octave_degree(
+                              FIFTH_HALFSTEPS * to_int(iterator.value())));
+    }
+    staff_keys.push_back(std::move(keys));
   }
-  return std::prev(iterator).value();
+
+  if (to_divisions.overflowed) {
+    warn_import_error(
+        parent, QObject::tr("The score is too long, or its rhythms too fine"));
+    return std::nullopt;
+  }
+  score.song_divisions = static_cast<int>(to_divisions.divisions);
+
+  auto maybe_midi_keys =
+      get_midi_keys(parent, staff_keys, score.measure_numbers);
+  if (!maybe_midi_keys.has_value()) {
+    return std::nullopt;
+  }
+  score.midi_keys = std::move(maybe_midi_keys.value());
+  return score;
 }
 
 auto get_interval(const int midi_interval, const int septimal_quartertones = 0)
@@ -297,7 +453,11 @@ auto import_score(QWidget& parent, const QString& filename)
   if (!maybe_result.has_value()) {
     return std::nullopt;
   }
-  auto parsed_score = parse_result(maybe_result.value());
+  auto maybe_parsed_score = parse_result(parent, maybe_result.value());
+  if (!maybe_parsed_score.has_value()) {
+    return std::nullopt;
+  }
+  auto& parsed_score = maybe_parsed_score.value();
   const auto song_divisions = parsed_score.song_divisions;
   auto& voices = parsed_score.voices;
   const auto& chords_dict = parsed_score.chords;
@@ -324,10 +484,10 @@ auto import_score(QWidget& parent, const QString& filename)
   ImportedScore score;
   score.voices.pitched = deduplicate_voice_names(voices.pitched);
   score.voices.unpitched = deduplicate_voice_names(voices.unpitched);
-  score.starting_midi_key =
-      get_most_recent(midi_keys, chords_dict.firstKey(), DEFAULT_STARTING_MIDI);
-  score.starting_tempo =
-      get_most_recent(tempos, chords_dict.firstKey(), DEFAULT_STARTING_TEMPO);
+  score.starting_midi_key = get_most_recent(midi_keys, chords_dict.firstKey())
+                                .value_or(DEFAULT_STARTING_MIDI);
+  score.starting_tempo = get_most_recent(tempos, chords_dict.firstKey())
+                             .value_or(DEFAULT_STARTING_TEMPO);
 
   auto last_midi_key = score.starting_midi_key;
   auto last_tempo = score.starting_tempo;
@@ -337,10 +497,11 @@ auto import_score(QWidget& parent, const QString& filename)
     const auto& chord = iterator.value();
     const auto next_iterator = std::next(iterator);
     const auto midi_key =
-        get_most_recent(midi_keys, time, DEFAULT_STARTING_MIDI);
-    const auto tempo = get_most_recent(tempos, time, DEFAULT_STARTING_TEMPO);
+        get_most_recent(midi_keys, time).value_or(DEFAULT_STARTING_MIDI);
+    const auto tempo =
+        get_most_recent(tempos, time).value_or(DEFAULT_STARTING_TEMPO);
     score.chords.push_back(make_chord(
-        chord, score.voices, get_most_recent(measure_numbers, time, 1),
+        chord, score.voices, get_most_recent(measure_numbers, time).value_or(1),
         midi_key, last_midi_key, tempo, last_tempo, song_divisions,
         next_iterator == chords_dict.cend()
             ? std::max(get_max_duration(chord.pitched_notes),

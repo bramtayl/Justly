@@ -2,28 +2,29 @@
 
 usage: python import_score.py SCORE_FILE
 
-Prints a json object to stdout. On success, it has every part's notes at
-sounding pitch, with repeats unrolled and ties combined, all timed in
-"divisions" per quarter note:
+Prints a json object to stdout. On success, it has every staff's notes at
+sounding pitch, with repeats unrolled and ties combined, all timed in quarter
+notes, as [numerator, denominator] fractions:
 
-    divisions: int
-    voices: {"pitched": [voice], "unpitched": [voice]}, where a voice is
-        {"part_name": str, "instrument_name": str, "midi_program": int | null}
-    notes: [{"time": int, "duration": int, "is_pitched": bool, "voice": int,
-             "midi_number": int, "septimal_quartertones": int}], where voice
-        indexes the pitched or unpitched voices, and midi_number and
-        septimal_quartertones are only for pitched notes
-    midi_keys, measure_numbers, tempos: [[time, value]], each value
-        starting at its time. Tempos are in quarter notes per minute
+    staves: [{"part_number": int, "part_name": str,
+              "key_signatures": [[time, sharps]]}], where staves of the same
+        part share a part number
+    notes: [{"time": time, "duration": time, "staff": int, "is_pitched": bool,
+             "instrument_name": str, "midi_program": int | null,
+             "midi_number": int, "septimal_quartertones": int}], where staff
+        indexes staves, and midi_number and septimal_quartertones are only
+        for pitched notes
+    measure_numbers, tempos: [[time, value]], each value starting at its
+        time. Tempos are in quarter notes per minute
 
-On failure, it has a single "error" with a message to show.
+On failure, it has a single "error" with a message to show. Justly checks
+the rest.
 """
 
 import contextlib
 import copy
 import io
 import json
-import math
 import sys
 from fractions import Fraction
 
@@ -34,10 +35,6 @@ with contextlib.redirect_stdout(io.StringIO()):
     from music21 import key as music21_key
     from music21 import pitch as music21_pitch
 
-MIDDLE_C_MIDI = 60
-MAX_MIDI_NUMBER = 127
-FIFTH_HALFSTEPS = 7
-HALFSTEPS_PER_OCTAVE = 12
 MAX_TIME = 2**31 - 1
 # unrolling a repeat copies its measures this many times
 MAX_REPEAT_TIMES = 100
@@ -130,10 +127,6 @@ def spell_arrows(score):
                         tied_spellings.pop(written, None)
 
 
-def to_fraction(quarter_length):
-    return Fraction(quarter_length).limit_denominator(MAX_TIME)
-
-
 def get_part_numbers(score):
     """Numbers the parts in order. music21 splits a part's staves into
     PartStaffs, with ids like P1-Staff2, which belong to the part before"""
@@ -205,12 +198,6 @@ def read_score(filename):
     return score
 
 
-def get_most_recent(changes, time):
-    """The value of the last change at or before time, or None"""
-    earlier_times = [change_time for change_time in changes if change_time <= time]
-    return changes[max(earlier_times)] if earlier_times else None
-
-
 def get_tied_notes(part):
     """The part's notes, with each tied note combined into the note it's
     tied from. Ties are followed after unrolling, so e.g. a tie into both
@@ -220,120 +207,79 @@ def get_tied_notes(part):
         yield from voice_part.stripTies(matchByPitch=True).flatten().notes
 
 
+def to_time(quarter_length):
+    fraction = Fraction(quarter_length).limit_denominator(MAX_TIME)
+    return [fraction.numerator, fraction.denominator]
+
+
 def convert(filename):
     score = read_score(filename)
 
+    staves = []
     notes = []
-    voices = {True: [], False: []}
-    voice_numbers = {True: {}, False: {}}
-    changes = {"midi_keys": {}, "measure_numbers": {}, "tempos": {}}
-    # each pitched part's keys, keyed by the time of the change
-    part_keys = []
+    measure_numbers = []
+    tempos = []
 
-    for part, part_number in zip(score.parts, get_part_numbers(score)):
+    for staff_number, (part, part_number) in enumerate(
+        zip(score.parts, get_part_numbers(score))
+    ):
         for measure in part.getElementsByClass(stream.Measure):
-            changes["measure_numbers"][to_fraction(measure.offset)] = (
-                measure.editorial.get("written_number", measure.number)
+            measure_numbers.append(
+                [
+                    to_time(measure.offset),
+                    measure.editorial.get("written_number", measure.number),
+                ]
             )
         flat_part = part.flatten()
-        # unpitched parts' keys don't matter
-        if any(not is_unpitched(element) for element in flat_part.notes):
-            part_keys.append(
-                {
-                    to_fraction(key_signature.offset): MIDDLE_C_MIDI
-                    + (FIFTH_HALFSTEPS * key_signature.sharps) % HALFSTEPS_PER_OCTAVE
+        staves.append(
+            {
+                "part_number": part_number,
+                "part_name": part.partName or "",
+                "key_signatures": [
+                    [to_time(key_signature.offset), key_signature.sharps]
                     for key_signature in flat_part.getElementsByClass(
                         music21_key.KeySignature
                     )
-                }
-            )
+                ],
+            }
+        )
         for metronome_mark in flat_part.getElementsByClass(tempo.MetronomeMark):
             quarters_per_minute = metronome_mark.getQuarterBPM()
-            if quarters_per_minute is not None and round(quarters_per_minute) > 0:
-                changes["tempos"][to_fraction(metronome_mark.offset)] = round(
-                    quarters_per_minute
-                )
+            if quarters_per_minute is not None:
+                tempos.append([to_time(metronome_mark.offset), quarters_per_minute])
 
         for element in get_tied_notes(part):
-            duration = to_fraction(element.quarterLength)
             # e.g. grace notes
-            if duration == 0:
+            if element.quarterLength == 0:
                 continue
             is_pitched = not is_unpitched(element)
             instrument = get_instrument(part, element)
-            instrument_name = (
-                "" if instrument is None else instrument.instrumentName or ""
-            )
-            # each instrument in each part gets its own voice
-            voice_key = (part_number, instrument_name)
-            some_voice_numbers = voice_numbers[is_pitched]
-            if voice_key not in some_voice_numbers:
-                some_voice_numbers[voice_key] = len(voices[is_pitched])
-                voices[is_pitched].append(
-                    {
-                        "part_name": part.partName or "",
-                        "instrument_name": instrument_name,
-                        "midi_program": None
-                        if instrument is None
-                        else instrument.midiProgram,
-                    }
-                )
             for sub_note in get_sub_notes(element):
                 new_note = {
-                    "time": to_fraction(element.offset),
-                    "duration": duration,
+                    "time": to_time(element.offset),
+                    "duration": to_time(element.quarterLength),
+                    "staff": staff_number,
                     "is_pitched": is_pitched,
-                    "voice": some_voice_numbers[voice_key],
+                    "instrument_name": ""
+                    if instrument is None
+                    else instrument.instrumentName or "",
+                    "midi_program": None
+                    if instrument is None
+                    else instrument.midiProgram,
                 }
                 if is_pitched:
-                    midi_number = round(sub_note.pitch.ps)
-                    if not 0 <= midi_number <= MAX_MIDI_NUMBER:
-                        raise ImportError_(
-                            f"A note in measure {element.measureNumber} is "
-                            "outside the midi range"
-                        )
-                    new_note["midi_number"] = midi_number
+                    new_note["midi_number"] = round(sub_note.pitch.ps)
                     new_note["septimal_quartertones"] = sub_note.editorial.get(
                         "septimal_quartertones", 0
                     )
                 notes.append(new_note)
 
-    # Justly has one key at a time, so every part, and every staff of a part,
-    # has to be in the same key whenever any of them changes
-    for time in sorted({time for keys in part_keys for time in keys}):
-        midi_keys = {get_most_recent(keys, time) for keys in part_keys}
-        if len(midi_keys) > 1:
-            raise ImportError_(
-                f"The key signatures in measure "
-                f"{get_most_recent(changes['measure_numbers'], time)} don't match"
-            )
-        changes["midi_keys"][time] = midi_keys.pop()
-
-    # the fewest divisions per quarter note that every time fits into
-    times = [new_note[field] for new_note in notes for field in ("time", "duration")]
-    for some_changes in changes.values():
-        times.extend(some_changes)
-    divisions = math.lcm(1, *(time.denominator for time in times))
-
-    def to_divisions(time):
-        result = time * divisions
-        if result > MAX_TIME:
-            raise ImportError_("The score is too long, or its rhythms too fine")
-        return int(result)
-
-    for new_note in notes:
-        new_note["time"] = to_divisions(new_note["time"])
-        new_note["duration"] = to_divisions(new_note["duration"])
-    result = {
-        "divisions": divisions,
-        "voices": {"pitched": voices[True], "unpitched": voices[False]},
+    return {
+        "staves": staves,
         "notes": notes,
+        "measure_numbers": measure_numbers,
+        "tempos": tempos,
     }
-    for name, some_changes in changes.items():
-        result[name] = [
-            [to_divisions(time), value] for time, value in sorted(some_changes.items())
-        ]
-    return result
 
 
 def main():
