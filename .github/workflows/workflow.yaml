@@ -25,7 +25,7 @@ jobs:
             family: ubuntu
           - os: windows-latest
             family: windows
-            cpack_generator: ZIP
+            cpack_generator: WIX
             package_name: Justly-Windows
             qt_host: windows
             qt_arch: win64_msvc2022_64
@@ -33,7 +33,7 @@ jobs:
           # x64 build running under emulation
           - os: windows-11-arm
             family: windows
-            cpack_generator: ZIP
+            cpack_generator: WIX
             package_name: Justly-Windows-arm64
             python: cpython-3.13-windows-aarch64-none
             qt_host: windows_arm64
@@ -87,6 +87,13 @@ jobs:
       uses: lukka/get-cmake@v4.4.2
       with:
         cmakeVersion: "~4.4.0"
+
+    # for CPack's WIX generator. The UI extension's version has to match
+    - name: Install WiX on Windows
+      if: matrix.family == 'windows'
+      run: |
+        dotnet tool install --global wix --version 5.0.2
+        wix extension add --global WixToolset.UI.wixext/5.0.2
 
     - name: Install Qt on Windows
       if: matrix.family == 'windows'
@@ -231,6 +238,7 @@ jobs:
         name: ${{ matrix.package_name }}
         path: |
           without_tests/Justly-*.zip
+          without_tests/Justly-*.msi
         if-no-files-found: error
 
   # builds the Flatpak the way Flathub will, and uploads it as a bundle that

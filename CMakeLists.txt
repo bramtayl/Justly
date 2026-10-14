@@ -358,4 +358,27 @@ if (BUILD_TESTS)
     endif()
 endif()
 
+# an installer, with the WIX generator, that adds Justly to the start menu
+# and opens songs and scores with it. Needs the wix .NET tool and its UI
+# extension, see .github/workflows/workflow.yaml
+if (WIN32)
+    set(CPACK_PACKAGE_VENDOR "Brandon Taylor")
+    set(CPACK_PACKAGE_INSTALL_DIRECTORY "Justly")
+    set(CPACK_PACKAGE_EXECUTABLES "Justly" "Justly")
+    set(CPACK_WIX_VERSION 4)
+    # stays the same across versions, so new versions replace old ones
+    set(CPACK_WIX_UPGRADE_GUID "05B4C9B0-F007-43F4-8F67-D06D49B6E20A")
+    set(CPACK_WIX_PRODUCT_ICON "${Justly_SOURCE_DIR}/windows/Justly.ico")
+    set(CPACK_WIX_PROGRAM_MENU_FOLDER ".")
+    set(CPACK_WIX_PATCH_FILE "${Justly_SOURCE_DIR}/windows/file_types.xml")
+    # WIX takes a .txt or .rtf license
+    configure_file("${Justly_SOURCE_DIR}/LICENSE.md"
+        "${CMAKE_BINARY_DIR}/LICENSE.txt" COPYONLY)
+    set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_BINARY_DIR}/LICENSE.txt")
+    # otherwise x64
+    if (CMAKE_CXX_COMPILER_ARCHITECTURE_ID STREQUAL "ARM64")
+        set(CPACK_WIX_ARCHITECTURE "arm64")
+    endif()
+endif()
+
 include(CPack)

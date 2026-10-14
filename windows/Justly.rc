@@ -1,0 +1,2 @@
+// the icon Windows shows for Justly.exe, and for the files it opens
+IDI_ICON1 ICON "Justly.ico"

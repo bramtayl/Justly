@@ -2,6 +2,8 @@ target_sources(Justly PRIVATE "Justly.cpp")
 
 if (WIN32)
     set_target_properties(Justly PROPERTIES WIN32_EXECUTABLE ON)
+    # the icon
+    target_sources(Justly PRIVATE "${Justly_SOURCE_DIR}/windows/Justly.rc")
 elseif (APPLE)
     # install(TARGETS) in the top-level CMakeLists.txt decides whether to
     # install Justly as a plain RUNTIME executable or as a BUNDLE using

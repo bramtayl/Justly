@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- registers the files Justly opens, added by CPack's WiX generator to the
+     component that installs Justly.exe. CM_FP_bin.Justly.exe is the id CPack
+     gives bin/Justly.exe -->
+<CPackWiXPatch>
+  <CPackWiXFragment Id="CM_CP_bin.Justly.exe">
+    <!-- Justly's own song files, which Justly opens by default -->
+    <ProgId Id="Justly.Song" Description="Justly song"
+        Icon="CM_FP_bin.Justly.exe" IconIndex="0">
+      <Extension Id="justly" ContentType="application/prs.justly_song+xml">
+        <Verb Id="open" TargetFile="CM_FP_bin.Justly.exe"
+            Argument="&quot;%1&quot;"/>
+      </Extension>
+    </ProgId>
+    <!-- MusicXML scores, which Justly only offers to open with, so it doesn't
+         take them from other score editors, or break them when uninstalled -->
+    <ProgId Id="Justly.Score" Description="MusicXML score"
+        Icon="CM_FP_bin.Justly.exe" IconIndex="0"/>
+    <RegistryValue Root="HKCR" Key="Justly.Score\shell\open\command"
+        Type="string" Value="&quot;[#CM_FP_bin.Justly.exe]&quot; &quot;%1&quot;"/>
+    <RegistryValue Root="HKCR" Key=".musicxml\OpenWithProgids"
+        Name="Justly.Score" Type="string" Value=""/>
+    <RegistryValue Root="HKCR" Key=".mxl\OpenWithProgids"
+        Name="Justly.Score" Type="string" Value=""/>
+  </CPackWiXFragment>
+</CPackWiXPatch>

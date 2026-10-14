@@ -25,7 +25,7 @@
 ## Installation
 
 You can download binaries for MacOS and Windows [here](https://github.com/bramtayl/Justly/releases/latest).
-On Windows, the Justly executable is in the "bin" subfolder.
+On Windows, the installer adds Justly to the start menu and opens songs and MusicXML scores with it.
 On Linux, build the [Flatpak](#flatpak), or build from source.
 
 ### Building from source
