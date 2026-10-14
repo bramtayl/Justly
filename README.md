@@ -110,6 +110,8 @@ cmake --install build --config Release --prefix install # install justly
 
 The Justly executable will be in the `bin` subfolder of the `install` folder.
 
+On ARM64 Windows, install Qt with `aqt install-qt windows_arm64 desktop 6.10.1 win64_msvc2022_arm64 --outputdir C:\Qt`, install python with `uv python install cpython-3.13-windows-aarch64-none --install-dir python --no-bin --no-registry`, and configure with `-DQt6_ROOT=C:/Qt/6.10.1/msvc2022_arm64`.
+
 ## Motivation
 
 You can use Justly to both compose and play music using any pitches you want.

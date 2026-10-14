@@ -34,6 +34,17 @@ jobs:
             family: windows
             cpack_generator: ZIP
             package_name: Justly-Windows
+            qt_host: windows
+            qt_arch: win64_msvc2022_64
+          # the python and Qt are named explicitly so nothing falls back to an
+          # x64 build running under emulation
+          - os: windows-11-arm
+            family: windows
+            cpack_generator: ZIP
+            package_name: Justly-Windows-arm64
+            python: cpython-3.13-windows-aarch64-none
+            qt_host: windows_arm64
+            qt_arch: win64_msvc2022_arm64
     runs-on: ${{matrix.os}}
     steps:
     - name: Download
@@ -46,7 +57,7 @@ jobs:
     - name: Install the python to bundle
       shell: bash
       run: |
-        uv python install 3.13 --install-dir python --no-bin --no-registry
+        uv python install ${{ matrix.python || '3.13' }} --install-dir python --no-bin --no-registry
         uv pip install --python python/cpython-3.13.* --break-system-packages music21==10.5.0
 
     # the runtime libraries are the system libraries that
@@ -90,6 +101,8 @@ jobs:
       uses: jurplel/install-qt-action@v4
       with:
         version: "6.10.1"
+        host: ${{ matrix.qt_host }}
+        arch: ${{ matrix.qt_arch }}
         cache: true
 
     - name: Restore vcpkg binary cache
@@ -97,7 +110,7 @@ jobs:
       uses: actions/cache@v6
       with:
         path: vcpkg_archives
-        key: windows-latest-vcpkg_archives-${{ hashFiles('vcpkg.json') }}
+        key: ${{matrix.os}}-vcpkg_archives-${{ hashFiles('vcpkg.json') }}
 
     - name: Install vcpkg packages on windows
       uses: lukka/run-vcpkg@v11
