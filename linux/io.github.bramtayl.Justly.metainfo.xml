@@ -35,6 +35,25 @@
   </categories>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="2.0.0" date="2026-10-14">
+      <description>
+        <p>
+          Song files from older versions of Justly won't open. To update one,
+          rename each percussion_set_pointer element in it to percussion_set.
+          Unsaved work from an older version that can't be restored is kept
+          in unrestored.xml.
+        </p>
+        <ul>
+          <li>Octaves can go from -20 to 20</li>
+          <li>Editing an interval out of range shows a warning instead of
+          saving a song that won't reopen</li>
+          <li>Importing a score with a rhythm or tempo that doesn't fit shows
+          a warning instead of saving a song that won't reopen</li>
+          <li>Importing a score with only percussion adds a pitched voice</li>
+          <li>Pasting malformed cells shows a warning instead of crashing</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.2.0" date="2026-09-24"/>
     <release version="1.1.4" date="2026-08-19"/>
     <release version="1.1.3" date="2026-08-05"/>

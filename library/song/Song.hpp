@@ -11,6 +11,8 @@ struct PitchedNote;
 static const auto C_0_MIDI = 12;
 static const auto DEFAULT_STARTING_MIDI = MIDDLE_C_MIDI;
 static const auto DEFAULT_STARTING_TEMPO = 100;
+// matches starting_tempo_type in song.xsd
+static const auto MAX_TEMPO = 999;
 static const auto DEFAULT_STARTING_VELOCITY = 64;
 
 struct Song {

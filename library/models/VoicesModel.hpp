@@ -11,16 +11,16 @@
 // can rename its notes too
 template <VoiceInterface SubVoice, NoteInterface SubNote>
 struct VoicesModel : public UndoRowsModel<SubVoice> {
-  QWidget& parent;
   int created_voices = 0;
   explicit VoicesModel(QWidget& parent_input, QUndoStack& undo_stack,
                        Song& song_input)
-      : UndoRowsModel<SubVoice>(undo_stack, song_input), parent(parent_input) {}
+      : UndoRowsModel<SubVoice>(parent_input, undo_stack, song_input) {}
 
   [[nodiscard]] auto check_cell(const int column_number,
                                 const QVariant& new_value) const
       -> bool override {
-    return check_voice_name(parent, this->get_rows(), column_number, new_value);
+    return check_voice_name(this->parent, this->get_rows(), column_number,
+                            new_value);
   }
 
   [[nodiscard]] auto make_set_cell(const QModelIndex& index,

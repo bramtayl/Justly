@@ -254,12 +254,21 @@ void Tester::test_recovery_restore_invalid_file() {
   recovery_file.close();
 
   // Enter picks the prompt's default Yes button
-  close_messages_later(main_window, waiting_for_message,
-                       {RECOVERY_PROMPT_TEXT, "Invalid XML file"});
+  close_messages_later(
+      main_window, waiting_for_message,
+      {RECOVERY_PROMPT_TEXT, "Invalid XML file",
+       "Couldn't restore the unsaved work. It's been kept in " +
+           QDir::toNativeSeparators(get_unrestored_file_path())});
   QVERIFY(!maybe_restore_recovery(main_window));
   QVERIFY(!waiting_for_message);
 
   QCOMPARE(window_body.current_file, old_current_file);
   QVERIFY(window_body.undo_stack.isClean());
-  remove_recovery_file();
+  // moved aside, so the next launch doesn't prompt again
+  QVERIFY(!QFile::exists(get_recovery_file_path()));
+  QFile unrestored_file(get_unrestored_file_path());
+  QVERIFY(unrestored_file.open(QIODevice::ReadOnly));
+  QCOMPARE(unrestored_file.readAll(), QByteArray("<"));
+  unrestored_file.close();
+  QVERIFY(unrestored_file.remove());
 }

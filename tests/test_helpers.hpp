@@ -175,7 +175,7 @@ inline auto make_voice_song_xml(
     body += QString(R"(
     <unpitched_voice>
       <name>%1</name>
-      <percussion_set_pointer>Room</percussion_set_pointer>
+      <percussion_set>Room</percussion_set>
       <midi_number>%2</midi_number>
     </unpitched_voice>)")
                 .arg(name)

@@ -91,8 +91,8 @@ struct Tester : public QObject {
   void test_interval_presets();
   static void test_voice_error_data();
   void test_voice_error();
-  static void test_voice_name_rejected_data();
-  void test_voice_name_rejected();
+  static void test_edit_rejected_data();
+  void test_edit_rejected();
   static void test_remove_voice_reassigns_notes_data();
   void test_remove_voice_reassigns_notes();
   void test_remove_voice_row_consistent_during_warning();

@@ -126,6 +126,12 @@ template <RowInterface SubRow>
       xml_to_rows(new_rows, field_node, max_rows);
     }
   }
+  // the schema bounds each column, but can't compare them
+  if (left_column > right_column) {
+    QMessageBox::warning(&parent, QObject::tr("Validation Error"),
+                         QObject::tr("Invalid clipboard"));
+    return {};
+  }
   reassign_unknown_pasted_voices(parent, song, new_rows);
   return Cells(left_column, right_column, std::move(new_rows));
 }

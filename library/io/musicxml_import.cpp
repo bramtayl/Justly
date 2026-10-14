@@ -286,6 +286,17 @@ auto parse_result(QWidget& parent, const QJsonObject& result)
   const auto tempos = get_changes(to_divisions, result.value("tempos"));
   for (auto iterator = tempos.cbegin(); iterator != tempos.cend(); ++iterator) {
     const auto tempo = to_int(iterator.value());
+    // tempo ratios are of tempos, so a tempo that fits in a ratio's
+    // numerator or denominator keeps every tempo ratio in range too
+    if (tempo > MAX_TEMPO) {
+      warn_import_error(
+          parent,
+          QObject::tr("The tempo in measure %1 is faster than %2 bpm")
+              .arg(get_most_recent(score.measure_numbers, iterator.key())
+                       .value_or(1))
+              .arg(MAX_TEMPO));
+      return std::nullopt;
+    }
     if (tempo > 0) {
       score.tempos[iterator.key()] = tempo;
     }
@@ -428,6 +439,26 @@ auto make_chord(const ParsedChord& parse_chord, const MusicXMLVoices& voices,
   return new_chord;
 }
 
+auto rational_fits(const Rational& rational) -> bool {
+  return rational.numerator <= MAX_NUMERATOR &&
+         rational.denominator <= MAX_DENOMINATOR;
+}
+
+template <NoteInterface SubNote>
+auto notes_fit(const QList<SubNote>& notes) -> bool {
+  return std::ranges::all_of(notes, [](const SubNote& note) -> bool {
+    return rational_fits(note.beats);
+  });
+}
+
+// whether the chord's beats fit in a ratio. Its intervals always fit, since
+// midi numbers and keys keep their octaves well within MAX_OCTAVE, and its
+// tempo ratio does too, since parse_result checks tempos
+auto chord_fits(const Chord& chord) -> bool {
+  return rational_fits(chord.beats) && notes_fit(chord.pitched_notes) &&
+         notes_fit(chord.unpitched_notes);
+}
+
 auto deduplicate_voice_names(QList<MusicXMLVoice> voices)
     -> QList<MusicXMLVoice> {
   QSet<QString> used_names;
@@ -473,14 +504,18 @@ auto import_score(QWidget& parent, const QString& filename)
     return std::nullopt;
   }
 
-  if (voices.unpitched.empty()) {
-    // a file with no percussion/unpitched notes would otherwise leave
-    // song.unpitched_voices completely empty, so manually inserting any
-    // unpitched note afterward (which defaults to the first voice) would
-    // reference a voice that doesn't exist
-    MusicXMLVoice default_voice;
-    default_voice.name = QObject::tr("unpitched voice 1");
-    voices.unpitched.push_back(std::move(default_voice));
+  // a file with no pitched or no unpitched notes would otherwise leave that
+  // kind of voice completely empty, so manually inserting a note of that kind
+  // afterward (which defaults to the first voice) would reference a voice
+  // that doesn't exist, and song.xsd requires at least one of each
+  for (auto [some_voices, default_name] :
+       {std::pair{&voices.pitched, QObject::tr("pitched voice 1")},
+        std::pair{&voices.unpitched, QObject::tr("unpitched voice 1")}}) {
+    if (some_voices->empty()) {
+      MusicXMLVoice default_voice;
+      default_voice.name = default_name;
+      some_voices->push_back(std::move(default_voice));
+    }
   }
 
   ImportedScore score;
@@ -502,13 +537,23 @@ auto import_score(QWidget& parent, const QString& filename)
         get_most_recent(midi_keys, time).value_or(DEFAULT_STARTING_MIDI);
     const auto tempo =
         get_most_recent(tempos, time).value_or(DEFAULT_STARTING_TEMPO);
-    score.chords.push_back(make_chord(
-        chord, score.voices, get_most_recent(measure_numbers, time).value_or(1),
-        midi_key, last_midi_key, tempo, last_tempo, song_divisions,
-        next_iterator == chords_dict.cend()
-            ? std::max(get_max_duration(chord.pitched_notes),
-                       get_max_duration(chord.unpitched_notes))
-            : next_iterator.key() - time));
+    const auto measure_number =
+        get_most_recent(measure_numbers, time).value_or(1);
+    auto new_chord =
+        make_chord(chord, score.voices, measure_number, midi_key, last_midi_key,
+                   tempo, last_tempo, song_divisions,
+                   next_iterator == chords_dict.cend()
+                       ? std::max(get_max_duration(chord.pitched_notes),
+                                  get_max_duration(chord.unpitched_notes))
+                       : next_iterator.key() - time);
+    if (!chord_fits(new_chord)) {
+      warn_import_error(
+          parent, QObject::tr("A rhythm in measure %1 is too long or too fine "
+                              "to write as a ratio")
+                      .arg(measure_number));
+      return std::nullopt;
+    }
+    score.chords.push_back(std::move(new_chord));
     last_midi_key = midi_key;
     last_tempo = tempo;
   }

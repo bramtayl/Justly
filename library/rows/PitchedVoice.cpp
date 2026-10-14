@@ -32,7 +32,7 @@ void PitchedVoice::from_xml(xmlNode& node) {
 }
 
 auto PitchedVoice::get_clipboard_schema() -> const char* {
-  return "pitched_voice_clipboard.xsd";
+  return "pitched_voices_clipboard.xsd";
 }
 
 auto PitchedVoice::get_xml_field_name() -> const char* {
@@ -58,7 +58,7 @@ auto PitchedVoice::get_column_name(int column_number) -> const char* {
 }
 
 auto PitchedVoice::get_cells_mime() -> const char* {
-  return "application/prs.pitched_voice_cells+xml";
+  return "application/prs.pitched_voices_cells+xml";
 }
 
 auto PitchedVoice::get_data(const int column_number) const -> QVariant {

@@ -1,9 +1,9 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
     <xs:include schemaLocation="common.xsd"/>
     <xs:simpleType name="chord_column">
-        <xs:restriction base="xs:decimal">
+        <xs:restriction base="xs:integer">
             <xs:minInclusive value="0" />
-            <xs:maxInclusive value="8" />
+            <xs:maxInclusive value="6" />
         </xs:restriction>
     </xs:simpleType>
     <xs:complexType name="chords_clipboard_type">

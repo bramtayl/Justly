@@ -27,7 +27,7 @@ struct MusicXMLVoices {
 
 // a musicxml score converted to Justly's terms, ready to replace the song
 struct ImportedScore {
-  // uniquely and non-emptily named, with at least one unpitched voice
+  // uniquely and non-emptily named, with at least one of each kind
   MusicXMLVoices voices;
   int starting_midi_key = 0;
   int starting_tempo = 0;

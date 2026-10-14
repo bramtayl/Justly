@@ -310,7 +310,7 @@ void Tester::test_unreduced_ratio_from_xml_data() {
   <unpitched_voices>
     <unpitched_voice>
       <name>B</name>
-      <percussion_set_pointer>Room</percussion_set_pointer>
+      <percussion_set>Room</percussion_set>
       <midi_number>36</midi_number>
     </unpitched_voice>
   </unpitched_voices>
@@ -411,10 +411,10 @@ void Tester::test_octave_bound() {
   switch_to(main_window, RowType::pitched_note_type, 1);
   select_cell(switch_table, 0, 0);
   close_message_later(main_window, waiting_for_message,
-                      "Octave 10 (absolutely) greater than maximum 9");
+                      "Octave 21 (absolutely) greater than maximum 20");
   press_times(window_body.controls_column.octave_row.plus_button,
-              OCTAVE_SHIFT_TIMES + 1);
-  undo_times(undo_stack, OCTAVE_SHIFT_TIMES);  // undo shift octave
+              MAX_OCTAVE + 1);
+  undo_times(undo_stack, MAX_OCTAVE);  // undo shift octave
 
   maybe_switch_back_to_chords(undo_stack, RowType::pitched_note_type);
 }
@@ -426,10 +426,10 @@ void Tester::test_octave_bound_chord() {
 
   select_cell(switch_table, 0, 0);
   close_message_later(main_window, waiting_for_message,
-                      "Octave 10 (absolutely) greater than maximum 9");
+                      "Octave 21 (absolutely) greater than maximum 20");
   press_times(window_body.controls_column.octave_row.plus_button,
-              OCTAVE_SHIFT_TIMES + 1);
-  undo_times(undo_stack, OCTAVE_SHIFT_TIMES);  // undo shift octave
+              MAX_OCTAVE + 1);
+  undo_times(undo_stack, MAX_OCTAVE);  // undo shift octave
 }
 
 void Tester::test_ratio_bound_data() {

@@ -1,5 +1,7 @@
 #include "cell_types/Interval.hpp"
 
+#include <QtWidgets/QMessageBox>
+
 #include "common/helpers.hpp"
 #include "io/XMLChildren.hpp"
 
@@ -79,4 +81,46 @@ void maybe_add_interval_to_xml(xmlNode& node, const char* const column_name,
     maybe_add_rational_to_xml(interval_node, "ratio", interval.ratio);
     maybe_add_int_to_xml(interval_node, "octave", interval.octave, 0);
   }
+}
+
+namespace {
+
+struct IntervalLimit {
+  const char* name;
+  int value;
+  int maximum;
+  const char* comparison;
+};
+
+}  // namespace
+
+auto check_interval(QWidget& parent_widget, const Interval& interval) -> bool {
+  for (const auto& limit :
+       {IntervalLimit{.name = QT_TRANSLATE_NOOP("QObject", "Numerator"),
+                      .value = interval.ratio.numerator,
+                      .maximum = MAX_NUMERATOR,
+                      .comparison = QT_TRANSLATE_NOOP(
+                          "QObject", " greater than maximum ")},
+        IntervalLimit{.name = QT_TRANSLATE_NOOP("QObject", "Denominator"),
+                      .value = interval.ratio.denominator,
+                      .maximum = MAX_DENOMINATOR,
+                      .comparison = QT_TRANSLATE_NOOP(
+                          "QObject", " greater than maximum ")},
+        IntervalLimit{.name = QT_TRANSLATE_NOOP("QObject", "Octave"),
+                      .value = interval.octave,
+                      .maximum = MAX_OCTAVE,
+                      .comparison = QT_TRANSLATE_NOOP(
+                          "QObject", " (absolutely) greater than maximum ")}}) {
+    if (std::abs(limit.value) > limit.maximum) {
+      QString message;
+      QTextStream stream(&message);
+      stream << QObject::tr(limit.name) << " " << limit.value
+             << QObject::tr(limit.comparison) << limit.maximum;
+      QMessageBox::warning(&parent_widget,
+                           QObject::tr("%1 error").arg(QObject::tr(limit.name)),
+                           message);
+      return false;
+    }
+  }
+  return true;
 }

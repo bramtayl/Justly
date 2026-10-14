@@ -105,6 +105,21 @@ void Tester::test_paste_error_data() {
   QTest::newRow("chord not Justly")
       << RowType::chord_type << -1 << "<song/>" << Chord::get_cells_mime()
       << "Invalid clipboard";
+  QTest::newRow("chord column out of range")
+      << RowType::chord_type << -1
+      << "<clipboard><left_column>7</left_column><right_column>7</"
+         "right_column><rows><chord/></rows></clipboard>"
+      << Chord::get_cells_mime() << "Invalid clipboard";
+  QTest::newRow("chord fractional column")
+      << RowType::chord_type << -1
+      << "<clipboard><left_column>0.5</left_column><right_column>1</"
+         "right_column><rows><chord/></rows></clipboard>"
+      << Chord::get_cells_mime() << "Invalid clipboard";
+  QTest::newRow("chord columns backward")
+      << RowType::chord_type << -1
+      << "<clipboard><left_column>3</left_column><right_column>2</"
+         "right_column><rows><chord/></rows></clipboard>"
+      << Chord::get_cells_mime() << "Invalid clipboard";
   QTest::newRow("pitched note not a mime")
       << RowType::pitched_note_type << 1 << "" << "not a mime"
       << "Cannot paste not a mime as pitched notes cells";
@@ -135,6 +150,11 @@ void Tester::test_paste_error_data() {
       << UnpitchedNote::get_cells_mime() << "Invalid XML";
   QTest::newRow("unpitched note not Justly")
       << RowType::unpitched_note_type << 1 << "<song/>"
+      << UnpitchedNote::get_cells_mime() << "Invalid clipboard";
+  QTest::newRow("unpitched note column out of range")
+      << RowType::unpitched_note_type << 1
+      << "<clipboard><left_column>4</left_column><right_column>4</"
+         "right_column><rows><unpitched_note/></rows></clipboard>"
       << UnpitchedNote::get_cells_mime() << "Invalid clipboard";
 }
 

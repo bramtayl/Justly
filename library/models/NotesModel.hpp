@@ -7,8 +7,8 @@
 
 template <NoteInterface SubNote>
 struct NotesModel : public UndoRowsModel<SubNote> {
-  explicit NotesModel(QUndoStack& undo_stack, Song& song)
-      : UndoRowsModel<SubNote>(undo_stack, song) {}
+  explicit NotesModel(QWidget& parent_input, QUndoStack& undo_stack, Song& song)
+      : UndoRowsModel<SubNote>(parent_input, undo_stack, song) {}
 
   [[nodiscard]] auto make_empty_row() const -> SubNote override {
     SubNote sub_note;

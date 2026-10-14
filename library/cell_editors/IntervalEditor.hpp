@@ -7,8 +7,6 @@
 class QSpinBox;
 struct RationalEditor;
 
-static const auto MAX_OCTAVE = 9;
-
 struct IntervalEditor : QFrame {
   Q_OBJECT
   Q_PROPERTY(Interval interval READ value WRITE setValue USER true)

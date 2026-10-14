@@ -4,7 +4,11 @@
 
 #include "cell_types/Rational.hpp"
 
+class QWidget;
+
 static const auto OCTAVE_RATIO = 2.0;
+// matches octave_type in common.xsd
+static const auto MAX_OCTAVE = 20;
 
 struct Interval {
   Rational ratio;
@@ -46,3 +50,8 @@ void set_interval_from_xml(Interval& interval, xmlNode& node);
 
 void maybe_add_interval_to_xml(xmlNode& node, const char* column_name,
                                const Interval& interval);
+
+// warns and returns false if interval's numerator, denominator, or octave
+// (after moving the ratio's factors of 2 into it) is out of range
+[[nodiscard]] auto check_interval(QWidget& parent_widget,
+                                  const Interval& interval) -> bool;

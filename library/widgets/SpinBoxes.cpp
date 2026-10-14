@@ -45,7 +45,6 @@ SpinBoxes::SpinBoxes(Song& song, FluidSynth& synth, QUndoStack& undo_stack)
   static const auto GAIN_STEP = 0.1;
   static const auto MAX_GAIN = 10;
   static const auto MAX_KEY = 999;
-  static const auto MAX_TEMPO = 999;
 
   auto& spin_boxes_form =  // NOLINT(cppcoreguidelines-owning-memory)
       *(new QFormLayout(this));

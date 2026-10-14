@@ -1,14 +1,20 @@
 #pragma once
 
 #include "actions/SetCells.hpp"
+#include "cell_types/Interval.hpp"
 #include "models/RowsModel.hpp"
 
 template <RowInterface SubRow>
 struct UndoRowsModel : public RowsModel<SubRow> {
+  // for warnings about rejected edits
+  QWidget& parent;
   QUndoStack& undo_stack;
 
-  explicit UndoRowsModel(QUndoStack& undo_stack_input, Song& song)
-      : RowsModel<SubRow>(song), undo_stack(undo_stack_input) {};
+  explicit UndoRowsModel(QWidget& parent_input, QUndoStack& undo_stack_input,
+                         Song& song)
+      : RowsModel<SubRow>(song),
+        parent(parent_input),
+        undo_stack(undo_stack_input) {};
 
   [[nodiscard]] auto setData(const QModelIndex& index,
                              const QVariant& new_value, const int role)
@@ -17,6 +23,12 @@ struct UndoRowsModel : public RowsModel<SubRow> {
       return false;
     };
     if (index.data(Qt::EditRole) == new_value) {
+      return false;
+    }
+    // the editor allows octaves that the ratio's factors of 2 push out of
+    // range once Interval moves them into the octave
+    if (new_value.metaType() == QMetaType::fromType<Interval>() &&
+        !check_interval(parent, variant_to<Interval>(new_value))) {
       return false;
     }
     if (!this->check_cell(index.column(), new_value)) {

@@ -54,7 +54,7 @@ void Tester::test_voice_error() {
   QCOMPARE(chords_model.rowCount(QModelIndex()), old_chord_count);
 }
 
-void Tester::test_voice_name_rejected_data() {
+void Tester::test_edit_rejected_data() {
   add_table_columns();
   QTest::addColumn<int>("column_number");
   QTest::addColumn<QVariant>("new_value");
@@ -76,9 +76,20 @@ void Tester::test_voice_name_rejected_data() {
       << RowType::unpitched_voice_type << -1
       << static_cast<int>(UnpitchedVoiceColumn::name_column)
       << QVariant(QString()) << "Voice name is empty!";
+  // Interval moves the ratio's factor of 2 into the octave, making it 21
+  QTest::newRow("chord octave out of range")
+      << RowType::chord_type << -1
+      << static_cast<int>(ChordColumn::interval_column)
+      << QVariant::fromValue(Interval(Rational(2, 1), MAX_OCTAVE))
+      << "Octave 21 (absolutely) greater than maximum 20";
+  QTest::newRow("pitched note octave out of range")
+      << RowType::pitched_note_type << 1
+      << static_cast<int>(PitchedNoteColumn::interval_column)
+      << QVariant::fromValue(Interval(Rational(1, 2), -MAX_OCTAVE))
+      << "Octave -21 (absolutely) greater than maximum 20";
 }
 
-void Tester::test_voice_name_rejected() {
+void Tester::test_edit_rejected() {
   QFETCH(const RowType, row_type);
   QFETCH(const int, chord_number);
   QFETCH(const int, column_number);
@@ -495,7 +506,7 @@ void Tester::test_voice_velocity_ratio_data() {
   <unpitched_voices>
     <unpitched_voice>
       <name>D</name>
-      <percussion_set_pointer>Room</percussion_set_pointer>
+      <percussion_set>Room</percussion_set>
       <midi_number>36</midi_number>
     </unpitched_voice>
   </unpitched_voices>
@@ -519,7 +530,7 @@ void Tester::test_voice_velocity_ratio_data() {
   <unpitched_voices>
     <unpitched_voice>
       <name>D</name>
-      <percussion_set_pointer>Room</percussion_set_pointer>
+      <percussion_set>Room</percussion_set>
       <midi_number>36</midi_number>
       <velocity_ratio><numerator>2</numerator></velocity_ratio>
     </unpitched_voice>

@@ -1,7 +1,7 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
     <xs:include schemaLocation="common.xsd"/>
     <xs:simpleType name="pitched_voice_column">
-        <xs:restriction base="xs:decimal">
+        <xs:restriction base="xs:integer">
             <xs:minInclusive value="0" />
             <xs:maxInclusive value="2" />
         </xs:restriction>

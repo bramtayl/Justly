@@ -6,10 +6,10 @@
 #include <QtWidgets/QDoubleSpinBox>
 
 #include "actions/ReplaceTable.hpp"
-#include "io/musicxml_import.hpp"
 #include "io/XMLChildren.hpp"
 #include "io/XMLDocument.hpp"
 #include "io/XMLValidator.hpp"
+#include "io/musicxml_import.hpp"
 #include "piano_roll/PianoRollWidget.hpp"
 #include "widgets/ControlsColumn.hpp"
 #include "widgets/MainWindow.hpp"
@@ -61,6 +61,10 @@ auto get_recovery_file_path() -> QString {
       QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
   QDir().mkpath(directory);
   return directory + "/recovery.xml";
+}
+
+auto get_unrestored_file_path() -> QString {
+  return QFileInfo(get_recovery_file_path()).dir().filePath("unrestored.xml");
 }
 
 void remove_recovery_file() {
@@ -307,6 +311,17 @@ auto maybe_restore_recovery(MainWindow& main_window) -> bool {
   // open_file always points current_file at whatever filename it's given,
   // and removes recovery.xml as a side effect once loaded
   if (!open_file(main_window, recovery_file)) {
+    // e.g. written by an older version of Justly. Move it aside, so the
+    // prompt doesn't come back every launch, without losing the work in it
+    const auto unrestored_file = get_unrestored_file_path();
+    QFile::remove(unrestored_file);
+    QFile::rename(recovery_file, unrestored_file);
+    remove_recovery_file();
+    QMessageBox::warning(
+        &window_body, WindowBody::tr("Recovery error"),
+        WindowBody::tr("Couldn't restore the unsaved work. It's been kept in "
+                       "%1")
+            .arg(QDir::toNativeSeparators(unrestored_file)));
     return false;
   }
   window_body.current_file = original_file;

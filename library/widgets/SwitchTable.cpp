@@ -6,9 +6,9 @@
 #include "song/Song.hpp"
 
 SwitchTable::SwitchTable(QUndoStack& undo_stack, Song& song)
-    : chords_model(undo_stack, song),
-      pitched_notes_model(undo_stack, song),
-      unpitched_notes_model(undo_stack, song),
+    : chords_model(*this, undo_stack, song),
+      pitched_notes_model(*this, undo_stack, song),
+      unpitched_notes_model(*this, undo_stack, song),
       pitched_voices_model(*this, undo_stack, song),
       unpitched_voices_model(*this, undo_stack, song),
       delegate(get_reference(

@@ -37,9 +37,16 @@ void Tester::test_musicxml() {
   auto& window_body = main_window.window_body;
 
   import_musicxml(main_window, test_dir.filePath(file_name));
-  QCOMPARE(
-      get_model(window_body.switch_column.switch_table).rowCount(QModelIndex()),
-      number_of_chords);
+  QCOMPARE(window_body.song.chords.size(), number_of_chords);
+
+  // an imported score has to fit song.xsd, or it would save but not reopen
+  QTemporaryFile temp_file;
+  QVERIFY(temp_file.open());
+  temp_file.close();
+  save_as_file(window_body, temp_file.fileName());
+  QVERIFY(open_file(main_window, temp_file.fileName()));
+  QCOMPARE(window_body.song.chords.size(), number_of_chords);
+
   open_file(main_window, test_dir.filePath("test_song.xml"));
 }
 
@@ -367,6 +374,17 @@ void Tester::test_musicxml_inline_error_data() {
   QTest::newRow("note duration out of range")
       << get_divisions() << make_pitch_note("", get_huge_number())
       << "The score is too long, or its rhythms too fine";
+  // beats are ratios with at most 999 in the numerator and denominator
+  QTest::newRow("note too long for a ratio")
+      << get_divisions() << make_pitch_note("", "1000")
+      << "A rhythm in measure 1 is too long or too fine to write as a ratio";
+  QTest::newRow("note too fine for a ratio")
+      << "<divisions>1000</divisions>" << make_pitch_note("", "1")
+      << "A rhythm in measure 1 is too long or too fine to write as a ratio";
+  QTest::newRow("tempo too fast")
+      << get_divisions()
+      << R"(<direction><sound tempo="1000"/></direction>)" + plain_note
+      << "The tempo in measure 1 is faster than 999 bpm";
   // unrolling a repeat copies its measures, so too many would run out of
   // memory
   QTest::newRow("too many repeat times")

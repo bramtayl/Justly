@@ -49,7 +49,7 @@
       "Bash(QT_QPA_PLATFORM=offscreen ./bin/JustlyTests test_save_error_does_not_lose_work test_save test_recovery_removed_on_save_and_open test_recovery_timer_debounce test_recovery_restore_accepted test_recovery_restore_declined test_recovery_no_prompt_when_missing)",
       "Bash(QT_QPA_PLATFORM=offscreen ./bin/JustlyTests test_save_error_does_not_lose_work)",
       "Bash(QT_QPA_PLATFORM=offscreen ./bin/JustlyTests test_unreduced_ratio_from_xml)",
-      "Bash(QT_QPA_PLATFORM=offscreen ./bin/JustlyTests test_voice_error test_voice_name_rejected test_open_error test_save_error_does_not_lose_work test_recovery_removed_on_save_and_open)",
+      "Bash(QT_QPA_PLATFORM=offscreen ./bin/JustlyTests test_voice_error test_edit_rejected test_open_error test_save_error_does_not_lose_work test_recovery_removed_on_save_and_open)",
       "Bash(QT_QPA_PLATFORM=offscreen ./bin/JustlyTests test_xml_bytes_size_is_safe test_zip_entry_size_is_safe)",
       "Bash(QT_QPA_PLATFORM=offscreen ./bin/JustlyTests test_xml_to_int_clamps_out_of_range)",
       "Bash(QT_QPA_PLATFORM=offscreen ./bin/JustlyTests test_zip_entry_size_is_safe)",

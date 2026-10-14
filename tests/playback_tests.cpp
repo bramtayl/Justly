@@ -177,7 +177,7 @@ void Tester::test_play_velocity_error() {
   <unpitched_voices>
     <unpitched_voice>
       <name>D</name>
-      <percussion_set_pointer>Room</percussion_set_pointer>
+      <percussion_set>Room</percussion_set>
       <midi_number>36</midi_number>
       <velocity_ratio><numerator>2</numerator></velocity_ratio>
     </unpitched_voice>

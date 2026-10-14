@@ -12,6 +12,9 @@ struct WindowBody;
 // mirrors save_as_file's format so it can be reloaded via open_file
 [[nodiscard]] auto get_recovery_file_path() -> QString;
 
+// where maybe_restore_recovery moves a recovery.xml it can't open
+[[nodiscard]] auto get_unrestored_file_path() -> QString;
+
 void remove_recovery_file();
 
 void write_recovery_file(WindowBody& window_body);

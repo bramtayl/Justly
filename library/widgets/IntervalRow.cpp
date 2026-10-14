@@ -13,44 +13,6 @@
 
 namespace {
 
-struct IntervalLimit {
-  const char* name;
-  int value;
-  int maximum;
-  const char* comparison;
-};
-
-auto check_interval(QWidget& parent_widget, const Interval& interval) -> bool {
-  for (const auto& limit :
-       {IntervalLimit{.name = QT_TRANSLATE_NOOP("QObject", "Numerator"),
-                      .value = interval.ratio.numerator,
-                      .maximum = MAX_NUMERATOR,
-                      .comparison = QT_TRANSLATE_NOOP(
-                          "QObject", " greater than maximum ")},
-        IntervalLimit{.name = QT_TRANSLATE_NOOP("QObject", "Denominator"),
-                      .value = interval.ratio.denominator,
-                      .maximum = MAX_DENOMINATOR,
-                      .comparison = QT_TRANSLATE_NOOP(
-                          "QObject", " greater than maximum ")},
-        IntervalLimit{.name = QT_TRANSLATE_NOOP("QObject", "Octave"),
-                      .value = interval.octave,
-                      .maximum = MAX_OCTAVE,
-                      .comparison = QT_TRANSLATE_NOOP(
-                          "QObject", " (absolutely) greater than maximum ")}}) {
-    if (std::abs(limit.value) > limit.maximum) {
-      QString message;
-      QTextStream stream(&message);
-      stream << QObject::tr(limit.name) << " " << limit.value
-             << QObject::tr(limit.comparison) << limit.maximum;
-      QMessageBox::warning(&parent_widget,
-                           QObject::tr("%1 error").arg(QObject::tr(limit.name)),
-                           message);
-      return false;
-    }
-  }
-  return true;
-}
-
 // multiplies the interval column of each selected row by interval, or returns
 // nullptr (after warning) if any result would be out of range
 template <RowInterface SubRow>
@@ -82,19 +44,17 @@ void update_interval(QUndoStack& undo_stack, SwitchTable& switch_table,
 
   switch (switch_table.delegate.current_row_type) {
     case RowType::chord_type:
-      maybe_push(
-          undo_stack,
-          make_update_interval_command(
-              switch_table, switch_table.chords_model, range,
-              static_cast<int>(ChordColumn::interval_column), interval));
+      maybe_push(undo_stack,
+                 make_update_interval_command(
+                     switch_table, switch_table.chords_model, range,
+                     static_cast<int>(ChordColumn::interval_column), interval));
       return;
     case RowType::pitched_note_type:
       maybe_push(
           undo_stack,
           make_update_interval_command(
               switch_table, switch_table.pitched_notes_model, range,
-              static_cast<int>(PitchedNoteColumn::interval_column),
-              interval));
+              static_cast<int>(PitchedNoteColumn::interval_column), interval));
       return;
     case RowType::unpitched_note_type:
     case RowType::pitched_voice_type:

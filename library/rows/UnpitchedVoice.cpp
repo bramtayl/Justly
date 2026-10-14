@@ -24,7 +24,7 @@ void UnpitchedVoice::from_xml(xmlNode& node) {
     const auto field_name = get_xml_name(field_node);
     if (field_name == "name") {
       name = get_qstring_content(field_node);
-    } else if (field_name == "percussion_set_pointer") {
+    } else if (field_name == "percussion_set") {
       program = get_qstring_content(field_node);
     } else if (field_name == "midi_number") {
       midi_number = xml_to_int(field_node);
@@ -36,7 +36,7 @@ void UnpitchedVoice::from_xml(xmlNode& node) {
 }
 
 auto UnpitchedVoice::get_clipboard_schema() -> const char* {
-  return "unpitched_voice_clipboard.xsd";
+  return "unpitched_voices_clipboard.xsd";
 }
 
 auto UnpitchedVoice::get_xml_field_name() -> const char* {
@@ -65,7 +65,7 @@ auto UnpitchedVoice::get_column_name(int column_number) -> const char* {
 }
 
 auto UnpitchedVoice::get_cells_mime() -> const char* {
-  return "application/prs.unpitched_voice_cells+xml";
+  return "application/prs.unpitched_voices_cells+xml";
 }
 
 auto UnpitchedVoice::get_data(const int column_number) const -> QVariant {
@@ -115,7 +115,7 @@ void UnpitchedVoice::column_to_xml(xmlNode& node,
       maybe_add_qstring_to_xml(node, "name", name);
       break;
     case UnpitchedVoiceColumn::percussion_set_column:
-      maybe_add_qstring_to_xml(node, "percussion_set_pointer", program);
+      maybe_add_qstring_to_xml(node, "percussion_set", program);
       break;
     case UnpitchedVoiceColumn::midi_number_column:
       set_xml_int(node, "midi_number", midi_number);
