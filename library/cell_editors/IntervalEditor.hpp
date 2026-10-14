@@ -1,13 +1,13 @@
 #pragma once
 
-#include <QtWidgets/QFrame>
+#include <QtWidgets/QWidget>
 
 #include "cell_types/Interval.hpp"
 
 class QSpinBox;
 struct RationalEditor;
 
-struct IntervalEditor : QFrame {
+struct IntervalEditor : QWidget {
   Q_OBJECT
   Q_PROPERTY(Interval interval READ value WRITE setValue USER true)
 

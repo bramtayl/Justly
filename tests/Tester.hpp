@@ -182,6 +182,8 @@ struct Tester : public QObject {
   void test_ratio_bound();
   static void test_remove_row_data();
   void test_remove_row();
+  static void test_remove_rows_inside_selection_data();
+  void test_remove_rows_inside_selection();
   void test_replace_table_combining();
   static void test_row_count_data();
   void test_row_count();

@@ -38,7 +38,12 @@ set(music21_version "10.5.0")
 
 # importing a score runs share/import_score.py, which reads it with music21
 if (LINUX)
-    # prefers the python of an active virtual environment
+    # prefers the python in .venv, so it doesn't need activating, unless one
+    # is passed with -DPython3_EXECUTABLE
+    set(venv_python "${Justly_SOURCE_DIR}/.venv/bin/python")
+    if (NOT DEFINED Python3_EXECUTABLE AND EXISTS "${venv_python}")
+        set(Python3_EXECUTABLE "${venv_python}")
+    endif()
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
     execute_process(
         COMMAND "${Python3_EXECUTABLE}" -c "import music21; print(music21.__version__)"

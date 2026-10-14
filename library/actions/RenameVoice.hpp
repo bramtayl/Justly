@@ -8,7 +8,18 @@
 template <VoiceInterface SubVoice, NoteInterface SubNote>
 struct VoicesModel;
 
-// renames a voice, and every note naming it, so notes follow their voice
+template <VoiceInterface SubVoice, NoteInterface SubNote>
+void set_notes_voice_name(VoicesModel<SubVoice, SubNote>& voices_model,
+                          const int row_number,
+                          const QList<NoteLocation>& note_locations,
+                          const QString& name) {
+  auto& chords = voices_model.song.chords;
+  for (const auto& note_location : note_locations) {
+    set_voice_name<SubNote>(chords, note_location, name);
+  }
+  voices_model.set_cell(row_number, SubVoice::get_name_column(), name);
+}
+
 template <VoiceInterface SubVoice, NoteInterface SubNote>
 struct RenameVoice : public QUndoCommand {
   VoicesModel<SubVoice, SubNote>& voices_model;
@@ -34,15 +45,11 @@ struct RenameVoice : public QUndoCommand {
         });
   }
 
-  void set_name(const QString& name) {
-    auto& chords = voices_model.song.chords;
-    for (const auto& note_location : note_locations) {
-      set_voice_name<SubNote>(chords, note_location, name);
-    }
-    voices_model.set_cell(row_number, SubVoice::get_name_column(), name);
+  void undo() override {
+    set_notes_voice_name(voices_model, row_number, note_locations, old_name);
   }
 
-  void undo() override { set_name(old_name); }
-
-  void redo() override { set_name(new_name); }
+  void redo() override {
+    set_notes_voice_name(voices_model, row_number, note_locations, new_name);
+  }
 };

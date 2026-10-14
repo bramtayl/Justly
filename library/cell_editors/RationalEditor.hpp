@@ -1,12 +1,12 @@
 #pragma once
 
-#include <QtWidgets/QFrame>
+#include <QtWidgets/QWidget>
 
 #include "cell_types/Rational.hpp"
 
 class QSpinBox;
 
-struct RationalEditor : QFrame {
+struct RationalEditor : QWidget {
   Q_OBJECT
   Q_PROPERTY(Rational rational READ value WRITE setValue USER true)
 

@@ -3,6 +3,8 @@
 #include <QtCore/QItemSelectionModel>
 #include <QtWidgets/QWidget>
 
+#include "models/TableSelection.hpp"
+
 class QLabel;
 class QUndoStack;
 struct Song;
@@ -30,6 +32,11 @@ template <typename Iterable>
 
 [[nodiscard]] auto get_only_range(const QAbstractItemView& table)
     -> QItemSelectionRange;
+
+// the switch table's current selection; empty (number_of_rows == 0) if
+// nothing is selected
+[[nodiscard]] auto get_table_selection(const SwitchTable& switch_table)
+    -> TableSelection;
 
 // replaces the selection with the whole rows from first_index's through
 // last_index's, then scrolls to scroll_index

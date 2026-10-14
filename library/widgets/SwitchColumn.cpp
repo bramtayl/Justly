@@ -30,6 +30,19 @@ auto get_only_range(const QAbstractItemView& table) -> QItemSelectionRange {
   return get_only(get_selection_model(table).selection());
 }
 
+auto get_table_selection(const SwitchTable& switch_table) -> TableSelection {
+  TableSelection selection{
+      .row_type = switch_table.delegate.current_row_type,
+      .chord_number = get_parent_chord_number(switch_table)};
+  // get_only_range asserts on an empty selection
+  if (!get_selection_model(switch_table).selection().empty()) {
+    const auto& range = get_only_range(switch_table);
+    selection.first_row_number = range.top();
+    selection.number_of_rows = get_number_of_rows(range);
+  }
+  return selection;
+}
+
 void select_rows_and_scroll(QAbstractItemView& item_view,
                             const QModelIndex& first_index,
                             const QModelIndex& last_index,

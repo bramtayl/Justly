@@ -273,12 +273,13 @@ void Tester::test_remove_row() {
   if (row_type == RowType::pitched_voice_type) {
     close_message_later(
         main_window, waiting_for_message,
-        "Reassigning 7 pitched note voices to the first voice \"Guitar\"");
+        "Reassigning 7 pitched note voices to the first remaining voice "
+        "\"Guitar\"");
   } else if (row_type == RowType::unpitched_voice_type) {
     close_message_later(
         main_window, waiting_for_message,
-        "Reassigning 2 unpitched note voices to the first voice \"Room "
-        "Kit\"");
+        "Reassigning 2 unpitched note voices to the first remaining voice "
+        "\"Room Kit\"");
   }
   main_window.song_menu_bar.edit_menu.remove_rows_action.trigger();
 
@@ -293,6 +294,54 @@ void Tester::test_remove_row() {
   QCOMPARE(restored_range.bottom(), 0);
   QCOMPARE(restored_range.left(), 0);
   QCOMPARE(restored_range.right(), model.columnCount() - 1);
+
+  maybe_switch_back_to_chords(undo_stack, row_type);
+}
+
+void Tester::test_remove_rows_inside_selection_data() { add_tables(); }
+
+// removing rows strictly inside a selected range makes Qt split it in two
+// and emit selectionChanged, which would trip every get_only_range caller
+// (e.g. update_piano_roll_selection); RowsModel::remove_rows clears the
+// selection first so it's only ever empty or a single range
+void Tester::test_remove_rows_inside_selection() {
+  QFETCH(const RowType, row_type);
+  QFETCH(const int, chord_number);
+
+  auto& window_body = main_window.window_body;
+  auto& switch_table = window_body.switch_column.switch_table;
+  auto& undo_stack = window_body.undo_stack;
+
+  switch_to(main_window, row_type, chord_number);
+
+  auto& model = get_model(switch_table);
+  auto& selection_model = get_selection_model(switch_table);
+
+  const auto old_row_count = model.rowCount();
+
+  // inserts a new row 1
+  select_cell(switch_table, 0, 0);
+  main_window.song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();
+  QCOMPARE(model.rowCount(), old_row_count + 1);
+
+  // surround the new row, so undoing the insert removes it from the middle
+  selection_model.select(QItemSelection(model.index(0, 0), model.index(2, 0)),
+                         SELECT_AND_CLEAR);
+
+  auto most_ranges = 0;
+  const QObject receiver;
+  QObject::connect(&selection_model, &QItemSelectionModel::selectionChanged,
+                   &receiver, [&selection_model, &most_ranges]() -> auto {
+                     most_ranges = std::max(
+                         most_ranges,
+                         static_cast<int>(selection_model.selection().size()));
+                   });
+
+  undo_stack.undo();
+  QCOMPARE(model.rowCount(), old_row_count);
+
+  QCOMPARE(most_ranges, 0);
+  QVERIFY(selection_model.selection().empty());
 
   maybe_switch_back_to_chords(undo_stack, row_type);
 }

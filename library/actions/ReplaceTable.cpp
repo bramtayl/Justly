@@ -3,70 +3,40 @@
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QLabel>
 #include <memory>
-#include <set>
 
 #include "actions/ChangeId.hpp"
-#include "column_numbers/ChordColumn.hpp"
-#include "column_numbers/PitchedNoteColumn.hpp"
-#include "column_numbers/PitchedVoiceColumn.hpp"
-#include "column_numbers/UnpitchedNoteColumn.hpp"
-#include "column_numbers/UnpitchedVoiceColumn.hpp"
 #include "menus/SongMenuBar.hpp"
 #include "piano_roll/PianoRollWidget.hpp"
 #include "widgets/ControlsColumn.hpp"
 
 namespace {
 
-// fits each column to its contents, but at least as wide as its editor (or,
-// for the text columns, TEXT_WIDTH), and makes rows as tall as the tallest
-// editor, so editing a cell doesn't squash it
-void resize_cells(SwitchTable& switch_table, const RowType row_type) {
-  static const auto TEXT_WIDTH = 200;
-  static const std::set<std::pair<RowType, int>> TEXT_COLUMNS = {
-      {RowType::chord_type, static_cast<int>(ChordColumn::words_column)},
-      {RowType::pitched_note_type,
-       static_cast<int>(PitchedNoteColumn::words_column)},
-      {RowType::unpitched_note_type,
-       static_cast<int>(UnpitchedNoteColumn::unpitched_note_words_column)},
-      {RowType::pitched_voice_type,
-       static_cast<int>(PitchedVoiceColumn::name_column)},
-      {RowType::unpitched_voice_type,
-       static_cast<int>(UnpitchedVoiceColumn::name_column)},
-  };
-  // the table takes the grid line out of the cell the editor fills
+template <RowInterface SubRow>
+void show_model(SwitchTable& switch_table, RowsModel<SubRow>& rows_model,
+                const RowType row_type) {
+  set_model(switch_table, rows_model);
+  // fit each column to its contents, but at least as wide as its editor (if
+  // it's editable), and make rows as tall as the tallest editor, so editing a
+  // cell doesn't squash it
   const auto grid_width = switch_table.showGrid() ? 1 : 0;
   auto row_height = 0;
-  const auto number_of_columns =
-      get_reference(switch_table.model()).columnCount();
-  for (auto column = 0; column < number_of_columns; column++) {
+  for (auto column = 0; column < SubRow::get_number_of_columns(); column++) {
     switch_table.resizeColumnToContents(column);
-    auto minimum_width = 0;
-    const std::unique_ptr<QWidget> editor_pointer(
-        create_switch_editor(switch_table.delegate, nullptr, row_type, column));
-    if (editor_pointer != nullptr) {
-      const auto editor_size = editor_pointer->sizeHint();
-      minimum_width = editor_size.width() + grid_width;
-      row_height = std::max(row_height, editor_size.height() + grid_width);
+    if (!column_is_editable<SubRow>(column)) {
+      continue;
     }
-    if (TEXT_COLUMNS.contains({row_type, column})) {
-      minimum_width = std::max(minimum_width, TEXT_WIDTH);
-    }
-    switch_table.setColumnWidth(
-        column, std::max(minimum_width, switch_table.columnWidth(column)));
+    const std::unique_ptr<QWidget> editor_pointer(&create_switch_editor(
+        switch_table.delegate, nullptr, row_type, column));
+    const auto editor_size = editor_pointer->sizeHint();
+    switch_table.setColumnWidth(column,
+                                std::max(editor_size.width() + grid_width,
+                                         switch_table.columnWidth(column)));
+    row_height = std::max(row_height, editor_size.height() + grid_width);
   }
   get_reference(switch_table.verticalHeader())
       .setDefaultSectionSize(row_height);
 }
 
-template <RowInterface SubRow>
-void show_model(SwitchTable& switch_table, RowsModel<SubRow>& rows_model,
-                const RowType row_type) {
-  set_model(switch_table, rows_model);
-  resize_cells(switch_table, row_type);
-}
-
-// points notes_model at one chord's notes, swapping it into the table if it
-// isn't already there, and selects new_note_number's row if it's >= 0
 template <NoteInterface SubNote>
 void show_notes(SwitchTable& switch_table, RowsModel<SubNote>& notes_model,
                 QList<SubNote>& notes, const RowType row_type,
@@ -81,8 +51,7 @@ void show_notes(SwitchTable& switch_table, RowsModel<SubNote>& notes_model,
   }
 }
 
-// voice names must be typed, not copy/pasted or deleted, since every voice
-// name must stay unique and non-empty
+// use to disable voice name copy-pasting and deleting
 template <RowInterface SubRow>
 auto selects_voice_name(const RowsModel<SubRow>& /*rows_model*/,
                         const QItemSelection& selection) -> bool {
@@ -97,37 +66,21 @@ auto selects_voice_name(const RowsModel<SubRow>& /*rows_model*/,
   }
 }
 
-// removing every remaining voice row would leave no voice for a note to
-// reference, so disable rather than let RemoveVoiceRows warn and cancel;
-// selection.size() can transiently be 0 or >1 while a model change (e.g.
-// undoing a row removal) is still adjusting the selection, so require
-// exactly one range rather than asserting via get_only_range
-template <RowInterface SubRow>
-auto removes_every_voice_row(const RowsModel<SubRow>& rows_model,
-                             const QItemSelection& selection) -> bool {
-  if constexpr (VoiceInterface<SubRow>) {
-    return selection.size() == 1 &&
-           get_number_of_rows(selection.at(0)) >= rows_model.get_rows().size();
-  } else {
-    return false;
-  }
+auto every_row_selected(const QAbstractItemModel& model,
+                        const QItemSelection& selection) -> bool {
+  // if the selection is empty, there won't be any range
+  return selection.size() == 1 &&
+         get_number_of_rows(selection.at(0)) >= model.rowCount();
 }
 
 // mirrors the switch table's current selection onto the piano roll (which
 // note bar(s) get highlighted, where the cursor jumps to); an empty
-// selection clears both, since get_only_range() asserts on an empty range
+// selection clears both
 void update_piano_roll_selection(PianoRollWidget& piano_roll_widget,
                                  const WindowBody& window_body) {
-  const auto& switch_table = window_body.switch_column.switch_table;
-  TableSelection selection{
-      .row_type = switch_table.delegate.current_row_type,
-      .chord_number = get_parent_chord_number(switch_table)};
-  if (!get_selection_model(switch_table).selection().empty()) {
-    const auto& range = get_only_range(switch_table);
-    selection.first_row_number = range.top();
-    selection.number_of_rows = get_number_of_rows(range);
-  }
-  set_piano_roll_selection(piano_roll_widget, selection);
+  set_piano_roll_selection(
+      piano_roll_widget,
+      get_table_selection(window_body.switch_column.switch_table));
 }
 
 void update_actions(SongMenuBar& song_menu_bar, WindowBody& window_body,
@@ -164,17 +117,14 @@ void update_actions(SongMenuBar& song_menu_bar, WindowBody& window_body,
   edit_menu.copy_action.setEnabled(can_copy_paste);
   auto& paste_menu = edit_menu.paste_menu;
   paste_menu.paste_over_action.setEnabled(can_copy_paste);
-  // pasting after/into always inserts a brand new row built only from the
-  // pasted column(s), so for voices it would create one with an empty
-  // (invalid) name -- unlike paste_over, which only ever touches existing,
-  // already-named rows, and rejects pasted names
+  // pasting new rows disabled for voices
   paste_menu.paste_after_action.setEnabled(can_copy_paste && !is_voice);
   paste_menu.paste_into_start_action.setEnabled(!is_voice);
   edit_menu.delete_cells_action.setEnabled(can_copy_paste);
-  const auto removing_every_voice_row = dispatch_row_type(
-      switch_table, [&selection](const auto& rows_model) -> bool {
-        return removes_every_voice_row(rows_model, selection);
-      });
+  // can't remove every voice
+  const auto removing_every_voice_row =
+      is_voice &&
+      every_row_selected(get_reference(switch_table.model()), selection);
   edit_menu.remove_rows_action.setEnabled(anything_selected &&
                                           !removing_every_voice_row);
 
@@ -264,11 +214,7 @@ void replace_table(SongMenuBar& song_menu_bar, WindowBody& window_body,
   auto& selection_model = get_selection_model(switch_table);
   update_actions(song_menu_bar, window_body, selection_model);
   update_piano_roll_selection(piano_roll_widget, window_body);
-  // set_model only swaps in a new selection model when row_type_changed, so
-  // when it's false this reconnects to the same selection model as last
-  // time; disconnect first so repeated calls (e.g. navigating between
-  // chords of the same note type) don't pile up duplicate connections that
-  // would each independently re-run update_actions/update_piano_roll_selection
+  // disconnect first to avoid duplicating connection
   QObject::disconnect(&selection_model, &QItemSelectionModel::selectionChanged,
                       &selection_model, nullptr);
   QObject::connect(

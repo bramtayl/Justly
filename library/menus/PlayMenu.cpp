@@ -90,12 +90,9 @@ void play_selection(WindowBody& window_body, const bool to_end) {
 }  // namespace
 
 auto get_play_selection(const WindowBody& window_body) -> TableSelection {
-  const auto& switch_table = window_body.switch_column.switch_table;
-  const auto& range = get_only_range(switch_table);
-  return {.row_type = switch_table.delegate.current_row_type,
-          .chord_number = get_parent_chord_number(switch_table),
-          .first_row_number = range.top(),
-          .number_of_rows = get_number_of_rows(range)};
+  auto selection = get_table_selection(window_body.switch_column.switch_table);
+  Q_ASSERT(selection.number_of_rows > 0);
+  return selection;
 }
 
 PlayMenu::PlayMenu(WindowBody& window_body)

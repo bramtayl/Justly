@@ -164,6 +164,10 @@ struct RowsModel : public QAbstractTableModel {
 
   void remove_rows(const int first_row_number, int number_of_rows) {
     auto& rows = get_rows();
+    // removing rows strictly inside a selected range makes Qt split it in two
+    // and emit selectionChanged from beginRemoveRows, so clear the selection
+    // first, keeping it either empty or a single range
+    get_reference(selection_model_pointer).clearSelection();
     beginRemoveRows(QModelIndex(), first_row_number,
                     first_row_number + number_of_rows - 1);
     rows.erase(rows.begin() + first_row_number,

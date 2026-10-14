@@ -125,10 +125,12 @@ void Tester::test_remove_voice_reassigns_notes_data() {
 
   QTest::newRow("pitched voice")
       << pitched_song << true
-      << "Reassigning 1 pitched note voice to the first voice \"A\"";
+      << "Reassigning 1 pitched note voice to the first remaining voice "
+         "\"A\"";
   QTest::newRow("unpitched voice")
       << unpitched_song << false
-      << "Reassigning 1 unpitched note voice to the first voice \"D\"";
+      << "Reassigning 1 unpitched note voice to the first remaining voice "
+         "\"D\"";
 }
 
 void Tester::test_remove_voice_reassigns_notes() {
@@ -320,14 +322,15 @@ void Tester::test_paste_stale_voice() {
           : static_cast<int>(
                 UnpitchedNoteColumn::unpitched_note_voice_name_column);
   const auto* const remove_warning =
-      is_pitched ? "Reassigning 1 pitched note voice to the first voice \"A\""
-                 : "Reassigning 1 unpitched note voice to the first voice "
-                   "\"D\"";
+      is_pitched ? "Reassigning 1 pitched note voice to the first remaining "
+                   "voice \"A\""
+                 : "Reassigning 1 unpitched note voice to the first remaining "
+                   "voice \"D\"";
   const auto* const paste_warning =
       is_pitched ? "Reassigning 1 clipboard pitched note voice to the first "
-                   "voice \"A\""
+                   "remaining voice \"A\""
                  : "Reassigning 1 clipboard unpitched note voice to the first "
-                   "voice \"D\"";
+                   "remaining voice \"D\"";
 
   open_text(main_window, text);
 
@@ -859,8 +862,8 @@ void Tester::test_paste_unknown_voice_data() {
          "pitched_note></rows></clipboard>"
       << PitchedNote::get_cells_mime()
       << QList<QString>{
-             "Reassigning 1 clipboard pitched note voice to the first voice "
-             "\"A\""};
+             "Reassigning 1 clipboard pitched note voice to the first "
+             "remaining voice \"A\""};
   QTest::newRow("unpitched note")
       << RowType::unpitched_note_type << 0
       << "<clipboard><left_column>0</left_column><right_column>0</"
@@ -868,8 +871,8 @@ void Tester::test_paste_unknown_voice_data() {
          "unpitched_note></rows></clipboard>"
       << UnpitchedNote::get_cells_mime()
       << QList<QString>{
-             "Reassigning 1 clipboard unpitched note voice to the first voice "
-             "\"D\""};
+             "Reassigning 1 clipboard unpitched note voice to the first "
+             "remaining voice \"D\""};
   QTest::newRow("chord")
       << RowType::chord_type << -1
       << "<clipboard><left_column>0</left_column><right_column>1</"
@@ -879,10 +882,10 @@ void Tester::test_paste_unknown_voice_data() {
          "</unpitched_notes></chord></rows></clipboard>"
       << Chord::get_cells_mime()
       << QList<QString>{
-             "Reassigning 1 clipboard pitched note voice to the first voice "
-             "\"A\"",
-             "Reassigning 1 clipboard unpitched note voice to the first voice "
-             "\"D\""};
+             "Reassigning 1 clipboard pitched note voice to the first "
+             "remaining voice \"A\"",
+             "Reassigning 1 clipboard unpitched note voice to the first "
+             "remaining voice \"D\""};
 }
 
 // pasted notes whose voice the song doesn't have land on the first voice,

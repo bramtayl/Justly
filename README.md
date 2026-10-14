@@ -65,7 +65,6 @@ sudo apt-get install -y curl # to download the musescore soundfont
 sudo snap install astral-uv --classic # to install music21
 uv venv # make a virtual environment for music21 in .venv
 uv pip install music21==10.5.0 # install music21
-source .venv/bin/activate # so cmake finds the python with music21
 curl --fail --location --output share/MS_Basic.sf3 "https://github.com/musescore/MuseScore/raw/v4.7.4/share/sound/MS%20Basic.sf3" # install the musescore soundfont
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release # configure cmake
 cmake --build build # build justly

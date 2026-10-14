@@ -2,6 +2,7 @@ set(EDITOR_HEADERS
     "IntervalEditor.hpp"
     "RationalEditor.hpp"
     "StringPicker.hpp"
+    "TextEditor.hpp"
 )
 
 target_sources(JustlyLibrary PUBLIC FILE_SET justly_headers FILES
@@ -12,6 +13,7 @@ target_sources(JustlyLibrary PRIVATE
     "IntervalEditor.cpp"
     "RationalEditor.cpp"
     "StringPicker.cpp"
+    "TextEditor.cpp"
 )
 
 # need to include because Q_OBJECT compiles code

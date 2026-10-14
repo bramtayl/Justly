@@ -8,13 +8,11 @@
 #include "common/helpers.hpp"
 
 IntervalEditor::IntervalEditor(QWidget* const parent_pointer)
-    : QFrame(parent_pointer),
+    : QWidget(parent_pointer),
       rational_editor(*(new RationalEditor(parent_pointer))),
       octave_box(*(new QSpinBox)) {
-  setFrameStyle(QFrame::StyledPanel);
   setAutoFillBackground(true);
 
-  rational_editor.setFrameShape(QFrame::NoFrame);
   // this editor's own margins already surround the nested one
   get_reference(rational_editor.layout()).setContentsMargins(0, 0, 0, 0);
 
