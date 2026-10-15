@@ -5,7 +5,7 @@
 #include <QtCore/QTimer>
 #include <QtWidgets/QDoubleSpinBox>
 
-#include "actions/ReplaceTable.hpp"
+#include "actions/replace_table.hpp"
 #include "io/XMLChildren.hpp"
 #include "io/XMLDocument.hpp"
 #include "io/XMLValidator.hpp"

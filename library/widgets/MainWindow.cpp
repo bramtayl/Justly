@@ -6,7 +6,7 @@
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QStatusBar>
 
-#include "actions/ReplaceTable.hpp"
+#include "actions/replace_table.hpp"
 #include "column_numbers/ChordColumn.hpp"
 #include "io/song_file.hpp"
 #include "menus/SongMenuBar.hpp"
@@ -14,14 +14,35 @@
 
 namespace {
 
-void add_replace_table(SongMenuBar& song_menu_bar, WindowBody& window_body,
-                       const RowType new_row_type, const int new_chord_number,
+// switching tables isn't undoable, since it doesn't change the song, but
+// the piano roll still has to redraw, since it only shows the current chord
+// while editing that chord's notes
+void show_table(SongMenuBar& song_menu_bar, WindowBody& window_body,
+                const RowType new_row_type, const int new_chord_number,
+                PianoRollWidget& piano_roll_widget,
+                const int new_note_number = -1) {
+  replace_table(song_menu_bar, window_body, new_row_type, new_chord_number,
+                piano_roll_widget, new_note_number);
+  rebuild_piano_roll_scene(piano_roll_widget);
+}
+
+void connect_show_rows(RowsModelBase& rows_model, QObject& context,
+                       SongMenuBar& song_menu_bar, WindowBody& window_body,
                        PianoRollWidget& piano_roll_widget,
-                       const int new_note_number = -1) {
-  window_body.undo_stack.push(
-      new ReplaceTable(  // NOLINT(cppcoreguidelines-owning-memory)
-          song_menu_bar, window_body, piano_roll_widget, new_row_type,
-          new_chord_number, new_note_number));
+                       const RowType row_type) {
+  QObject::connect(
+      &rows_model, &RowsModelBase::show_rows_requested, &context,
+      [&song_menu_bar, &window_body, &piano_roll_widget,
+       row_type](const int chord_number) -> auto {
+        const auto& switch_table = window_body.switch_column.switch_table;
+        // don't reset the table, and its selection, if it's already shown
+        if (switch_table.delegate.current_row_type != row_type ||
+            get_parent_chord_number(switch_table) != chord_number) {
+          // the undo stack redraws the piano roll after the command finishes
+          replace_table(song_menu_bar, window_body, row_type, chord_number,
+                        piano_roll_widget);
+        }
+      });
 }
 
 void connect_switch_to_table(QAction& action, QObject& context,
@@ -32,8 +53,7 @@ void connect_switch_to_table(QAction& action, QObject& context,
   QObject::connect(
       &action, &QAction::triggered, &context,
       [&song_menu_bar, &window_body, &piano_roll_widget, row_type]() -> auto {
-        add_replace_table(song_menu_bar, window_body, row_type, -1,
-                          piano_roll_widget);
+        show_table(song_menu_bar, window_body, row_type, -1, piano_roll_widget);
       });
 }
 
@@ -46,7 +66,7 @@ void connect_navigate_chord_action(QAction& action, QObject& context,
       &action, &QAction::triggered, &context,
       [&song_menu_bar, &window_body, &piano_roll_widget, delta]() -> auto {
         const auto& switch_table = window_body.switch_column.switch_table;
-        add_replace_table(
+        show_table(
             song_menu_bar, window_body, switch_table.delegate.current_row_type,
             get_parent_chord_number(switch_table) + delta, piano_roll_widget);
       });
@@ -95,6 +115,20 @@ MainWindow::MainWindow()
                    .width(),
                minimumSizeHint().height()));
 
+  connect_show_rows(switch_table.chords_model, *this, song_menu_bar,
+                    window_body, piano_roll_widget, RowType::chord_type);
+  connect_show_rows(switch_table.pitched_notes_model, *this, song_menu_bar,
+                    window_body, piano_roll_widget, RowType::pitched_note_type);
+  connect_show_rows(switch_table.unpitched_notes_model, *this, song_menu_bar,
+                    window_body, piano_roll_widget,
+                    RowType::unpitched_note_type);
+  connect_show_rows(switch_table.pitched_voices_model, *this, song_menu_bar,
+                    window_body, piano_roll_widget,
+                    RowType::pitched_voice_type);
+  connect_show_rows(switch_table.unpitched_voices_model, *this, song_menu_bar,
+                    window_body, piano_roll_widget,
+                    RowType::unpitched_voice_type);
+
   connect_switch_to_table(song_menu_bar.view_menu.back_to_chords_action, *this,
                           song_menu_bar, window_body, piano_roll_widget,
                           RowType::chord_type);
@@ -116,10 +150,10 @@ MainWindow::MainWindow()
           if (is_pitched ||
               (column ==
                static_cast<int>(ChordColumn::unpitched_notes_column))) {
-            add_replace_table(song_menu_bar, window_body,
-                              (is_pitched ? RowType::pitched_note_type
-                                          : RowType::unpitched_note_type),
-                              index.row(), piano_roll_widget);
+            show_table(song_menu_bar, window_body,
+                       (is_pitched ? RowType::pitched_note_type
+                                   : RowType::unpitched_note_type),
+                       index.row(), piano_roll_widget);
           }
         }
       });
@@ -167,15 +201,15 @@ MainWindow::MainWindow()
   // double-clicking a note in the piano roll opens the pitched/unpitched
   // notes table for its chord, scrolled to and highlighting that note --
   // mirroring the chords table's own double-click-into-notes behavior
-  QObject::connect(
-      &piano_roll_widget, &PianoRollWidget::note_double_clicked, this,
-      [this](const int chord_number, const int note_number,
-             const bool is_pitched) -> void {
-        add_replace_table(song_menu_bar, window_body,
-                          is_pitched ? RowType::pitched_note_type
-                                     : RowType::unpitched_note_type,
-                          chord_number, piano_roll_widget, note_number);
-      });
+  QObject::connect(&piano_roll_widget, &PianoRollWidget::note_double_clicked,
+                   this,
+                   [this](const int chord_number, const int note_number,
+                          const bool is_pitched) -> void {
+                     show_table(song_menu_bar, window_body,
+                                is_pitched ? RowType::pitched_note_type
+                                           : RowType::unpitched_note_type,
+                                chord_number, piano_roll_widget, note_number);
+                   });
 
   // wires the piano roll's playhead animation to the existing Play/Stop
   // actions, since playback itself remains fire-and-forget (no
@@ -201,7 +235,7 @@ MainWindow::MainWindow()
         const auto& song = window_body.song;
         const auto selection = get_play_selection(window_body);
         // play_to_end_action is disabled for voice rows; see
-        // ReplaceTable.cpp's update_actions
+        // replace_table.cpp's update_actions
         Q_ASSERT(!is_voice_type(selection.row_type));
         const auto first_chord_number =
             selection.row_type == RowType::chord_type
@@ -223,16 +257,11 @@ MainWindow::MainWindow()
       &play_menu.stop_playing_action, &QAction::triggered, this,
       [this]() -> auto { stop_piano_roll_playhead(piano_roll_widget); });
 
-  // start with one voice of each kind, for new notes to use; add_insert_row
-  // inserts into whichever table add_replace_table just switched to
-  add_replace_table(song_menu_bar, window_body, RowType::pitched_voice_type, -1,
-                    piano_roll_widget);
-  add_insert_row(window_body, 0);
-  add_replace_table(song_menu_bar, window_body, RowType::unpitched_voice_type,
-                    -1, piano_roll_widget);
-  add_insert_row(window_body, 0);
-  add_replace_table(song_menu_bar, window_body, RowType::chord_type, -1,
-                    piano_roll_widget);
+  // start with one voice of each kind, for new notes to use
+  undo_stack.push(make_insert_command(switch_table.pitched_voices_model, 0));
+  undo_stack.push(make_insert_command(switch_table.unpitched_voices_model, 0));
+  show_table(song_menu_bar, window_body, RowType::chord_type, -1,
+             piano_roll_widget);
   clear_and_clean(undo_stack);
 }
 

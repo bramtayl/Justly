@@ -47,7 +47,7 @@ struct PianoRollWidget : public QWidget {
 
   // true for the duration of select_chord_at_playhead()'s own call to
   // QItemSelectionModel::select() -- that select() re-enters this widget
-  // synchronously via ReplaceTable's selectionChanged connection
+  // synchronously via replace_table's selectionChanged connection
   // (update_piano_roll_selection() -> set_piano_roll_selection() ->
   // apply_selection_highlight()); without this guard,
   // apply_selection_highlight() would treat the sync as an ordinary
@@ -56,7 +56,7 @@ struct PianoRollWidget : public QWidget {
   // drag/playback actually put it
   bool selecting_chord_from_playhead = false;
 
-  // the switch table's current selection, mirrored here by ReplaceTable.cpp
+  // the switch table's current selection, mirrored here by replace_table.cpp
   // (via set_piano_roll_selection()) every time it changes, so
   // rebuild_piano_roll_scene() can reapply the same highlight/cursor after
   // redrawing a fresh set of items. Starts out empty

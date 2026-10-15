@@ -7,6 +7,9 @@
 template <RowInterface SubRow>
 struct SetCells : public QUndoCommand {
   RowsModel<SubRow>& rows_model;
+  // the chord whose notes these are (-1 for chords and voices), since the
+  // notes models are shared between chords
+  const int chord_number;
   const int first_row_number;
   const int number_of_rows;
   const int left_column;
@@ -19,6 +22,7 @@ struct SetCells : public QUndoCommand {
                     const int number_of_rows_input, const int left_column_input,
                     const int right_column_input, QList<SubRow> new_rows_input)
       : rows_model(rows_model_input),
+        chord_number(rows_model.parent_chord_number),
         first_row_number(first_row_number_input),
         number_of_rows(number_of_rows_input),
         left_column(left_column_input),
@@ -28,12 +32,14 @@ struct SetCells : public QUndoCommand {
         new_rows(std::move(new_rows_input)) {}
 
   void undo() override {
+    emit rows_model.show_rows_requested(chord_number);
     rows_model.set_cells(make_range(rows_model, first_row_number,
                                     number_of_rows, left_column, right_column),
                          old_rows);
   }
 
   void redo() override {
+    emit rows_model.show_rows_requested(chord_number);
     rows_model.set_cells(make_range(rows_model, first_row_number,
                                     number_of_rows, left_column, right_column),
                          new_rows);

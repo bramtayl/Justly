@@ -2,12 +2,13 @@
 
 #include <QtCore/QItemSelectionRange>
 
+#include "models/RowsModelBase.hpp"
 #include "rows/Row.hpp"
 
 struct Song;
 
 template <RowInterface SubRow>
-struct RowsModel : public QAbstractTableModel {
+struct RowsModel : public RowsModelBase {
   Song& song;
   QItemSelectionModel* selection_model_pointer = nullptr;
   QList<SubRow>* rows_pointer = nullptr;

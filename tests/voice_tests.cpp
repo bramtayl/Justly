@@ -98,7 +98,6 @@ void Tester::test_edit_rejected() {
 
   auto& window_body = main_window.window_body;
   auto& switch_table = window_body.switch_column.switch_table;
-  auto& undo_stack = window_body.undo_stack;
 
   switch_to(main_window, row_type, chord_number);
 
@@ -110,7 +109,7 @@ void Tester::test_edit_rejected() {
   QVERIFY(!model.setData(test_index, new_value, Qt::EditRole));
   QCOMPARE(test_index.data(), old_value);
 
-  maybe_switch_back_to_chords(undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_remove_voice_reassigns_notes_data() {
@@ -186,7 +185,7 @@ void Tester::test_remove_voice_reassigns_notes() {
     QCOMPARE(notes.at(2).voice_name, QString("F"));
   }
 
-  maybe_switch_back_to_chords(undo_stack, voice_row_type);
+  maybe_switch_back_to_chords(main_window, voice_row_type);
 
   // restore the shared fixture
   open_file(main_window, test_dir.filePath("test_song.justly"));
@@ -241,7 +240,7 @@ void Tester::test_remove_voice_row_consistent_during_warning() {
   QCOMPARE(notes.at(2).voice_name, QString("C"));
 
   undo_stack.undo();  // undo the voice removal
-  maybe_switch_back_to_chords(undo_stack, RowType::pitched_voice_type);
+  maybe_switch_back_to_chords(main_window, RowType::pitched_voice_type);
 
   // restore the shared fixture
   open_file(main_window, test_dir.filePath("test_song.justly"));
@@ -266,7 +265,6 @@ void Tester::test_remove_last_voice_disables_action() {
 
   auto& window_body = main_window.window_body;
   auto& switch_table = window_body.switch_column.switch_table;
-  auto& undo_stack = window_body.undo_stack;
   const auto voice_row_type =
       is_pitched ? RowType::pitched_voice_type : RowType::unpitched_voice_type;
 
@@ -279,7 +277,7 @@ void Tester::test_remove_last_voice_disables_action() {
   select_cell(switch_table, 0, 0);
   QVERIFY(!main_window.song_menu_bar.edit_menu.remove_rows_action.isEnabled());
 
-  maybe_switch_back_to_chords(undo_stack, voice_row_type);
+  maybe_switch_back_to_chords(main_window, voice_row_type);
 
   // restore the shared fixture
   open_file(main_window, test_dir.filePath("test_song.justly"));
@@ -563,7 +561,7 @@ void Tester::test_voice_velocity_ratio() {
 
   switch_to(main_window, row_type, 0);
   QCOMPARE(get_model(switch_table).index(0, 0).data(Qt::StatusTipRole), status);
-  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 
   // velocity ratio should also round-trip through save/load like any
   // other ratio column
@@ -628,7 +626,7 @@ void Tester::test_set_voice_name() {
   undo_stack.undo();
   QCOMPARE(index.data(), old_value);
 
-  maybe_switch_back_to_chords(undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_rename_voice_renames_notes_data() {
@@ -689,7 +687,7 @@ void Tester::test_rename_voice_renames_notes() {
            (QList<QString>{"Z", is_pitched ? "B" : "E"}));
   undo_stack.undo();
 
-  maybe_switch_back_to_chords(undo_stack, voice_row_type);
+  maybe_switch_back_to_chords(main_window, voice_row_type);
 
   // restore the shared fixture
   open_file(main_window, test_dir.filePath("test_song.justly"));
@@ -711,13 +709,12 @@ void Tester::test_voice_paste_insert_disabled_data() {
 void Tester::test_voice_paste_insert_disabled() {
   // pasting after/into always inserts a brand new row built only from the
   // pasted column(s), which for voices would create one with an empty
-  // (invalid) name -- see ReplaceTable.hpp
+  // (invalid) name -- see replace_table.hpp
   QFETCH(const RowType, row_type);
   QFETCH(const int, column_number);
 
   auto& window_body = main_window.window_body;
   auto& switch_table = window_body.switch_column.switch_table;
-  auto& undo_stack = window_body.undo_stack;
   auto& paste_menu = main_window.song_menu_bar.edit_menu.paste_menu;
 
   switch_to(main_window, row_type, -1);
@@ -726,7 +723,7 @@ void Tester::test_voice_paste_insert_disabled() {
   QVERIFY(!paste_menu.paste_after_action.isEnabled());
   QVERIFY(!paste_menu.paste_into_start_action.isEnabled());
 
-  maybe_switch_back_to_chords(undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_voice_velocity_ratio_cells_data() {
@@ -958,7 +955,7 @@ void Tester::test_voice_name_delete_disabled() {
   select_cell(switch_table, 0, column_number);
   QVERIFY(!delete_cells_action.isEnabled());
 
-  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_insert_voice_unique_name_data() {
@@ -1047,5 +1044,5 @@ void Tester::test_paste_voice_name_rejected() {
   QCOMPARE(get_names(song.pitched_voices), old_pitched_voices);
   QCOMPARE(get_names(song.unpitched_voices), old_unpitched_voices);
 
-  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }

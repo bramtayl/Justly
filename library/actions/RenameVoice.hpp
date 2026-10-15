@@ -13,6 +13,7 @@ void set_notes_voice_name(VoicesModel<SubVoice, SubNote>& voices_model,
                           const int row_number,
                           const QList<NoteLocation>& note_locations,
                           const QString& name) {
+  emit voices_model.show_rows_requested(-1);
   auto& chords = voices_model.song.chords;
   for (const auto& note_location : note_locations) {
     set_voice_name<SubNote>(chords, note_location, name);

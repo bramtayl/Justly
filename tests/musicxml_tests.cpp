@@ -161,18 +161,17 @@ void Tester::test_open_after_editing_chord_notes_resets_menu() {
 // there's no reason opening a different file requires navigating back to
 // the chords view first
 void Tester::test_open_action_enabled_outside_chords_view() {
-  auto& undo_stack = main_window.window_body.undo_stack;
   auto& open_action = main_window.song_menu_bar.file_menu.open_action;
 
   QVERIFY(open_action.isEnabled());
 
   switch_to(main_window, RowType::pitched_voice_type, -1);
   QVERIFY(open_action.isEnabled());
-  maybe_switch_back_to_chords(undo_stack, RowType::pitched_voice_type);
+  maybe_switch_back_to_chords(main_window, RowType::pitched_voice_type);
 
   switch_to(main_window, RowType::pitched_note_type, 0);
   QVERIFY(open_action.isEnabled());
-  maybe_switch_back_to_chords(undo_stack, RowType::pitched_note_type);
+  maybe_switch_back_to_chords(main_window, RowType::pitched_note_type);
 }
 
 // regression test: finish_loading (which resets the switch column's label/
@@ -193,8 +192,7 @@ void Tester::test_failed_import_does_not_reset_notes_view() {
 
   QCOMPARE(switch_column.editing_text.text(), "Pitched notes for chord 1");
 
-  maybe_switch_back_to_chords(window_body.undo_stack,
-                              RowType::pitched_note_type);
+  maybe_switch_back_to_chords(main_window, RowType::pitched_note_type);
 }
 
 // an imported voice whose name exactly matches a built-in program (here, the

@@ -4,7 +4,6 @@
 #include <QtWidgets/QLabel>
 #include <memory>
 
-#include "actions/ChangeId.hpp"
 #include "menus/SongMenuBar.hpp"
 #include "piano_roll/PianoRollWidget.hpp"
 #include "widgets/ControlsColumn.hpp"
@@ -15,9 +14,6 @@ template <RowInterface SubRow>
 void show_model(SwitchTable& switch_table, RowsModel<SubRow>& rows_model,
                 const RowType row_type) {
   set_model(switch_table, rows_model);
-  // fit each column to its contents, but at least as wide as its editor (if
-  // it's editable), and make rows as tall as the tallest editor, so editing a
-  // cell doesn't squash it
   const auto grid_width = switch_table.showGrid() ? 1 : 0;
   auto row_height = 0;
   for (auto column = 0; column < SubRow::get_number_of_columns(); column++) {
@@ -73,9 +69,6 @@ auto every_row_selected(const QAbstractItemModel& model,
          get_number_of_rows(selection.at(0)) >= model.rowCount();
 }
 
-// mirrors the switch table's current selection onto the piano roll (which
-// note bar(s) get highlighted, where the cursor jumps to); an empty
-// selection clears both
 void update_piano_roll_selection(PianoRollWidget& piano_roll_widget,
                                  const WindowBody& window_body) {
   set_piano_roll_selection(
@@ -225,32 +218,4 @@ void replace_table(SongMenuBar& song_menu_bar, WindowBody& window_body,
         update_actions(song_menu_bar, window_body, selection_model);
         update_piano_roll_selection(piano_roll_widget, window_body);
       });
-}
-
-auto ReplaceTable::id() const -> int { return REPLACE_TABLE_ID; }
-
-auto ReplaceTable::mergeWith(const QUndoCommand* const next_command_pointer)
-    -> bool {
-  Q_ASSERT(next_command_pointer != nullptr);
-  const auto& next_command =
-      get_reference(dynamic_cast<const ReplaceTable*>(next_command_pointer));
-  const auto next_row_type = next_command.new_row_type;
-  const auto next_chord_number = next_command.new_chord_number;
-  if (old_row_type == next_row_type && old_chord_number == next_chord_number) {
-    setObsolete(true);
-  }
-  new_row_type = next_row_type;
-  new_chord_number = next_chord_number;
-  new_note_number = next_command.new_note_number;
-  return true;
-}
-
-void ReplaceTable::undo() {
-  replace_table(song_menu_bar, window_body, old_row_type, old_chord_number,
-                piano_roll_widget);
-}
-
-void ReplaceTable::redo() {
-  replace_table(song_menu_bar, window_body, new_row_type, new_chord_number,
-                piano_roll_widget, new_note_number);
 }

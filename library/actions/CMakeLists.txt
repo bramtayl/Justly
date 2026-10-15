@@ -5,12 +5,12 @@ target_sources(JustlyLibrary PUBLIC FILE_SET justly_headers FILES
     "OrphanedVoiceNameLocation.hpp"
     "RemoveVoiceRows.hpp"
     "RenameVoice.hpp"
-    "ReplaceTable.hpp"
+    "replace_table.hpp"
     "SetCells.hpp"
     "SetDouble.hpp"
 )
 
 target_sources(JustlyLibrary PRIVATE
-    "ReplaceTable.cpp"
+    "replace_table.cpp"
     "SetDouble.cpp"
 )

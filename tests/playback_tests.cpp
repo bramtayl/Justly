@@ -70,7 +70,7 @@ void Tester::test_play() {
   QThread::msleep(WAIT_TIME);
   play_menu.stop_playing_action.trigger();
 
-  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_play_to_end_starts_playhead() {
@@ -130,7 +130,7 @@ void Tester::test_play_to_end() {
   QThread::msleep(WAIT_TIME);
   play_menu.stop_playing_action.trigger();
 
-  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 // starting velocity 100 with a 2x note and/or voice velocity ratio exceeds
@@ -206,7 +206,7 @@ void Tester::test_play_velocity_error() {
       .trigger();
   play_menu.stop_playing_action.trigger();
 
-  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 
   // restore the shared fixture
   open_file(main_window, test_dir.filePath("test_song.justly"));
@@ -239,8 +239,7 @@ void Tester::test_play_channel_exhausted() {
   play_menu.play_action.trigger();
   play_menu.stop_playing_action.trigger();
 
-  maybe_switch_back_to_chords(window_body.undo_stack,
-                              RowType::pitched_voice_type);
+  maybe_switch_back_to_chords(main_window, RowType::pitched_voice_type);
 
   // restore the shared fixture
   open_file(main_window, test_dir.filePath("test_song.justly"));

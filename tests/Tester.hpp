@@ -134,7 +134,7 @@ struct Tester : public QObject {
   void test_failed_import_does_not_reset_notes_view();
   static void test_next_previous_data();
   void test_next_previous();
-  void test_navigate_chords_after_edit();
+  void test_undo_shows_changed_rows();
   void test_double_click_outside_notes_columns();
   static void test_voice_cell_editors_data();
   void test_voice_cell_editors();
@@ -184,7 +184,7 @@ struct Tester : public QObject {
   void test_remove_row();
   static void test_remove_rows_inside_selection_data();
   void test_remove_rows_inside_selection();
-  void test_replace_table_combining();
+  void test_switching_tables_not_undoable();
   static void test_row_count_data();
   void test_row_count();
   static void test_row_header_data();

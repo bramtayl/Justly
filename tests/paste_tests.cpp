@@ -23,7 +23,7 @@ void Tester::test_insert_after() {
   undo_stack.undo();
   QCOMPARE(model.rowCount(), old_row_count);
 
-  maybe_switch_back_to_chords(undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_insert_into_data() { add_tables(); }
@@ -49,7 +49,7 @@ void Tester::test_insert_into() {
   undo_stack.undo();
   QCOMPARE(model.rowCount(), old_row_count);
 
-  maybe_switch_back_to_chords(undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_paste_after_data() { add_cells(); }
@@ -77,7 +77,7 @@ void Tester::test_paste_after() {
   undo_stack.undo();
   QCOMPARE(model.rowCount(), number_of_rows);
 
-  maybe_switch_back_to_chords(undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_paste_error_data() {
@@ -167,7 +167,6 @@ void Tester::test_paste_error() {
 
   auto& window_body = main_window.window_body;
   auto& switch_table = window_body.switch_column.switch_table;
-  auto& undo_stack = window_body.undo_stack;
 
   switch_to(main_window, row_type, chord_number);
 
@@ -186,7 +185,7 @@ void Tester::test_paste_error() {
   close_message_later(main_window, waiting_for_message, error_message);
   main_window.song_menu_bar.edit_menu.paste_menu.paste_over_action.trigger();
 
-  maybe_switch_back_to_chords(undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 // inserting pasted rows rejects the same clipboards that pasting over does,
@@ -202,7 +201,6 @@ void Tester::test_paste_after_error() {
 
   auto& window_body = main_window.window_body;
   auto& switch_table = window_body.switch_column.switch_table;
-  auto& undo_stack = window_body.undo_stack;
 
   switch_to(main_window, row_type, chord_number);
   const auto old_row_count = get_model(switch_table).rowCount(QModelIndex());
@@ -219,7 +217,7 @@ void Tester::test_paste_after_error() {
   main_window.song_menu_bar.edit_menu.paste_menu.paste_after_action.trigger();
   QCOMPARE(get_model(switch_table).rowCount(QModelIndex()), old_row_count);
 
-  maybe_switch_back_to_chords(undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_paste_into_data() { add_cells(); }
@@ -248,7 +246,7 @@ void Tester::test_paste_into() {
   undo_stack.undo();
   QCOMPARE(model.rowCount(), number_of_rows);
 
-  maybe_switch_back_to_chords(undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_remove_row_data() { add_tables(); }
@@ -295,7 +293,7 @@ void Tester::test_remove_row() {
   QCOMPARE(restored_range.left(), 0);
   QCOMPARE(restored_range.right(), model.columnCount() - 1);
 
-  maybe_switch_back_to_chords(undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_remove_rows_inside_selection_data() { add_tables(); }
@@ -343,5 +341,5 @@ void Tester::test_remove_rows_inside_selection() {
   QCOMPARE(most_ranges, 0);
   QVERIFY(selection_model.selection().empty());
 
-  maybe_switch_back_to_chords(undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }

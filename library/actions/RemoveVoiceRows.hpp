@@ -43,6 +43,7 @@ struct RemoveVoiceRows : public QUndoCommand {
   }
 
   void undo() override {
+    emit voices_model.show_rows_requested(-1);
     voices_model.insert_rows(first_deleted_row_number, old_voice_rows, 0,
                              SubVoice::get_number_of_columns() - 1);
     auto& chords = voices_model.song.chords;
@@ -53,6 +54,7 @@ struct RemoveVoiceRows : public QUndoCommand {
   }
 
   void redo() override {
+    emit voices_model.show_rows_requested(-1);
     auto& chords = voices_model.song.chords;
 
     // finish every mutation to song.chords and voices_model before showing

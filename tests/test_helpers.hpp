@@ -104,10 +104,10 @@ inline void switch_to(MainWindow& main_window, const RowType row_type,
   }
 }
 
-inline void maybe_switch_back_to_chords(QUndoStack& undo_stack,
+inline void maybe_switch_back_to_chords(MainWindow& main_window,
                                         const RowType row_type) {
   if (row_type != RowType::chord_type) {
-    undo_stack.undo();
+    main_window.song_menu_bar.view_menu.back_to_chords_action.trigger();
   }
 }
 
@@ -503,7 +503,7 @@ inline void add_editable_cell_pairs() {
       << static_cast<int>(UnpitchedNoteColumn::unpitched_note_words_column);
   // note: voice name columns are excluded here, since copy/cut/paste of
   // voice names is disabled (a voice's name must be typed, not copied, so
-  // that it stays unique -- see ReplaceTable.hpp)
+  // that it stays unique -- see replace_table.hpp)
 }
 
 // pitched/unpitched voice columns other than name: unlike

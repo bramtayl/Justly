@@ -111,7 +111,7 @@ void UnpitchedVoice::column_to_xml(xmlNode& node,
       Q_UNREACHABLE();
     case UnpitchedVoiceColumn::name_column:
       // only reached when saving: copy/cut are disabled when a voice name
-      // is selected; see ReplaceTable.cpp's update_actions
+      // is selected; see replace_table.cpp's update_actions
       maybe_add_qstring_to_xml(node, "name", name);
       break;
     case UnpitchedVoiceColumn::percussion_set_column:

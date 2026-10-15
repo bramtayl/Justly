@@ -49,7 +49,7 @@ void Tester::test_editable() {
   QCOMPARE(
       get_model(switch_table).index(0, column_number).flags(),
       is_editable ? uneditable_flags | Qt::ItemIsEditable : uneditable_flags);
-  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_frequency_bound_data() {
@@ -74,7 +74,6 @@ void Tester::test_frequency_bound() {
 
   auto& window_body = main_window.window_body;
   auto& switch_table = window_body.switch_column.switch_table;
-  auto& undo_stack = window_body.undo_stack;
 
   switch_to(main_window, RowType::pitched_note_type, 1);
   select_cell(switch_table, 0, 0);
@@ -82,7 +81,7 @@ void Tester::test_frequency_bound() {
   press_times(button, OCTAVE_SHIFT_TIMES);
   main_window.song_menu_bar.play_menu.play_action.trigger();
   undo_times(window_body.undo_stack, OCTAVE_SHIFT_TIMES);  // undo shift octave
-  maybe_switch_back_to_chords(undo_stack, RowType::pitched_note_type);
+  maybe_switch_back_to_chords(main_window, RowType::pitched_note_type);
 }
 
 void Tester::test_frequency_in_status_data() {
@@ -290,7 +289,7 @@ void Tester::test_interval_button() {
   QCOMPARE_NE(original_data, test_index.data());
   undo_stack.undo();
   QCOMPARE(original_data, test_index.data());
-  maybe_switch_back_to_chords(undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_unreduced_ratio_from_xml_data() {
@@ -416,7 +415,7 @@ void Tester::test_octave_bound() {
               MAX_OCTAVE + 1);
   undo_times(undo_stack, MAX_OCTAVE);  // undo shift octave
 
-  maybe_switch_back_to_chords(undo_stack, RowType::pitched_note_type);
+  maybe_switch_back_to_chords(main_window, RowType::pitched_note_type);
 }
 
 void Tester::test_octave_bound_chord() {
@@ -472,5 +471,5 @@ void Tester::test_ratio_bound() {
   fifth_button.click();
   undo_times(undo_stack, RATIO_SHIFT_TIMES * 2);  // undo shift numerator
 
-  maybe_switch_back_to_chords(undo_stack, RowType::pitched_note_type);
+  maybe_switch_back_to_chords(main_window, RowType::pitched_note_type);
 }

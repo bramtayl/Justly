@@ -163,7 +163,7 @@ void Tester::test_piano_roll_rebuilds_on_edit() {
   undo_stack.undo();  // undo insert
   QCOMPARE(scene.items().size(), old_item_count);
 
-  maybe_switch_back_to_chords(undo_stack, RowType::pitched_note_type);
+  maybe_switch_back_to_chords(main_window, RowType::pitched_note_type);
 }
 
 void Tester::test_piano_roll_double_click_selects_note_data() {
@@ -182,7 +182,6 @@ void Tester::test_piano_roll_double_click_selects_note() {
 
   auto& piano_roll_widget = main_window.piano_roll_widget;
   auto& switch_table = main_window.window_body.switch_column.switch_table;
-  auto& undo_stack = main_window.window_body.undo_stack;
 
   // chord number 1 (from test_song.justly) has both pitched and unpitched
   // notes, matching the fixture used by the other piano-roll tests above
@@ -207,7 +206,7 @@ void Tester::test_piano_roll_double_click_selects_note() {
   QVERIFY(note_item_pointer != nullptr);
 
   // drives the actual production event filter with real QMouseEvents,
-  // rather than calling add_replace_table directly, so this exercises the
+  // rather than calling show_table directly, so this exercises the
   // full click-to-scene-item-to-callback path. Qt delivers a double-click
   // as press, release, double-click -- and the press moves the playhead
   // line (drawn in front of the bars) right under the cursor, so the
@@ -237,7 +236,7 @@ void Tester::test_piano_roll_double_click_selects_note() {
   QCOMPARE(get_parent_chord_number(switch_table), 1);
   QCOMPARE(get_only_range(switch_table).top(), note_number);
 
-  undo_stack.undo();
+  maybe_switch_back_to_chords(main_window, expected_row_type);
 }
 
 void Tester::test_piano_roll_click_selects_note_data() {
@@ -256,7 +255,6 @@ void Tester::test_piano_roll_click_selects_note() {
 
   auto& piano_roll_widget = main_window.piano_roll_widget;
   auto& switch_table = main_window.window_body.switch_column.switch_table;
-  auto& undo_stack = main_window.window_body.undo_stack;
 
   // enters note mode for chord 1, matching the fixture used by
   // test_piano_roll_double_click_selects_note above, then starts on
@@ -317,7 +315,7 @@ void Tester::test_piano_roll_click_selects_note() {
   piano_roll_widget.eventFilter(
       piano_roll_widget.piano_roll_scene.view.viewport(), &release_event);
 
-  maybe_switch_back_to_chords(undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_piano_roll_notes_mode_shows_only_chord_notes() {
@@ -336,14 +334,12 @@ void Tester::test_piano_roll_notes_mode_shows_only_chord_notes() {
   switch_to(main_window, RowType::pitched_note_type, 0);
   QCOMPARE(piano_roll_widget.piano_roll_scene.events.size(), 1);
   QCOMPARE(piano_roll_widget.piano_roll_scene.events.at(0).chord_number, 0);
-  maybe_switch_back_to_chords(window_body.undo_stack,
-                              RowType::pitched_note_type);
+  maybe_switch_back_to_chords(main_window, RowType::pitched_note_type);
 
   switch_to(main_window, RowType::pitched_note_type, 1);
   QCOMPARE(piano_roll_widget.piano_roll_scene.events.size(), 1);
   QCOMPARE(piano_roll_widget.piano_roll_scene.events.at(0).chord_number, 1);
-  maybe_switch_back_to_chords(window_body.undo_stack,
-                              RowType::pitched_note_type);
+  maybe_switch_back_to_chords(main_window, RowType::pitched_note_type);
 
   // back in chord mode, both chords' notes are shown again
   QCOMPARE(piano_roll_widget.piano_roll_scene.events.size(), 2);
@@ -353,10 +349,8 @@ void Tester::test_piano_roll_notes_mode_shows_only_chord_notes() {
 }
 
 void Tester::test_piano_roll_notes_mode_axis_starts_at_chord_start() {
-  auto& window_body = main_window.window_body;
   auto& piano_roll_widget = main_window.piano_roll_widget;
   auto& piano_roll_scene = piano_roll_widget.piano_roll_scene;
-  auto& undo_stack = window_body.undo_stack;
 
   // outside notes mode the axis spans the whole song, starting at time 0
   QCOMPARE(piano_roll_scene.time_axis_baseline_ms, 0.0);
@@ -378,7 +372,7 @@ void Tester::test_piano_roll_notes_mode_axis_starts_at_chord_start() {
              (event.start_time_ms - 600.0) * PIANO_ROLL_PIXELS_PER_MS);
   }
 
-  maybe_switch_back_to_chords(undo_stack, RowType::pitched_note_type);
+  maybe_switch_back_to_chords(main_window, RowType::pitched_note_type);
   QCOMPARE(piano_roll_scene.time_axis_baseline_ms, 0.0);
 }
 
@@ -411,7 +405,6 @@ void Tester::test_piano_roll_selection_highlights_note() {
 
   auto& piano_roll_widget = main_window.piano_roll_widget;
   auto& switch_table = main_window.window_body.switch_column.switch_table;
-  auto& undo_stack = main_window.window_body.undo_stack;
 
   switch_to(main_window, row_type, 1);
   select_cell(switch_table, note_number, 0);
@@ -426,13 +419,12 @@ void Tester::test_piano_roll_selection_highlights_note() {
   // the playhead sits at 0 rather than at chord 1's absolute start time
   QCOMPARE(piano_roll_widget.piano_roll_scene.playhead_item.line().x1(), 0.0);
 
-  maybe_switch_back_to_chords(undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_piano_roll_selection_ignores_voice_table() {
   auto& piano_roll_widget = main_window.piano_roll_widget;
   auto& switch_table = main_window.window_body.switch_column.switch_table;
-  auto& undo_stack = main_window.window_body.undo_stack;
 
   // put a highlight/cursor up first, so switching to a voice table (which
   // has no timeline position) has to actually clear it rather than just
@@ -449,7 +441,7 @@ void Tester::test_piano_roll_selection_ignores_voice_table() {
     QCOMPARE(get_reference(note_item_pointer).pen().style(), Qt::NoPen);
   }
 
-  maybe_switch_back_to_chords(undo_stack, RowType::pitched_voice_type);
+  maybe_switch_back_to_chords(main_window, RowType::pitched_voice_type);
 }
 
 void Tester::test_piano_roll_selection_preserves_multi_row_range() {
@@ -949,7 +941,6 @@ void Tester::test_piano_roll_click_without_selection() {
 void Tester::test_piano_roll_click_replaces_note_row() {
   auto& piano_roll_widget = main_window.piano_roll_widget;
   auto& switch_table = main_window.window_body.switch_column.switch_table;
-  auto& undo_stack = main_window.window_body.undo_stack;
 
   switch_to(main_window, RowType::pitched_note_type, 1);
   get_selection_model(switch_table)
@@ -970,7 +961,7 @@ void Tester::test_piano_roll_click_replaces_note_row() {
                                       QEvent::MouseButtonRelease,
                                       *maybe_bar_center, Qt::NoButton));
 
-  maybe_switch_back_to_chords(undo_stack, RowType::pitched_note_type);
+  maybe_switch_back_to_chords(main_window, RowType::pitched_note_type);
 }
 
 // a song without chords has nothing for a click to select

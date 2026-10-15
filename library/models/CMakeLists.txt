@@ -3,6 +3,7 @@ target_sources(JustlyLibrary PUBLIC FILE_SET justly_headers FILES
     "ChordsModel.hpp"
     "NotesModel.hpp"
     "RowsModel.hpp"
+    "RowsModelBase.hpp"
     "TableSelection.hpp"
     "UndoRowsModel.hpp"
     "VoicesModel.hpp"

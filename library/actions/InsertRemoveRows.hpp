@@ -22,6 +22,9 @@ void insert_or_remove(RowsModel<SubRow>& rows_model, const int first_row_number,
 template <RowInterface SubRow>
 struct InsertRemoveRows : public QUndoCommand {
   RowsModel<SubRow>& rows_model;
+  // the chord whose notes these are (-1 for chords and voices), since the
+  // notes models are shared between chords
+  const int chord_number;
   const int first_row_number;
   const QList<SubRow> new_rows;
   const int left_column;
@@ -32,6 +35,7 @@ struct InsertRemoveRows : public QUndoCommand {
                    QList<SubRow> new_rows_input, const int left_column_input,
                    const int right_column_input, const bool backwards_input)
       : rows_model(rows_model_input),
+        chord_number(rows_model.parent_chord_number),
         first_row_number(first_row_number_input),
         new_rows(std::move(new_rows_input)),
         left_column(left_column_input),
@@ -39,11 +43,13 @@ struct InsertRemoveRows : public QUndoCommand {
         backwards(backwards_input) {}
 
   void undo() override {
+    emit rows_model.show_rows_requested(chord_number);
     insert_or_remove(rows_model, first_row_number, new_rows, left_column,
                      right_column, backwards);
   }
 
   void redo() override {
+    emit rows_model.show_rows_requested(chord_number);
     insert_or_remove(rows_model, first_row_number, new_rows, left_column,
                      right_column, !backwards);
   }

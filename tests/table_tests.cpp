@@ -40,7 +40,7 @@ void Tester::test_column_count() {
 
   switch_to(main_window, row_type, chord_number);
   QCOMPARE(get_model(switch_table).columnCount(), number_of_columns);
-  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_column_header_data() {
@@ -156,7 +156,7 @@ void Tester::test_column_header() {
   switch_to(main_window, row_type, chord_number);
   QCOMPARE(get_model(switch_table).headerData(column_number, Qt::Horizontal),
            column_name);
-  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_copy_data() {
@@ -199,7 +199,7 @@ void Tester::test_copy() {
   undo_stack.undo();
   QCOMPARE(second_index.data(), second_value);
 
-  maybe_switch_back_to_chords(undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_cut_data() { add_cell_pairs(); }
@@ -243,7 +243,7 @@ void Tester::test_cut() {
   undo_stack.undo();
   QCOMPARE(second_index.data(), second_value);
 
-  maybe_switch_back_to_chords(undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_delete_data() {
@@ -285,7 +285,7 @@ void Tester::test_delete() {
   undo_stack.undo();
   QCOMPARE(old_value, delete_index.data());
 
-  maybe_switch_back_to_chords(undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_next_previous_data() {
@@ -309,10 +309,10 @@ void Tester::test_next_previous() {
   QCOMPARE(get_parent_chord_number(switch_table), chord_number - 1);
   view_menu.next_chord_action.trigger();
   QCOMPARE(get_parent_chord_number(switch_table), chord_number);
-  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
-// replace_table() (ReplaceTable.hpp) reconnects an update lambda to the
+// replace_table() (replace_table.hpp) reconnects an update lambda to the
 // switch table's selection model on every call, but only swaps in a fresh
 // selection model (via set_model) when the row type actually changes --
 // when it doesn't (e.g. next/previous_chord_action, exercised above),
@@ -360,11 +360,14 @@ void Tester::
   }
 }
 
-void Tester::test_replace_table_combining() {
-  auto& window_body = main_window.window_body;
-  switch_to(main_window, RowType::unpitched_note_type, 0);
+// switching tables doesn't change the song, so there's nothing to undo
+void Tester::test_switching_tables_not_undoable() {
+  auto& undo_stack = main_window.window_body.undo_stack;
+  switch_to(main_window, RowType::unpitched_note_type, 1);
+  main_window.song_menu_bar.view_menu.next_chord_action.trigger();
   main_window.song_menu_bar.view_menu.back_to_chords_action.trigger();
-  QVERIFY(!window_body.undo_stack.canUndo());
+  QVERIFY(!undo_stack.canUndo());
+  QVERIFY(undo_stack.isClean());
 }
 
 void Tester::test_row_count_data() {
@@ -418,7 +421,7 @@ void Tester::test_row_count() {
 
   switch_to(main_window, row_type, chord_number);
   QCOMPARE(get_model(switch_table).rowCount(), number_of_rows);
-  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_row_header_data() {
@@ -506,7 +509,7 @@ void Tester::test_status() {
 
   switch_to(main_window, row_type, chord_number);
   QCOMPARE(get_model(switch_table).index(0, 0).data(Qt::StatusTipRole), status);
-  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_set_value_data() {
@@ -553,7 +556,7 @@ void Tester::test_set_value() {
   undo_stack.undo();
   QCOMPARE(second_index.data(Qt::EditRole), second_value);
 
-  maybe_switch_back_to_chords(undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_to_string_data() {
@@ -614,7 +617,7 @@ void Tester::test_unused_role() {
   const auto test_index = model.index(0, 0);
   QCOMPARE(test_index.data(Qt::DecorationRole), QVariant());
   QVERIFY(!(model.setData(test_index, QVariant(), Qt::DecorationRole)));
-  maybe_switch_back_to_chords(window_body.undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
 void Tester::test_voice_cell_editors_data() {
@@ -702,37 +705,40 @@ void Tester::test_voice_cell_editors() {
     QCOMPARE(commit_count, 1);
   }
 
-  maybe_switch_back_to_chords(main_window.window_body.undo_stack, row_type);
+  maybe_switch_back_to_chords(main_window, row_type);
 }
 
-// moving between chords' notes after an edit merges the moves into one undo
-// step, like it does without the edit
-void Tester::test_navigate_chords_after_edit() {
+// undoing and redoing an edit shows the rows it changes, even after
+// switching to another chord's notes, which share the same model
+void Tester::test_undo_shows_changed_rows() {
   auto& window_body = main_window.window_body;
   auto& switch_table = window_body.switch_column.switch_table;
   auto& undo_stack = window_body.undo_stack;
   auto& view_menu = main_window.song_menu_bar.view_menu;
+  const auto words_column = static_cast<int>(PitchedNoteColumn::words_column);
+  const auto& notes = window_body.song.chords.at(1).pitched_notes;
 
   switch_to(main_window, RowType::pitched_note_type, 1);
   auto& model = get_model(switch_table);
-  QVERIFY(model.setData(
-      model.index(
-          0, static_cast<int>(PitchedNoteColumn::words_column)),
-      "edited"));
-  const auto index_after_edit = undo_stack.index();
+  const auto old_words = notes.at(0).words;
+  QVERIFY(model.setData(model.index(0, words_column), "edited", Qt::EditRole));
 
   view_menu.next_chord_action.trigger();
-  view_menu.next_chord_action.trigger();
-  QCOMPARE(get_parent_chord_number(switch_table), 3);
-  QCOMPARE(undo_stack.index(), index_after_edit + 1);
+  QCOMPARE(get_parent_chord_number(switch_table), 2);
 
   undo_stack.undo();
   QCOMPARE(switch_table.delegate.current_row_type, RowType::pitched_note_type);
   QCOMPARE(get_parent_chord_number(switch_table), 1);
+  QCOMPARE(notes.at(0).words, old_words);
 
-  undo_stack.undo();  // the edit
-  undo_stack.undo();  // back to chords
-  QCOMPARE(switch_table.delegate.current_row_type, RowType::chord_type);
+  view_menu.back_to_chords_action.trigger();
+  undo_stack.redo();
+  QCOMPARE(switch_table.delegate.current_row_type, RowType::pitched_note_type);
+  QCOMPARE(get_parent_chord_number(switch_table), 1);
+  QCOMPARE(notes.at(0).words, "edited");
+
+  undo_stack.undo();
+  maybe_switch_back_to_chords(main_window, RowType::pitched_note_type);
 }
 
 // double-clicking only opens notes from a chord's notes columns
@@ -748,6 +754,5 @@ void Tester::test_double_click_outside_notes_columns() {
   double_click_cell(switch_table, 0, 0);
   QCOMPARE(switch_table.delegate.current_row_type, RowType::pitched_note_type);
   QCOMPARE(get_parent_chord_number(switch_table), 1);
-  maybe_switch_back_to_chords(window_body.undo_stack,
-                              RowType::pitched_note_type);
+  maybe_switch_back_to_chords(main_window, RowType::pitched_note_type);
 }
